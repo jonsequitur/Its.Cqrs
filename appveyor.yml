@@ -1,0 +1,14 @@
+install:
+  - nuget restore
+
+configuration:
+  - Release
+
+build:
+  project: Its.Cqrs.sln
+  publish_nuget: true
+
+test:
+  assemblies:
+    - '**\*Tests.dll'
+
