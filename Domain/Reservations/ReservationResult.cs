@@ -1,0 +1,23 @@
+﻿namespace Microsoft.Its.Domain
+{
+    public class ReservationResult
+    {
+        public bool IsSuccessful { get; private set; }
+
+        public string Message { get; private set; }
+
+        public ReservationResult ReservationIsSuccessful(string response)
+        {
+            IsSuccessful = true;
+            Message = response;
+            return this;
+        }
+
+        public ReservationResult ReservationFailed(string response)
+        {
+            IsSuccessful = false;
+            Message = response;
+            return this;
+        }
+    }
+}

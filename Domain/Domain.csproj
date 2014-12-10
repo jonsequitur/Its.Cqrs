@@ -1,0 +1,210 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{99442ACC-A914-4BDF-8DE5-D074FA0447F5}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Microsoft.Its.Domain</RootNamespace>
+    <AssemblyName>Microsoft.Its.Domain</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <NoWarn>1591</NoWarn>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Microsoft.Its.Domain.xml</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Microsoft.Its.Domain.xml</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Its.Validation.1.3.0\lib\net45\Its.Validation.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.6.0.5\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="%28Its.Recipes%29\MaybeExtensions.cs" />
+    <Compile Include="%28Its.Recipes%29\PocketContainer.Clone.cs" />
+    <Compile Include="%28Its.Recipes%29\PocketContainer.cs" />
+    <Compile Include="%28Its.Recipes%29\PocketContainerOpenGenericStrategy.cs" />
+    <Compile Include="%28Its.Recipes%29\PocketContainerPrimitiveAvoidanceStrategy.cs" />
+    <Compile Include="%28Its.Recipes%29\PocketContainerSingleImplementationStrategy.cs" />
+    <Compile Include="%28Its.Recipes%29\System.Linq\EnumerableExtensions.cs" />
+    <Compile Include="%28Its.Recipes%29\System.Dynamic\TypeExtensions.cs" />
+    <Compile Include="%28Its.Recipes%29\System.Linq.Expressions\MappingExpression.cs" />
+    <Compile Include="..\AssemblyInfoVersion.cs">
+      <Link>Properties\AssemblyInfoVersion.cs</Link>
+    </Compile>
+    <Compile Include="AggregateType.cs" />
+    <Compile Include="AggregateType{T}.cs" />
+    <Compile Include="AnonymousClock.cs" />
+    <Compile Include="Authorization\AuthorizationExtensions.cs" />
+    <Compile Include="Authorization\AuthorizationPolicy.cs" />
+    <Compile Include="Authorization\AuthorizationQuery.cs" />
+    <Compile Include="Authorization\AuthorizationFor.cs" />
+    <Compile Include="Authorization\AuthorizationQuery{TResource,TCommand,TPrincipal}.cs" />
+    <Compile Include="Authorization\IAuthorizationQuery{TResource,TCommand,TPrincipal}.cs" />
+    <Compile Include="Clock.cs" />
+    <Compile Include="Command.cs" />
+    <Compile Include="CommandAuthorizationException.cs" />
+    <Compile Include="CommandContext.cs" />
+    <Compile Include="CommandHandler.cs" />
+    <Compile Include="CommandReference.cs" />
+    <Compile Include="ConfigurationContext.cs" />
+    <Compile Include="ConfigurationExtensions.cs" />
+    <Compile Include="DomainConfigurationException.cs" />
+    <Compile Include="EventHandling\AnonymousConsequenter{TEvent}.cs" />
+    <Compile Include="EventHandling\AnonymousProjector{TEvent}.cs" />
+    <Compile Include="EventHandling\CompositeEventHandler.cs" />
+    <Compile Include="EventHandling\EventHandlerBase.cs" />
+    <Compile Include="EventHandling\EventHandlerWrapper.cs" />
+    <Compile Include="EventHandling\Consequenter.cs" />
+    <Compile Include="EventHandling\DuckTypeProjector{T}.cs" />
+    <Compile Include="EventHandling\DynamicProjector.cs" />
+    <Compile Include="EventHandling\EventHandler.cs" />
+    <Compile Include="EventHandling\EventHandlerBinder{TEvent}.cs" />
+    <Compile Include="EventHandling\Handle{TEvent}.cs" />
+    <Compile Include="EventHandling\IEventHandler.cs" />
+    <Compile Include="EventHandling\IEventHandlerBinder.cs" />
+    <Compile Include="EventHandling\IEventHandlerWrapper.cs" />
+    <Compile Include="EventHandling\IEventQuery.cs" />
+    <Compile Include="EventHandling\INamedEventHandler.cs" />
+    <Compile Include="EventHandling\MatchEvent.cs" />
+    <Compile Include="EventHandling\ReflectedEventHandlerBinder.cs" />
+    <Compile Include="EventNameAttribute.cs" />
+    <Compile Include="IClock.cs" />
+    <Compile Include="EventHandling\Projector.cs" />
+    <Compile Include="ICommandHandler{TCommand}.cs" />
+    <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />
+    <Compile Include="PocketContainerExtensions.cs" />
+    <Compile Include="Reservations\NoReservations.cs" />
+    <Compile Include="Reservations\ReservationResult.cs" />
+    <Compile Include="Scheduling\CommandScheduled.cs" />
+    <Compile Include="Command{T}.cs" />
+    <Compile Include="CommandValidationException.cs" />
+    <Compile Include="ConcurrencyException.cs" />
+    <Compile Include="Configuration.cs" />
+    <Compile Include="Event.cs" />
+    <Compile Include="EventHandling\EventBusExtensions.cs" />
+    <Compile Include="EventComparer.cs" />
+    <Compile Include="EventExtensions.cs" />
+    <Compile Include="EventHandling\EventHandlerSubscription.cs" />
+    <Compile Include="EventHandling\EventHandlingDeserializationError.cs" />
+    <Compile Include="EventHandling\EventHandlingError.cs" />
+    <Compile Include="EventSequence.cs" />
+    <Compile Include="EventSourcedAggregate.cs" />
+    <Compile Include="EventSourcedAggregate{T}.cs" />
+    <Compile Include="Event{T}.cs" />
+    <Compile Include="AggregateExtensions.cs" />
+    <Compile Include="ExpressionExtensions.cs" />
+    <Compile Include="Properties\GlobalSuppressions.cs" />
+    <Compile Include="IAggregate.cs" />
+    <Compile Include="ConstructorCommand{T}.cs" />
+    <Compile Include="IHaveExtensibleMetada.cs" />
+    <Compile Include="ICommand.cs" />
+    <Compile Include="Reservations\IReservationService.cs" />
+    <Compile Include="Scheduling\CommandSchedulerExtensions.cs" />
+    <Compile Include="Scheduling\EventSourcedRepositoryExtensions.cs" />
+    <Compile Include="Scheduling\ICommandScheduler.cs" />
+    <Compile Include="Scheduling\ImmediateCommandScheduler{T}.cs" />
+    <Compile Include="Scheduling\IScheduledCommand.cs" />
+    <Compile Include="Scheduling\ScheduledCommandException.cs" />
+    <Compile Include="Scheduling\ScheduledCommandFailure.cs" />
+    <Compile Include="ObjectId{T}.cs" />
+    <Compile Include="IEventBus{T}.cs" />
+    <Compile Include="IEventSourced.cs" />
+    <Compile Include="ICommand{T}.cs" />
+    <Compile Include="IEvent.cs" />
+    <Compile Include="IEventSourcedRepository.cs" />
+    <Compile Include="IEvent{T}.cs" />
+    <Compile Include="InProcessEventBus.cs" />
+    <Compile Include="IOptional.cs" />
+    <Compile Include="IHaveConsequencesWhen.cs" />
+    <Compile Include="Optional.cs" />
+    <Compile Include="ReferTo.cs" />
+    <Compile Include="Optional{T}.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Discover.cs" />
+    <Compile Include="Scheduling\IScheduledCommand{T}.cs" />
+    <Compile Include="Scheduling\ScheduledCommandFailure{T}.cs" />
+    <Compile Include="Scheduling\ScheduledCommandPrecondition.cs" />
+    <Compile Include="Scheduling\ScheduledCommandResult.cs" />
+    <Compile Include="Scheduling\ScheduledCommandSuccess.cs" />
+    <Compile Include="Serialization\AnonymousEvent.cs" />
+    <Compile Include="Serialization\CommandConverter.cs" />
+    <Compile Include="Serialization\DynamicEvent.cs" />
+    <Compile Include="Serialization\OptionalContractResolver.cs" />
+    <Compile Include="Serialization\OptionalConverter.cs" />
+    <Compile Include="Serialization\PrimitiveConverter.cs" />
+    <Compile Include="Serialization\Serializer.cs" />
+    <Compile Include="Serialization\UriConverter.cs" />
+    <Compile Include="String{T}.cs" />
+    <Compile Include="SystemClock.cs" />
+    <Compile Include="TypeExtensions.cs" />
+    <Compile Include="Reservations\Reservation.cs" />
+    <Compile Include="UnitOfWork{T}.cs" />
+    <Compile Include="Validation.cs" />
+    <Compile Include="IUpdateProjectionWhen.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Microsoft.Its.Domain.nuspec" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

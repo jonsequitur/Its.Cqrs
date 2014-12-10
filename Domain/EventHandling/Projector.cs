@@ -1,0 +1,47 @@
+﻿using System;
+using System.Linq;
+using Microsoft.Its.Recipes;
+ 
+namespace Microsoft.Its.Domain
+{
+    public static class Projector
+    {
+        public static IUpdateProjectionWhen<TEvent> Create<TEvent>(Action<TEvent> onEvent) where TEvent : IEvent
+        {
+            return new AnonymousProjector<TEvent>(onEvent);
+        }
+
+        public static IUpdateProjectionWhen<IEvent> CreateFor<T>(Action<T> onEvent)
+        {
+            return new DuckTypeProjector<T>(onEvent);
+        }
+
+        public static IEventHandler CreateDynamic(
+            Action<dynamic> onEvent,
+            params string[] eventTypes)
+        {
+            var matchEvents = eventTypes.OrEmpty().Select(e => e.Split(new[]
+            {
+                '.'
+            }, StringSplitOptions.RemoveEmptyEntries))
+                                        .Select(e =>
+                                        {
+                                            if (e.Length == 1)
+                                            {
+                                                // just the event type
+                                                return new MatchEvent(type: e[0]);
+                                            }
+
+                                            // AggregateType.EventType
+                                            return new MatchEvent(type: e[1]);
+                                        }).ToArray();
+
+            return new DynamicProjector(onEvent, matchEvents);
+        }
+
+        public static IEventHandler Combine(params object[] projectors)
+        {
+            return new CompositeEventHandler(projectors);
+        }
+    }
+}

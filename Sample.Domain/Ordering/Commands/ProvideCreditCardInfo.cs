@@ -1,0 +1,26 @@
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.Its.Domain;
+using Its.Validation;
+
+namespace Sample.Domain.Ordering.Commands
+{
+    public class ProvideCreditCardInfo : Command<Order>, ICreditCardInfo
+    {
+        public string CreditCardNumber { get; set; }
+        public string CreditCardName { get; set; }
+        public string CreditCardCvv2 { get; set; }
+        public string CreditCardExpirationMonth { get; set; }
+        public string CreditCardExpirationYear { get; set; }
+
+        [Range(.01, double.MaxValue)]
+        public decimal Amount { get; set; }
+
+        public override IValidationRule CommandValidator
+        {
+            get
+            {
+                return CreditCardInfo.IsValid;
+            }
+        }
+    }
+}

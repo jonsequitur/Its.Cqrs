@@ -1,0 +1,69 @@
+[
+  {
+    "Order.ItemAdded": {
+      "SequenceNumber": 1,
+      "AggregateId": "49846C94-2C7A-4384-BC1B-997439DF2FCE",
+      "Timestamp": "2013-05-22T23:15:27.3769293+00:00",
+      "Quantity": 1,
+      "ProductName": "It's Log!",
+      "Price": 19.99
+    }
+  },
+  {
+    "Order.ShippingMethodSelected": {
+      "SequenceNumber": 2,
+      "AggregateId": "49846C94-2C7A-4384-BC1B-997439DF2FCE",
+      "Timestamp": "2013-05-22T23:15:27.3769293+00:00",
+      "ServiceMethod": "Express Mule",
+      "Price": 8.00,
+      "Carrier": "Mule Express"
+    }
+  },
+  {
+    "Order.Placed": {
+      "SequenceNumber": 3,
+      "AggregateId": "49846C94-2C7A-4384-BC1B-997439DF2FCE",
+      "Timestamp": "2013-05-22T23:16:37.3769293+00:00",
+      "OrderNumber": "SARUGJF",
+      "CustomerId": "B3C1FECC-0CFB-4E6E-A000-74BF70D3B71A",
+      "TotalPrice": 27.99
+    }
+  },
+  {
+    "Order.Paid": {
+      "SequenceNumber": 4,
+      "AggregateId": "49846C94-2C7A-4384-BC1B-997439DF2FCE",
+      "Timestamp": "2013-05-22T23:16:47.3769293+00:00",
+      "Amount": 27.99
+    }
+  },
+  {
+    "Order.Shipped": {
+      "SequenceNumber": 5,
+      "AggregateId": "49846C94-2C7A-4384-BC1B-997439DF2FCE",
+      "Timestamp": "2013-05-23T23:15:27.3769293+00:00"
+    }
+  },
+  {
+    "Order.Delivered": {
+      "SequenceNumber": 6,
+      "AggregateId": "49846C94-2C7A-4384-BC1B-997439DF2FCE",
+      "Timestamp": "2013-05-29T23:15:27.3769293+00:00"
+    }
+  },
+  {
+    "Order.CreditCardCharged": {
+      "SequenceNumber": 7,
+      "AggregateId": "49846C94-2C7A-4384-BC1B-997439DF2FCE",
+      "Timestamp": "2013-05-29T23:16:27.3769293+00:00",
+      "Amount": 27.99
+    }
+  },
+  {
+    "Order.Fulfilled": {
+      "SequenceNumber": 8,
+      "AggregateId": "49846C94-2C7A-4384-BC1B-997439DF2FCE",
+      "Timestamp": "2013-05-29T23:18:27.3769293+00:00"
+    }
+  }
+]

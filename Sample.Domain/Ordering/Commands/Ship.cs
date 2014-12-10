@@ -1,0 +1,29 @@
+﻿using System.Linq;
+using Microsoft.Its.Domain;
+using Its.Validation;
+using Its.Validation.Configuration;
+
+namespace Sample.Domain.Ordering.Commands
+{
+    public class Ship : Command<Order>
+    {
+        public string ShipmentId { get; set; }
+
+        public override IValidationRule<Order> Validator
+        {
+            get
+            {
+                var productIsInStock = Validate.That<OrderItem>(item => Inventory.IsAvailable(item.ProductName))
+                                               .WithErrorMessage((e, item) => string.Format("Product '{0}' is out of stock.", item.ProductName));
+
+                return new ValidationPlan<Order>
+                {
+                    Order.NotCancelled,
+                    Order.NotShipped,
+                    Order.NotFulfilled,
+                    Validate.That<Order>(o => o.Items.Every(productIsInStock))
+                };
+            }
+        }
+    }
+}

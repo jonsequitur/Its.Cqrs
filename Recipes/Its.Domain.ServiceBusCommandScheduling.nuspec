@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Its.Recipes-Its.Domain.ServiceBusCommandScheduling</id>
+    <title>Its.Recipes - Azure Service Bus Command Scheduling</title>
+    <version>0.2.1-beta</version>
+    <authors>Microsoft,jonsequitur</authors>
+    <owners>Microsoft,jonsequitur</owners>
+    <projectUrl>https://github.com/jonsequitur/Its.Cqrs</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Provides durable command scheduling for Its.Cqrs using Azure ServiceBus 2.0.</description>
+    <tags>Its.Cqrs CQRS ServiceBus Azure</tags>
+    <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+    <dependencies>
+      <dependency id="Its.Domain" version="[0.9.6-beta,1)" />
+      <dependency id="Its.Domain.Sql" version="[0.9.6-beta,1)" />
+      <dependency id="Its.Recipes-ServiceBusConfiguration" version="[0.3.0,1)" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="ServiceBus\ServiceBusCommandQueueReceiver.cs"
+          target="content\(Its.Recipes)\Its.Domain\ServiceBusCommandQueueReceiver.cs" />
+    <file src="ServiceBus\ServiceBusCommandQueueSender.cs"
+          target="content\(Its.Recipes)\Its.Domain\ServiceBusCommandQueueSender.cs" />
+  </files>
+</package>

@@ -1,0 +1,30 @@
+﻿using System;
+using Its.Validation;
+using Its.Validation;
+
+namespace Microsoft.Its.Domain
+{
+    /// <summary>
+    ///     A command that can be applied to an aggregate to trigger some action and record an applicable state change.
+    /// </summary>
+    /// <typeparam name="T">The type of the aggregate.</typeparam>
+    public interface ICommand<in T> : ICommand
+    {
+        /// <summary>
+        ///     Performs the action of the command upon the aggregate.
+        /// </summary>
+        /// <param name="aggregate">The aggregate to which to apply the command.</param>
+        /// <exception cref="CommandValidationException">
+        ///     If the command cannot be applied due its state or the state of the aggregate, it should throw a
+        ///     <see
+        ///         cref="CommandValidationException" />
+        ///     indicating the specifics of the failure.
+        /// </exception>
+        void ApplyTo(T aggregate);
+
+        /// <summary>
+        ///     Gets a validator that can be used to check the valididty of the command against the state of the aggregate before it is applied.
+        /// </summary>
+        IValidationRule<T> Validator { get; }
+    }
+}

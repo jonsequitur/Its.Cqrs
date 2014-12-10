@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Its.Domain</id>
+    <title>Its.Domain</title>
+    <version>0.10.0-beta</version>
+    <authors>jonsequitur</authors>
+    <owners>jonsequitur,Microsoft</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Basic building blocks for building domain models using CQRS and Event Sourcing.</description>
+    <copyright>Copyright 2014</copyright>
+    <tags>CQRS Its.Cqrs event-sourcing DDD</tags>
+    <dependencies>
+      <dependency id="Newtonsoft.Json" version="[4.5.11,)" />
+      <dependency id="Its.Validation" version="[1.1.5,2.0)" />
+      <dependency id="Rx-Main" version="[2.2.5,)" />
+    </dependencies>
+  </metadata>
+</package>

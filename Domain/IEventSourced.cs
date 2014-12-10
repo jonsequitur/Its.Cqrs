@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Microsoft.Its.Domain
+{
+    /// <summary>
+    ///     Represents an aggregate whose state can be persisted as a sequence of events.
+    /// </summary>
+    public interface IEventSourced : IAggregateRoot
+    {
+        long Version { get; }
+
+        /// <summary>
+        ///     Gets any events for this aggregate that have not yet been stored and published.
+        /// </summary>
+        IEnumerable<IEvent> PendingEvents { get; }
+    }
+}
