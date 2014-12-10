@@ -15,7 +15,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     public class EventStoreDbTest
     {
         private static bool databasesInitialized;
-
+        private static readonly object lockObj = new object();  
         protected long HighestEventId;
         private CompositeDisposable disposables;
         private bool classInitializeHasBeenCalled;
@@ -45,11 +45,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             Command<Order>.AuthorizeDefault = (order, command) => true;
             Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
-
-            if (databasesInitialized)
+         
+            lock (lockObj)
             {
-                return;
-            }
+                if (databasesInitialized)
+                {
+                    return;
+                }
 
 #if !DEBUG
             new EventStoreDbContext().Database.Delete();
@@ -60,32 +62,33 @@ namespace Microsoft.Its.Domain.Sql.Tests
             new CommandSchedulerDbContext().Database.Delete();
 #endif
 
-            using (var eventStore = new EventStoreDbContext())
-            {
-                new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(eventStore);
-            }
-            using (var eventStore = new OtherEventStoreDbContext())
-            {
-                new EventStoreDatabaseInitializer<OtherEventStoreDbContext>().InitializeDatabase(eventStore);
-            }
-            using (var db = new ReadModelDbContext())
-            {
-                new ReadModelDatabaseInitializer<ReadModelDbContext>().InitializeDatabase(db);
-            }
-            using (var db = new ReadModels1DbContext())
-            {
-                new ReadModelDatabaseInitializer<ReadModels1DbContext>().InitializeDatabase(db);
-            }
-            using (var db = new ReadModels2DbContext())
-            {
-                new ReadModelDatabaseInitializer<ReadModels2DbContext>().InitializeDatabase(db);
-            }
-            using (var db = new CommandSchedulerDbContext())
-            {
-                new CommandSchedulerDatabaseInitializer().InitializeDatabase(db);
-            }
+                using (var eventStore = new EventStoreDbContext())
+                {
+                    new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(eventStore);
+                }
+                using (var eventStore = new OtherEventStoreDbContext())
+                {
+                    new EventStoreDatabaseInitializer<OtherEventStoreDbContext>().InitializeDatabase(eventStore);
+                }
+                using (var db = new ReadModelDbContext())
+                {
+                    new ReadModelDatabaseInitializer<ReadModelDbContext>().InitializeDatabase(db);
+                }
+                using (var db = new ReadModels1DbContext())
+                {
+                    new ReadModelDatabaseInitializer<ReadModels1DbContext>().InitializeDatabase(db);
+                }
+                using (var db = new ReadModels2DbContext())
+                {
+                    new ReadModelDatabaseInitializer<ReadModels2DbContext>().InitializeDatabase(db);
+                }
+                using (var db = new CommandSchedulerDbContext())
+                {
+                    new CommandSchedulerDatabaseInitializer().InitializeDatabase(db);
+                }
 
-            databasesInitialized = true;
+                databasesInitialized = true;
+            }
         }
 
         protected virtual void AfterClassIsInitialized()
