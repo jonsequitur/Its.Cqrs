@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Reactive.Disposables;
 using FluentAssertions;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
-using Microsoft.Its.Log.Instrumentation;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain;

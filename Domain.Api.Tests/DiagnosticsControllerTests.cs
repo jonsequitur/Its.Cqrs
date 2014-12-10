@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Net.Http;
 using System.Web.Http;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.Log.Instrumentation;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Its.Data;
 using Microsoft.Its.Domain;
 using Its.Validation;
 using Sample.Domain.Ordering.Commands;

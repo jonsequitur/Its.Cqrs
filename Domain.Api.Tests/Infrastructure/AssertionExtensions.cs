@@ -2,8 +2,8 @@
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Testing;
-using Microsoft.Its.Log.Instrumentation;
 using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
 

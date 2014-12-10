@@ -1,4 +1,4 @@
-﻿using Microsoft.Its.Log.Instrumentation;
+﻿using Its.Log.Instrumentation;
 
 namespace Sample.Domain.Projections
 {
