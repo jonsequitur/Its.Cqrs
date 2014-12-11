@@ -55,14 +55,6 @@ namespace Microsoft.Its.Domain.Sql
                         .HasKey(x => new { x.AggregateId, x.SequenceNumber })
                         .ToTable("Events", "EventStore");
 
-            // FIX: (OnModelCreating) remove this from the open source version
-            if (SequenceIdColumnIsPresent())
-            {
-                modelBuilder.Entity<StorableEvent>()
-                            .Property(e => e.SequenceNumber)
-                            .HasColumnName("SequenceId");
-            }
-
             modelBuilder.Entity<StorableEvent>()
                         .Property(e => e.Body);
 
@@ -80,28 +72,6 @@ namespace Microsoft.Its.Domain.Sql
 
             // ignore timestamp since DateTimeOffset is not supported by EF in some stores
             modelBuilder.Entity<StorableEvent>().Ignore(a => a.Timestamp);
-        }
-
-        /// <summary>
-        /// Provides transparent forward- abd backward- schema compatibility for event stores having SequenceId versus SequenceNumber column names.
-        /// </summary>
-        private bool SequenceIdColumnIsPresent()
-        {
-            try
-            {
-                using (var connection = new SqlConnection(Database.Connection.ConnectionString))
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "select count(*) from sys.columns where object_id = OBJECT_ID('EventStore.Events') and name = 'SequenceId'";
-                    connection.Open();
-                    var sequenceIdColumn = (int) command.ExecuteScalar();
-                    return sequenceIdColumn == 1;
-                }
-            }
-            catch (SqlException)
-            {
-                return false;
-            }
         }
 
         public DbSet<StorableEvent> Events { get; set; }

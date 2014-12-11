@@ -51,7 +51,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (var catchup = CreateReadModelCatchup(projector1))
             {
                 catchup.Progress.ForEachAsync(s => Console.WriteLine(s));
-                catchup.DisposeAfter(r => r.Run());
+                catchup.Run();
             }
 
             order.Apply(new AddItem
@@ -66,7 +66,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (var catchup = CreateReadModelCatchup(projector1, projector2))
             {
                 catchup.Progress.ForEachAsync(s => Console.WriteLine(s));
-                catchup.DisposeAfter(r => r.Run());
+                catchup.Run();
             }
 
             projector1.CallCount.Should().Be(2, "A given event should only be passed to a given projector once");

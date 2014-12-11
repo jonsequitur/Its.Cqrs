@@ -122,7 +122,6 @@
     <Compile Include="EventStoreDbTest.cs" />
     <Compile Include="DynamicEventTests.cs" />
     <Compile Include="EventExtensionsTests.cs" />
-    <Compile Include="EventStoreVersioningTests.cs" />
     <Compile Include="OtherEventStoreDbContext.cs" />
     <Compile Include="QueryableExtensionsTests.cs" />
     <Compile Include="DiagnosticTests.cs" />

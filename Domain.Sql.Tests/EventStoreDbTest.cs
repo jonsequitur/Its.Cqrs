@@ -24,8 +24,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             EventStoreDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
-            EventStoreDbContext_v0_8.NameOrConnectionString =
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore_v0_8";
             ReadModelDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsReadModels";
             CommandSchedulerDbContext.NameOrConnectionString =
@@ -52,6 +50,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 {
                     return;
                 }
+
+                Console.WriteLine("Initializing databases");
 
 #if !DEBUG
             new EventStoreDbContext().Database.Delete();
