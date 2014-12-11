@@ -1,37 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Microsoft.Its.EventStore
 {
+    /// <summary>
+    /// Represents an append-only stream of events.
+    /// </summary>
     public interface IEventStream
     {
-        // QUESTION: (IEventStream) is there a better param name than aggregateId for these methods?
-
         /// <summary>
-        /// Appends an event to the stream.
+        /// Appends a events to the stream.
         /// </summary>
-        /// <param name="e">The event to append to the stream.</param>
-        void Append(IStoredEvent e);
+        /// <param name="events">The events to append to the stream.</param>
+        Task Append(IStoredEvent[] events);
 
         /// <summary>
-        /// Gets the latest event in the specified event stream with the specified aggregate id.
+        /// Gets the latest event in the stream with the specified id.
         /// </summary>
         /// <returns></returns>
-        IStoredEvent Latest(string aggregateId);
+        Task<IStoredEvent> Latest(string id);
 
         /// <summary>
-        /// Gets all of the events in the stream with the specified aggregate id.
+        /// Gets all of the events in the stream having the specified id.
         /// </summary>
-        IEnumerable<IStoredEvent> All(string aggregateId);
+        Task<IEnumerable<IStoredEvent>> All(string id);
 
         /// <summary>
-        /// Gets all of the events in the stream created with the specified aggregate id as of the specified date.
+        /// Gets all of the events in the stream created having the specified id as of the specified date.
         /// </summary>
-        IEnumerable<IStoredEvent> AsOfDate(string aggregateId, DateTimeOffset date);
+        Task<IEnumerable<IStoredEvent>> AsOfDate(string id, DateTimeOffset date);
 
         /// <summary>
-        /// Gets all of the events in the stream created with the specified aggregate id up to (and including) the specified version.
+        /// Gets all of the events in the stream created having the specified id up to (and including) the specified version.
         /// </summary>
-        IEnumerable<IStoredEvent> UpToVersion(string aggregateId, long version);
+        Task<IEnumerable<IStoredEvent>> UpToVersion(string id, long version);
     }
 }

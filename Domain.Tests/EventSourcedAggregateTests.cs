@@ -1,13 +1,13 @@
 ﻿using System;
+using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
-using FluentAssertions;
+using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
 using Sample.Domain.Ordering.Commands;
-using Microsoft.Its.Domain.Testing;
 
 namespace Microsoft.Its.Domain.Tests
 {
@@ -25,9 +25,10 @@ namespace Microsoft.Its.Domain.Tests
 
             disposables = new CompositeDisposable();
 
-            var configurationContext = ConfigurationContext.Establish(
-                new Configuration().UseInMemoryEventStore()
-                                   .IgnoreScheduledCommands());
+            var configurationContext = ConfigurationContext
+                .Establish(new Configuration()
+                    .UseInMemoryEventStore()
+                    .IgnoreScheduledCommands());
             disposables.Add(configurationContext);
         }
 
@@ -81,9 +82,9 @@ namespace Microsoft.Its.Domain.Tests
             };
 
             ctorCall.Invoking(c => c())
-                    .ShouldThrow<ArgumentException>()
-                    .And
-                    .Message.Should().Contain("Inconsistent aggregate ids");
+                .ShouldThrow<ArgumentException>()
+                .And
+                .Message.Should().Contain("Inconsistent aggregate ids");
         }
 
         [Test]
@@ -108,7 +109,7 @@ namespace Microsoft.Its.Domain.Tests
             order.IsCancelled.Should().Be(false);
 
             order.Invoking(o => o.Apply(new Cancel()))
-                 .ShouldThrow<CommandValidationException>();
+                .ShouldThrow<CommandValidationException>();
 
             order.IsCancelled.Should().Be(false);
         }
@@ -119,9 +120,9 @@ namespace Microsoft.Its.Domain.Tests
             Action ctorCall = () => { new Order(Guid.NewGuid(), new IEvent[0]); };
 
             ctorCall.Invoking(c => c())
-                    .ShouldThrow<ArgumentException>()
-                    .And
-                    .Message.Should().Contain("Event history is empty");
+                .ShouldThrow<ArgumentException>()
+                .And
+                .Message.Should().Contain("Event history is empty");
         }
 
         [Test]
@@ -129,10 +130,10 @@ namespace Microsoft.Its.Domain.Tests
         {
             var id = Guid.NewGuid();
             var order = new Order(id,
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 1, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 1, ProductName = "foo", Price = 1 },
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
                 );
 
             order.Items.Single().Quantity.Should().Be(4);
@@ -144,10 +145,10 @@ namespace Microsoft.Its.Domain.Tests
             // arrange
             var id = Guid.NewGuid();
             var order = new Order(id,
-                                  new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
+                new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
                 );
 
             // act
@@ -157,17 +158,17 @@ namespace Microsoft.Its.Domain.Tests
             order.Version.Should().Be(104);
             order.PendingEvents.Last().SequenceNumber.Should().Be(104);
         }
-        
+
         [Test]
         public void When_there_are_gaps_in_the_event_sequence_then_new_events_have_the_correct_sequence_numbers_after_save()
         {
             // arrange
             var id = Guid.NewGuid();
             var order = new Order(id,
-                                  new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
+                new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
+                new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
                 );
 
             // act
@@ -185,9 +186,9 @@ namespace Microsoft.Its.Domain.Tests
             Action create = () => new Order(Guid.Empty);
 
             create.Invoking(c => c())
-                  .ShouldThrow<ArgumentException>()
-                  .And
-                  .Message.Should().Contain("id cannot be Guid.Empty");
+                .ShouldThrow<ArgumentException>()
+                .And
+                .Message.Should().Contain("id cannot be Guid.Empty");
         }
 
         [Test]

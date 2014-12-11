@@ -10,7 +10,6 @@ namespace Sample.Banking.Domain
         /// <summary>
         /// Initializes a new instance of the <see cref="CheckingAccount"/> class.
         /// </summary>
-        /// <param name="eventHistory">The id.</param>
         /// <param name="eventHistory">The event history.</param>
         /// <remarks>This constructor is used when sourcing the aggregate from its event history.</remarks>
         public CheckingAccount(Guid id, IEnumerable<IEvent> eventHistory) : base(id, eventHistory)
@@ -20,7 +19,7 @@ namespace Sample.Banking.Domain
         /// <summary>
         /// Initializes a new instance of the <see cref="CheckingAccount" /> class.
         /// </summary>
-        /// <param name="customerAccountId">The checking account id.</param>
+        /// <param name="checkingAccountId">The checking account identifier.</param>
         /// <param name="customerAccountId">The customer account id for the customer account that owns the checking account.</param>
         public CheckingAccount(Guid checkingAccountId, Guid customerAccountId) : base(checkingAccountId)
         {

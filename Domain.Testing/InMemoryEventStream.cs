@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Its.EventStore;
-using Microsoft.Its.Domain.Serialization;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.EventStore;
+using Microsoft.Its.Domain.Serialization;
+using Microsoft.Its.EventStore;
 
 namespace Microsoft.Its.Domain.Testing
 {
     public class InMemoryEventStream : IEventStream
     {
-        public HashSet<IStoredEvent> Events = new HashSet<IStoredEvent>(new Its.EventStore.EventComparer());
+        private readonly HashSet<IStoredEvent> events = new HashSet<IStoredEvent>(new Its.EventStore.EventComparer());
 
         public EventHandler<IStoredEvent> BeforeSave;
 
@@ -23,68 +24,67 @@ namespace Microsoft.Its.Domain.Testing
         }
 
         /// <summary>
-        /// Gets the name of the event stream, i.e. the name of the aggregate type.
+        /// Gets the name of the event stream.
         /// </summary>
         public string Name { get; private set; }
 
-        /// <summary>
-        /// Appends an event to the stream.
-        /// </summary>
-        /// <param name="event">The event to append to the stream.</param>
-        public void Append(IStoredEvent @event)
+        public HashSet<IStoredEvent> Events
         {
-            var handler = BeforeSave;
-            if (handler != null)
+            get
             {
-                handler(this, @event);
+                return events;
             }
+        }
 
-            var storedEvent = @event.ToStoredEvent();
-
-            if (Events.Contains(storedEvent))
+        public async Task Append(IStoredEvent[] @events)
+        {
+            await Task.Run(() =>
             {
-                throw new ConcurrencyException(string.Format("There was a concurrency violation.\n  Existing:\n{0}\nAttempted:\n{1}",
-                                                             Events.Single(e => e.AggregateId == @event.AggregateId &&
-                                                                                e.SequenceNumber == @event.SequenceNumber).ToDomainEvent(Name).ToDiagnosticJson(),
-                                                             @event.ToDiagnosticJson()));
-            }
+                var handler = BeforeSave;
+                if (handler != null)
+                {
+                    @events.ForEach(e => handler(this, e));
+                }
 
-            Events.Add(storedEvent);
+                lock (this.events)
+                {
+                    foreach (var storedEvent in events.Select(e => e.ToStoredEvent()))
+                    {
+                        if (this.events.Contains(storedEvent))
+                        {
+                            throw new ConcurrencyException(string.Format("There was a concurrency violation.\n  Existing:\n{0}\nAttempted:\n{1}",
+                                this.events.Single(e => e.AggregateId == storedEvent.AggregateId &&
+                                                        e.SequenceNumber == storedEvent.SequenceNumber)
+                                    .ToDomainEvent(Name)
+                                    .ToDiagnosticJson(),
+                                storedEvent.ToDiagnosticJson()));
+                        }
+                        this.events.Add(storedEvent);
+                    }
+                }
+            });
         }
 
-        /// <summary>
-        /// Gets the latest event in the specified event stream.
-        /// </summary>
-        /// <returns></returns>
-        public IStoredEvent Latest(string aggregateId)
+        public async Task<IStoredEvent> Latest(string id)
         {
-            return Events.Last(e => e.AggregateId == aggregateId);
+            return await Task.Run(() => events.Last(e => e.AggregateId == id));
         }
 
-        /// <summary>
-        /// Gets all of the events in the stream with the specified aggregate id.
-        /// </summary>
-        public IEnumerable<IStoredEvent> All(string aggregateId)
+        public async Task<IEnumerable<IStoredEvent>> All(string id)
         {
-            return Events.Where(e => e.AggregateId == aggregateId);
+            return await Task.Run(() => events.Where(e => e.AggregateId == id));
         }
 
-        /// <summary>
-        /// Gets all of the events in the stream created with the specified aggregate id as of the specified date.
-        /// </summary>
-        public IEnumerable<IStoredEvent> AsOfDate(string aggregateId, DateTimeOffset date)
+        public async Task<IEnumerable<IStoredEvent>> AsOfDate(string id, DateTimeOffset date)
         {
-            return Events.Where(e => e.AggregateId == aggregateId)
-                         .Where(e => e.Timestamp <= date);
+            return await Task.Run(() => events.Where(e => e.AggregateId == id)
+                .Where(e => e.Timestamp <= date));
         }
 
-        /// <summary>
-        /// Gets all of the events in the stream created with the specified aggregate id up to (and including) the specified version.
-        /// </summary>
-        public IEnumerable<IStoredEvent> UpToVersion(string aggregateId, long version)
+        public async Task<IEnumerable<IStoredEvent>> UpToVersion(string id, long version)
         {
-            return Events.Where(e => e.AggregateId == aggregateId)
-                         .Where(e => e.SequenceNumber <= version);
+            return await Task.Run(() => events.Where(e => e.AggregateId == id)
+                .Where(e => e.SequenceNumber <= version));
         }
     }
 }

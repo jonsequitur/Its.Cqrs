@@ -128,6 +128,7 @@
     <Compile Include="EventHandlerTests.cs" />
     <Compile Include="EventHandlingTests.cs" />
     <Compile Include="EventSequenceTests.cs" />
+    <Compile Include="EventSourcedAggregateSnapshottingTests.cs" />
     <Compile Include="EventSourcedAggregateTests.cs" />
     <Compile Include="EventSourcedRepositoryTests.cs" />
     <Compile Include="EventTests.cs" />

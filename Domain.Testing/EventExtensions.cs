@@ -11,8 +11,13 @@ namespace Microsoft.Its.Domain.Testing
         public static IEventStream ToEventStream(this IEnumerable<IEvent> events, string name)
         {
             var stream = new InMemoryEventStream(name);
-            events.AssignSequenceNumbers()
-                  .ForEach(e => stream.Append(e.ToStoredEvent()));
+
+            var storableEvents = events.AssignSequenceNumbers()
+                                       .Select(e => e.ToStoredEvent());
+
+            stream.Append(storableEvents.ToArray())
+                  .Wait();
+
             return stream;
         }
 

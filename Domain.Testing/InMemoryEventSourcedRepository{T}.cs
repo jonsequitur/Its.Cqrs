@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Reactive.Linq;
+using System.Linq;
 using Microsoft.Its.Domain.EventStore;
-using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.EventStore;
 using Microsoft.Its.Recipes;
-using Microsoft.Its.Domain.Sql;
 
 namespace Microsoft.Its.Domain.Testing
 {
@@ -23,7 +21,9 @@ namespace Microsoft.Its.Domain.Testing
 
         public TAggregate GetLatest(Guid aggregateId)
         {
-            var events = eventStream.All(aggregateId.ToString()).ToArray();
+            var events = eventStream.All(aggregateId.ToString())
+                                    .Result
+                                    .ToArray();
 
             if (events.Any())
             {
@@ -37,7 +37,9 @@ namespace Microsoft.Its.Domain.Testing
 
         public TAggregate GetVersion(Guid aggregateId, long version)
         {
-            var events = eventStream.UpToVersion(aggregateId.ToString(), version).ToArray();
+            var events = eventStream.UpToVersion(aggregateId.ToString(), version)
+                                    .Result
+                                    .ToArray();
 
             if (events.Any())
             {
@@ -49,7 +51,9 @@ namespace Microsoft.Its.Domain.Testing
 
         public TAggregate GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate)
         {
-            var events = eventStream.AsOfDate(aggregateId.ToString(), asOfDate).ToArray();
+            var events = eventStream.AsOfDate(aggregateId.ToString(), asOfDate)
+                                    .Result
+                                    .ToArray();
 
             if (events.Any())
             {
@@ -65,7 +69,11 @@ namespace Microsoft.Its.Domain.Testing
 
             foreach (var e in events)
             {
-                eventStream.Append(e.ToStoredEvent());
+                eventStream.Append(new[]
+                {
+                    e.ToStoredEvent()
+                }).Wait();
+
                 e.SetAggregate(aggregate);
             }
 
@@ -87,7 +95,8 @@ namespace Microsoft.Its.Domain.Testing
         /// <remarks>Events not present in the in-memory aggregate will not be re-fetched from the event store.</remarks>
         public void Refresh(TAggregate aggregate)
         {
-            var newEvents = eventStream.All(aggregateId: aggregate.Id.ToString())
+            var newEvents = eventStream.All(id: aggregate.Id.ToString())
+                                       .Result
                                        .Where(e => e.SequenceNumber > aggregate.Version)
                                        .Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName));
 

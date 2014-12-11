@@ -1,6 +1,4 @@
 using System;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain;
@@ -56,20 +54,19 @@ namespace Sample.Domain
                 });
 
                 // schedule the next email if one is not already scheduled
-                if (!customerAccount.Events()
-                                    .OfType<CommandScheduled<CustomerAccount>>()
-                                    .Where(e => e.Command is SendMarketingEmail)
-                                    .Any(e => e.DueTime > now))
+                if (!AggregateExtensions.Events(customerAccount)
+                    .OfType<CommandScheduled<CustomerAccount>>()
+                    .Where(e => e.Command is SendMarketingEmail)
+                    .Any(e => e.DueTime > now))
                 {
-
                     try
                     {
                         await scheduler.Schedule(Guid.NewGuid(),
-                                                 new AddItem
-                                                 {
-                                                     ProductName = "Appreciation stickers",
-                                                     Price = 0m
-                                                 });
+                            new AddItem
+                            {
+                                ProductName = "Appreciation stickers",
+                                Price = 0m
+                            });
                     }
                     catch (Exception exception)
                     {
@@ -117,7 +114,6 @@ namespace Sample.Domain
             }
 
             public Func<dynamic, Task> SendOrderConfirmationEmail = _ => Task.Run(() => { });
-
         }
     }
 }

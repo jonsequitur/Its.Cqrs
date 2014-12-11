@@ -235,9 +235,11 @@ namespace Microsoft.Its.Domain.Testing
                                                                 .Resolve<ConcurrentDictionary<string, IEventStream>>()
                                                                 .GetOrAdd(streamName, s => new InMemoryEventStream(s));
 
-                                 events
-                                     .AssignSequenceNumbers()
-                                     .ForEach(e => eventStream.Append(e.ToStoredEvent()));
+                                 var storableEvents = events.AssignSequenceNumbers()
+                                                            .Select(e => e.ToStoredEvent());
+
+                                 eventStream.Append(storableEvents.ToArray())
+                                            .Wait();
                              }
                              else
                              {

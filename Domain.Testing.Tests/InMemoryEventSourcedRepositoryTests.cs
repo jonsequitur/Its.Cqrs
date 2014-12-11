@@ -141,7 +141,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     CustomerName = "Willie Nelson",
                     HairColor = "red"
                 }.ToJson(),
-                Timestamp = DateTimeOffset.UtcNow,
+                Timestamp = DateTimeOffset.UtcNow
             };
 
             SaveEventsDirectly(goodEvent, badEvent);
@@ -155,10 +155,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
         protected override void SaveEventsDirectly(params object[] storableEvents)
         {
-            foreach (IStoredEvent e in storableEvents)
-            {
-                eventStream.Append(e);
-            }
+            eventStream.Append(storableEvents.Cast<IStoredEvent>().ToArray())
+                       .Wait();
         }
     }
 }
