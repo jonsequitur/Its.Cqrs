@@ -71,7 +71,7 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        ///     Gets any events for this aggregate that have not yet been stored and published.
+        ///     Gets any events for this aggregate that have not yet been committed to the event store.
         /// </summary>
         public IEnumerable<IEvent> PendingEvents
         {

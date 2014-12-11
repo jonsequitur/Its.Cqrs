@@ -7,7 +7,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Microsoft.Its.Log.Lite
+namespace Its.Log.Lite
 {
     /// <summary>
     /// Writes messages to trace output or to Its.Log via the Its.Log TraceListener, if it is in use. 
@@ -31,7 +31,7 @@ namespace Microsoft.Its.Log.Lite
             {
                 foreach (var listener in Trace.Listeners)
                 {
-                    if (listener.GetType().FullName == "Microsoft.Its.Log.Instrumentation.TraceListener")
+                    if (listener.GetType().FullName == "Its.Log.Instrumentation.TraceListener")
                     {
                         return true;
                     }

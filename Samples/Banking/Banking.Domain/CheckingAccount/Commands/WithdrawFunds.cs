@@ -2,7 +2,7 @@
 using Its.Validation.Configuration;
 using Microsoft.Its.Domain;
 
-namespace Banking.Domain
+namespace Sample.Banking.Domain
 {
     public class WithdrawFunds : Command<CheckingAccount>
     {
@@ -13,7 +13,7 @@ namespace Banking.Domain
             get
             {
                 return Validate.That<CheckingAccount>(account => account.DateClosed == null)
-                               .WithErrorMessage("You cannot make a withdrawal from a closed account.");
+                    .WithErrorMessage("You cannot make a withdrawal from a closed account.");
             }
         }
 
@@ -22,7 +22,7 @@ namespace Banking.Domain
             get
             {
                 return Validate.That<WithdrawFunds>(cmd => cmd.Amount > 0)
-                               .WithErrorMessage("You cannot make a withdrawal for a negative amount.");
+                    .WithErrorMessage("You cannot make a withdrawal for a negative amount.");
             }
         }
     }

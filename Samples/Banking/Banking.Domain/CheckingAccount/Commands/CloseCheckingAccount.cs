@@ -2,7 +2,7 @@
 using Its.Validation.Configuration;
 using Microsoft.Its.Domain;
 
-namespace Banking.Domain
+namespace Sample.Banking.Domain
 {
     public class CloseCheckingAccount : Command<CheckingAccount>
     {
@@ -11,7 +11,7 @@ namespace Banking.Domain
             get
             {
                 return Validate.That<CheckingAccount>(account => account.Balance == 0)
-                               .WithErrorMessage("The account cannot be closed until it has a zero balance.");
+                    .WithErrorMessage("The account cannot be closed until it has a zero balance.");
             }
         }
     }

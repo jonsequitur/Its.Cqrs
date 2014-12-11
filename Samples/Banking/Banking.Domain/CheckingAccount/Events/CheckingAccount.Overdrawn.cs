@@ -1,6 +1,6 @@
 ﻿using Microsoft.Its.Domain;
 
-namespace Banking.Domain
+namespace Sample.Banking.Domain
 {
     public partial class CheckingAccount
     {

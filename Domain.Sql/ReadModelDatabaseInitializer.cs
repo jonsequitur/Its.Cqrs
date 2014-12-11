@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Data.Entity;
 using System.Linq;
-using log = Microsoft.Its.Log.Lite.Log;
+using log = Its.Log.Lite.Log;
 
 namespace Microsoft.Its.Domain.Sql
 {

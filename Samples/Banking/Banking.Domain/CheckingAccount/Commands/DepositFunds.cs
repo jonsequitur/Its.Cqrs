@@ -1,8 +1,8 @@
-﻿using Microsoft.Its.Domain;
-using Its.Validation;
+﻿using Its.Validation;
 using Its.Validation.Configuration;
+using Microsoft.Its.Domain;
 
-namespace Banking.Domain
+namespace Sample.Banking.Domain
 {
     public class DepositFunds : Command<CheckingAccount>
     {
@@ -19,7 +19,7 @@ namespace Banking.Domain
             get
             {
                 return Validate.That<DepositFunds>(cmd => cmd.Amount > 0)
-                               .WithErrorMessage("You cannot make a deposit for a negative amount.");
+                    .WithErrorMessage("You cannot make a deposit for a negative amount.");
             }
         }
 
@@ -31,7 +31,7 @@ namespace Banking.Domain
             get
             {
                 return Validate.That<CheckingAccount>(account => account.DateClosed == null)
-                               .WithErrorMessage("You cannot make a deposit into a closed account.");
+                    .WithErrorMessage("You cannot make a deposit into a closed account.");
             }
         }
     }

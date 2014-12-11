@@ -7,6 +7,7 @@ using FluentAssertions;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.Tests;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
 using Sample.Domain.Ordering;
@@ -14,16 +15,8 @@ using Sample.Domain.Ordering;
 namespace Microsoft.Its.Domain.Api.Tests
 {
     [TestFixture]
-    public class DomainApiControllerTests
+    public class DomainApiControllerTests : EventStoreDbTest
     {
-        [SetUp]
-        public void SetUp()
-        {
-            Command<Order>.AuthorizeDefault = (order, command) => true;
-            EventStoreDbContext.NameOrConnectionString = @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
-            Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
-        }
-
         [Test]
         public async Task ApplyBatch_can_accept_an_array_commands()
         {

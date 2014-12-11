@@ -59,7 +59,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 bus = new FakeEventBus();
                 orderRepository = new SqlEventSourcedRepository<Order>(bus);
 
-                var configuration = new Domain.Configuration()
+                var configuration = new Configuration()
                     .UseSqlEventStore(() => new EventStoreDbContext())
                     .UseEventBus(bus)
                     .UseDependency(_ => scheduler)

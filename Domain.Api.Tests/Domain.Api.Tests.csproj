@@ -68,14 +68,6 @@
       <HintPath>..\packages\Its.Validation.1.3.0\lib\net45\Its.Validation.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.Its.Configuration, Version=0.8.11108.58, Culture=neutral, PublicKeyToken=8afeae72300c8fa7, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Its.Configuration.0.8.0-beta\lib\net40\Microsoft.Its.Configuration.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Its.Log, Version=2.7.0.0, Culture=neutral, PublicKeyToken=76490b1978d4e7b6, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Its.Log.2.7.1-beta\lib\net40\Microsoft.Its.Log.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Practices.ServiceLocation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\CommonServiceLocator.1.0\lib\NET35\Microsoft.Practices.ServiceLocation.dll</HintPath>
@@ -179,6 +171,10 @@
     <ProjectReference Include="..\Domain.Api\Domain.Api.csproj">
       <Project>{B9B510BA-35DF-4CAE-A620-83752749139E}</Project>
       <Name>Domain.Api</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Domain.Sql.Tests\Domain.Sql.Tests.csproj">
+      <Project>{8F59D318-8365-4240-B72E-9C69BF5AD748}</Project>
+      <Name>Domain.Sql.Tests</Name>
     </ProjectReference>
     <ProjectReference Include="..\Domain.Sql\Domain.Sql.csproj">
       <Project>{DEC1C144-4D30-4A83-A03A-8F90085C87EF}</Project>

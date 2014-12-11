@@ -7,8 +7,8 @@
     <ProjectGuid>{0388601C-B785-498D-92DE-5B8C376728C0}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Banking.Domain</RootNamespace>
-    <AssemblyName>Banking.Domain</AssemblyName>
+    <RootNamespace>Sample.Banking.Domain</RootNamespace>
+    <AssemblyName>Sample.Banking.Domain</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

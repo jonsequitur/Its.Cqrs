@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Its.Domain;
 
-namespace Banking.Domain
+namespace Sample.Banking.Domain
 {
     public partial class CustomerAccount : EventSourcedAggregate<CustomerAccount>
     {

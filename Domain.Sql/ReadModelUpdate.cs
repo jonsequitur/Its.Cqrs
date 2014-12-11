@@ -5,7 +5,7 @@ using System.Linq;
 using System.Transactions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
-using log = Microsoft.Its.Log.Lite.Log;
+using log = Its.Log.Lite.Log;
 
 namespace Microsoft.Its.Domain.Sql
 {

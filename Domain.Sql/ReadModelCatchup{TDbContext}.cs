@@ -12,7 +12,7 @@ using System.Threading;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Unit = System.Reactive.Unit;
-using log = Microsoft.Its.Log.Lite.Log;
+using log = Its.Log.Lite.Log;
 
 namespace Microsoft.Its.Domain.Sql
 {

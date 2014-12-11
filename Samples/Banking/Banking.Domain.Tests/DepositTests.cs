@@ -1,12 +1,12 @@
 ﻿using System;
-using Banking.Domain.Tests.Infrastructure;
 using FluentAssertions;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Recipes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NUnit.Framework;
+using Sample.Banking.Domain.Tests.Infrastructure;
 
-namespace Banking.Domain.Tests
+namespace Sample.Banking.Domain.Tests
 {
     [TestClass, TestFixture]
     public class DepositTests

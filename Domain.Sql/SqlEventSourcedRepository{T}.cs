@@ -2,8 +2,7 @@
 using System.Linq;
 using System.Transactions;
 using Microsoft.Its.Domain.Serialization;
-using Newtonsoft.Json;
-using log = Microsoft.Its.Log.Lite.Log;
+using log = Its.Log.Lite.Log;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql
