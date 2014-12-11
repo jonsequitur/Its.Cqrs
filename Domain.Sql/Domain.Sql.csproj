@@ -129,7 +129,6 @@
     <Compile Include="EventBusExtensions.cs" />
     <Compile Include="ExclusiveEventStoreCatchupQuery.cs" />
     <Compile Include="EventContractResolver.cs" />
-    <Compile Include="CreateEventStoreIfNotExists.cs" />
     <Compile Include="DbContextExtensions.cs" />
     <Compile Include="CopyEventStoreIfNotExists.cs" />
     <Compile Include="ReservationServiceDbContext.cs" />

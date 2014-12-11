@@ -45,7 +45,7 @@ namespace Microsoft.Its.Domain.Sql
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             foreach (var configuration in GetEntityModelConfigurationTypes()
-                .Select(Domain.Configuration.Global.Container.Resolve)
+                .Select(Domain.Configuration.Current.Container.Resolve)
                 .Cast<IEntityModelConfiguration>().ToArray())
             {
                 configuration.ConfigureModel(modelBuilder.Configurations);

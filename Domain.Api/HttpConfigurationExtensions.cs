@@ -200,50 +200,6 @@ namespace Microsoft.Its.Domain.Api
             return config;
         }
 
-        /// <summary>
-        ///     Discovers and starts all domain event handlers in the AppDomain.
-        /// </summary>
-        /// <param name="configuration">The HTTP configuration.</param>
-        /// <param name="where">An optional filter that allows specific .</param>
-        /// <returns>The updated HttpConfiguration.</returns>
-        [Obsolete("Use IEventBus.Subscribe instead.")]
-        public static HttpConfiguration StartEventHandlers(
-            this HttpConfiguration configuration,
-            Func<Type, bool> where = null)
-        {
-            if (configuration == null)
-            {
-                throw new ArgumentNullException("configuration");
-            }
-
-            var runningHandlers = RunningEventHandlersByType(configuration);
-            var bus = (IEventBus) (configuration.DependencyResolver.GetService(typeof (IEventBus)) ??
-                                   InProcessEventBus.Instance);
-
-            var discoveredHandlerTypes = Discover.EventHandlerTypes()
-                                                 .Where(t => where == null || where(t));
-
-            discoveredHandlerTypes.ForEach(handlerType =>
-                                           runningHandlers.GetOrAdd(handlerType, t =>
-                                           {
-                                               // instantiate an instance of the handler type
-                                               object handler;
-                                               try
-                                               {
-                                                   handler = configuration.DependencyResolver.GetService(handlerType) ??
-                                                             Activator.CreateInstance(handlerType);
-                                               }
-                                               catch (Exception exception)
-                                               {
-                                                   throw new InvalidOperationException(string.Format("A handler of type {0} could not be instantiated.", t), exception);
-                                               }
-
-                                               return new EventHandlerSubscription(handler, bus);
-                                           }));
-
-            return configuration;
-        }
-
         internal static HttpConfiguration MapDiagnostics(this HttpConfiguration configuration,
                                                        string baseUrl = "")
         {

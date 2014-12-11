@@ -160,7 +160,6 @@
     <Compile Include="CommandDispatchTests.cs" />
     <Compile Include="DiagnosticsControllerTests.cs" />
     <Compile Include="DomainApiControllerTests.cs" />
-    <Compile Include="HttpConfigurationTests.cs" />
     <Compile Include="Infrastructure\AggregateExtensions.cs" />
     <Compile Include="Infrastructure\AnonymousProjector.cs" />
     <Compile Include="Infrastructure\AssertionExtensions.cs" />

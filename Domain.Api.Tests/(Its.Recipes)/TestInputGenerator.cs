@@ -371,15 +371,6 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        ///     Selects a specified number of elements randomly from a sequence.
-        /// </summary>
-        [Obsolete("This method has an ambiguous name. Please Use RandomSequence or RandomSubset.", false)]
-        public static IEnumerable<T> Random<T>(this IEnumerable<T> source, int numberOfItems)
-        {
-            return source.RandomSequence(numberOfItems);
-        }
-
-        /// <summary>
         ///     Sorts the elements of a sequence in a random order.
         /// </summary>
         /// <typeparam name="T">The element type.</typeparam>
