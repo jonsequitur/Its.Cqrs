@@ -35,14 +35,13 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void An_ggregate_can_be_built_from_a_snapshot_projection()
+        public void An_aggregate_can_be_built_from_a_snapshot_projection()
         {
 
 
             // FIX (Aggregate_can_be_built_from_a_snapshot_projection) write test
             Assert.Fail("Test not written yet.");
         }
-
 
 
     }
