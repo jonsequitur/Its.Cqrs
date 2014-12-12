@@ -1,6 +1,5 @@
 ﻿using System;
 using Its.Validation;
-using Its.Validation;
 
 namespace Microsoft.Its.Domain
 {

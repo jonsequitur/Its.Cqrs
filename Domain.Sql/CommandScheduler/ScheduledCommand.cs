@@ -25,5 +25,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public Clock Clock { get; set; }
 
         public ScheduledCommandResult Result { get; set; }
+
+        internal bool NonDurable { get; set; }
+
+        internal bool ShouldBeDeliveredImmediately()
+        {
+            return DueTime == null || DueTime <= Clock.UtcNow;
+        }
     }
 }

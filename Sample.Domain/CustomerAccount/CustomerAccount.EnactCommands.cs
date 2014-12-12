@@ -9,12 +9,23 @@ namespace Sample.Domain
 {
     public partial class CustomerAccount
     {
-        public void EnactCommand(RequestUserName command)
+        public class RequestUserNameCommandHandler : ICommandHandler<CustomerAccount, RequestUserName>
         {
-            RecordEvent(new UserNameAcquired
+            public async Task EnactCommand(CustomerAccount customerAccount, RequestUserName command)
             {
-                UserName = command.UserName
-            });
+                customerAccount.RecordEvent(new UserNameAcquired
+                {
+                    UserName = command.UserName
+                });
+            }
+
+            public async Task HandleScheduledCommandException(CustomerAccount aggregate, ScheduledCommandFailure<RequestUserName> command)
+            {
+                if (command.Exception is ConcurrencyException)
+                {
+                    command.Retry(TimeSpan.Zero);
+                }
+            }
         }
 
         public void EnactCommand(ChangeEmailAddress command)

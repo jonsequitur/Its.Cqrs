@@ -22,7 +22,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             using (VirtualClock.Start())
             {
-                // FIX: (In_memory_command_scheduling_is_enabled_by_default) 
+                // TODO: (In_memory_command_scheduling_is_enabled_by_default) 
                 var scenario = new ScenarioBuilder().Prepare();
 
                 scenario.Save(new CustomerAccount()
