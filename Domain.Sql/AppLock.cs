@@ -41,7 +41,7 @@ EXEC @result = sp_getapplock @Resource = @lockResource,
                                 @LockTimeout = 60000;
 SELECT @result";
 
-            Debug.WriteLine(String.Format("trying to acquire app lock '{0}' (#{1})", lockResourceName, GetHashCode()));
+            Debug.WriteLine(String.Format("Trying to acquire app lock '{0}' (#{1})", lockResourceName, GetHashCode()));
 
             var getAppLock = connection.CreateCommand();
             getAppLock.Parameters.Add(new SqlParameter("lockResource", lockResourceName));
