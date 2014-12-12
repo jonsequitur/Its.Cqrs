@@ -1,11 +1,14 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Diagnostics;
+using System.Reactive.Linq;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
@@ -17,18 +20,21 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         IEventHandler,
         IEventHandlerBinder where TAggregate : class, IEventSourced
     {
-        private readonly Func<IEventSourcedRepository<TAggregate>> getRepository;
+        public IObserver<ScheduledCommandResult> Activity = Observer.Create<ScheduledCommandResult>(a => { });
+        public Func<IScheduledCommand<TAggregate>, string> GetClockLookupKey = cmd => null;
+        public Func<IEvent, string> GetClockName = cmd => null;
         private readonly CommandPreconditionVerifier<TAggregate> commandPreconditionVerifier;
+        private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
         private readonly IEventBus eventBus;
-        private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
-
         private readonly string eventStreamName = AggregateType<TAggregate>.EventStreamName;
+        private readonly Func<IEventSourcedRepository<TAggregate>> getRepository;
 
         public SqlCommandScheduler(
             Func<IEventSourcedRepository<TAggregate>> getRepository,
             Func<CommandSchedulerDbContext> createCommandSchedulerDbContext,
-            IEventBus eventBus, CommandPreconditionVerifier<TAggregate> commandPreconditionVerifier)
+            IEventBus eventBus,
+            CommandPreconditionVerifier<TAggregate> commandPreconditionVerifier)
         {
             if (getRepository == null)
             {
@@ -53,13 +59,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(async e => await Schedule(e));
         }
 
-        public Func<IEvent, string> GetClockName = cmd => null;
-
-        public Func<IScheduledCommand<TAggregate>, string> GetClockLookupKey = cmd => null;
-
-        public IObserver<ScheduledCommandResult> Activity = Observer.Create<ScheduledCommandResult>(a => { });
-
         public async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
+        {
+            await Deliver(scheduledCommand, true);
+        }
+
+        private async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand, bool durable)
         {
             IClock clock = null;
             if (scheduledCommand.DueTime != null)
@@ -80,6 +85,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 scheduledCommand.IfTypeIs<CommandScheduled<TAggregate>>()
                                 .ThenDo(c => c.Result = result);
+
+                if (!durable)
+                {
+                    return;
+                }
 
                 using (var db = createCommandSchedulerDbContext())
                 {
@@ -111,11 +121,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                         }
 
                         db.Errors.Add(new CommandExecutionError
-                        {
-                            ScheduledCommand = storedCommand,
-                            Error = result.IfTypeIs<ScheduledCommandFailure>()
-                                          .Then(f => f.Exception.ToJson()).ElseDefault()
-                        });
+                                      {
+                                          ScheduledCommand = storedCommand,
+                                          Error = result.IfTypeIs<ScheduledCommandFailure>()
+                                                        .Then(f => f.Exception.ToJson()).ElseDefault()
+                                      });
                     }
 
                     db.SaveChanges();
@@ -125,41 +135,81 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         public async Task Schedule(IScheduledCommand<TAggregate> scheduledCommandEvent)
         {
-            var domainTime = Domain.Clock.Now();
-
-            Clock schedulerClock;
-            ScheduledCommand storedScheduledCommand;
-
             Debug.WriteLine("SqlCommandScheduler.Schedule: " + Description(scheduledCommandEvent));
+
+            var storedScheduledCommand = StoreScheduledCommand(scheduledCommandEvent);
+
+            // deliver the command immediately if appropriate
+            if (storedScheduledCommand.ShouldBeDeliveredImmediately())
+            {
+                var scheduledCommand = storedScheduledCommand.ToScheduledCommand<TAggregate>();
+
+                // sometimes the command depends on a precondition even that hasn't been saved
+                if (!await commandPreconditionVerifier.VerifyPrecondition(scheduledCommand))
+                {
+                    eventBus.Events<IEvent>()
+                            .Where(
+                                e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
+                                     e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
+                            .Take(1)
+                            .Timeout(TimeSpan.FromSeconds(10))
+                            .Subscribe(
+                                async e => { await Deliver(scheduledCommand); },
+                                onError: ex =>
+                                         {
+                                             // TODO: (Schedule) this should probably go somewhere else
+                                             eventBus.PublishErrorAsync(new Domain.EventHandlingError(ex, this));
+                                         });
+                }
+                else
+                {
+                    await Deliver(scheduledCommand,
+                                  durable: !storedScheduledCommand.NonDurable);
+                }
+            }
+        }
+
+        private ScheduledCommand StoreScheduledCommand(IScheduledCommand<TAggregate> scheduledCommandEvent)
+        {
+            ScheduledCommand storedScheduledCommand;
 
             using (var db = createCommandSchedulerDbContext())
             {
+                var domainTime = Domain.Clock.Now();
+
                 // store the scheduled command
                 var clockName = ClockNameForEvent(scheduledCommandEvent, db);
-                schedulerClock = db.Clocks.SingleOrDefault(c => c.Name == clockName);
+                var schedulerClock = db.Clocks.SingleOrDefault(c => c.Name == clockName);
 
                 if (schedulerClock == null)
                 {
                     schedulerClock = new Clock
-                    {
-                        Name = clockName,
-                        UtcNow = domainTime,
-                        StartTime = domainTime
-                    };
+                                     {
+                                         Name = clockName,
+                                         UtcNow = domainTime,
+                                         StartTime = domainTime
+                                     };
                     db.Clocks.Add(schedulerClock);
                     db.SaveChanges();
                 }
 
                 storedScheduledCommand = new ScheduledCommand
+                                         {
+                                             AggregateId = scheduledCommandEvent.AggregateId,
+                                             SequenceNumber = scheduledCommandEvent.SequenceNumber,
+                                             AggregateType = eventStreamName,
+                                             SerializedCommand = scheduledCommandEvent.ToJson(),
+                                             CreatedTime = domainTime,
+                                             DueTime = scheduledCommandEvent.DueTime,
+                                             Clock = schedulerClock
+                                         };
+
+                if (storedScheduledCommand.ShouldBeDeliveredImmediately() &&
+                    !scheduledCommandEvent.Command.RequiresDurableScheduling)
                 {
-                    AggregateId = scheduledCommandEvent.AggregateId,
-                    SequenceNumber = scheduledCommandEvent.SequenceNumber,
-                    AggregateType = eventStreamName,
-                    SerializedCommand = scheduledCommandEvent.ToJson(),
-                    CreatedTime = domainTime,
-                    DueTime = scheduledCommandEvent.DueTime,
-                    Clock = schedulerClock
-                };
+                    storedScheduledCommand.NonDurable = true;
+                    return storedScheduledCommand;
+                }
 
                 db.ScheduledCommands.Add(storedScheduledCommand);
 
@@ -193,34 +243,17 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 }
             }
 
-            // deliver the command immediately if appropriate
-            if (scheduledCommandEvent.DueTime == null ||
-                scheduledCommandEvent.DueTime <= schedulerClock.UtcNow)
-            {
-                var scheduledCommand = storedScheduledCommand.ToScheduledCommand<TAggregate>();
+            return storedScheduledCommand;
+        }
 
-                // sometimes the command depends on a precondition even that hasn't been saved
-                if (!await commandPreconditionVerifier.VerifyPrecondition(scheduledCommand))
-                {
-                    eventBus.Events<IEvent>()
-                            .Where(
-                                e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
-                                     e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
-                            .Take(1)
-                            .Timeout(TimeSpan.FromSeconds(10))
-                            .Subscribe(
-                                async e => { await Deliver(scheduledCommand); },
-                                onError: ex =>
-                                {
-                                    // TODO: (Schedule) this should probably go somewhere else
-                                    eventBus.PublishErrorAsync(new Domain.EventHandlingError(ex, this));
-                                });
-                }
-                else
-                {
-                    await Deliver(scheduledCommand);
-                }
-            }
+        public IEnumerable<IEventHandlerBinder> GetBinders()
+        {
+            return new IEventHandlerBinder[] { this };
+        }
+
+        public IDisposable SubscribeToBus(object handler, IEventBus bus)
+        {
+            return bus.Subscribe(consequenter);
         }
 
         private string ClockNameForEvent(
@@ -231,9 +264,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             var clockName =
                 scheduledCommandEvent.IfTypeIs<IHaveExtensibleMetada>()
                                      .Then(e => ((object) e.Metadata)
-                                                    .IfTypeIs<IDictionary<string, object>>()
-                                                    .Then(m => m.IfContains("ClockName")
-                                                                .Then(v => v.ToString())))
+                                               .IfTypeIs<IDictionary<string, object>>()
+                                               .Then(m => m.IfContains("ClockName")
+                                                           .Then(v => v.ToString())))
                                      .ElseDefault();
 
             if (clockName != null)
@@ -259,25 +292,15 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         private static string Description(IScheduledCommand<TAggregate> scheduledCommand)
         {
             return new
-            {
-                Name = scheduledCommand.Command.CommandName,
-                DueTime = scheduledCommand.DueTime.IfNotNull()
-                                          .Then(t => t.ToString("O"))
-                                          .Else(() => "[null]"),
-                Clocks = Domain.Clock.Current.ToString(),
-                scheduledCommand.AggregateId,
-                scheduledCommand.ETag,
-            }.ToString();
-        }
-
-        public IEnumerable<IEventHandlerBinder> GetBinders()
-        {
-            return new IEventHandlerBinder[] { this };
-        }
-
-        public IDisposable SubscribeToBus(object handler, IEventBus bus)
-        {
-            return bus.Subscribe(consequenter);
+                   {
+                       Name = scheduledCommand.Command.CommandName,
+                       DueTime = scheduledCommand.DueTime.IfNotNull()
+                                                 .Then(t => t.ToString("O"))
+                                                 .Else(() => "[null]"),
+                       Clocks = Domain.Clock.Current.ToString(),
+                       scheduledCommand.AggregateId,
+                       scheduledCommand.ETag
+                   }.ToString();
         }
     }
 }

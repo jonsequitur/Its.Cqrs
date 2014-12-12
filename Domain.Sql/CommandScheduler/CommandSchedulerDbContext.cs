@@ -81,6 +81,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     .IsRequired();
 
                 Ignore(c => c.Result);
+                Ignore(c => c.NonDurable);
             }
         }
 
