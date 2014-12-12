@@ -212,7 +212,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                 async e => { await Deliver(scheduledCommand); },
                                 onError: ex =>
                                 {
-                                    // FIX: (Schedule) this should probably go somewhere else
+                                    // TODO: (Schedule) this should probably go somewhere else
                                     eventBus.PublishErrorAsync(new Domain.EventHandlingError(ex, this));
                                 });
                 }

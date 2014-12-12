@@ -79,8 +79,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             using (CommandContext.Establish(scheduledCommand.Command))
             {
-                // FIX: (Deliver) await
-                repository.ApplyScheduledCommand(scheduledCommand);
+                await repository.ApplyScheduledCommand(scheduledCommand);
             }
         }
 

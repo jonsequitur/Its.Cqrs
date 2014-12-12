@@ -193,7 +193,7 @@ namespace Microsoft.Its.Domain.Testing
                 }
                 else
                 {
-                    // FIX: (GetOrAddCommandScheduler) can we resolve the scheduler directly once the SqlCommandScheduler directly registers them?
+                    // TODO: (GetOrAddCommandScheduler) can we resolve the scheduler directly once the SqlCommandScheduler directly registers them?
                     handler = container
                         .Resolve<SqlCommandScheduler>()
                         .GetBinders()
