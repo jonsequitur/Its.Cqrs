@@ -1,4 +1,7 @@
-﻿// THIS FILE IS NOT INTENDED TO BE EDITED. 
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+// THIS FILE IS NOT INTENDED TO BE EDITED. 
 // 
 // This file can be updated in-place using the Package Manager Console. To check for updates, run the following command:
 // 

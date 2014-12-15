@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -193,7 +196,7 @@ namespace Microsoft.Its.Domain.Testing
                 }
                 else
                 {
-                    // FIX: (GetOrAddCommandScheduler) can we resolve the scheduler directly once the SqlCommandScheduler directly registers them?
+                    // TODO: (GetOrAddCommandScheduler) can we resolve the scheduler directly once the SqlCommandScheduler directly registers them?
                     handler = container
                         .Resolve<SqlCommandScheduler>()
                         .GetBinders()

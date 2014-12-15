@@ -1,4 +1,7 @@
-﻿using System;
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.Its.Recipes;
@@ -22,7 +25,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             using (VirtualClock.Start())
             {
-                // FIX: (In_memory_command_scheduling_is_enabled_by_default) 
+                // TODO: (In_memory_command_scheduling_is_enabled_by_default) 
                 var scenario = new ScenarioBuilder().Prepare();
 
                 scenario.Save(new CustomerAccount()

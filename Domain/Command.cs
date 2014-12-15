@@ -1,4 +1,7 @@
-﻿using System;
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -47,6 +50,18 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the command requires durability, even when scheduled for immediate delivery.
+        /// </summary>
+        [JsonIgnore]
+        public virtual bool RequiresDurableScheduling
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         private static readonly Lazy<Dictionary<Tuple<Type, string>, Type>> index = new Lazy<Dictionary<Tuple<Type, string>, Type>>
             (() => AggregateType.KnownTypes
                                 .Select(aggregateType =>
@@ -66,6 +81,9 @@ namespace Microsoft.Its.Domain
                                                             }))
                                 .ToDictionary(p => p.key, p => p.value));
 
+        /// <summary>
+        /// Gets all known <see cref="Command" /> types.
+        /// </summary>
         public static Type[] KnownTypes
         {
             get

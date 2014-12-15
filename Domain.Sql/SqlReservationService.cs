@@ -1,9 +1,11 @@
-﻿using System;
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Data;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -35,7 +37,7 @@ namespace Microsoft.Its.Domain.Sql
                 {
                     var reservedValues = db.Set<ReservedValue>();
 
-                    var expiration = now + (lease.HasValue ? lease.Value : TimeSpan.FromMinutes(1));
+                    var expiration = now + (lease ?? TimeSpan.FromMinutes(1));
 
                     // see if there is a pre-existing lease by the same actor
                     var reservedValue = reservedValues.SingleOrDefault(r => r.Scope == scope &&
@@ -205,7 +207,7 @@ namespace Microsoft.Its.Domain.Sql
             using (var db = CreateReservationServiceDbContext())
             {
                 var reservedValues = db.Set<ReservedValue>();
-                var expiration = now + (lease.HasValue ? lease.Value : TimeSpan.FromMinutes(1));
+                var expiration = now + (lease ?? TimeSpan.FromMinutes(1));
 
                 ReservedValue valueToReserve = null;
                 do

@@ -1,4 +1,7 @@
-﻿namespace Microsoft.Its.Domain
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+namespace Microsoft.Its.Domain
 {
     /// <summary>
     /// A sequential event applicable to a specific type, which can be used to rebuild the object's historical states.

@@ -1,4 +1,7 @@
-﻿using System;
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive.Disposables;
@@ -79,8 +82,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             using (CommandContext.Establish(scheduledCommand.Command))
             {
-                // FIX: (Deliver) await
-                repository.ApplyScheduledCommand(scheduledCommand);
+                await repository.ApplyScheduledCommand(scheduledCommand);
             }
         }
 

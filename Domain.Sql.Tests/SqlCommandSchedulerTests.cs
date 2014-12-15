@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity.Infrastructure;
@@ -16,6 +19,7 @@ using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
+using Moq;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
@@ -1241,6 +1245,33 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 scheduledAggregateIds.Should()
                                      .BeEquivalentTo(aggregateIds);
+            }
+        }
+
+        [Test]
+        public async Task When_a_command_is_non_durable_then_immediate_scheduling_does_not_result_in_command_scheduler_db_entry()
+        {
+            var commandScheduler = Configuration.Current.Container.Resolve<ICommandScheduler<CustomerAccount>>();
+            var reserverationService = new Mock<IReservationService>();
+            reserverationService.Setup(m => m.Reserve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+                                .Returns(() => Task.FromResult(true));
+            Configuration.Current.ReservationService = reserverationService.Object;
+
+            var aggregateId = Any.Guid();
+            accountRepository.Save(new CustomerAccount(aggregateId).Apply(new RequestNoSpam()));
+            await commandScheduler.Schedule(aggregateId, new RequestUserName
+                                                         {
+                                                             UserName = Any.Email()
+                                                         });
+
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var scheduledAggregateIds = db.ScheduledCommands
+                                              .Where(c => aggregateId == c.AggregateId)
+                                              .ToArray();
+
+                scheduledAggregateIds.Should()
+                                     .BeEmpty();
             }
         }
 

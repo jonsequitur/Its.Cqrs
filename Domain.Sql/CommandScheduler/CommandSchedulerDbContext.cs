@@ -1,4 +1,7 @@
-﻿using System;
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Data.Entity;
 using System.Data.Entity.ModelConfiguration;
 using System.Diagnostics;
@@ -81,6 +84,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     .IsRequired();
 
                 Ignore(c => c.Result);
+                Ignore(c => c.NonDurable);
             }
         }
 
