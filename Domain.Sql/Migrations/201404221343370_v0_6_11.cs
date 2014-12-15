@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System.Data.Entity.Migrations;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler.Migrations

@@ -1,4 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System.ComponentModel.DataAnnotations;
 using Microsoft.Its.Domain;
 using Its.Validation;
 

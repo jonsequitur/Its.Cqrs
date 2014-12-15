@@ -1,4 +1,7 @@
-﻿namespace Microsoft.Its.Domain.Authorization
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+namespace Microsoft.Its.Domain.Authorization
 {
     /// <summary>
     ///     Represents a check for whether a principal can issue a specific command pertaining to a specific resource.
