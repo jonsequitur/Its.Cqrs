@@ -65,7 +65,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 var configuration = new Configuration()
                     .UseSqlEventStore(() => new EventStoreDbContext())
                     .UseEventBus(bus)
-                    .UseDependency(_ => scheduler)
+                    .UseSqlCommandScheduling()
                     .UseDependency<IEventSourcedRepository<Order>>(t => orderRepository);
 
                 var clockName = Any.Paragraph(4);
@@ -80,6 +80,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 disposables.Add(queueSender.Messages.Subscribe(s => Console.WriteLine("ServiceBusCommandQueueSender: " + s.ToJson())));
                 disposables.Add(bus.Subscribe(scheduler));
                 disposables.Add(configuration);
+                disposables.Add(ConfigurationContext.Establish(configuration));
             }
         }
 
@@ -93,7 +94,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
         }
 
         [Test]
-        public async Task When_ServiceBusCommandQueueSender_is_subscribed_to_the_service_bus_then_messages_are_scheduled_to_trigger_scheduled_commands()
+        public async Task When_ServiceBusCommandQueueSender_is_subscribed_to_the_service_bus_then_messages_are_scheduled_to_trigger_event_based_scheduled_commands()
         {
             VirtualClock.Start(DateTimeOffset.Now.AddHours(-13));
 
@@ -114,6 +115,40 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                     Console.WriteLine(new { ShipOrderId = order.Id, due });
 
                     orderRepository.Save(order);
+                });
+
+                RunCatchup();
+
+                // reset the clock so that when the messages are delivered, the target commands are now due
+                Clock.Reset();
+
+                queueReceiver.StartReceivingMessages();
+
+                var activity = await scheduler.Activity
+                                              .Where(a => aggregateIds.Contains(a.ScheduledCommand.AggregateId))
+                                              .Take(5)
+                                              .ToList()
+                                              .Timeout(TimeSpan.FromMinutes(5));
+
+                activity.Select(a => a.ScheduledCommand.AggregateId)
+                        .ShouldBeEquivalentTo(aggregateIds);
+            }
+        }
+
+        [Test]
+        public async Task When_ServiceBusCommandQueueSender_is_subscribed_to_the_service_bus_then_messages_are_scheduled_to_trigger_directly_scheduled_commands()
+        {
+            VirtualClock.Start(DateTimeOffset.Now.AddHours(-13));
+
+            using (var queueReceiver = CreateQueueReceiver())
+            {
+                var aggregateIds = Enumerable.Range(1, 5)
+                                             .Select(_ => Guid.NewGuid())
+                                             .ToArray();
+                
+                aggregateIds.ForEach(id =>
+                {
+                        
                 });
 
                 RunCatchup();
