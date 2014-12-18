@@ -6,8 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.Its.Domain.Serialization;
+using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.EventStore;
+using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain.Ordering;
 
@@ -33,7 +35,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
                          .IgnoreScheduledCommands();
         }
 
-        protected override IEventSourcedRepository<Order> CreateRepository(Action onSave = null)
+        protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
+            Action onSave = null)
         {
             var bus = Configuration.Current.EventBus;
             
@@ -42,13 +45,13 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 eventStream.BeforeSave += (sender, @event) => onSave();
             }
 
-            return new InMemoryEventSourcedRepository<Order>(eventStream, bus);
+            return Configuration.Current.Repository<TAggregate>();
         }
 
         [Test]
         public override void When_storage_fails_then_no_events_are_published()
         {
-            var repository = CreateRepository(onSave: () => { throw new ConcurrencyException("oops!"); });
+            var repository = CreateRepository<Order>(onSave: () => { throw new ConcurrencyException("oops!"); });
 
             var order = new Order();
             Action save = () =>
@@ -86,7 +89,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             SaveEventsDirectly(events.ToArray());
 
-            var repository = CreateRepository();
+            var repository = CreateRepository<Order>();
 
             var order = repository.GetLatest(orderId);
 
@@ -117,7 +120,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             SaveEventsDirectly(events.ToArray());
 
-            var repository = CreateRepository();
+            var repository = CreateRepository<Order>();
 
             var order = repository.GetLatest(orderId);
 
@@ -149,16 +152,22 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             SaveEventsDirectly(goodEvent, badEvent);
 
-            var repository = CreateRepository();
+            var repository = CreateRepository<Order>();
 
             var order = repository.GetLatest(orderId);
 
             order.CustomerName.Should().Be("Willie Nelson");
         }
 
-        protected override void SaveEventsDirectly(params object[] storableEvents)
+        protected override void SaveEventsDirectly(params object[] events)
         {
-            eventStream.Append(storableEvents.Cast<IStoredEvent>().ToArray())
+            eventStream.Append(
+                events
+                    .Select(e => e.IfTypeIs<IStoredEvent>()
+                                  .Else(() => e.IfTypeIs<IEvent>()
+                                               .Then(ee => ee.ToStoredEvent()))
+                                  .ElseDefault())
+                    .ToArray())
                        .Wait();
         }
     }

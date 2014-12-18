@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Its.Validation;
@@ -58,12 +59,35 @@ namespace Microsoft.Its.Domain
             return !command.RunAllValidations(aggregate, false).HasFailures;
         }
 
+        /// <summary>
+        /// Creates a new instance of the aggregate in memory using its state as of the specified version.
+        /// </summary>
         public static TAggregate AsOfVersion<TAggregate>(this TAggregate aggregate, long version) where TAggregate : EventSourcedAggregate
         {
-            return AggregateType<TAggregate>.Factory.Invoke(
+            return AggregateType<TAggregate>.FromEventHistory.Invoke(
                 aggregate.Id,
                 aggregate.Events()
                          .Where(e => e.SequenceNumber <= version));
+        }
+
+        /// <summary>
+        /// Saves a snapshot of the aggregate.
+        /// </summary>
+        public static async Task SaveSnapshot<TAggregate>(
+            this ISnapshotRepository repository, 
+            TAggregate aggregate)
+            where TAggregate : class, IEventSourced
+        {
+            var snapshotCreator = Configuration.Current.Container.Resolve<ICreateSnapshot<TAggregate>>();
+
+            var snapshot = snapshotCreator.CreateSnapshot(aggregate);
+
+            snapshot.AggregateId = aggregate.Id;
+            snapshot.AggregateTypeName = AggregateType<TAggregate>.EventStreamName;
+            snapshot.LastUpdated = Clock.Now();
+            snapshot.Version = aggregate.Version;
+
+            await repository.SaveSnapshot(snapshot);
         }
 
         /// <summary>
@@ -145,6 +169,12 @@ namespace Microsoft.Its.Domain
                 ((EventSequence) aggregate.PendingEvents).Version);
         }
 
+        /// <summary>
+        /// Determines whether the specified ETag already exists in the aggregate's event stream.
+        /// </summary>
+        /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+        /// <param name="aggregate">The aggregate.</param>
+        /// <param name="etag">The etag.</param>
         public static bool HasETag<TAggregate>(this TAggregate aggregate, string etag)
             where TAggregate : IEventSourced
         {
@@ -153,10 +183,9 @@ namespace Microsoft.Its.Domain
                 return false;
             }
 
-            var eventSourced = aggregate as EventSourcedAggregate;
-
-            return eventSourced != null &&
-                   eventSourced.Events().Any(e => e.ETag == etag);
+            return aggregate.IfTypeIs<EventSourcedAggregate>()
+                            .Then(a => a.HasETag(etag))
+                            .ElseDefault();
         }
     }
 }

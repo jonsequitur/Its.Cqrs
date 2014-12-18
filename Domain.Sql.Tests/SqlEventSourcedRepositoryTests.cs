@@ -34,9 +34,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                          .IgnoreScheduledCommands();
         }
 
-        protected override IEventSourcedRepository<Order> CreateRepository(Action onSave = null)
+        protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
+            Action onSave = null)
         {
-            var repository = new SqlEventSourcedRepository<Order>();
+            var repository = Configuration.Current.Repository<TAggregate>() as SqlEventSourcedRepository<TAggregate>;
 
             if (onSave != null)
             {
@@ -50,11 +51,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
             return repository;
         }
 
-        protected override void SaveEventsDirectly(params object[] storableEvents)
+        protected override void SaveEventsDirectly(params object[] events)
         {
             using (var db = new EventStoreDbContext())
             {
-                storableEvents.OfType<StorableEvent>().ForEach(e => { db.Events.AddOrUpdate(e); });
+                events
+                    .Select(e => e.IfTypeIs<StorableEvent>()
+                                  .Else(() => e.IfTypeIs<IEvent>()
+                                               .Then(ee => ee.ToStorableEvent()))
+                                  .ElseDefault())
+                    .ForEach(e => { db.Events.Add(e); });
                 db.SaveChanges();
             }
         }
@@ -87,7 +93,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 db.SaveChanges();
             }
 
-            var repository = CreateRepository();
+            var repository = CreateRepository<Order>();
 
             var order = repository.GetLatest(orderId);
 
@@ -122,7 +128,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 db.SaveChanges();
             }
 
-            var repository = CreateRepository();
+            var repository = CreateRepository<Order>();
 
             var order = repository.GetLatest(orderId);
 
@@ -155,7 +161,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             SaveEventsDirectly(goodEvent, badEvent);
 
-            var repository = CreateRepository();
+            var repository = CreateRepository<Order>();
 
             var order = repository.GetLatest(orderId);
 
@@ -168,7 +174,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var order = new Order();
             var bus = new FakeEventBus();
             bus.Events<IEvent>().Subscribe(e => { throw new Exception("oops"); });
-            var repository = CreateRepository(() => { throw new Exception("oops!"); });
+            var repository = CreateRepository<Order>(() => { throw new Exception("oops!"); });
 
             order
                 .Apply(new AddItem
@@ -207,7 +213,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             SaveEventsDirectly(e);
 
-            var repository = CreateRepository();
+            var repository = CreateRepository<Order>();
 
             var order = repository.GetLatest(id);
 

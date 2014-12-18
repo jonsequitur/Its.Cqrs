@@ -38,6 +38,7 @@ namespace Microsoft.Its.Domain
                      .UseImmediateCommandScheduling()
                      .RegisterSingle<IReservationService>(c => new NoReservations())
                      .RegisterSingle<IEventBus>(c => new InProcessEventBus())
+                     .Register<ISnapshotRepository>(c => new NoSnapshots())
                      .RegisterSingle(c => this);
         }
 

@@ -205,6 +205,23 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
+        /// Throws an exception if the <see cref="Recipes.Maybe{T}" /> has no value.
+        /// </summary>
+        /// <typeparam name="T">The type held by the <see cref="Recipes.Maybe{T}" />.</typeparam>
+        /// <param name="maybe">The maybe.</param>
+        /// <param name="exception">A function that returns the exception to be thrown.</param>
+        /// <returns></returns>
+        public static T ElseThrow<T>(this Maybe<T> maybe, Func<Exception> exception)
+        {
+            if (maybe.HasValue)
+            {
+                return maybe.Value;
+            }
+
+            throw exception();
+        }
+
+        /// <summary>
         ///     If the dictionary contains a value for a specified key, executes an action passing the corresponding value.
         /// </summary>
         /// <typeparam name="TKey"> The type of the key. </typeparam>

@@ -122,8 +122,12 @@
     <Compile Include="EventNameAttribute.cs" />
     <Compile Include="IClock.cs" />
     <Compile Include="EventHandling\Projector.cs" />
-    <Compile Include="ICommandHandler{TCommand}.cs" />
     <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />
+    <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />
+    <Compile Include="Snapshots\InMemorySnapshotRepository{T}.cs" />
+    <Compile Include="Snapshots\ISnapshot.cs" />
+    <Compile Include="Snapshots\ISnapshotRepository.cs" />
+    <Compile Include="Snapshots\NoSnapshots{T}.cs" />
     <Compile Include="PocketContainerExtensions.cs" />
     <Compile Include="Reservations\NoReservations.cs" />
     <Compile Include="Reservations\ReservationResult.cs" />

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Its.Validation;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -37,11 +38,23 @@ namespace Microsoft.Its.Domain
         /// <param name="eventHistory">The event history.</param>
         protected EventSourcedAggregate(Guid id, IEnumerable<IEvent> eventHistory) : base(id, eventHistory)
         {
-            BuildUp();
+           BuildUpStateFromEventHistory();
         }
 
-        private void BuildUp()
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventSourcedAggregate{T}"/> class.
+        /// </summary>
+        /// <param name="snapshot">A snapshot of the aggregate's built-up state.</param>
+        /// <param name="eventHistory">The event history.</param>
+        /// <remarks>After building up its internal state from the snapshot, the constructor that calls into this constructor should call </remarks>
+        protected EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory) : base(snapshot, eventHistory)
         {
+        }
+
+        protected void BuildUpStateFromEventHistory()
+        {
+            InitializeEventHistory();
+
             foreach (var @event in EventHistory.OfType<IEvent<T>>())
             {
                 @event.Update((T) this);
