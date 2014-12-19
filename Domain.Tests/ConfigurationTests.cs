@@ -9,6 +9,7 @@ using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Recipes;
 using Moq;
 using NUnit.Framework;
+using Pocket;
 using Sample.Domain.Ordering;
 using Sample.Domain.Ordering.Commands;
 

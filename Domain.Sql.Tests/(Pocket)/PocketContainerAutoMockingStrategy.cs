@@ -11,7 +11,7 @@ using System;
 using System.Linq;
 using Moq;
 
-namespace Microsoft.Its.Recipes
+namespace Pocket
 {
 #if !RecipesProject
     [System.Diagnostics.DebuggerStepThrough]

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Web.Http;
 using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.Recipes;
+using Pocket;
 
 namespace Microsoft.Its.Domain.Api.Tests.Infrastructure
 {

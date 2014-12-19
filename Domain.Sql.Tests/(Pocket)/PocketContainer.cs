@@ -1,7 +1,9 @@
-// Copyright (c) Microsoft. All rights reserved. 
+﻿// Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // THIS FILE IS NOT INTENDED TO BE EDITED. 
+// 
+// It has been imported using NuGet from the PocketContainer project (https://github.com/jonsequitur/PocketContainer). 
 // 
 // This file can be updated in-place using the Package Manager Console. To check for updates, run the following command:
 // 
@@ -15,13 +17,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Microsoft.Its.Recipes
+namespace Pocket
 {
     /// <summary>
     /// An embedded dependency injection container, for when you want to use a container without adding an assembly dependency.
     /// </summary>
     /// <remarks>The default resolution strategy follows Unity's conventions. A concrete type can be resolved without explicit registration. It will choose the longest constructor and resolve the types to satisfy its arguments. This continues recursively until the graph is built or it fails to build a dependency.</remarks>
-#if !RecipesProject
+#if !SourceProject
     [System.Diagnostics.DebuggerStepThrough]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
@@ -59,8 +61,6 @@ namespace Microsoft.Its.Recipes
             });
         }
 
-   
-
         /// <summary>
         /// Resolves an instance of the specified type.
         /// </summary>
@@ -81,12 +81,18 @@ namespace Microsoft.Its.Recipes
                 }
                 catch (TypeInitializationException ex)
                 {
-                    throw new ArgumentException(string.Format("PocketContainer can't construct a {0} unless you register it first. ☹", typeof (T)), ex);
+                    throw OnFailedResolve(typeof(T), ex);
                 }
 
                 return c => defaultFactory(c);
             })(this);
         }
+
+        /// <summary>
+        /// Returns an exception to be thrown when resolve fails.
+        /// </summary>
+        public Func<Type, Exception, Exception> OnFailedResolve = (type, exception) =>
+            new ArgumentException(string.Format("PocketContainer can't construct a {0} unless you register it first. ☹", type), exception);
 
         /// <summary>
         /// Resolves an instance of the specified type.
@@ -121,13 +127,16 @@ namespace Microsoft.Its.Recipes
         /// <summary>
         /// Registers a delegate to retrieve instances of the specified type.
         /// </summary>
-        public virtual PocketContainer Register<T>(Func<PocketContainer, T> factory)
+        public PocketContainer Register<T>(Func<PocketContainer, T> factory)
         {
             resolvers[typeof (T)] = c => factory(c);
             resolvers[typeof (Lazy<T>)] = c => new Lazy<T>(c.Resolve<T>);
             return this;
         }
 
+        /// <summary>
+        /// Registers a delegate to retrieve instances of the specified type.
+        /// </summary>
         public PocketContainer Register(Type type, Func<PocketContainer, dynamic> factory)
         {
             typeof (PocketContainer).GetMethods()
@@ -137,6 +146,9 @@ namespace Microsoft.Its.Recipes
             return this;
         }
 
+        /// <summary>
+        /// Registers a delegate to retrieve an instance of the specified type when it is first resolved. This instance will be reused for the lifetime of the container.
+        /// </summary>
         public PocketContainer RegisterSingle<T>(Func<PocketContainer, T> factory)
         {
             Register<T>(c => singletons.GetOrAdd(typeof (T), t => factory(c)));
@@ -145,6 +157,9 @@ namespace Microsoft.Its.Recipes
             return this;
         }
 
+        /// <summary>
+        /// Registers a delegate to retrieve an instance of the specified type when it is first resolved. This instance will be reused for the lifetime of the container.
+        /// </summary>
         public PocketContainer RegisterSingle(Type type, Func<PocketContainer, dynamic> factory)
         {
             typeof (PocketContainer).GetMethods()
@@ -164,21 +179,23 @@ namespace Microsoft.Its.Recipes
                 constantExpression = Expression.Constant(func.Target);
             }
 
+// ReSharper disable PossiblyMistakenUseOfParamsMethod
             var call = Expression.Call(constantExpression, func.Method, containerParam);
+// ReSharper restore PossiblyMistakenUseOfParamsMethod
             var delegateType = typeof (Func<,>).MakeGenericType(typeof (PocketContainer), resultType);
             var body = Expression.Convert(call, resultType);
             var expression = Expression.Lambda(delegateType,
-                                               body,
-                                               new[] { containerParam });
+                                               body, 
+                                               containerParam);
             return expression.Compile();
         }
 
-        internal static partial class Factory<T>
+        internal static class Factory<T>
         {
             public static readonly Func<PocketContainer, T> Default = Build.UsingLongestConstructor<T>();
         }
 
-        internal static partial class Build
+        internal static class Build
         {
             public static Func<PocketContainer, T> UsingLongestConstructor<T>()
             {
@@ -225,7 +242,9 @@ namespace Microsoft.Its.Recipes
             return GetEnumerator();
         }
 
+// ReSharper disable UnusedMember.Local
         private Func<PocketContainer, Func<T>> MakeResolverFunc<T>()
+// ReSharper restore UnusedMember.Local
         {
             var container = Expression.Parameter(typeof (PocketContainer), "container");
 
@@ -233,7 +252,7 @@ namespace Microsoft.Its.Recipes
                 Expression.Lambda<Func<T>>(
                     Expression.Call(container,
                                     resolveMethod.MakeGenericMethod(typeof (T)))),
-                    container);
+                container);
 
             return resolve.Compile();
         }

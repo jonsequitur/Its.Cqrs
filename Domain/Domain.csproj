@@ -72,14 +72,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="%28Its.Recipes%29\MaybeExtensions.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainer.Clone.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainer.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainerOpenGenericStrategy.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainerPrimitiveAvoidanceStrategy.cs" />
     <Compile Include="%28Its.Recipes%29\PocketContainerSingleImplementationStrategy.cs" />
     <Compile Include="%28Its.Recipes%29\System.Linq\EnumerableExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\System.Dynamic\TypeExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\System.Linq.Expressions\MappingExpression.cs" />
+    <Compile Include="%28Pocket%29\PocketContainer.Clone.cs" />
+    <Compile Include="%28Pocket%29\PocketContainer.cs" />
+    <Compile Include="%28Pocket%29\PocketContainerOpenGenericStrategy.cs" />
+    <Compile Include="%28Pocket%29\PocketContainerPrimitiveAvoidanceStrategy.cs" />
     <Compile Include="..\AssemblyInfoVersion.cs">
       <Link>Properties\AssemblyInfoVersion.cs</Link>
     </Compile>
