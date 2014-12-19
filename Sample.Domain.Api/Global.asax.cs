@@ -8,7 +8,7 @@ using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
-using Microsoft.Practices.Unity;
+using Pocket;
 
 namespace Sample.Domain.Api
 {
@@ -21,14 +21,11 @@ namespace Sample.Domain.Api
         {
             AreaRegistration.RegisterAllAreas();
 
-            var container = new UnityContainer();
+            var container = new PocketContainer();
 
-            container
-                .RegisterCommonMvcTypes()
-                .UseAsMvcDependencyResolver();
+            GlobalConfiguration.Configuration
+                               .ResolveDependenciesUsing(container);
 
-            UnityConfig.Register(container);
-            WebApiConfig.Register(GlobalConfiguration.Configuration, container);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             MvcRouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);

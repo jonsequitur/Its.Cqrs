@@ -83,6 +83,7 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Data.Entity" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
@@ -115,9 +116,9 @@
   <ItemGroup>
     <Compile Include="%28Its.Recipes%29\DisposableExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\MaybeExtensions.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainer.cs" />
     <Compile Include="%28Its.Recipes%29\System.Linq\EnumerableExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\TestInputGenerator.cs" />
+    <Compile Include="%28Pocket%29\PocketContainer.cs" />
     <Compile Include="AuthorizationTests.cs" />
     <Compile Include="CommandContextTests.cs" />
     <Compile Include="CommandSchedulingTests.cs" />
