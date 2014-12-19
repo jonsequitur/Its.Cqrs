@@ -78,15 +78,13 @@ namespace Microsoft.Its.Domain.Sql
                 {
                     aggregate = AggregateType<TAggregate>.FromSnapshot(
                         snapshot,
-                        eventsArray.Select(e => e.ToDomainEvent())
-                                   .Where(e => e != null));
+                        eventsArray.Select(e => e.ToDomainEvent()));
                 }
                 else if (eventsArray.Length > 0)
                 {
                     aggregate = AggregateType<TAggregate>.FromEventHistory(
                         id,
-                        eventsArray.Select(e => e.ToDomainEvent())
-                                   .Where(e => e != null));
+                        eventsArray.Select(e => e.ToDomainEvent()));
                 }
             }
 

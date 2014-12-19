@@ -140,6 +140,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SerializerTests.cs" />
     <Compile Include="Infrastructure\TestConsequenter.cs" />
+    <Compile Include="SnapshotRepositoryExtensionsTests.cs" />
     <Compile Include="TypeDiscoveryTests.cs" />
     <Compile Include="ReservationTests.cs" />
     <Compile Include="UnitOfWorkTests.cs" />

@@ -84,15 +84,16 @@ namespace Microsoft.Its.Domain
             this Configuration configuration,
             Func<Type, Func<object>> strategy)
         {
-            configuration.Container.AddStrategy(t =>
-                                                {
-                                                    Func<object> resolveFunc = strategy(t);
-                                                    if (resolveFunc != null)
-                                                    {
-                                                        return container => resolveFunc();
-                                                    }
-                                                    return null;
-                                                });
+            configuration.Container
+                         .AddStrategy(t =>
+                                      {
+                                          Func<object> resolveFunc = strategy(t);
+                                          if (resolveFunc != null)
+                                          {
+                                              return container => resolveFunc();
+                                          }
+                                          return null;
+                                      });
             return configuration;
         }
 

@@ -190,6 +190,7 @@
     <Compile Include="Serialization\PrimitiveConverter.cs" />
     <Compile Include="Serialization\Serializer.cs" />
     <Compile Include="Serialization\UriConverter.cs" />
+    <Compile Include="Snapshots\SnapshotRepositoryExtensions.cs" />
     <Compile Include="String{T}.cs" />
     <Compile Include="SystemClock.cs" />
     <Compile Include="TypeExtensions.cs" />
