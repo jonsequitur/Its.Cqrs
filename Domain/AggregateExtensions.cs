@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Its.Validation;
@@ -166,6 +165,13 @@ namespace Microsoft.Its.Domain
             return aggregate.IfTypeIs<EventSourcedAggregate>()
                             .Then(a => a.HasETag(etag))
                             .ElseDefault();
+        }
+
+        internal static IEnumerable<string> ETags(this IEventSourced eventSourced)
+        {
+            return eventSourced.IfTypeIs<EventSourcedAggregate>()
+                               .Then(a => a.ETags())
+                               .Else(() => new string[0]);
         }
     }
 }

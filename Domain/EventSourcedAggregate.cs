@@ -65,7 +65,7 @@ namespace Microsoft.Its.Domain
         protected internal EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory) :
             this(snapshot.IfNotNull()
                          .Then(s => s.AggregateId)
-                         .ElseThrow(() => new ArgumentNullException()))
+                         .ElseThrow(() => new ArgumentNullException("snapshot")))
         {
             if (eventHistory == null)
             {
@@ -189,10 +189,16 @@ namespace Microsoft.Its.Domain
 
         internal bool HasETag(string etag)
         {
-            return this.Events().Any(e => e.ETag == etag) ||
-                   sourceSnapshot.IfNotNull()
-                                 .Then(s => s.ETags.Any(e => e == etag))
-                                 .ElseDefault();
+            return ETags().Any(e => e == etag);
+        }
+
+        internal IEnumerable<string> ETags()
+        {
+            return sourceSnapshot.IfNotNull()
+                                 .Then(s => s.ETags)
+                                 .Else(() => new string[0])
+                                 .Concat(this.Events()
+                                             .Select(e => e.ETag));
         }
     }
 }

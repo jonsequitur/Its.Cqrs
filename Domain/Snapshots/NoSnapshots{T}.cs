@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
-    public class NoSnapshots : ISnapshotRepository
+    internal class NoSnapshots : ISnapshotRepository
     {
-        public async Task<ISnapshot> Get(Guid aggregateId, long? maxVersion = null, DateTimeOffset? maxTimestamp = null)
+        public async Task<ISnapshot> Get(Guid aggregateId, long? maxVersion = null, DateTimeOffset? asOfDate = null)
         {
             return null;
         }

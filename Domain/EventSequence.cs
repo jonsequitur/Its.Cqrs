@@ -163,12 +163,12 @@ namespace Microsoft.Its.Domain
         {
             if (Count > 0)
             {
-                throw new InvalidOperationException("The sequence offset must be set before events are added.");
+                throw new InvalidOperationException("The version must be set before events are added.");
             }
 
             if (version < 0)
             {
-                throw new ArgumentException("sequenceNumber must be at least 0.");
+                throw new ArgumentException("version must be at least 0.");
             }
 
             startSequenceFrom = version;

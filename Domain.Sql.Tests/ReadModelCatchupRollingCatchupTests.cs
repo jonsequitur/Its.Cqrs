@@ -91,6 +91,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     catchup2.Dispose();
                 });
 
+                Console.WriteLine("Waiting on catchups to complete");
+
                 // wait on both catchups to complete
                 catchup1
                     .Progress
