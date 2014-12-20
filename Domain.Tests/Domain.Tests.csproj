@@ -129,7 +129,6 @@
     <Compile Include="EventHandlerTests.cs" />
     <Compile Include="EventHandlingTests.cs" />
     <Compile Include="EventSequenceTests.cs" />
-    <Compile Include="EventSourcedAggregateSnapshottingTests.cs" />
     <Compile Include="EventSourcedAggregateTests.cs" />
     <Compile Include="EventSourcedRepositoryTests.cs" />
     <Compile Include="EventTests.cs" />
@@ -142,6 +141,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SerializerTests.cs" />
     <Compile Include="Infrastructure\TestConsequenter.cs" />
+    <Compile Include="SnapshotRepositoryExtensionsTests.cs" />
     <Compile Include="TypeDiscoveryTests.cs" />
     <Compile Include="ReservationTests.cs" />
     <Compile Include="UnitOfWorkTests.cs" />

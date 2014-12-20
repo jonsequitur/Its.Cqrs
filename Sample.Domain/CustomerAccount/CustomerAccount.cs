@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Its.Domain;
 
 namespace Sample.Domain
@@ -19,7 +20,16 @@ namespace Sample.Domain
         {
         }
 
-        protected string UserName { get; private set; }
+        public CustomerAccount(CustomerAccountSnapshot snapshot, IEnumerable<IEvent> additionalEvents) : base(snapshot, additionalEvents)
+        {
+            EmailAddress = snapshot.EmailAddress;
+            UserName = snapshot.UserName;
+            NoSpam = snapshot.NoSpam;
+
+            BuildUpStateFromEventHistory();
+        }
+
+        public string UserName { get; private set; }
 
         public EmailAddress EmailAddress { get; private set; }
 
@@ -30,6 +40,20 @@ namespace Sample.Domain
             get
             {
                 return communicationsSent;
+            }
+        }
+
+        public class CustomerAccountSnapshotCreator : ICreateSnapshot<CustomerAccount>
+        {
+            public ISnapshot CreateSnapshot(CustomerAccount aggregate)
+            {
+                return new CustomerAccountSnapshot
+                       {
+                           UserName = aggregate.UserName,
+                           EmailAddress = aggregate.EmailAddress,
+                           NoSpam = aggregate.NoSpam,
+                           CommunicationsSent = aggregate.CommunicationsSent.ToArray()
+                       };
             }
         }
     }

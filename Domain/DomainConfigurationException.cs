@@ -11,5 +11,9 @@ namespace Microsoft.Its.Domain
         public DomainConfigurationException(string message) : base(message)
         {
         }
+
+        public DomainConfigurationException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 }

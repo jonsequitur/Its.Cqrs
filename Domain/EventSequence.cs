@@ -157,33 +157,30 @@ namespace Microsoft.Its.Domain
             {
                 Add(@event);
             }
-
-            if (events.Count == 0)
-            {
-                throw new ArgumentException("Event history is empty.");
-            }
         }
 
-        internal void StartSequenceFrom(long sequenceNumber)
+        internal void SetVersion(long version)
         {
             if (Count > 0)
             {
-                throw new InvalidOperationException("The sequence offset must be set before events are added.");
+                throw new InvalidOperationException("The version must be set before events are added.");
             }
 
-            if (sequenceNumber < 0)
+            if (version < 0)
             {
-                throw new ArgumentException("sequenceNumber must be at least 0.");
+                throw new ArgumentException("version must be at least 0.");
             }
 
-            startSequenceFrom = sequenceNumber;
+            startSequenceFrom = version;
+            this.version = version;
         }
 
         internal void TransferTo(EventSequence eventHistory)
         {
             eventHistory.AddRange(this);
             events.Clear();
-            startSequenceFrom = eventHistory.Count;
+            startSequenceFrom = eventHistory.Version;
+            version = eventHistory.Version;
         }
     }
 }

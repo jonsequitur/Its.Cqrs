@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -16,6 +17,8 @@ namespace Microsoft.Its.Domain
         private readonly Guid id;
         private readonly EventSequence eventHistory;
         private readonly EventSequence pendingEvents;
+        private readonly IEvent[] sourceEvents;
+        private readonly ISnapshot sourceSnapshot;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventSourcedAggregate"/> class.
@@ -35,7 +38,7 @@ namespace Microsoft.Its.Domain
         /// <param name="eventHistory">The aggregate's event history.</param>
         /// <exception cref="System.ArgumentException">The aggregate's id cannot be <see cref="Guid.Empty" />.</exception>
         /// <exception cref="System.ArgumentNullException">eventHistory</exception>
-        protected EventSourcedAggregate(Guid id, IEnumerable<IEvent> eventHistory) : this(id)
+        protected internal EventSourcedAggregate(Guid id, IEnumerable<IEvent> eventHistory) : this(id)
         {
             if (id == Guid.Empty)
             {
@@ -46,9 +49,55 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("eventHistory");
             }
 
-            this.eventHistory.AddRange(eventHistory);
-            pendingEvents.StartSequenceFrom(this.eventHistory.Version);
-            this.id = this.eventHistory.AggregateId;
+            sourceEvents = eventHistory.ToArray();
+
+            if (sourceEvents.Length == 0)
+            {
+                throw new ArgumentException("Event history is empty");
+            }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventSourcedAggregate{T}"/> class.
+        /// </summary>
+        /// <param name="snapshot">A snapshot of the aggregate's built-up state.</param>
+        /// <param name="eventHistory">The event history.</param>
+        protected internal EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory) :
+            this(snapshot.IfNotNull()
+                         .Then(s => s.AggregateId)
+                         .ElseThrow(() => new ArgumentNullException("snapshot")))
+        {
+            if (eventHistory == null)
+            {
+                throw new ArgumentNullException("eventHistory");
+            }
+
+            sourceEvents = eventHistory.ToArray();
+            sourceSnapshot = snapshot;
+        }
+
+        protected internal void InitializeEventHistory()
+        {
+            if (eventHistory.Count > 0)
+            {
+                throw new InvalidOperationException("Event history has already been initialized.");
+            }
+
+            eventHistory.AddRange(sourceEvents);
+
+            if (sourceSnapshot != null)
+            {
+                pendingEvents.SetVersion(sourceSnapshot.Version);
+            }
+            else
+            {
+                pendingEvents.SetVersion(eventHistory.Version);
+            }
+
+            if (eventHistory.AggregateId != Id)
+            {
+                throw new ArgumentException("Event history does not match specified aggregate id");
+            }
         }
 
         /// <summary>
@@ -136,6 +185,20 @@ namespace Microsoft.Its.Domain
         public void ConfirmSave()
         {
             pendingEvents.TransferTo(eventHistory);
+        }
+
+        internal bool HasETag(string etag)
+        {
+            return ETags().Any(e => e == etag);
+        }
+
+        internal IEnumerable<string> ETags()
+        {
+            return sourceSnapshot.IfNotNull()
+                                 .Then(s => s.ETags)
+                                 .Else(() => new string[0])
+                                 .Concat(this.Events()
+                                             .Select(e => e.ETag));
         }
     }
 }
