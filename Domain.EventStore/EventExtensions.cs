@@ -49,7 +49,7 @@ namespace Microsoft.Its.Domain.EventStore
 
             var id = storedEvents.Select(e => e.AggregateId).Distinct().Single();
 
-            return AggregateType<TAggregate>.Factory.Invoke(
+            return AggregateType<TAggregate>.FromEventHistory.Invoke(
                 Guid.Parse(id),
                 storedEvents.OrderBy(e => e.SequenceNumber)
                             .Select(e => e.ToDomainEvent(streamName))

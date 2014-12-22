@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Transactions;
 using Microsoft.Its.Recipes;
+using Pocket;
 using Sample.Domain;
 using Sample.Domain.Ordering;
 
@@ -19,8 +20,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             .Register(c => Recipes.Any.PositiveInt())
             .Register(c => Recipes.Any.Word());
 
-        private static readonly Func<IEvent>[] events = new Func<IEvent>[]
-        {
+        private static readonly Func<IEvent>[] events = {
             () => container.Resolve<Order.Cancelled>(),
             () => container.Resolve<Order.Created>(),
             () => container.Resolve<Order.CreditCardCharged>(),

@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Reactive.Disposables;
 using Microsoft.Its.Recipes;
+using Pocket;
 
 namespace Microsoft.Its.Domain
 {
@@ -16,8 +17,18 @@ namespace Microsoft.Its.Domain
     {
         private static readonly Configuration global;
         private readonly CompositeDisposable disposables = new CompositeDisposable();
-        private readonly PocketContainer container = new PocketContainer();
-        private readonly ConcurrentDictionary<string,object> properties = new ConcurrentDictionary<string, object>();
+
+        private readonly PocketContainer container = new PocketContainer
+                                                     {
+                                                         OnFailedResolve =
+                                                             (type, exception) =>
+                                                             new DomainConfigurationException(
+                                                             string.Format(
+                                                                 "Its.Domain can't create an instance of {0} unless you register it first via Configuration.UseDependency or Configuration.UseDependencies.",
+                                                                 type), exception)
+                                                     };
+
+        private readonly ConcurrentDictionary<string, object> properties = new ConcurrentDictionary<string, object>();
 
         /// <summary>
         /// Initializes the <see cref="Configuration"/> class.
@@ -38,6 +49,7 @@ namespace Microsoft.Its.Domain
                      .UseImmediateCommandScheduling()
                      .RegisterSingle<IReservationService>(c => new NoReservations())
                      .RegisterSingle<IEventBus>(c => new InProcessEventBus())
+                     .Register<ISnapshotRepository>(c => new NoSnapshots())
                      .RegisterSingle(c => this);
         }
 

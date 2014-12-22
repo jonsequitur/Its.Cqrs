@@ -10,19 +10,58 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing
 {
+    /// <summary>
+    /// Provides in-memory persistence for event sourced aggregates.
+    /// </summary>
     public class InMemoryEventSourcedRepository<TAggregate> : IEventSourcedRepository<TAggregate> where TAggregate : class, IEventSourced
     {
-        // TODO: (InMemoryEventSourcedRepository) this can probably be moved / copied to Domain.EventStore and used with any IEventStream implementation
         private readonly IEventStream eventStream;
         private readonly IEventBus bus;
-
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InMemoryEventSourcedRepository{TAggregate}"/> class.
+        /// </summary>
         public InMemoryEventSourcedRepository(IEventStream eventStream = null, IEventBus bus = null)
         {
             this.eventStream = eventStream ?? new InMemoryEventStream(AggregateType<TAggregate>.EventStreamName);
             this.bus = bus ?? new FakeEventBus();
         }
 
+        /// <summary>
+        ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
+        /// </summary>
+        /// <param name="aggregateId">The id of the aggregate.</param>
+        /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
         public TAggregate GetLatest(Guid aggregateId)
+        {
+            if (AggregateType<TAggregate>.SupportsSnapshots)
+            {
+                var snapshot = Configuration.Current
+                                            .SnapshotRepository()
+                                            .Get(aggregateId)
+                                            .Result;
+
+                if (snapshot != null)
+                {
+                    return GetLatestWithSnapshot(aggregateId, snapshot);
+                }
+            }
+
+            return GetLatestWithoutSnapshot(aggregateId);
+        }
+
+        private TAggregate GetLatestWithSnapshot(Guid aggregateId, ISnapshot snapshot)
+        {
+            var additionalEvents = eventStream.All(aggregateId.ToString())
+                                              .Result
+                                              .Where(e => e.SequenceNumber > snapshot.Version);
+
+            return AggregateType<TAggregate>.FromSnapshot(
+                snapshot,
+                additionalEvents.Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName)));
+        }
+
+        private TAggregate GetLatestWithoutSnapshot(Guid aggregateId)
         {
             var events = eventStream.All(aggregateId.ToString())
                                     .Result
@@ -30,7 +69,7 @@ namespace Microsoft.Its.Domain.Testing
 
             if (events.Any())
             {
-                return AggregateType<TAggregate>.Factory.Invoke(
+                return AggregateType<TAggregate>.FromEventHistory.Invoke(
                     aggregateId,
                     events.Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName)));
             }
@@ -38,6 +77,12 @@ namespace Microsoft.Its.Domain.Testing
             return null;
         }
 
+        /// <summary>
+        ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
+        /// </summary>
+        /// <param name="version">The version at which to retrieve the aggregate.</param>
+        /// <param name="aggregateId">The id of the aggregate.</param>
+        /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
         public TAggregate GetVersion(Guid aggregateId, long version)
         {
             var events = eventStream.UpToVersion(aggregateId.ToString(), version)
@@ -52,6 +97,14 @@ namespace Microsoft.Its.Domain.Testing
             return null;
         }
 
+        /// <summary>
+        /// Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
+        /// </summary>
+        /// <param name="aggregateId">The id of the aggregate.</param>
+        /// <param name="asOfDate">The date at which the aggregate should be sourced.</param>
+        /// <returns>
+        /// The deserialized aggregate, or null if none exists with the specified id.
+        /// </returns>
         public TAggregate GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate)
         {
             var events = eventStream.AsOfDate(aggregateId.ToString(), asOfDate)
@@ -66,6 +119,10 @@ namespace Microsoft.Its.Domain.Testing
             return null;
         }
 
+        /// <summary>
+        ///     Persists the state of the specified aggregate by adding new events to the event store.
+        /// </summary>
+        /// <param name="aggregate">The aggregate to persist.</param>
         public void Save(TAggregate aggregate)
         {
             var events = aggregate.PendingEvents.ToArray();

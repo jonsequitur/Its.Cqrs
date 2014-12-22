@@ -72,14 +72,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="%28Its.Recipes%29\MaybeExtensions.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainer.Clone.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainer.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainerOpenGenericStrategy.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainerPrimitiveAvoidanceStrategy.cs" />
     <Compile Include="%28Its.Recipes%29\PocketContainerSingleImplementationStrategy.cs" />
     <Compile Include="%28Its.Recipes%29\System.Linq\EnumerableExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\System.Dynamic\TypeExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\System.Linq.Expressions\MappingExpression.cs" />
+    <Compile Include="%28Pocket%29\PocketContainer.Clone.cs" />
+    <Compile Include="%28Pocket%29\PocketContainer.cs" />
+    <Compile Include="%28Pocket%29\PocketContainerOpenGenericStrategy.cs" />
+    <Compile Include="%28Pocket%29\PocketContainerPrimitiveAvoidanceStrategy.cs" />
     <Compile Include="..\AssemblyInfoVersion.cs">
       <Link>Properties\AssemblyInfoVersion.cs</Link>
     </Compile>
@@ -122,8 +122,12 @@
     <Compile Include="EventNameAttribute.cs" />
     <Compile Include="IClock.cs" />
     <Compile Include="EventHandling\Projector.cs" />
-    <Compile Include="ICommandHandler{TCommand}.cs" />
     <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />
+    <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />
+    <Compile Include="Snapshots\InMemorySnapshotRepository{T}.cs" />
+    <Compile Include="Snapshots\ISnapshot.cs" />
+    <Compile Include="Snapshots\ISnapshotRepository.cs" />
+    <Compile Include="Snapshots\NoSnapshots{T}.cs" />
     <Compile Include="PocketContainerExtensions.cs" />
     <Compile Include="Reservations\NoReservations.cs" />
     <Compile Include="Reservations\ReservationResult.cs" />
@@ -186,6 +190,7 @@
     <Compile Include="Serialization\PrimitiveConverter.cs" />
     <Compile Include="Serialization\Serializer.cs" />
     <Compile Include="Serialization\UriConverter.cs" />
+    <Compile Include="Snapshots\SnapshotRepositoryExtensions.cs" />
     <Compile Include="String{T}.cs" />
     <Compile Include="SystemClock.cs" />
     <Compile Include="TypeExtensions.cs" />

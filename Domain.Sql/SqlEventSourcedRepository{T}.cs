@@ -39,6 +39,15 @@ namespace Microsoft.Its.Domain.Sql
         private TAggregate Get(Guid id, long? version = null, DateTimeOffset? asOfDate = null)
         {
             TAggregate aggregate = null;
+            ISnapshot snapshot = null;
+            
+            if (AggregateType<TAggregate>.SupportsSnapshots)
+            {
+                snapshot = Configuration.Current
+                                        .SnapshotRepository()
+                                        .Get(id, version, asOfDate)
+                                        .Result;
+            }
 
             using (new TransactionScope(TransactionScopeOption.Suppress))
             using (var context = GetEventStoreContext())
@@ -47,6 +56,11 @@ namespace Microsoft.Its.Domain.Sql
                 var events = context.Events
                                     .Where(e => e.StreamName == streamName)
                                     .Where(x => x.AggregateId == id);
+
+                if (snapshot != null)
+                {
+                    events = events.Where(e => e.SequenceNumber > snapshot.Version);
+                }
 
                 if (version != null)
                 {
@@ -60,12 +74,17 @@ namespace Microsoft.Its.Domain.Sql
 
                 var eventsArray = events.ToArray();
 
-                if (eventsArray.Length > 0)
+                if (snapshot != null)
                 {
-                    aggregate = AggregateType<TAggregate>.Factory.Invoke(
+                    aggregate = AggregateType<TAggregate>.FromSnapshot(
+                        snapshot,
+                        eventsArray.Select(e => e.ToDomainEvent()));
+                }
+                else if (eventsArray.Length > 0)
+                {
+                    aggregate = AggregateType<TAggregate>.FromEventHistory(
                         id,
-                        eventsArray.Select(e => e.ToDomainEvent())
-                                   .Where(e => e != null));
+                        eventsArray.Select(e => e.ToDomainEvent()));
                 }
             }
 

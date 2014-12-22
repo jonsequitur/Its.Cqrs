@@ -114,7 +114,7 @@ namespace Microsoft.Its.Domain
                 if (numberOfHandlerTypes > 1)
                 {
                     throw new DomainConfigurationException(
-                        string.Format("Multiple handler implementations were found for {0}: {1}. This might be a mistake. If not, you must register one explicitly.",
+                        string.Format("Multiple handler implementations were found for {0}: {1}. This might be a mistake. If not, you must register one explicitly using Configuration.UseDependency.",
                                       handlerType.FullName,
                                       handlerTypes.Select(t => t.FullName).ToDelimitedString(", ")));
                 }

@@ -49,10 +49,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\EntityFramework.5.0.0\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
-    <Reference Include="FluentAssertions, Version=2.1.0.0, Culture=neutral, PublicKeyToken=33f2691a05b67b6a, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\FluentAssertions.2.1.0.0\lib\net45\FluentAssertions.dll</HintPath>
-    </Reference>
     <Reference Include="Its.Configuration">
       <HintPath>..\packages\Its.Configuration.0.10.1\lib\net40\Its.Configuration.dll</HintPath>
     </Reference>
@@ -60,26 +56,6 @@
       <HintPath>..\packages\Its.Log.2.8.0-beta\lib\net40\Its.Log.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.Its.Configuration, Version=0.8.11108.58, Culture=neutral, PublicKeyToken=8afeae72300c8fa7, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Its.Configuration.0.8.0-beta\lib\net40\Microsoft.Its.Configuration.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Its.Configuration.Unity">
-      <HintPath>..\packages\Microsoft.Its.Configuration.Unity.0.5.2-beta\lib\net40\Microsoft.Its.Configuration.Unity.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Its.Log, Version=2.7.0.0, Culture=neutral, PublicKeyToken=76490b1978d4e7b6, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Its.Log.2.7.1-beta\lib\net40\Microsoft.Its.Log.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Practices.ServiceLocation">
-      <HintPath>..\packages\CommonServiceLocator.1.0\lib\NET35\Microsoft.Practices.ServiceLocation.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Practices.Unity">
-      <HintPath>..\packages\Unity.2.1.505.2\lib\NET35\Microsoft.Practices.Unity.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Practices.Unity.Configuration">
-      <HintPath>..\packages\Unity.2.1.505.2\lib\NET35\Microsoft.Practices.Unity.Configuration.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.6.0.5\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -174,15 +150,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="%28Its.Recipes%29\MaybeExtensions.cs" />
-    <Compile Include="%28Its.Recipes%29\Microsoft.Practices.Unity\RegisterFactoryExtensions.cs" />
-    <Compile Include="%28Its.Recipes%29\System.Web.Http.Dependencies\UnityDependencyResolver.cs" />
-    <Compile Include="%28Its.Recipes%29\System.Web.Http\HttpConfigurationExtensions.Unity.cs" />
-    <Compile Include="%28Its.Recipes%29\System.Web.Mvc\UnityMvcExtensions.cs" />
+    <Compile Include="%28Pocket%29\PocketContainer.cs" />
+    <Compile Include="%28Pocket%29\System.Web.Http.Dependencies\PocketContainerDependencyResolver.cs" />
+    <Compile Include="%28Pocket%29\System.Web.Http\HttpConfigurationExtensions.cs" />
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
-    <Compile Include="App_Start\UnityConfig.cs" />
-    <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\OrderApiController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="EventHandlers\UpdateOrderHistory.cs" />

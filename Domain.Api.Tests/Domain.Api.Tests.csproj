@@ -139,10 +139,10 @@
   <ItemGroup>
     <Compile Include="%28Its.Recipes%29\FakeHttpClient.cs" />
     <Compile Include="%28Its.Recipes%29\MaybeExtensions.cs" />
-    <Compile Include="%28Its.Recipes%29\PocketContainer.cs" />
-    <Compile Include="%28Its.Recipes%29\System.Web.Http.Dependencies\PocketContainerDependencyResolver.cs" />
-    <Compile Include="%28Its.Recipes%29\System.Web.Http\HttpConfigurationExtensions.PocketContainer.cs" />
     <Compile Include="%28Its.Recipes%29\TestInputGenerator.cs" />
+    <Compile Include="%28Pocket%29\PocketContainer.cs" />
+    <Compile Include="%28Pocket%29\System.Web.Http.Dependencies\PocketContainerDependencyResolver.cs" />
+    <Compile Include="%28Pocket%29\System.Web.Http\HttpConfigurationExtensions.cs" />
     <Compile Include="..\Domain.Api\Serialization\JsonContent.cs">
       <Link>Infrastructure\JsonContent.cs</Link>
     </Compile>
@@ -205,6 +205,10 @@
     <Content Include="Sample.Domain.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="%28Its.Recipes%29\System.Web.Http.Dependencies\" />
+    <Folder Include="%28Its.Recipes%29\System.Web.Http\" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
