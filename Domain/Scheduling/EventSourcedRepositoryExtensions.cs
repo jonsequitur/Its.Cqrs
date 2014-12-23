@@ -12,7 +12,7 @@ namespace Microsoft.Its.Domain
 {
     internal static class EventSourcedRepositoryExtensions
     {
-        private static readonly MethodInfo createMethod = typeof (ScheduledCommandFailure)
+        private static readonly MethodInfo createMethod = typeof (CommandFailed)
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(m => m.Name == "Create");
 
@@ -55,7 +55,7 @@ namespace Microsoft.Its.Domain
                 }
 
                 repository.Save(aggregate);
-                return new ScheduledCommandSuccess(scheduled);
+                return new CommandSucceeded(scheduled);
             }
             catch (Exception exception)
             {
@@ -70,7 +70,7 @@ namespace Microsoft.Its.Domain
             TAggregate aggregate = null)
             where TAggregate : class, IEventSourced
         {
-            var failure = (ScheduledCommandFailure) createMethod
+            var failure = (CommandFailed) createMethod
                                                         .MakeGenericMethod(scheduled.Command.GetType())
                                                         .Invoke(null, new object[] { scheduled.Command, scheduled, exception });
 

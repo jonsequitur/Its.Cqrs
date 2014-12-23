@@ -9,9 +9,9 @@ using Newtonsoft.Json;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    public class ScheduledCommandFailure : ScheduledCommandResult
+    public class CommandFailed : ScheduledCommandResult
     {
-        internal ScheduledCommandFailure(IScheduledCommand command, Exception exception = null) : base(command)
+        internal CommandFailed(IScheduledCommand command, Exception exception = null) : base(command)
         {
             Exception = exception;
         }
@@ -46,13 +46,13 @@ namespace Microsoft.Its.Domain
 
         public int NumberOfPreviousAttempts { get; set; }
 
-        internal static ScheduledCommandFailure<TCommand> Create<TCommand>(
+        internal static CommandFailed Create<TCommand>(
             TCommand command,
             IScheduledCommand scheduledCommand,
             Exception exception)
             where TCommand : class, ICommand
         {
-            return new ScheduledCommandFailure<TCommand>(command, scheduledCommand, exception);
+            return new CommandFailed<TCommand>(command, scheduledCommand, exception);
         }
     }
 }

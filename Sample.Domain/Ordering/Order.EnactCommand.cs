@@ -86,7 +86,7 @@ namespace Sample.Domain.Ordering
                     deliveryDependsOn: cancelled);
             }
 
-            public async Task HandleScheduledCommandException(Order order, ScheduledCommandFailure<Cancel> command)
+            public async Task HandleScheduledCommandException(Order order, CommandFailed<Cancel> command)
             {
             }
         }
@@ -134,7 +134,7 @@ namespace Sample.Domain.Ordering
                 });
             }
 
-            public async Task HandleScheduledCommandException(Order order, ScheduledCommandFailure<ChargeCreditCard> command)
+            public async Task HandleScheduledCommandException(Order order, CommandFailed<ChargeCreditCard> command)
             {
                 if (command.NumberOfPreviousAttempts < 3)
                 {
@@ -187,7 +187,7 @@ namespace Sample.Domain.Ordering
 
         public class OrderShipCommandHandler : ICommandHandler<Order, Ship>
         {
-            public async Task HandleScheduledCommandException(Order order, ScheduledCommandFailure<Ship> command)
+            public async Task HandleScheduledCommandException(Order order, CommandFailed<Ship> command)
             {
                 if (command.Exception is CommandValidationException)
                 {
@@ -250,7 +250,7 @@ namespace Sample.Domain.Ordering
                 }
             }
 
-            public async Task HandleScheduledCommandException(Order order, ScheduledCommandFailure<ChargeAccount> command)
+            public async Task HandleScheduledCommandException(Order order, CommandFailed<ChargeAccount> command)
             {
             }
         }

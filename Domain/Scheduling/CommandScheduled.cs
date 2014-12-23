@@ -1,36 +1,28 @@
-// Copyright (c) Microsoft. All rights reserved. 
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
 using System;
-using Microsoft.Its.Domain.Serialization;
-using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace Microsoft.Its.Domain
 {
-    /// <summary>
-    /// An event that indicates that a command was scheduled.
-    /// </summary>
-    /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
-    [EventName("Scheduled")]
-    public class CommandScheduled<TAggregate> :
-        Event<TAggregate>,
-        IScheduledCommand<TAggregate>
-        where TAggregate : IEventSourced
+    [DebuggerStepThrough]
+    public class CommandScheduled : ICommandSchedulerActivity
     {
-        [JsonConverter(typeof (CommandConverter))]
-        public ICommand<TAggregate> Command { get; set; }
+        private readonly IScheduledCommand scheduledCommand;
 
-        public DateTimeOffset? DueTime { get; set; }
-
-        /// <summary>
-        /// Indicates a precondition ETag for a specific aggregate. If no event on the target aggregate exists with this ETag, the command will fail, and the aggregate can decide whether to reschedule or ignore the command.
-        /// </summary>
-        public ScheduledCommandPrecondition DeliveryPrecondition { get; set; }
-
-        internal ScheduledCommandResult Result { get; set; }
-
-        public override void Update(TAggregate aggregate)
+        public CommandScheduled(IScheduledCommand scheduledCommand)
         {
+            if (scheduledCommand == null)
+            {
+                throw new ArgumentNullException("scheduledCommand");
+            }
+            this.scheduledCommand = scheduledCommand;
+        }
+
+        public IScheduledCommand ScheduledCommand
+        {
+            get
+            {
+                return   scheduledCommand;
+            }
         }
     }
 }

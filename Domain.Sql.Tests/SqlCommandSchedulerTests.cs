@@ -41,8 +41,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             Logging.Configure();
             Formatter<SchedulerAdvancedResult>.RegisterForAllMembers();
-            Formatter<ScheduledCommandSuccess>.RegisterForAllMembers();
-            Formatter<ScheduledCommandFailure>.RegisterForAllMembers();
+            Formatter<CommandSucceeded>.RegisterForAllMembers();
+            Formatter<CommandFailed>.RegisterForAllMembers();
 
             // disable authorization checks
             Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
@@ -217,12 +217,37 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
+        public void SqlCommandScheduler_Activity_is_notified_when_a_command_is_scheduled()
+        {
+            // arrange
+            var order = CommandSchedulingTests.CreateOrder();
+
+            var activity = new List<ICommandSchedulerActivity>();
+
+            using (Configuration.Current
+                                .Container
+                                .Resolve<SqlCommandScheduler>()
+                                .Activity
+                                .Subscribe(activity.Add))
+            {
+                // act
+                order.Apply(new ShipOn(Clock.Now().Add(TimeSpan.FromDays(2))));
+                orderRepository.Save(order);
+
+                //assert 
+                activity.Should()
+                        .ContainSingle(a => a.ScheduledCommand.AggregateId == order.Id &&
+                                            a is CommandScheduled);
+            }
+        }
+
+        [Test]
         public void SqlCommandScheduler_Activity_is_notified_when_a_command_is_delivered_immediately()
         {
             // arrange
             var order = CommandSchedulingTests.CreateOrder();
 
-            var activity = new List<ScheduledCommandResult>();
+            var activity = new List<ICommandSchedulerActivity>();
 
             using (Configuration.Current.Container
                                 .Resolve<SqlCommandScheduler>()
@@ -236,7 +261,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 //assert 
                 activity.Should()
                         .ContainSingle(a => a.ScheduledCommand.AggregateId == order.Id &&
-                                            a is ScheduledCommandSuccess);
+                                            a is CommandSucceeded);
             }
         }
 
@@ -246,7 +271,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var order = CommandSchedulingTests.CreateOrder();
 
-            var activity = new List<ScheduledCommandResult>();
+            var activity = new List<ICommandSchedulerActivity>();
 
             order.Apply(new ShipOn(Clock.Now().Add(TimeSpan.FromDays(2))));
             orderRepository.Save(order);
@@ -259,7 +284,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 //assert 
                 activity.Should()
                         .ContainSingle(a => a.ScheduledCommand.AggregateId == order.Id &&
-                                            a is ScheduledCommandSuccess);
+                                            a is CommandSucceeded);
             }
         }
 
@@ -1113,7 +1138,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 ETag = Any.Guid().ToString()
             };
 
-            var schedulerActivity = new List<ScheduledCommandResult>();
+            var schedulerActivity = new List<ICommandSchedulerActivity>();
             using (container.Resolve<SqlCommandScheduler>()
                             .Activity
                             .Subscribe(schedulerActivity.Add))
@@ -1144,7 +1169,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 schedulerActivity
                     .Should()
-                    .NotContain(a => a.IfTypeIs<ScheduledCommandFailure>()
+                    .NotContain(a => a.IfTypeIs<CommandFailed>()
                                    .Then(f => true)
                                    .ElseDefault());
             }
@@ -1168,7 +1193,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 ETag = prerequisiteETag
             };
 
-            var schedulerActivity = new List<ScheduledCommandResult>();
+            var schedulerActivity = new List<ICommandSchedulerActivity>();
             using (container.Resolve<SqlCommandScheduler>()
                             .Activity
                             .Subscribe(schedulerActivity.Add))

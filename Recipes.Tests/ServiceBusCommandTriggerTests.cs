@@ -42,8 +42,8 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
         {
             Formatter<ScheduledCommand>.RegisterForAllMembers();
             Formatter<ScheduledCommandResult>.RegisterForAllMembers();
-            Formatter<ScheduledCommandFailure>.RegisterForAllMembers();
-            Formatter<ScheduledCommandSuccess>.RegisterForAllMembers();
+            Formatter<CommandSucceeded>.RegisterForAllMembers();
+            Formatter<CommandFailed>.RegisterForAllMembers();
         }
 
         [SetUp]
@@ -175,7 +175,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
             VirtualClock.Start(Clock.Now().AddHours(-1));
 
             var aggregateId = Any.Guid();
-            var appliedCommands = new List<ScheduledCommandResult>();
+            var appliedCommands = new List<ICommandSchedulerActivity>();
 
             scheduler.Activity.Where(c => c.ScheduledCommand.AggregateId == aggregateId)
                      .Subscribe(appliedCommands.Add);

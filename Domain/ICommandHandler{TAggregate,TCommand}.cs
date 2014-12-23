@@ -22,6 +22,6 @@ namespace Microsoft.Its.Domain
         /// Handles any exception that occurs during delivery of a scheduled command.
         /// </summary>
         /// <remarks>The aggregate can use this method to control retry and cancelation of the command.</remarks>
-        Task HandleScheduledCommandException(TAggregate aggregate, ScheduledCommandFailure<TCommand> command);
+        Task HandleScheduledCommandException(TAggregate aggregate, CommandFailed<TCommand> command);
     }
 }
