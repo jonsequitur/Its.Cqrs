@@ -22,7 +22,7 @@ namespace Sample.Domain
                 });
             }
 
-            public async Task HandleScheduledCommandException(CustomerAccount aggregate, ScheduledCommandFailure<RequestUserName> command)
+            public async Task HandleScheduledCommandException(CustomerAccount aggregate, CommandFailed<RequestUserName> command)
             {
                 if (command.Exception is ConcurrencyException)
                 {
@@ -91,7 +91,7 @@ namespace Sample.Domain
                 }
             }
 
-            public async Task HandleScheduledCommandException(CustomerAccount aggregate, ScheduledCommandFailure<SendMarketingEmail> command)
+            public async Task HandleScheduledCommandException(CustomerAccount aggregate, CommandFailed<SendMarketingEmail> command)
             {
             }
         }
@@ -123,7 +123,7 @@ namespace Sample.Domain
 
             public async Task HandleScheduledCommandException(
                 CustomerAccount order,
-                ScheduledCommandFailure<NotifyOrderCanceled> command)
+                CommandFailed<NotifyOrderCanceled> command)
             {
             }
 

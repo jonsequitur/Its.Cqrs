@@ -20,7 +20,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         IEventHandler,
         IEventHandlerBinder where TAggregate : class, IEventSourced
     {
-        public IObserver<ScheduledCommandResult> Activity = Observer.Create<ScheduledCommandResult>(a => { });
+        public IObserver<ICommandSchedulerActivity> Activity = Observer.Create<ICommandSchedulerActivity>(a => { });
         public Func<IScheduledCommand<TAggregate>, string> GetClockLookupKey = cmd => null;
         public Func<IEvent, string> GetClockName = cmd => null;
         private readonly CommandPreconditionVerifier<TAggregate> commandPreconditionVerifier;
@@ -103,7 +103,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     }
                     else
                     {
-                        var failure = result as ScheduledCommandFailure;
+                        var failure = result as CommandFailed;
                         storedCommand.Attempts ++;
 
                         // reschedule as appropriate
@@ -123,7 +123,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                         db.Errors.Add(new CommandExecutionError
                                       {
                                           ScheduledCommand = storedCommand,
-                                          Error = result.IfTypeIs<ScheduledCommandFailure>()
+                                          Error = result.IfTypeIs<CommandFailed>()
                                                         .Then(f => f.Exception.ToJson()).ElseDefault()
                                       });
                     }
@@ -139,11 +139,13 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             var storedScheduledCommand = StoreScheduledCommand(scheduledCommandEvent);
 
+            var scheduledCommand = storedScheduledCommand.ToScheduledCommand<TAggregate>();
+            
+            Activity.OnNext(new CommandScheduled(scheduledCommand));
+            
             // deliver the command immediately if appropriate
             if (storedScheduledCommand.ShouldBeDeliveredImmediately())
             {
-                var scheduledCommand = storedScheduledCommand.ToScheduledCommand<TAggregate>();
-
                 // sometimes the command depends on a precondition even that hasn't been saved
                 if (!await commandPreconditionVerifier.VerifyPrecondition(scheduledCommand))
                 {

@@ -123,6 +123,8 @@
     <Compile Include="IClock.cs" />
     <Compile Include="EventHandling\Projector.cs" />
     <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />
+    <Compile Include="Scheduling\ICommandSchedulerActivity.cs" />
+    <Compile Include="Scheduling\CommandScheduled.cs" />
     <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />
     <Compile Include="Snapshots\InMemorySnapshotRepository{T}.cs" />
     <Compile Include="Snapshots\ISnapshot.cs" />
@@ -131,7 +133,7 @@
     <Compile Include="PocketContainerExtensions.cs" />
     <Compile Include="Reservations\NoReservations.cs" />
     <Compile Include="Reservations\ReservationResult.cs" />
-    <Compile Include="Scheduling\CommandScheduled.cs" />
+    <Compile Include="Scheduling\CommandScheduled{T}.cs" />
     <Compile Include="Command{T}.cs" />
     <Compile Include="CommandValidationException.cs" />
     <Compile Include="ConcurrencyException.cs" />
@@ -161,7 +163,7 @@
     <Compile Include="Scheduling\ImmediateCommandScheduler{T}.cs" />
     <Compile Include="Scheduling\IScheduledCommand.cs" />
     <Compile Include="Scheduling\ScheduledCommandException.cs" />
-    <Compile Include="Scheduling\ScheduledCommandFailure.cs" />
+    <Compile Include="Scheduling\CommandFailed.cs" />
     <Compile Include="ObjectId{T}.cs" />
     <Compile Include="IEventBus{T}.cs" />
     <Compile Include="IEventSourced.cs" />
@@ -178,10 +180,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Discover.cs" />
     <Compile Include="Scheduling\IScheduledCommand{T}.cs" />
-    <Compile Include="Scheduling\ScheduledCommandFailure{T}.cs" />
+    <Compile Include="Scheduling\CommandFailed{T}.cs" />
     <Compile Include="Scheduling\ScheduledCommandPrecondition.cs" />
     <Compile Include="Scheduling\ScheduledCommandResult.cs" />
-    <Compile Include="Scheduling\ScheduledCommandSuccess.cs" />
+    <Compile Include="Scheduling\CommandSucceeded.cs" />
     <Compile Include="Serialization\AnonymousEvent.cs" />
     <Compile Include="Serialization\CommandConverter.cs" />
     <Compile Include="Serialization\DynamicEvent.cs" />

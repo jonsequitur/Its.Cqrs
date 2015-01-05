@@ -7,10 +7,10 @@ using System.Diagnostics;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    public class ScheduledCommandFailure<TCommand> : ScheduledCommandFailure
+    public class CommandFailed<TCommand> : CommandFailed
         where TCommand : class, ICommand
     {
-        internal ScheduledCommandFailure(
+        internal CommandFailed(
             TCommand command,
             IScheduledCommand scheduledCommand,
             Exception exception) : base(scheduledCommand, exception)

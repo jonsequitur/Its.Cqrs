@@ -7,7 +7,7 @@ using System.Diagnostics;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    public abstract class ScheduledCommandResult
+    public abstract class ScheduledCommandResult : ICommandSchedulerActivity
     {
         private readonly IScheduledCommand command;
 

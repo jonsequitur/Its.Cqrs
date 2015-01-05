@@ -10,7 +10,7 @@ namespace Microsoft.Its.Domain
     [DebuggerStepThrough]
     public class ScheduledCommandException : Exception
     {
-        public ScheduledCommandException(ScheduledCommandFailure failure)
+        public ScheduledCommandException(CommandFailed failure)
             : base(failure.Exception
                           .IfNotNull()
                           .Then(e => e.Message)
@@ -24,6 +24,6 @@ namespace Microsoft.Its.Domain
             Failure = failure;
         }
 
-        public ScheduledCommandFailure Failure { get; private set; }
+        public CommandFailed Failure { get; private set; }
     }
 }

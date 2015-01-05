@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         private readonly IEventHandlerBinder[] binders;
 
-        private readonly ISubject<ScheduledCommandResult> activity = new Subject<ScheduledCommandResult>();
+        private readonly ISubject<ICommandSchedulerActivity> activity = new Subject<ICommandSchedulerActivity>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlCommandScheduler"/> class.
@@ -71,7 +71,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <summary>
         /// An observable of scheduler activity, which is updated each time a command is applied, whether successful or not.
         /// </summary>
-        public IObservable<ScheduledCommandResult> Activity
+        public IObservable<ICommandSchedulerActivity> Activity
         {
             get
             {
