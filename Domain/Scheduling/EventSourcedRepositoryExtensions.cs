@@ -112,7 +112,7 @@ namespace Microsoft.Its.Domain
             {
                 if (failure.NumberOfPreviousAttempts < 5)
                 {
-                    failure.Retry(TimeSpan.FromMinutes(1*(failure.NumberOfPreviousAttempts + 1)));
+                    failure.Retry(TimeSpan.FromMinutes(failure.NumberOfPreviousAttempts + 1));
                 }
             }
 
