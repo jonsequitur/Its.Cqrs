@@ -954,7 +954,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             Events.Write(10);
 
-            using (var catchup = CreateReadModelCatchup(Projector.Create<IEvent>(e => { })))
+            using (var catchup = CreateReadModelCatchup(Projector.Create<IEvent>(e =>
+            {
+                // slow this down just enough for the batch to still be running when we await below
+                Thread.Sleep(2);
+            })))
             {
                 Task.Run(() => catchup.Run());
                 var status = await catchup.SingleBatchAsync();
