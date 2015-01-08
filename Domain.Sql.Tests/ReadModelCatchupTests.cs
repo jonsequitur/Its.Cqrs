@@ -957,10 +957,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (var catchup = CreateReadModelCatchup(Projector.Create<IEvent>(e =>
             {
                 // slow this down just enough for the batch to still be running when we await below
-                Thread.Sleep(2);
+                Thread.Sleep(1000);
             })))
             {
                 Task.Run(() => catchup.Run());
+                Thread.Sleep(1000);
                 var status = await catchup.SingleBatchAsync();
 
                 status.IsEndOfBatch.Should().BeTrue();

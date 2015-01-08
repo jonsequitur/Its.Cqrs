@@ -60,5 +60,55 @@ namespace Microsoft.Its.Domain.Tests
                     .Should()
                     .Contain(etag);
         }
+
+        [Test]
+        public async Task Null_or_empty_or_whitespace_ETags_are_not_saved_in_the_snapshot()
+        {
+            var account = new CustomerAccount()
+                .Apply(new RequestSpam
+                       {
+                           ETag = ""
+                       })
+                .Apply(new RequestSpam
+                       {
+                           ETag = "      "
+                       })
+                .Apply(new RequestSpam
+                       {
+                           ETag = null
+                       });
+
+            var repository = new InMemorySnapshotRepository();
+            await repository.SaveSnapshot(account);
+
+            var snapshot = await repository.Get(account.Id);
+
+            snapshot.ETags
+                    .Should()
+                    .BeEmpty();
+        }
+
+        [Test]
+        public async Task Repeated_ETags_are_not_repeated_in_the_snapshot()
+        {
+            var account = new CustomerAccount()
+                .Apply(new RequestSpam
+                       {
+                           ETag = "a"
+                       })
+                .Apply(new RequestSpam
+                       {
+                           ETag = "a"
+                       });
+
+            var repository = new InMemorySnapshotRepository();
+            await repository.SaveSnapshot(account);
+
+            var snapshot = await repository.Get(account.Id);
+
+            snapshot.ETags
+                    .Should()
+                    .ContainSingle(etag => etag == "a");
+        }
     }
 }
