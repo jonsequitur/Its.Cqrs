@@ -8,11 +8,11 @@ A set of libraries for CQRS and Event Sourcing, with a Domain-Driven Design flav
 Here are some useful definitions:
 ---------------------------------
 
-[CQRS] (http://martinfowler.com/bliki/CQRS.html)
+[CQRS](http://martinfowler.com/bliki/CQRS.html)
 
-[Domain Driven Design] (http://en.wikipedia.org/wiki/Domain-driven_design)
+[Domain Driven Design](http://en.wikipedia.org/wiki/Domain-driven_design)
 
-[Event Sourcing] (http://martinfowler.com/eaaDev/EventSourcing.html)
+[Event Sourcing](http://martinfowler.com/eaaDev/EventSourcing.html)
 
 Ok, why?
 --------
