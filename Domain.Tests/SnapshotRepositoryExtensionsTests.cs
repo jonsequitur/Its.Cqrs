@@ -54,7 +54,7 @@ namespace Microsoft.Its.Domain.Tests
             var repository = new InMemorySnapshotRepository();
             await repository.SaveSnapshot(account);
 
-            var snapshot = await repository.Get(account.Id);
+            var snapshot = await repository.GetSnapshot(account.Id);
 
             snapshot.ETags
                     .Should()
@@ -81,7 +81,7 @@ namespace Microsoft.Its.Domain.Tests
             var repository = new InMemorySnapshotRepository();
             await repository.SaveSnapshot(account);
 
-            var snapshot = await repository.Get(account.Id);
+            var snapshot = await repository.GetSnapshot(account.Id);
 
             snapshot.ETags
                     .Should()
@@ -104,7 +104,7 @@ namespace Microsoft.Its.Domain.Tests
             var repository = new InMemorySnapshotRepository();
             await repository.SaveSnapshot(account);
 
-            var snapshot = await repository.Get(account.Id);
+            var snapshot = await repository.GetSnapshot(account.Id);
 
             snapshot.ETags
                     .Should()

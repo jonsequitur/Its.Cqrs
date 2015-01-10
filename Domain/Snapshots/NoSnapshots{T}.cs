@@ -8,7 +8,7 @@ namespace Microsoft.Its.Domain
 {
     internal class NoSnapshots : ISnapshotRepository
     {
-        public async Task<ISnapshot> Get(Guid aggregateId, long? maxVersion = null, DateTimeOffset? asOfDate = null)
+        public async Task<ISnapshot> GetSnapshot(Guid aggregateId, long? maxVersion = null, DateTimeOffset? asOfDate = null)
         {
             return null;
         }
