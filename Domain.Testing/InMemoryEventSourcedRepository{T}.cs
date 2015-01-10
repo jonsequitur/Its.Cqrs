@@ -38,7 +38,7 @@ namespace Microsoft.Its.Domain.Testing
             {
                 var snapshot = Configuration.Current
                                             .SnapshotRepository()
-                                            .Get(aggregateId)
+                                            .GetSnapshot(aggregateId)
                                             .Result;
 
                 if (snapshot != null)

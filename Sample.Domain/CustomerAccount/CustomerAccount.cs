@@ -20,7 +20,7 @@ namespace Sample.Domain
         {
         }
 
-        public CustomerAccount(CustomerAccountSnapshot snapshot, IEnumerable<IEvent> additionalEvents) : base(snapshot, additionalEvents)
+        public CustomerAccount(CustomerAccountSnapshot snapshot, IEnumerable<IEvent> additionalEvents = null) : base(snapshot, additionalEvents)
         {
             EmailAddress = snapshot.EmailAddress;
             UserName = snapshot.UserName;

@@ -8,7 +8,7 @@ namespace Microsoft.Its.Domain
 {
     public interface ISnapshotRepository
     {
-        Task<ISnapshot> Get(Guid aggregateId,
+        Task<ISnapshot> GetSnapshot(Guid aggregateId,
                             long? maxVersion = null,
                             DateTimeOffset? maxTimestamp = null);
 
