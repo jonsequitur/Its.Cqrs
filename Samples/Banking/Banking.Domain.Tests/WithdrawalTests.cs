@@ -39,7 +39,7 @@ namespace Sample.Banking.Domain.Tests
         public void When_a_withdrawal_is_made_then_the_balance_reflects_it()
         {
             var startingBalance = account.Balance;
-            var withdrawalAmount = Any.Decimal(1, 2000);
+            var withdrawalAmount = Any.Decimal(1, account.Balance);
             account.Apply(new WithdrawFunds
             {
                 Amount = withdrawalAmount

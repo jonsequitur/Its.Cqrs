@@ -15,8 +15,18 @@ namespace Sample.Banking.Domain
         {
             get
             {
-                return Validate.That<CheckingAccount>(account => account.DateClosed == null)
-                    .WithErrorMessage("You cannot make a withdrawal from a closed account.");
+                var accountIsNotClosed =
+                    Validate.That<CheckingAccount>(account => account.DateClosed == null)
+                            .WithErrorMessage("You cannot make a withdrawal from a closed account.");
+
+                var fundsAreAvailable = Validate.That<CheckingAccount>(account => account.Balance >= Amount)
+                                                .WithErrorMessage("Insufficient funds.");
+
+                return new ValidationPlan<CheckingAccount>
+                {
+                    accountIsNotClosed,
+                    fundsAreAvailable.When(accountIsNotClosed)
+                };
             }
         }
 
@@ -25,7 +35,7 @@ namespace Sample.Banking.Domain
             get
             {
                 return Validate.That<WithdrawFunds>(cmd => cmd.Amount > 0)
-                    .WithErrorMessage("You cannot make a withdrawal for a negative amount.");
+                               .WithErrorMessage("You cannot make a withdrawal for a negative amount.");
             }
         }
     }

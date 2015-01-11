@@ -48,6 +48,11 @@ namespace Sample.Banking.Domain.Tests
         [Test]
         public void A_checking_account_with_a_negative_balance_cannot_be_closed()
         {
+            account.Apply(new DepositFunds
+            {
+                Amount = Any.Decimal(20, 200)
+            });
+
             account.Apply(new WithdrawFunds
             {
                 Amount = 1
