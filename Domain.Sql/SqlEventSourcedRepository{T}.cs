@@ -45,7 +45,7 @@ namespace Microsoft.Its.Domain.Sql
             {
                 snapshot = Configuration.Current
                                         .SnapshotRepository()
-                                        .Get(id, version, asOfDate)
+                                        .GetSnapshot(id, version, asOfDate)
                                         .Result;
             }
 

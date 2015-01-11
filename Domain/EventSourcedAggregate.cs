@@ -62,17 +62,12 @@ namespace Microsoft.Its.Domain
         /// </summary>
         /// <param name="snapshot">A snapshot of the aggregate's built-up state.</param>
         /// <param name="eventHistory">The event history.</param>
-        protected internal EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory) :
+        protected internal EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null) :
             this(snapshot.IfNotNull()
                          .Then(s => s.AggregateId)
                          .ElseThrow(() => new ArgumentNullException("snapshot")))
         {
-            if (eventHistory == null)
-            {
-                throw new ArgumentNullException("eventHistory");
-            }
-
-            sourceEvents = eventHistory.ToArray();
+            sourceEvents = eventHistory.OrEmpty().ToArray();
             sourceSnapshot = snapshot;
         }
 

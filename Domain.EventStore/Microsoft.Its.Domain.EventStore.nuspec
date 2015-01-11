@@ -3,7 +3,7 @@
   <metadata>
     <id>Its.Domain.EventStore</id>
     <title>Its.Domain.EventStore</title>
-    <version>0.10.0-beta</version>
+    <version>0.10.1-beta</version>
     <authors>Microsoft,jonsequitur</authors>
     <owners>Microsoft,jonsequitur</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -11,7 +11,7 @@
     <copyright>Copyright 2014</copyright>
     <tags>CQRS Its.Cqrs event-sourcing</tags>
     <dependencies>
-      <dependency id="Its.Domain" version="[0.10.0-beta,1)" />
+      <dependency id="Its.Domain" version="[0.10.1-beta,1)" />
     </dependencies>
   </metadata>
 </package>
