@@ -49,8 +49,12 @@ namespace Microsoft.Its.Domain.Sql
 
                     if (!aggregates.Contains(MatchEvent.Wildcard))
                     {
-                        eventQuery = eventQuery.Where(e => aggregates.Contains(e.StreamName) ||
-                                                           eventTypes.Contains(e.Type));
+                        var allEmptyAggregates = aggregates.All(string.IsNullOrWhiteSpace);
+                        var allEmptyEventTypesOrWildCardEvent = eventTypes.All(string.IsNullOrWhiteSpace) ||
+                                                                eventTypes.Contains(MatchEvent.Wildcard);
+
+                        eventQuery = eventQuery.Where(e => (allEmptyAggregates || aggregates.Contains(e.StreamName)) &&
+                                                           (allEmptyEventTypesOrWildCardEvent || eventTypes.Contains(e.Type)));
                     }
                 }
 
