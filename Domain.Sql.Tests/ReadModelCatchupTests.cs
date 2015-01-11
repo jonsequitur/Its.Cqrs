@@ -115,6 +115,30 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
+        public void ReadModelCatchup_queries_events_that_match_both_aggregate_and_event_type()
+        {
+            const int numOfOrderCreatedEvents = 5;
+
+            Events.Write(numOfOrderCreatedEvents, _ => new Order.Created());
+            Events.Write(7, _ => new CustomerAccount.Created());
+            Events.Write(8, _ => new Order.Cancelled());
+
+            var projector = new DuckTypeProjector<Order.Created>(e => { });
+            var eventsQueried = 0;
+
+            using (var catchup = CreateReadModelCatchup(projector))
+            {
+                catchup.Progress
+                       .Where(s => !s.IsStartOfBatch)
+                       .ForEachAsync(s => { eventsQueried++; });
+                catchup.DisposeAfter(r => r.Run());
+                Console.WriteLine(new { eventsQueried });
+            }
+
+            eventsQueried.Should().Be(numOfOrderCreatedEvents);
+        }
+
+        [Test]
         public void ReadModelCatchup_queries_all_events_if_IEvent_is_subscribed()
         {
             Events.Write(100, _ => Events.Any());
