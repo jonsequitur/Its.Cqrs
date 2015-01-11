@@ -36,6 +36,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             () => container.Resolve<Order.ShipmentCancelled>(),
             () => container.Resolve<Order.Shipped>(),
             () => container.Resolve<Order.ShippingMethodSelected>(),
+            () => container.Resolve<CustomerAccount.Created>(),
             () => container.Resolve<CustomerAccount.EmailAddressChanged>(),
             () => container.Resolve<CustomerAccount.OrderShipConfirmationEmailSent>(),
             () => container.Resolve<CustomerAccount.RequestedNoSpam>(),
