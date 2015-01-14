@@ -11,7 +11,7 @@
     <copyright>Copyright 2014</copyright>
     <tags>CQRS Its.Cqrs event-sourcing</tags>
     <dependencies>
-      <dependency id="Its.Domain" version="[0.10.1-beta,1)" />
+      <dependency id="Its.Domain" version="[0.10.2-beta,1)" />
     </dependencies>
   </metadata>
 </package>

@@ -11,10 +11,10 @@
     <copyright>Copyright 2014</copyright>
     <tags>testing CQRS Its.Cqrs</tags>
     <dependencies>
-      <dependency id="Its.Domain" version="[0.10.1-beta,1)" />
-      <dependency id="Its.Domain.EventStore" version="[0.10.1-beta,1)" />
-      <dependency id="Its.Domain.Sql" version="[0.10.1-beta,1)" />
-      <dependency id="Its.EventStore" version="[0.10.1-beta,1)" />
+      <dependency id="Its.Domain" version="[0.10.2-beta,1)" />
+      <dependency id="Its.Domain.EventStore" version="[0.10.2-beta,1)" />
+      <dependency id="Its.Domain.Sql" version="[0.10.2-beta,1)" />
+      <dependency id="Its.EventStore" version="[0.10.2-beta,1)" />
       <dependency id="Rx-Main" version="[2.2.5,)" />
     </dependencies>
   </metadata>
