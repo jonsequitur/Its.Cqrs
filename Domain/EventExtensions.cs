@@ -21,19 +21,21 @@ namespace Microsoft.Its.Domain
         {
             return e.IfTypeIs<IHaveExtensibleMetada>()
                     .Then(ev => ((object) ev.Metadata)
-                                    .IfTypeIs<IDictionary<string, object>>()
-                                    .Then(dict =>
-                                          dict.IfContains("Actor")
-                                              .Then(a => a.ToString())))
+                        .IfTypeIs<IDictionary<string, object>>()
+                        .Then(dict =>
+                            dict.IfContains("Actor")
+                                .Then(a => a.ToString())))
                     .Else(() => null);
         }
 
-        public static void SetActor(this IHaveExtensibleMetada e, string actor)
+        public static void SetActor(this IHaveExtensibleMetada e,
+                                    string actor)
         {
             e.Metadata.Actor = actor;
         }
 
-        public static void SetActor(this IHaveExtensibleMetada e, ICommand fromCommand)
+        public static void SetActor(this IHaveExtensibleMetada e,
+                                    ICommand fromCommand)
         {
             e.Metadata.Actor = fromCommand.Principal
                                           .Identity
@@ -49,10 +51,11 @@ namespace Microsoft.Its.Domain
         /// <returns>The type of the aggregate, or null if none.</returns>
         public static Type AggregateType(this IEvent @event)
         {
-            return @event.GetType().AggregateTypeForEventType();
+            return @event.GetType()
+                         .AggregateTypeForEventType();
         }
 
-        private static readonly ConcurrentDictionary<Type, Type> aggregateTypesForEventTypes = new ConcurrentDictionary<Type, Type>(); 
+        private static readonly ConcurrentDictionary<Type, Type> aggregateTypesForEventTypes = new ConcurrentDictionary<Type, Type>();
 
         /// <summary>
         /// Returns the type of the aggregate to which an event applies.
@@ -61,22 +64,23 @@ namespace Microsoft.Its.Domain
         public static Type AggregateTypeForEventType(this Type eventType)
         {
             return aggregateTypesForEventTypes.GetOrAdd(eventType,
-                                                        t =>
-                                                        {
-                                                            // first, look for an IEvent<T> implementation
-                                                            var aggregateType = t.GetInterfaces()
-                                                                    .Where(i => i.IsGenericType)
-                                                                    .Where(i => i.GetGenericTypeDefinition() == typeof (IEvent<>))
-                                                                    .Select(i => i.GenericTypeArguments.First())
-                                                                    .FirstOrDefault();
+                t =>
+                {
+                    // first, look for an IEvent<T> implementation
+                    var aggregateType = t.GetInterfaces()
+                                         .Concat(new[] { t })
+                                         .Where(i => i.IsGenericType)
+                                         .Where(i => i.GetGenericTypeDefinition() == typeof (IEvent<>))
+                                         .Select(i => i.GenericTypeArguments.First())
+                                         .FirstOrDefault();
 
-                                                            if (aggregateType == null && t.IsNested)
-                                                            {
-                                                                aggregateType = t.DeclaringType;
-                                                            }
+                    if (aggregateType == null && t.IsNested)
+                    {
+                        aggregateType = t.DeclaringType;
+                    }
 
-                                                            return aggregateType;
-                                                        });
+                    return aggregateType;
+                });
         }
 
         /// <summary>
@@ -100,22 +104,26 @@ namespace Microsoft.Its.Domain
         /// <returns>A string representing the class's name.</returns>
         public static string EventName(this IEvent @event)
         {
-            return eventNames.GetOrAdd(@event.GetType(), t =>
-            {
-                Func<IEvent, string> defaultName = e => e.GetType().EventName();
-
-                if (t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IScheduledCommand<>)))
+            return eventNames.GetOrAdd(@event.GetType(),
+                t =>
                 {
-                    return e => defaultName(e) + ":" + ((dynamic) e).Command.GetType().Name;
-                }
+                    Func<IEvent, string> defaultName = e => e.GetType()
+                                                             .EventName();
 
-                if (t == typeof (DynamicEvent))
-                {
-                    return e => ((DynamicEvent) e).EventTypeName;
-                }
+                    if (t.GetInterfaces()
+                         .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IScheduledCommand<>)))
+                    {
+                        return e => defaultName(e) + ":" + ((dynamic) e).Command.GetType()
+                                                                        .Name;
+                    }
 
-                return defaultName;
-            })(@event);
+                    if (t == typeof (DynamicEvent))
+                    {
+                        return e => ((DynamicEvent) e).EventTypeName;
+                    }
+
+                    return defaultName;
+                })(@event);
         }
 
         private static readonly ConcurrentDictionary<Type, string> eventNames2 = new ConcurrentDictionary<Type, string>();
@@ -128,22 +136,24 @@ namespace Microsoft.Its.Domain
         public static string EventName(this Type eventType)
         {
             // TODO: (EventExtensions) differentiate these two methods in terms of use cases. it's potentially misleading since they can return different values
-            return eventNames2.GetOrAdd(eventType, t => t.GetCustomAttributes(false)
-                                                         .OfType<EventNameAttribute>()
-                                                         .FirstOrDefault()
-                                                         .IfNotNull()
-                                                         .Then(att => att.EventName)
-                                                         .Else(() =>
-                                                         {
-                                                             if (t.IsGenericType)
-                                                             {
-                                                                 var contractName = AttributedModelServices.GetContractName(t);
-                                                                 // e.g. Microsoft.Its.Domain.Event(Microsoft.Its.SomeAggregate) --> Event(SomeAggregate)
-                                                                 contractName = new Regex(@"([0-9\w\+]+\.)|([0-9\w\+]+\+)([\(\)]*)").Replace(contractName, "$3");
-                                                                 return contractName;
-                                                             }
-                                                             return t.Name;
-                                                         }));
+            return eventNames2.GetOrAdd(eventType,
+                t => t.GetCustomAttributes(false)
+                      .OfType<EventNameAttribute>()
+                      .FirstOrDefault()
+                      .IfNotNull()
+                      .Then(att => att.EventName)
+                      .Else(() =>
+                      {
+                          if (t.IsGenericType)
+                          {
+                              var contractName = AttributedModelServices.GetContractName(t);
+                              // e.g. Microsoft.Its.Domain.Event(Microsoft.Its.SomeAggregate) --> Event(SomeAggregate)
+                              contractName = new Regex(@"([0-9\w\+]+\.)|([0-9\w\+]+\+)([\(\)]*)").Replace(contractName,
+                                  "$3");
+                              return contractName;
+                          }
+                          return t.Name;
+                      }));
         }
 
         public static T GetAggregate<T>(this Event<T> @event) where T : class, IEventSourced
@@ -162,12 +172,16 @@ namespace Microsoft.Its.Domain
                 });
         }
 
-        internal static void SetAggregate(this IEvent @event, IEventSourced aggregate)
+        internal static void SetAggregate(this IEvent @event,
+                                          IEventSourced aggregate)
         {
             @event.IfTypeIs<IHaveExtensibleMetada>()
                   .ThenDo(e => ((object) e.Metadata)
-                                   .IfTypeIs<IDictionary<string, object>>()
-                                   .ThenDo(metadata => { metadata["Aggregate"] = aggregate; }));
+                      .IfTypeIs<IDictionary<string, object>>()
+                      .ThenDo(metadata =>
+                      {
+                          metadata["Aggregate"] = aggregate;
+                      }));
         }
     }
 }

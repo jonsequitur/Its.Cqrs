@@ -13,6 +13,7 @@ using FluentAssertions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
@@ -76,17 +77,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
             projector2.CallCount.Should().Be(2, "A projector should be passed events it has not previously seen.");
         }
 
-        [Test]
         public void ReadModelCatchup_does_not_query_events_that_no_subscribed_projector_is_interested_in()
         {
             Events.Write(100, _ => Events.Any());
+            Events.Write(1, _ => new Order.Created());
 
-            var projector1 = new Projector1();
-            var projector2 = Projector.Create<CustomerAccount.EmailAddressChanged>(e => { });
+            var projector2 = Projector.Create<CustomerAccount.Created>(e => { });
 
             StorableEvent extraneousEvent = null;
 
-            using (var catchup = CreateReadModelCatchup(projector1, projector2))
+            using (var catchup = CreateReadModelCatchup(projector2))
             using (var eventStore = new EventStoreDbContext())
             {
                 var eventsQueried = 0;
@@ -96,7 +96,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        {
                            var eventId = s.CurrentEventId;
                            var @event = eventStore.Events.Single(e => e.Id == eventId);
-                           if (@event.Type != "EmailAddressChanged" && @event.Type != "ItemAdded")
+                           if (@event.StreamName != "CustomerAccount" || @event.Type != "Created")
                            {
                                extraneousEvent = @event;
                                catchup.Dispose();
@@ -109,10 +109,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             if (extraneousEvent != null)
             {
-                Assert.Fail(string.Format("Found an event that should not have been queried from the event store: {0}:{1} (#{2})", extraneousEvent.StreamName, extraneousEvent.Type,
+                Assert.Fail(string.Format("Found an event that should not have been queried from the event store: {0}:{1} (#{2})",
+                                          extraneousEvent.StreamName,
+                                          extraneousEvent.Type,
                                           extraneousEvent.Id));
             }
         }
+
 
         [Test]
         public void ReadModelCatchup_queries_events_that_match_both_aggregate_and_event_type()
@@ -271,6 +274,51 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         [Test]
         public void ReadModelCatchup_queries_scheduled_commands_if_IScheduledCommand_is_subscribed()
+        {
+            var scheduledCommandsWritten = 0;
+            var scheduledCommandsQueried = 0;
+            Events.Write(50, _ =>
+            {
+                if (Any.Bool())
+                {
+                    return Events.Any();
+                }
+
+                scheduledCommandsWritten++;
+                return new CommandScheduled<Order>
+                {
+                    Command = new Ship(),
+                    DueTime = DateTimeOffset.UtcNow
+                };
+            });
+
+            var projector = Projector.Create<IScheduledCommand>(e => { }).Named(MethodBase.GetCurrentMethod().Name);
+            var eventsQueried = 0;
+
+            using (var catchup = CreateReadModelCatchup(projector))
+            using (var eventStore = new EventStoreDbContext())
+            {
+                catchup.Progress
+                       .Where(s => !s.IsStartOfBatch)
+                       .ForEachAsync(s =>
+                       {
+                           var eventId = s.CurrentEventId;
+                           var @event = eventStore.Events.Single(e => e.Id == eventId);
+                           if (@event.Type.StartsWith("Scheduled:"))
+                           {
+                               scheduledCommandsQueried++;
+                           }
+                           eventsQueried++;
+                       });
+                catchup.DisposeAfter(r => r.Run());
+                Console.WriteLine(new { eventsQueried });
+            }
+
+            scheduledCommandsQueried.Should().Be(scheduledCommandsWritten);
+        }
+        
+        [Test]
+        public void ReadModelCatchup_queries_scheduled_commands_if_IScheduledCommandT_is_subscribed()
         {
             var scheduledCommandsWritten = 0;
             var scheduledCommandsQueried = 0;
