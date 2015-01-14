@@ -193,20 +193,14 @@ namespace Microsoft.Its.Domain
         private static IEnumerable<MatchEvent> MatchBasedOnEventType(Type eventType)
         {
             var eventTypes = Event.ConcreteTypesOf(eventType)
-                                  .Select(t => t.EventName())
                                   .ToArray();
 
-            // if an aggregate-wide subscription is present (e.g. "IEvent(CustomerAccount)"), we have to OR filter on the StreamName (a.k.a. aggregate)
-            var aggregates = eventTypes
-                .Select(m => Regex.Match(m, @"\((?<aggregate>[0-9a-zA-Z]+)\)", RegexOptions.ExplicitCapture))
-                .Select(m => m.Groups["aggregate"].Value)
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .ToArray();
-
-            var matchAggregates = aggregates.Select(streamName => new MatchEvent(streamName: streamName));
-            var matchEvents = eventTypes.Select(type => new MatchEvent(type: type));
-
-            return matchAggregates.Concat(matchEvents);
+            var matchBasedOnEventType = eventTypes.Select(e => new MatchEvent(type: e.EventName(),
+                streamName: e.AggregateTypeForEventType()
+                             .IfNotNull()
+                             .Then(AggregateType.EventStreamName)
+                             .Else(() => MatchEvent.Wildcard)));
+            return matchBasedOnEventType;
         }
 
         /// <summary>
