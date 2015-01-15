@@ -84,10 +84,26 @@ namespace Microsoft.Its.Domain
 
         internal static Type[] ConcreteTypesOf(Type eventType)
         {
-            return Discover.ConcreteTypesDerivedFrom(eventType)
-                           .Concat(new[] { eventType })
-                           .Distinct()
-                           .ToArray();
+            var types = Discover.ConcreteTypesDerivedFrom(eventType);
+
+            if (!typeof (IScheduledCommand).IsAssignableFrom(eventType))
+            {
+                return types.ToArray();
+            }
+
+            if (eventType.IsGenericType)
+            {
+                var type = typeof (CommandScheduled<>).MakeGenericType(eventType.GetGenericArguments());
+                return types.Concat(new[] { type })
+                            .Distinct()
+                            .ToArray();
+            }
+            else
+            {
+                return types.Concat(AggregateType.KnownTypes.Select(t => typeof (CommandScheduled<>).MakeGenericType(t)).ToArray())
+                            .Distinct()
+                            .ToArray();
+            }
         }
     }
 }
