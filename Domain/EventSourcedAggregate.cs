@@ -187,7 +187,7 @@ namespace Microsoft.Its.Domain
             return ETags().Any(e => e == etag);
         }
 
-        internal IEnumerable<string> ETags()
+        public IEnumerable<string> ETags()
         {
             return sourceSnapshot.IfNotNull()
                                  .Then(s => s.ETags)
