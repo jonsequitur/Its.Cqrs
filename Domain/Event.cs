@@ -86,6 +86,7 @@ namespace Microsoft.Its.Domain
         {
             return Discover.ConcreteTypesDerivedFrom(eventType)
                            .Concat(new[] { eventType })
+                           .Distinct()
                            .ToArray();
         }
     }

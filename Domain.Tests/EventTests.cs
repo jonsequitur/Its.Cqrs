@@ -6,7 +6,6 @@ using FluentAssertions;
 using NUnit.Framework;
 using Sample.Domain.Ordering;
 using Sample.Domain.Ordering.Commands;
-using Assert = NUnit.Framework.Assert;
 
 namespace Microsoft.Its.Domain.Tests
 {

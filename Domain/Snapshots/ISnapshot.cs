@@ -5,6 +5,9 @@ using System;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// An aggregate snapshot.
+    /// </summary>
     public interface ISnapshot
     {
         Guid AggregateId { get; set; }
