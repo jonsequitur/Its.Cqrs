@@ -93,9 +93,10 @@ namespace Microsoft.Its.Domain
         public static bool IsProjectorType(this Type type)
         {
             var interfaces = type.GetInterfaces();
-            return
-                interfaces.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IUpdateProjectionWhen<>)) &&
-                !interfaces.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IHaveConsequencesWhen<>));
+            var isEventHandler = (typeof(IEventHandler).IsAssignableFrom(type) ||
+                      interfaces.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IUpdateProjectionWhen<>)));
+            bool isConsequentor = interfaces.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IHaveConsequencesWhen<>));
+            return isEventHandler && !isConsequentor;
         }
 
         /// <summary>
