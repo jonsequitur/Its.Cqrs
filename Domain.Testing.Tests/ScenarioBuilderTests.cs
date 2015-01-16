@@ -155,37 +155,35 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             var firstShipHandled = false;
             var secondShipHandled = false;
-            var scenario = CreateScenarioBuilder()
+            CreateScenarioBuilder()
                 .AddHandler(Domain.Projector.CreateDynamic(dynamicEvent =>
                                                            {
                                                                var @event = dynamicEvent as IEvent;
-                                                                   
                                                                @event.IfTypeIs<CommandScheduled<Order>>()
-                                                                .ThenDo(c =>
-                                                                        {
-                                                                            var shipmentId = (c.Command as Ship).ShipmentId;
-                                                                            Console.WriteLine("Handling [{0}] Shipment", shipmentId);
-                                                                            if (shipmentId == "first")
-                                                                            {
-                                                                                firstShipHandled = true;
-                                                                            }
-                                                                            else if (shipmentId == "second")
-                                                                            {
-                                                                                secondShipHandled = true;
-                                                                            }
-                                                                        });
-                                                              
-                                                    
-                                                           }, "Order.Scheduled:Ship"))
+                                                                     .ThenDo(c =>
+                                                                             {
+                                                                                 var shipmentId = (c.Command as Ship).ShipmentId;
+                                                                                 Console.WriteLine("Handling [{0}] Shipment", shipmentId);
+                                                                                 if (shipmentId == "first")
+                                                                                 {
+                                                                                     firstShipHandled = true;
+                                                                                 }
+                                                                                 else if (shipmentId == "second")
+                                                                                 {
+                                                                                     secondShipHandled = true;
+                                                                                 }
+                                                                             });
+                                                           },
+                                                           "Order.Scheduled:Ship"))
                 .AddEvents(
-                new CommandScheduled<Order>
+                           new CommandScheduled<Order>
                            {
-                               Command = new Ship(){ShipmentId = "first"},
+                               Command = new Ship() {ShipmentId = "first"},
                                DueTime = DateTime.Now
                            },
                            new CommandScheduled<Order>
                            {
-                               Command = new Ship() { ShipmentId = "second" },
+                               Command = new Ship() {ShipmentId = "second"},
                                DueTime = DateTime.Now
                            })
                 .Prepare();

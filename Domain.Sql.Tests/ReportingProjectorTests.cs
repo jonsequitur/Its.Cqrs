@@ -611,7 +611,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public int Quacks { get; set; }
     }
 
-    public class  Reporting
+    public class Reporting
     {
         public class DuckEvent
         {
