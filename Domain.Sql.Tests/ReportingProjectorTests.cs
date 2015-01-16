@@ -286,7 +286,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var expectedAggregateId = Any.Guid();
             var receivedAggregateId = new Guid();
             var expectedSequenceNumber = Any.PositiveInt();
-            int receivedSequenceNumber = 0;
+            long receivedSequenceNumber = 0;
             var receivedTimestamp = new DateTimeOffset();
             var receivedEventStreamName = "";
             var receivedEventTypeName = "";

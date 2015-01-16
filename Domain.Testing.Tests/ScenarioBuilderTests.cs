@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Linq;
-using System.Reactive.Disposables;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
@@ -12,6 +9,9 @@ using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
 using Sample.Domain.Ordering.Commands;
+using System;
+using System.Linq;
+using System.Reactive.Disposables;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
@@ -148,6 +148,48 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var order = scenario.Aggregates.OfType<Order>().Single();
 
             order.CustomerName.Should().Be(firstCustomerName);
+        }
+
+        [Test]
+        public void DynamicProjectors_registered_as_event_handlers_in_ScenarioBuilder_run_catchups_when_prepare_is_called()
+        {
+            var firstShipHandled = false;
+            var secondShipHandled = false;
+            CreateScenarioBuilder()
+                .AddHandler(Domain.Projector.CreateDynamic(dynamicEvent =>
+                                                           {
+                                                               var @event = dynamicEvent as IEvent;
+                                                               @event.IfTypeIs<CommandScheduled<Order>>()
+                                                                     .ThenDo(c =>
+                                                                             {
+                                                                                 var shipmentId = (c.Command as Ship).ShipmentId;
+                                                                                 Console.WriteLine("Handling [{0}] Shipment", shipmentId);
+                                                                                 if (shipmentId == "first")
+                                                                                 {
+                                                                                     firstShipHandled = true;
+                                                                                 }
+                                                                                 else if (shipmentId == "second")
+                                                                                 {
+                                                                                     secondShipHandled = true;
+                                                                                 }
+                                                                             });
+                                                           },
+                                                           "Order.Scheduled:Ship"))
+                .AddEvents(
+                           new CommandScheduled<Order>
+                           {
+                               Command = new Ship() {ShipmentId = "first"},
+                               DueTime = DateTime.Now
+                           },
+                           new CommandScheduled<Order>
+                           {
+                               Command = new Ship() {ShipmentId = "second"},
+                               DueTime = DateTime.Now
+                           })
+                .Prepare();
+
+            firstShipHandled.Should().BeTrue();
+            secondShipHandled.Should().BeTrue();
         }
 
         [Test]
