@@ -5,6 +5,7 @@ using System;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -129,6 +130,20 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
+        public void EventSourcedBase_can_be_rehydrated_from_an_empty_event_sequence_when_using_a_snapshot()
+        {
+            Action ctorCall = () => { new CustomerAccount(new CustomerAccountSnapshot
+            {
+                AggregateId = Any.Guid(),
+                EmailAddress = Any.Email(),
+                Version = 12
+            }, new IEvent[0]); };
+
+            ctorCall.Invoking(c => c())
+                .ShouldNotThrow<Exception>();
+        }
+
+        [Test]
         public void Gaps_in_the_event_sequence_do_not_cause_incorrect_sourcing()
         {
             var id = Guid.NewGuid();
@@ -181,6 +196,35 @@ namespace Microsoft.Its.Domain.Tests
             // assert
             order.EventHistory.Last().Should().BeOfType<Order.Cancelled>();
             order.EventHistory.Last().SequenceNumber.Should().Be(104);
+        }
+
+        [Test]
+        public async Task When_instantiated_from_a_snapshot_the_aggregate_version_is_correct()
+        {
+            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
+            {
+                AggregateId = Any.Guid(),
+                EmailAddress = Any.Email(),
+                Version = 12
+            });
+
+            customerAccount.Version.Should().Be(12);
+        }
+
+        [Test]
+        public async Task An_aggregate_instantiated_from_a_snapshot_adds_new_events_at_the_correct_sequence_number()
+        {
+            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
+            {
+                AggregateId = Any.Guid(),
+                EmailAddress = Any.Email(),
+                Version = 12
+            });
+
+            customerAccount.Apply(new RequestNoSpam());
+
+            customerAccount.Version.Should().Be(13);
+            customerAccount.PendingEvents.Last().SequenceNumber.Should().Be(13);
         }
 
         [Test]
