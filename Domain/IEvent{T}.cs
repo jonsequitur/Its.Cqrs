@@ -13,7 +13,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Updates the specified object when the event is applied.
         /// </summary>
-        /// <param name="aggregate">The order.</param>
+        /// <param name="aggregate">The aggregate to which the event pertains.</param>
         /// <remarks>This is used to update the object's state either upon applying a command, or when building up the object from an event source. Execution of this method should not create an side effects outside the object's state.</remarks>
         void Update(T aggregate);
     }

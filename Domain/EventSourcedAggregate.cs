@@ -18,7 +18,7 @@ namespace Microsoft.Its.Domain
         private readonly EventSequence eventHistory;
         private readonly EventSequence pendingEvents;
         private readonly IEvent[] sourceEvents;
-        private readonly ISnapshot sourceSnapshot;
+        internal readonly ISnapshot sourceSnapshot;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventSourcedAggregate"/> class.
@@ -192,8 +192,7 @@ namespace Microsoft.Its.Domain
             return sourceSnapshot.IfNotNull()
                                  .Then(s => s.ETags)
                                  .Else(() => new string[0])
-                                 .Concat(this.Events()
-                                             .Select(e => e.ETag));
+                                 .Concat(eventHistory.Select(e => e.ETag).Distinct());
         }
     }
 }

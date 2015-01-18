@@ -528,7 +528,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task When_a_snapshot_is_not_up_to_date_then_GetLatest_retrieves_later_events_and_applies_them()
         {
-             // arrange
+            // arrange
             var snapshotRepository = new InMemorySnapshotRepository();
             Configuration.Current.UseDependency<ISnapshotRepository>(_ => snapshotRepository);
 
@@ -555,6 +555,32 @@ namespace Microsoft.Its.Domain.Tests
             // assert
             account.Version.Should().Be(124);
             account.NoSpam.Should().Be(false);
+        }
+
+        [Ignore("Scenario under consideration")]
+        [Test]
+        public async Task Snapshotting_can_be_bypassed()
+        {
+            var snapshotRepository = new InMemorySnapshotRepository();
+            Configuration.Current.UseDependency<ISnapshotRepository>(_ => snapshotRepository);
+
+            var account = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(Any.Email()))
+                .Apply(new RequestSpam())
+                .Apply(new SendMarketingEmail())
+                .Apply(new SendOrderConfirmationEmail(Any.AlphanumericString(8, 8)));
+
+            var eventSourcedRepository = CreateRepository<CustomerAccount>();
+            eventSourcedRepository.Save(account);
+            await snapshotRepository.SaveSnapshot(account);
+
+            // act
+            account = eventSourcedRepository.GetLatest(account.Id);
+
+            // assert
+            account.Events().Count()
+                   .Should()
+                   .Be(4);
         }
     }
 }
