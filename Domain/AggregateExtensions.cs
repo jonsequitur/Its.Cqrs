@@ -40,6 +40,11 @@ namespace Microsoft.Its.Domain
         /// <returns></returns>
         public static IEnumerable<IEvent> Events(this EventSourcedAggregate aggregate)
         {
+            if (aggregate.sourceSnapshot != null)
+            {
+                throw new InvalidOperationException("Aggregate was sourced from a snapshot, so event history is unavailable.");
+            }
+
             return aggregate.EventHistory.Concat(aggregate.PendingEvents);
         }
 
@@ -63,10 +68,27 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public static TAggregate AsOfVersion<TAggregate>(this TAggregate aggregate, long version) where TAggregate : EventSourcedAggregate
         {
+            var snapshot = aggregate.sourceSnapshot;
+
+            var eventsAsOfVersion = aggregate.EventHistory
+                                             .Concat(aggregate.PendingEvents)
+                                             .Where(e => e.SequenceNumber <= version);
+
+            if (snapshot != null)
+            {
+                if (snapshot.Version > version)
+                {
+                    throw new InvalidOperationException("Snapshot version is later than specified version. Source the aggregate from an earlier snapshot or from events in order to use AsOfVersion.");
+                }
+
+                return AggregateType<TAggregate>.FromSnapshot.Invoke(
+                    snapshot,
+                    eventsAsOfVersion);
+            }
+
             return AggregateType<TAggregate>.FromEventHistory.Invoke(
                 aggregate.Id,
-                aggregate.Events()
-                         .Where(e => e.SequenceNumber <= version));
+                eventsAsOfVersion);
         }
 
         /// <summary>

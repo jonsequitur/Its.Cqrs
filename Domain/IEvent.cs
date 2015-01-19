@@ -16,7 +16,7 @@ namespace Microsoft.Its.Domain
         long SequenceNumber { get; }
 
         /// <summary>
-        /// Gets the unique id of the source object to which this event applies.
+        /// Gets the id of the aggregate to which this event applies.
         /// </summary>
         Guid AggregateId { get; }
 

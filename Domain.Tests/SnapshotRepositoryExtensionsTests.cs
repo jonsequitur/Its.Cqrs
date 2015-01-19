@@ -50,6 +50,7 @@ namespace Microsoft.Its.Domain.Tests
                                                       {
                                                           ETag = etag
                                                       });
+            account.ConfirmSave();
 
             var repository = new InMemorySnapshotRepository();
             await repository.SaveSnapshot(account);
@@ -100,6 +101,7 @@ namespace Microsoft.Its.Domain.Tests
                        {
                            ETag = "a"
                        });
+            account.ConfirmSave();
 
             var repository = new InMemorySnapshotRepository();
             await repository.SaveSnapshot(account);

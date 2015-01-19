@@ -258,5 +258,63 @@ namespace Microsoft.Its.Domain.Tests
 
             orderAtOlderVersion.CustomerName.Should().Be(originalName);
         }
+
+        [Test]
+        public async Task Attempting_to_re_source_an_aggregate_that_was_instantiated_using_a_snapshot_succeeds_if_the_specified_version_is_at_or_after_the_snapshot()
+        {
+            var originalEmail = Any.Email();
+            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
+            {
+                AggregateId = Any.Guid(),
+                Version = 10,
+                EmailAddress = originalEmail
+            });
+
+            customerAccount.Apply(new ChangeEmailAddress(Any.Email()));
+
+            var accountAtv10 = customerAccount.AsOfVersion(10);
+
+            accountAtv10.Version.Should().Be(10);
+            accountAtv10.EmailAddress.Should().Be(originalEmail);
+        }
+
+        [Test]
+        public async Task Attempting_to_re_source_an_aggregate_that_was_instantiated_using_a_snapshot_throws_if_the_specified_version_is_prior_to_the_snapshot()
+        {
+            var originalEmail = Any.Email();
+            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
+            {
+                AggregateId = Any.Guid(),
+                Version = 10,
+                EmailAddress = originalEmail
+            });
+
+            Action rollBack = () => customerAccount.AsOfVersion(9);
+
+            rollBack.ShouldThrow<InvalidOperationException>()
+                .And
+                .Message
+                .Should()
+                .Contain("Snapshot version is later than specified version.");
+        }
+
+        [Test]
+        public async Task Accessing_event_history_from_an_aggregate_instantiated_using_a_snapshot_throws()
+        {
+            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
+            {
+                AggregateId = Any.Guid(),
+                Version = 10,
+                EmailAddress = Any.Email()
+            });
+
+            Action getEvents = ()=> customerAccount.Events();
+
+            getEvents.ShouldThrow<InvalidOperationException>()
+                .And
+                .Message
+                .Should()
+                .Contain("Aggregate was sourced from a snapshot, so event history is unavailable.");
+        }
     }
 }

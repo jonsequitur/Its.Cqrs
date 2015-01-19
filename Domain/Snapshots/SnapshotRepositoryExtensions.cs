@@ -24,7 +24,9 @@ namespace Microsoft.Its.Domain
             snapshot.AggregateTypeName = AggregateType<TAggregate>.EventStreamName;
             snapshot.LastUpdated = Clock.Now();
             snapshot.Version = aggregate.Version;
-            snapshot.ETags = aggregate.ETags().Where(e => !string.IsNullOrWhiteSpace(e)).ToArray();
+            snapshot.ETags = aggregate.ETags()
+                                      .Where(e => !string.IsNullOrWhiteSpace(e))
+                                      .ToArray();
 
             await repository.SaveSnapshot(snapshot);
         }

@@ -296,11 +296,14 @@ namespace Microsoft.Its.Domain.Tests
                 ETag = etag
             });
 
+            order.ConfirmSave();
+
             order.Apply(new ChangeCustomerInfo
             {
                 CustomerName = Any.FullName(),
                 ETag = etag
             });
+
 
             order.CustomerName.Should().Be(newName);
         }
