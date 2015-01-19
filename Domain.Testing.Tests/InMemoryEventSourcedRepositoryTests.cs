@@ -38,8 +38,6 @@ namespace Microsoft.Its.Domain.Testing.Tests
         protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
             Action onSave = null)
         {
-            var bus = Configuration.Current.EventBus;
-            
             if (onSave != null)
             {
                 eventStream.BeforeSave += (sender, @event) => onSave();

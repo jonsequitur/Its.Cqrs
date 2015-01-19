@@ -499,7 +499,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task When_new_events_are_added_to_a_snapshot_sourced_aggregate_the_version_increments_correctly()
+        public async Task When_new_events_are_added_to_an_aggregate_sourced_from_a_fully_current_snapshot_the_version_increments_correctly()
         {
              // arrange
             var snapshotRepository = new InMemorySnapshotRepository();
@@ -516,6 +516,40 @@ namespace Microsoft.Its.Domain.Tests
                                ETags = new[] { Any.Word(), Any.Word() }
                            };
             await snapshotRepository.SaveSnapshot(snapshot);
+
+            // act
+            var account = CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
+            account.Apply(new RequestSpam());
+
+            // assert
+            account.Version.Should().Be(124);
+        }
+
+        [Test]
+        public async Task When_new_events_are_added_to_an_aggregate_sourced_from_a_stale_snapshot_the_version_increments_correctly()
+        {
+             // arrange
+            var snapshotRepository = new InMemorySnapshotRepository();
+            Configuration.Current.UseDependency<ISnapshotRepository>(_ => snapshotRepository);
+
+            var snapshot = new CustomerAccountSnapshot
+                           {
+                               AggregateId = Any.Guid(),
+                               Version = 122,
+                               AggregateTypeName = AggregateType<CustomerAccount>.EventStreamName,
+                               EmailAddress = Any.Email(),
+                               NoSpam = true,
+                               UserName = Any.FullName(),
+                               ETags = new[] { Any.Word(), Any.Word() }
+                           };
+
+            await snapshotRepository.SaveSnapshot(snapshot);
+            SaveEventsDirectly(new CustomerAccount.RequestedSpam
+            {
+                AggregateId = snapshot.AggregateId,
+                SequenceNumber = snapshot.Version + 1
+            });
+            
 
             // act
             var account = CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);

@@ -82,7 +82,7 @@ namespace Microsoft.Its.Domain
 
             if (sourceSnapshot != null)
             {
-                pendingEvents.SetVersion(sourceSnapshot.Version);
+                pendingEvents.SetVersion(Math.Max(eventHistory.Version, sourceSnapshot.Version));
             }
             else
             {
