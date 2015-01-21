@@ -13,7 +13,6 @@ using FluentAssertions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
@@ -77,6 +76,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             projector2.CallCount.Should().Be(2, "A projector should be passed events it has not previously seen.");
         }
 
+        [Test]
         public void ReadModelCatchup_does_not_query_events_that_no_subscribed_projector_is_interested_in()
         {
             Events.Write(100, _ => Events.Any());
