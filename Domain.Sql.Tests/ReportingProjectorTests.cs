@@ -469,6 +469,35 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
+        [Test]
+        public void Report_projections_can_be_created_using_EventHandlerBase_including_dynamic_event_types()
+        {
+            var projector = new OrderTallyProjector();
+
+            Events.Write(1, _ => new Order.Cancelled());
+            Events.Write(20, _ => new Order.Fulfilled());
+            Events.Write(4, _ => new Order.Misdelivered());
+
+            using (var catchup = CreateReadModelCatchup(projector))
+            {
+                catchup.Run();
+            }
+
+            using (var db = new ReadModelDbContext())
+            {
+                db.Set<OrderTally>()
+                  .Single(t => t.Status == "Fulfilled")
+                  .Count
+                  .Should()
+                  .Be(20);
+                db.Set<OrderTally>()
+                  .Single(t => t.Status == "Misdelivered")
+                  .Count
+                  .Should()
+                  .Be(4);
+            }
+        }
+
         [Ignore("This would require some sort of proxy to access properties that are not on Event")]
         [Test]
         public void All_events_can_be_subscribed_using_EventHandlerBase_On_Event()
@@ -659,30 +688,46 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             On<Placed>(e =>
             {
-                using (var db1 = new ReadModelDbContext())
+                using (var db = new ReadModelDbContext())
                 {
-                    db1.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count ++;
-                    db1.SaveChanges();
+                    db.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count ++;
+                    db.SaveChanges();
                 }
             });
 
             On<Cancelled>(e =>
             {
-                using (var db2 = new ReadModelDbContext())
+                using (var db = new ReadModelDbContext())
                 {
-                    db2.OrderTallyByStatus(OrderTally.OrderStatus.Canceled).Count ++;
-                    db2.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count --;
-                    db2.SaveChanges();
+                    db.OrderTallyByStatus(OrderTally.OrderStatus.Canceled).Count ++;
+                    db.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count --;
+                    db.SaveChanges();
                 }
             });
 
             On<Delivered>(e =>
             {
-                using (var db3 = new ReadModelDbContext())
+                using (var db = new ReadModelDbContext())
                 {
-                    db3.OrderTallyByStatus(OrderTally.OrderStatus.Delivered).Count ++;
-                    db3.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count --;
-                    db3.SaveChanges();
+                    db.OrderTallyByStatus(OrderTally.OrderStatus.Delivered).Count ++;
+                    db.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count --;
+                    db.SaveChanges();
+                }
+            });
+
+            On("Order.Fulfilled", e =>
+            {  using (var db = new ReadModelDbContext())
+                {
+                    db.OrderTallyByStatus(OrderTally.OrderStatus.Fulfilled).Count ++;
+                    db.SaveChanges();
+                }
+            });
+            
+            On("Order.Misdelivered", e =>
+            {  using (var db = new ReadModelDbContext())
+                {
+                    db.OrderTallyByStatus(OrderTally.OrderStatus.Misdelivered).Count ++;
+                    db.SaveChanges();
                 }
             });
         }

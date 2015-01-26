@@ -20,7 +20,9 @@ namespace Sample.Domain.Projections
         {
             Pending,
             Canceled,
-            Delivered
+            Delivered,
+            Misdelivered,
+            Fulfilled
         }
     }
 }

@@ -17,6 +17,11 @@ namespace Microsoft.Its.Domain.EventHandling
             eventHandlers.Add(new DuckTypeProjector<T>(handle));
         }
 
+        protected virtual void On(string eventType, Action<dynamic> handle)
+        {
+            eventHandlers.Add(Projector.CreateDynamic(handle, eventType));
+        }
+
         public IEnumerable<IEventHandlerBinder> GetBinders()
         {
             return eventHandlers.SelectMany(e => e.GetBinders());
