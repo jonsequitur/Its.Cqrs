@@ -36,7 +36,7 @@ namespace Microsoft.Its.Domain
                                             }
 
                                             // AggregateType.EventType
-                                            return new MatchEvent(type: e[1]);
+                                            return new MatchEvent(streamName: e[0], type: e[1]);
                                         }).ToArray();
 
             return new DynamicProjector(onEvent, matchEvents);

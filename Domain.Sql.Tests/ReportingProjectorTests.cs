@@ -2,10 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Threading.Tasks;
 using FluentAssertions;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.EventHandling;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
@@ -41,7 +41,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Events.Write(10);
             var projectedEventCount = 0;
 
-            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e => { projectedEventCount++; })))
+            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e =>
+            {
+                projectedEventCount++;
+            })))
             {
                 catchup.Run();
             }
@@ -59,7 +62,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 CustomerName = expectedName
             });
 
-            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e => { actualName = e.CustomerName; })))
+            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e =>
+            {
+                actualName = e.CustomerName;
+            })))
             {
                 catchup.Run();
             }
@@ -73,7 +79,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             IEvent receivedEvent = null;
             Events.Write(1, _ => new Order.CustomerInfoChanged());
 
-            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e => { receivedEvent = e; })))
+            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e =>
+            {
+                receivedEvent = e;
+            })))
             {
                 catchup.Run();
             }
@@ -97,7 +106,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
             var total = 0;
 
-            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e => { total += (int) e.SomeValue; })))
+            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e =>
+            {
+                total += (int) e.SomeValue;
+            })))
             {
                 catchup.Run();
             }
@@ -136,7 +148,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 return e;
             });
 
-            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e => { eventsQueried++; },
+            using (var catchup = CreateReadModelCatchup(Projector.CreateDynamic(e =>
+            {
+                eventsQueried++;
+            },
                                                                                 "Order.ItemAdded",
                                                                                 "Order.ItemRemoved")))
             {
@@ -177,8 +192,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 return e;
             });
 
-            var projector1 = Projector.CreateFor<ItemAdded>(e => { eventsQueried++; });
-            var projector2 = Projector.CreateFor<ItemRemoved>(e => { eventsQueried++; });
+            var projector1 = Projector.CreateFor<ItemAdded>(e =>
+            {
+                eventsQueried++;
+            });
+            var projector2 = Projector.CreateFor<ItemRemoved>(e =>
+            {
+                eventsQueried++;
+            });
 
             using (var catchup = CreateReadModelCatchup(projector1, projector2))
             {
@@ -214,8 +235,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var unNestedDuckQuacks = 0;
             var nestedDuckQuacks = 0;
 
-            var projector1 = Projector.CreateFor<DuckEvent>(e => { unNestedDuckQuacks += e.Quacks; });
-            var projector2 = Projector.CreateFor<Reporting.DuckEvent>(e => { nestedDuckQuacks += e.Quacks; });
+            var projector1 = Projector.CreateFor<DuckEvent>(e =>
+            {
+                unNestedDuckQuacks += e.Quacks;
+            });
+            var projector2 = Projector.CreateFor<Reporting.DuckEvent>(e =>
+            {
+                nestedDuckQuacks += e.Quacks;
+            });
 
             using (var catchup = CreateReadModelCatchup(projector1, projector2))
             {
@@ -252,8 +279,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var unNestedDucks = 0;
             var nestedDucks = 0;
 
-            var projector1 = Projector.CreateFor<DuckEvent>(e => { unNestedDucks++; });
-            var projector2 = Projector.CreateFor<Reporting.DuckEvent>(e => { nestedDucks++; });
+            var projector1 = Projector.CreateFor<DuckEvent>(e =>
+            {
+                unNestedDucks++;
+            });
+            var projector2 = Projector.CreateFor<Reporting.DuckEvent>(e =>
+            {
+                nestedDucks++;
+            });
 
             using (var catchup = CreateReadModelCatchup(projector1, projector2))
             {
@@ -269,7 +302,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             Events.Write(1, _ => new Order.Cancelled());
             Cancelled cancelled = null;
-            var projector = Projector.CreateFor<Cancelled>(e => { cancelled = e; });
+            var projector = Projector.CreateFor<Cancelled>(e =>
+            {
+                cancelled = e;
+            });
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
@@ -573,7 +609,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             eventsHandled.Should().Be(19);
         }
-        
+
         [Test]
         public async Task Catchup_continues_when_DynamicProjector_throws()
         {
@@ -716,15 +752,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
             });
 
             On("Order.Fulfilled", e =>
-            {  using (var db = new ReadModelDbContext())
+            {
+                using (var db = new ReadModelDbContext())
                 {
                     db.OrderTallyByStatus(OrderTally.OrderStatus.Fulfilled).Count ++;
                     db.SaveChanges();
                 }
             });
-            
+
             On("Order.Misdelivered", e =>
-            {  using (var db = new ReadModelDbContext())
+            {
+                using (var db = new ReadModelDbContext())
                 {
                     db.OrderTallyByStatus(OrderTally.OrderStatus.Misdelivered).Count ++;
                     db.SaveChanges();

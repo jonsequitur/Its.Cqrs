@@ -48,6 +48,12 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        public bool Matches(IEvent @event)
+        {
+            return (streamName == "" || streamName == Wildcard || streamName.Equals(@event.EventStreamName())) &&
+                   (type == "" || type == Wildcard || type.Equals(@event.EventName()));
+        }
+
         public override string ToString()
         {
             return string.Format("{0}.{1}", StreamName, Type);
@@ -83,9 +89,9 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        public static MatchEvent[] All()
+        public static MatchEvent[] All =
         {
-            return new MatchEvent[0];
-        }
+            new MatchEvent()
+        };
     }
 }

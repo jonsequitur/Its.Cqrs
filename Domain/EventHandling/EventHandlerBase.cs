@@ -24,7 +24,8 @@ namespace Microsoft.Its.Domain.EventHandling
 
         public IEnumerable<IEventHandlerBinder> GetBinders()
         {
-            return eventHandlers.SelectMany(e => e.GetBinders());
+            var eventHandlerBinders = eventHandlers.SelectMany(e => e.GetBinders());
+            return eventHandlerBinders;
         }
 
         public virtual string Name

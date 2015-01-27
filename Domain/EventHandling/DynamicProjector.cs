@@ -27,7 +27,7 @@ namespace Microsoft.Its.Domain
 
             this.matchEvents = matchEvents.OrEmpty().Any()
                                    ? matchEvents
-                                   : MatchEvent.All();
+                                   : MatchEvent.All;
         }
 
         public IEnumerable<IEventHandlerBinder> GetBinders()
@@ -52,7 +52,13 @@ namespace Microsoft.Its.Domain
         {
             return bus.Events<IEvent>()
                       .SubscribeDurablyAndPublishErrors(this,
-                                                        e => onEvent(e),
+                                                        e =>
+                                                        {
+                                                            if (matchEvents.Any(me => me.Matches(e)))
+                                                            {
+                                                                onEvent(e);
+                                                            }
+                                                        },
                                                         bus);
         }
 
