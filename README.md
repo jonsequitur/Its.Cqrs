@@ -1,7 +1,7 @@
 Its.Cqrs
 ========
 
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/jonsequitur/Its.Cqrs?svg=true)](https://ci.appveyor.com/project/jonsequitur/its-cqrs)
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/jonsequitur/Its.Cqrs?svg=true&branch=master)](https://ci.appveyor.com/project/jonsequitur/its-cqrs)
 
 A set of libraries for CQRS and Event Sourcing, with a Domain-Driven Design flavor. 
 
