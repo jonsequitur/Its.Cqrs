@@ -3,8 +3,10 @@
 
 using System;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using FluentAssertions;
 using Its.Configuration;
 using Microsoft.Its.Recipes;
@@ -68,6 +70,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (var eventStore = new EventStoreDbContext())
             {
                 eventStoreInitializer.InitializeDatabase(eventStore);
+
                 eventStore.Events.Count().Should().Be(8);
             }
         }

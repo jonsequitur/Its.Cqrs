@@ -13,6 +13,8 @@ namespace Microsoft.Its.Domain.Sql
     public class EventStoreDatabaseInitializer<TContext> : IDatabaseInitializer<TContext>
         where TContext : DbContext
     {
+        private bool seeded;
+
         public void InitializeDatabase(TContext context)
         {
             var dbMigrator = new DbMigrator(new EventStoreMigrationConfiguration<TContext>());
@@ -25,11 +27,17 @@ namespace Microsoft.Its.Domain.Sql
             OnSeed.IfNotNull()
                   .ThenDo(seed =>
                   {
-                      seed(context);
-                      context.SaveChanges();
+                      if (!seeded)
+                      {
+                          seeded = true;
+                          seed(context);
+                          context.SaveChanges();
+                      }
                   });
         }
 
-        public Action<TContext> OnSeed = context => { };
+        public Action<TContext> OnSeed = context =>
+        {
+        };
     }
 }
