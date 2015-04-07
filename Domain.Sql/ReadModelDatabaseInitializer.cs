@@ -3,7 +3,7 @@
 
 using System;
 using System.Data.Entity;
-using System.Linq;
+using System.Transactions;
 using log = Its.Log.Lite.Log;
 
 namespace Microsoft.Its.Domain.Sql
@@ -15,7 +15,40 @@ namespace Microsoft.Its.Domain.Sql
     public class ReadModelDatabaseInitializer<TDbContext> : DropCreateDatabaseIfModelChanges<TDbContext>
         where TDbContext : ReadModelDbContext, new()
     {
-       
+        /// <summary>
+        /// See https://msdn.microsoft.com/en-us/library/dn268335.aspx for more info.
+        /// 
+        /// MAXSIZE = ( [ 100 MB | 500 MB ] | [ { 1 | 5 | 10 | 20 | 30 … 150…500 } GB  ] )
+        /// | EDITION = { 'web' | 'business' | 'basic' | 'standard' | 'premium' } 
+        /// | SERVICE_OBJECTIVE = { 'shared' | 'basic' | 'S0' | 'S1' | 'S2' | 'P1' | 'P2' | 'P3' } 
+        /// </summary>
+        /// <param name="context"> The DbContext </param>
+        /// <param name="dbSizeInGB"> Size of database in GB </param>
+        /// <param name="edition"> Edition of database </param>
+        /// <param name="serviceObjective"> Service objective of database </param>
+        public void InitializeDatabase(TDbContext context, int dbSizeInGB, string edition, string serviceObjective)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException("context");
+            }
+
+            bool flag;
+            using (new TransactionScope(TransactionScopeOption.Suppress))
+                flag = context.Database.Exists();
+
+            if (flag)
+            {
+                if (context.Database.CompatibleWithModel(true))
+                    return;
+                context.Database.Delete();
+            }
+
+            context.CreateDatabase(dbSizeInGB, edition, serviceObjective);
+            Seed(context);
+            context.SaveChanges();
+        }
+
         /// <summary>
         /// A that should be overridden to actually add data to the context for seeding. 
         ///                 The default implementation does nothing.
