@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Its.EventStore
+namespace Microsoft.Its.Domain.Testing
 {
     /// <summary>
     ///     A sequential event applicable to a specific type, which can be used to rebuild the object's historical states.

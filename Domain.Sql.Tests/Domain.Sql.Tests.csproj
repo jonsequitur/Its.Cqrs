@@ -178,10 +178,6 @@
       <Project>{99442ACC-A914-4BDF-8DE5-D074FA0447F5}</Project>
       <Name>Domain</Name>
     </ProjectReference>
-    <ProjectReference Include="..\EventStore\EventStore.csproj">
-      <Project>{49f372ba-8ec1-4f5d-860d-957199ef0422}</Project>
-      <Name>EventStore</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Sample.Domain.Api\Sample.Domain.Api.csproj">
       <Project>{D561CDB3-2C8F-48F1-9F19-A0CD77F7C726}</Project>
       <Name>Sample.Domain.Api</Name>

@@ -5,15 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Its.Domain.EventStore;
 using Microsoft.Its.Domain.Serialization;
-using Microsoft.Its.EventStore;
 
 namespace Microsoft.Its.Domain.Testing
 {
     public class InMemoryEventStream : IEventStream
     {
-        private readonly HashSet<IStoredEvent> events = new HashSet<IStoredEvent>(new Its.EventStore.EventComparer());
+        private readonly HashSet<IStoredEvent> events = new HashSet<IStoredEvent>(new EventComparer());
 
         public EventHandler<IStoredEvent> BeforeSave;
 

@@ -5,7 +5,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.EventStore;
 using Pocket;
 
 namespace Microsoft.Its.Domain.Testing

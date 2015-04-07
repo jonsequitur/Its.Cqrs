@@ -150,10 +150,6 @@
       <Project>{99442acc-a914-4bdf-8de5-d074fa0447f5}</Project>
       <Name>Domain</Name>
     </ProjectReference>
-    <ProjectReference Include="..\EventStore\EventStore.csproj">
-      <Project>{49f372ba-8ec1-4f5d-860d-957199ef0422}</Project>
-      <Name>EventStore</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Recipes\Recipes.csproj">
       <Project>{02C62BEC-31F5-48D6-8627-A4DE4EF90C91}</Project>
       <Name>Recipes</Name>
