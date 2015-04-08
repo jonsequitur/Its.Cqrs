@@ -96,50 +96,67 @@ namespace Microsoft.Its.Domain.Sql
             return connection;
         }
 
-        public static void CreateDatabase(this DbContext context, int dbSizeInGB, string edition, string serviceObjective)
+        public static bool IsAzureDatabase(this DbContext context)
         {
-            var connectionString = context.Database.Connection.ConnectionString;
-            var databaseName = context.Database.Connection.Database;
-
-            if (connectionString.Contains("database.windows.net"))
-            {
-                var connstrBldr = new SqlConnectionStringBuilder(connectionString)
-                {
-                    InitialCatalog = "master"
-                };
-
-                var dbCreationCmd = string.Format("CREATE DATABASE [{0}] (MAXSIZE={1}GB, EDITION='{2}', SERVICE_OBJECTIVE='{3}')",
-                        databaseName, dbSizeInGB, edition, serviceObjective);
-
-                ExecuteNonQuery(connstrBldr.ConnectionString, dbCreationCmd);
-                WaitUntilDatabaseCreated(connstrBldr.ConnectionString, databaseName);
-
-                context.Database.Initialize(force: true);
-            }
-            else
-            {
-                context.Database.Create();
-            }
+            return context.Database.Connection.ConnectionString.Contains("database.windows.net");
         }
 
-        private static void WaitUntilDatabaseCreated(string connString, string databaseName)
+        /// <summary>
+        /// See https://msdn.microsoft.com/en-us/library/dn268335.aspx for more info.
+        /// 
+        /// MAXSIZE = ( [ 100 MB | 500 MB ] | [ { 1 | 5 | 10 | 20 | 30 … 150…500 } GB  ] )
+        /// | EDITION = { 'web' | 'business' | 'basic' | 'standard' | 'premium' } 
+        /// | SERVICE_OBJECTIVE = { 'shared' | 'basic' | 'S0' | 'S1' | 'S2' | 'P1' | 'P2' | 'P3' } 
+        /// </summary>
+        /// <param name="context"> The DbContext </param>
+        /// <param name="dbSizeInGB"> Size of database in GB </param>
+        /// <param name="edition"> Edition of database </param>
+        /// <param name="serviceObjective"> Service objective of database </param>
+        public static void CreateAzureDatabase(this DbContext context, int dbSizeInGB, string edition, string serviceObjective)
+        {
+            if (!context.IsAzureDatabase())
+            {
+                throw new ArgumentException("Not Azure database based on ConnectionString");
+            }
+
+            var connstrBldr = new SqlConnectionStringBuilder(context.Database.Connection.ConnectionString)
+            {
+                InitialCatalog = "master"
+            };
+
+            var databaseName = context.Database.Connection.Database;
+            var dbCreationCmd = string.Format("CREATE DATABASE [{0}] (MAXSIZE={1}GB, EDITION='{2}', SERVICE_OBJECTIVE='{3}')",
+                    databaseName, dbSizeInGB, edition, serviceObjective);
+
+            ExecuteNonQuery(connstrBldr.ConnectionString, dbCreationCmd);
+            context.WaitUntilDatabaseCreated();
+        }
+
+        private static void WaitUntilDatabaseCreated(this DbContext context)
         {
             // wait up to 60 seconds
             var sleepInSeconds = 2;
             var retryCount = 30;
-            var dbStatus = "CREATING";
+            Exception exception = null;
 
             while (true)
             {
                 if (retryCount <= 0)
                 {
-                    throw new DataException("dbStatus is not ONLINE after 60 seconds, status = " + dbStatus);
+                    throw exception ?? new TimeoutException("Database is not ONLINE after 60 seconds");
                 }
 
-                dbStatus = Query(connString, string.Format("SELECT state_desc FROM sys.databases WHERE name = '{0}'", databaseName));
-                if (dbStatus.Equals("ONLINE", StringComparison.OrdinalIgnoreCase))
+                try
                 {
-                    break;
+                    if (context.Database.Exists())
+                    {
+                        context.Database.Initialize(force: true);
+                        break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    exception = e;
                 }
 
                 retryCount--;
@@ -155,17 +172,6 @@ namespace Microsoft.Its.Domain.Sql
                 var cmd = conn.CreateCommand();
                 cmd.CommandText = commandText;
                 cmd.ExecuteNonQuery();
-            }
-        }
-
-        private static string Query(string connString, string query)
-        {
-            using (var conn = new SqlConnection(connString))
-            {
-                conn.Open();
-                var cmd = conn.CreateCommand();
-                cmd.CommandText = query;
-                return (string) cmd.ExecuteScalar();
             }
         }
     }
