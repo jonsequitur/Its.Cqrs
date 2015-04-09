@@ -3,7 +3,7 @@
 
 using System;
 using System.Data.Entity;
-using System.Linq;
+using System.Transactions;
 using log = Its.Log.Lite.Log;
 
 namespace Microsoft.Its.Domain.Sql
@@ -15,7 +15,33 @@ namespace Microsoft.Its.Domain.Sql
     public class ReadModelDatabaseInitializer<TDbContext> : DropCreateDatabaseIfModelChanges<TDbContext>
         where TDbContext : ReadModelDbContext, new()
     {
-       
+        public void InitializeDatabase(TDbContext context, int dbSizeInGB, string edition, string serviceObjective)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException("context");
+            }
+
+            if (context.Database.Exists())
+            {
+                if (context.Database.CompatibleWithModel(true))
+                    return;
+                context.Database.Delete();
+            }
+
+            if (context.IsAzureDatabase())
+            {
+                context.CreateAzureDatabase(dbSizeInGB, edition, serviceObjective);
+            }
+            else
+            {
+                context.Database.Create();
+            }
+
+            Seed(context);
+            context.SaveChanges();
+        }
+
         /// <summary>
         /// A that should be overridden to actually add data to the context for seeding. 
         ///                 The default implementation does nothing.
