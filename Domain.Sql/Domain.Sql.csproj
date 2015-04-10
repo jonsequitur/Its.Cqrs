@@ -100,6 +100,10 @@
     <Compile Include="EventHandlerProgress.cs" />
     <Compile Include="EventHandlerProgressCalculator.cs" />
     <Compile Include="EventStoreDatabaseInitializer{T}.cs" />
+    <Compile Include="Migrations\201407120005564_v0_8_2.cs" />
+    <Compile Include="Migrations\201407120005564_v0_8_2.Designer.cs">
+      <DependentUpon>201407120005564_v0_8_2.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\201409181840497_InitialCreate.cs" />
     <Compile Include="Migrations\201409181840497_InitialCreate.Designer.cs">
       <DependentUpon>201409181840497_InitialCreate.cs</DependentUpon>
@@ -116,10 +120,6 @@
     <Compile Include="Migrations\201404242201400_v0_6_12.cs" />
     <Compile Include="Migrations\201404242201400_v0_6_12.Designer.cs">
       <DependentUpon>201404242201400_v0_6_12.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201407120005564_v0_8_2.cs" />
-    <Compile Include="Migrations\201407120005564_v0_8_2.Designer.cs">
-      <DependentUpon>201407120005564_v0_8_2.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\CommandSchedulerMigrationConfiguration.cs" />
     <Compile Include="ReadModelCatchupResult.cs" />

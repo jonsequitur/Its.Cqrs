@@ -13,9 +13,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public void InitializeDatabase(CommandSchedulerDbContext context)
         {
             var dbMigrator = new DbMigrator(new CommandSchedulerMigrationConfiguration());
+            
             if (dbMigrator.GetPendingMigrations().Any())
             {
-                dbMigrator.Update();
+                dbMigrator.Update("201407120005564_v0_8_2");
             }
         }
     }

@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Data.Entity;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,7 +20,7 @@ namespace Microsoft.Its.Domain.Api.Tests
     public class DomainApiControllerTests : EventStoreDbTest
     {
         [Test]
-        public async Task ApplyBatch_can_accept_an_array_commands()
+        public async Task ApplyBatch_can_accept_an_array_of_commands()
         {
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
             var order = new Order();
