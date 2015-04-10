@@ -39,9 +39,12 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework">
-      <HintPath>..\packages\EntityFramework.5.0.0\lib\net45\EntityFramework.dll</HintPath>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -55,7 +58,6 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
@@ -98,6 +100,10 @@
     <Compile Include="EventHandlerProgress.cs" />
     <Compile Include="EventHandlerProgressCalculator.cs" />
     <Compile Include="EventStoreDatabaseInitializer{T}.cs" />
+    <Compile Include="Migrations\201407120005564_v0_8_2.cs" />
+    <Compile Include="Migrations\201407120005564_v0_8_2.Designer.cs">
+      <DependentUpon>201407120005564_v0_8_2.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\201409181840497_InitialCreate.cs" />
     <Compile Include="Migrations\201409181840497_InitialCreate.Designer.cs">
       <DependentUpon>201409181840497_InitialCreate.cs</DependentUpon>
@@ -114,10 +120,6 @@
     <Compile Include="Migrations\201404242201400_v0_6_12.cs" />
     <Compile Include="Migrations\201404242201400_v0_6_12.Designer.cs">
       <DependentUpon>201404242201400_v0_6_12.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201407120005564_v0_8_2.cs" />
-    <Compile Include="Migrations\201407120005564_v0_8_2.Designer.cs">
-      <DependentUpon>201407120005564_v0_8_2.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\CommandSchedulerMigrationConfiguration.cs" />
     <Compile Include="ReadModelCatchupResult.cs" />

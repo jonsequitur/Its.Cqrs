@@ -34,9 +34,13 @@
     <DocumentationFile>bin\Release\Microsoft.Its.Domain.Testing.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework">
-      <HintPath>..\packages\EntityFramework.5.0.0\lib\net45\EntityFramework.dll</HintPath>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -49,7 +53,6 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
@@ -79,7 +82,11 @@
     <Compile Include="AggregateBuilder{T}.cs" />
     <Compile Include="AssertionException.cs" />
     <Compile Include="AssertionExtensions.cs" />
+    <Compile Include="EventComparer.cs" />
+    <Compile Include="EventStreamExtensions.cs" />
+    <Compile Include="IEventStream.cs" />
     <Compile Include="IgnoreCommandScheduling{T}.cs" />
+    <Compile Include="IStoredEvent.cs" />
     <Compile Include="TestConfigurationExtensions.cs" />
     <Compile Include="EventExtensions.cs" />
     <Compile Include="EventSourcedComparer.cs" />

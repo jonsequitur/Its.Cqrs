@@ -4,8 +4,6 @@
 using System;
 using System.Reactive.Linq;
 using System.Linq;
-using Microsoft.Its.Domain.EventStore;
-using Microsoft.Its.EventStore;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing

@@ -10,7 +10,6 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
-using Microsoft.Its.EventStore;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing

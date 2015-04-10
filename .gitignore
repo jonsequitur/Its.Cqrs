@@ -25,3 +25,4 @@ Artifacts
 *.psess
 Blobs/
 *.xml
+NuGet/

@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Its.EventStore
+namespace Microsoft.Its.Domain.Testing
 {
     public class EventComparer : IEqualityComparer<IStoredEvent>
     {
