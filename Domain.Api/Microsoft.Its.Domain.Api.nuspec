@@ -3,7 +3,7 @@
   <metadata>
     <id>Its.Domain.Api</id>
     <title>Its.Domain.Api</title>
-    <version>0.10.5-beta</version>
+    <version>0.11.0-beta</version>
     <authors>Microsoft,jonsequitur</authors>
     <owners>Microsoft,jonsequitur</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -11,7 +11,7 @@
     <copyright>Copyright 2014</copyright>
     <tags>webapi DDD CQRS Its.Cqrs</tags>
     <dependencies>
-      <dependency id="Its.Domain" version="[0.10.5-beta,1)" />
+      <dependency id="Its.Domain" version="[0.11.0-beta,1)" />
       <dependency id="Microsoft.AspNet.WebApi" version="[5.1.2,)"  />
       <dependency id="Rx-Main" version="[2.2.5,)"   />
     </dependencies>
