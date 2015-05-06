@@ -15,7 +15,13 @@ namespace Microsoft.Its.Domain.Sql
     public class ReadModelDatabaseInitializer<TDbContext> : DropCreateDatabaseIfModelChanges<TDbContext>
         where TDbContext : ReadModelDbContext, new()
     {
-        public void InitializeDatabase(TDbContext context, int dbSizeInGB, string edition, string serviceObjective)
+        public void InitializeDatabase(
+            TDbContext context, 
+            int dbSizeInGB, 
+            string edition, 
+            string serviceObjective, 
+            string login = null, 
+            string readonlyUser = null)
         {
             if (context == null)
             {
@@ -32,6 +38,10 @@ namespace Microsoft.Its.Domain.Sql
             if (context.IsAzureDatabase())
             {
                 context.CreateAzureDatabase(dbSizeInGB, edition, serviceObjective);
+                if (!string.IsNullOrWhiteSpace(login) && !string.IsNullOrWhiteSpace(readonlyUser))
+                {
+                    context.CreateReadonlyUser(login, readonlyUser);
+                }
             }
             else
             {

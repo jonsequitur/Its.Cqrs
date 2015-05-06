@@ -1,7 +1,6 @@
 ﻿using System.Data.Entity;
 using System.Data.Entity.SqlServer;
 
-
 namespace Microsoft.Its.Domain.Sql
 {
     public class EfDbConfiguration : DbConfiguration
