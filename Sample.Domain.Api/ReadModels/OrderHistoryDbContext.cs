@@ -6,7 +6,7 @@ using Microsoft.Its.Domain.Sql;
 
 namespace Sample.Domain.Api.ReadModels
 {
-    [DbConfigurationType(typeof(EfDbConfiguration))]
+    [DbConfigurationType(typeof(SqlClientDbConfiguration))]
     public class OrderHistoryDbContext : DbContext
     {
         public OrderHistoryDbContext() : base("ReadModels")
