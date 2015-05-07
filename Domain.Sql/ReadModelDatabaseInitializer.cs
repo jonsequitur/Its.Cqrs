@@ -3,7 +3,6 @@
 
 using System;
 using System.Data.Entity;
-using System.Transactions;
 using log = Its.Log.Lite.Log;
 
 namespace Microsoft.Its.Domain.Sql
@@ -20,8 +19,7 @@ namespace Microsoft.Its.Domain.Sql
             int dbSizeInGB, 
             string edition, 
             string serviceObjective, 
-            string login = null, 
-            string readonlyUser = null)
+            DbReadonlyUser readonlyUser = null)
         {
             if (context == null)
             {
@@ -38,9 +36,9 @@ namespace Microsoft.Its.Domain.Sql
             if (context.IsAzureDatabase())
             {
                 context.CreateAzureDatabase(dbSizeInGB, edition, serviceObjective);
-                if (!string.IsNullOrWhiteSpace(login) && !string.IsNullOrWhiteSpace(readonlyUser))
+                if (readonlyUser != null)
                 {
-                    context.CreateReadonlyUser(login, readonlyUser);
+                    context.CreateReadonlyUser(readonlyUser);
                 }
             }
             else

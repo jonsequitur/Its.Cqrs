@@ -3,9 +3,9 @@ using System.Data.Entity.SqlServer;
 
 namespace Microsoft.Its.Domain.Sql
 {
-    public class EfDbConfiguration : DbConfiguration
+    public class SqlClientDbConfiguration : DbConfiguration
     {
-        public EfDbConfiguration()
+        public SqlClientDbConfiguration()
         {
             SetProviderServices("System.Data.SqlClient", SqlProviderServices.Instance);
         }
