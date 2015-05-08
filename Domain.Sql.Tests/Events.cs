@@ -67,7 +67,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             long lastEventId = 0;
 
-            using (new TransactionScope(TransactionScopeOption.Suppress))
+            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var eventStore = createEventStore.IfNotNull()
                                                     .Then(c => c())
                                                     .Else(() => new EventStoreDbContext()))

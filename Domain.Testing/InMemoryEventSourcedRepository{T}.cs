@@ -4,6 +4,7 @@
 using System;
 using System.Reactive.Linq;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing
@@ -15,7 +16,7 @@ namespace Microsoft.Its.Domain.Testing
     {
         private readonly IEventStream eventStream;
         private readonly IEventBus bus;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="InMemoryEventSourcedRepository{TAggregate}"/> class.
         /// </summary>
@@ -30,40 +31,36 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public TAggregate GetLatest(Guid aggregateId)
+        public async Task<TAggregate> GetLatest(Guid aggregateId)
         {
             if (AggregateType<TAggregate>.SupportsSnapshots)
             {
-                var snapshot = Configuration.Current
-                                            .SnapshotRepository()
-                                            .GetSnapshot(aggregateId)
-                                            .Result;
+                var snapshot = await Configuration.Current
+                                                  .SnapshotRepository()
+                                                  .GetSnapshot(aggregateId);
 
                 if (snapshot != null)
                 {
-                    return GetLatestWithSnapshot(aggregateId, snapshot);
+                    return await GetLatestWithSnapshot(aggregateId, snapshot);
                 }
             }
 
-            return GetLatestWithoutSnapshot(aggregateId);
+            return await GetLatestWithoutSnapshot(aggregateId);
         }
 
-        private TAggregate GetLatestWithSnapshot(Guid aggregateId, ISnapshot snapshot)
+        private async Task<TAggregate> GetLatestWithSnapshot(Guid aggregateId, ISnapshot snapshot)
         {
-            var additionalEvents = eventStream.All(aggregateId.ToString())
-                                              .Result
-                                              .Where(e => e.SequenceNumber > snapshot.Version);
+            var additionalEvents = (await eventStream.All(aggregateId.ToString()))
+                .Where(e => e.SequenceNumber > snapshot.Version);
 
             return AggregateType<TAggregate>.FromSnapshot(
                 snapshot,
                 additionalEvents.Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName)));
         }
 
-        private TAggregate GetLatestWithoutSnapshot(Guid aggregateId)
+        private async Task<TAggregate> GetLatestWithoutSnapshot(Guid aggregateId)
         {
-            var events = eventStream.All(aggregateId.ToString())
-                                    .Result
-                                    .ToArray();
+            var events = (await eventStream.All(aggregateId.ToString())).ToArray();
 
             if (events.Any())
             {
@@ -81,11 +78,9 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="version">The version at which to retrieve the aggregate.</param>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public TAggregate GetVersion(Guid aggregateId, long version)
+        public async Task<TAggregate> GetVersion(Guid aggregateId, long version)
         {
-            var events = eventStream.UpToVersion(aggregateId.ToString(), version)
-                                    .Result
-                                    .ToArray();
+            var events = (await eventStream.UpToVersion(aggregateId.ToString(), version)).ToArray();
 
             if (events.Any())
             {
@@ -103,11 +98,9 @@ namespace Microsoft.Its.Domain.Testing
         /// <returns>
         /// The deserialized aggregate, or null if none exists with the specified id.
         /// </returns>
-        public TAggregate GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate)
+        public async Task<TAggregate> GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate)
         {
-            var events = eventStream.AsOfDate(aggregateId.ToString(), asOfDate)
-                                    .Result
-                                    .ToArray();
+            var events = (await eventStream.AsOfDate(aggregateId.ToString(), asOfDate)).ToArray();
 
             if (events.Any())
             {
@@ -121,16 +114,16 @@ namespace Microsoft.Its.Domain.Testing
         ///     Persists the state of the specified aggregate by adding new events to the event store.
         /// </summary>
         /// <param name="aggregate">The aggregate to persist.</param>
-        public void Save(TAggregate aggregate)
+        public async Task Save(TAggregate aggregate)
         {
             var events = aggregate.PendingEvents.ToArray();
 
             foreach (var e in events)
             {
-                eventStream.Append(new[]
+                await eventStream.Append(new[]
                 {
                     e.ToStoredEvent()
-                }).Wait();
+                });
 
                 e.SetAggregate(aggregate);
             }
@@ -141,7 +134,9 @@ namespace Microsoft.Its.Domain.Testing
 
             // publish the events
             bus.PublishAsync(events)
-               .Do(onNext: e => { },
+               .Do(onNext: e =>
+               {
+               },
                    onError: ex => Console.WriteLine(ex.ToString()))
                .Wait();
         }
@@ -151,12 +146,11 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="aggregate">The aggregate to refresh.</param>
         /// <remarks>Events not present in the in-memory aggregate will not be re-fetched from the event store.</remarks>
-        public void Refresh(TAggregate aggregate)
+        public async Task Refresh(TAggregate aggregate)
         {
-            var newEvents = eventStream.All(id: aggregate.Id.ToString())
-                                       .Result
-                                       .Where(e => e.SequenceNumber > aggregate.Version)
-                                       .Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName));
+            var newEvents = (await eventStream.All(id: aggregate.Id.ToString()))
+                .Where(e => e.SequenceNumber > aggregate.Version)
+                .Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName));
 
             aggregate.Update(newEvents);
         }

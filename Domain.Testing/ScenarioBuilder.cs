@@ -253,7 +253,7 @@ namespace Microsoft.Its.Domain.Testing
 
                              es.Select(e => e.AggregateId).Distinct().ForEach(id =>
                              {
-                                 var aggregate = repository.GetLatest(id);
+                                 var aggregate = repository.GetLatest(id).Result;
                                  scenario.aggregates.Add(aggregate);
                              });
                          });

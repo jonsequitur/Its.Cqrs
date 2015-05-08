@@ -46,10 +46,11 @@ namespace Microsoft.Its.Domain.Api.Tests
         }
 
         [Test]
-        public void Posting_command_JSON_applies_a_command_with_the_specified_name_to_an_aggregate_with_the_specified_id()
+        public async Task Posting_command_JSON_applies_a_command_with_the_specified_name_to_an_aggregate_with_the_specified_id()
         {
             var order = new Order(Guid.NewGuid(),
-                                  new Order.CustomerInfoChanged { CustomerName = "Joe" }).SaveToEventStore();
+                                  new Order.CustomerInfoChanged { CustomerName = "Joe" });
+            await order.SaveToEventStore();
             var json = new AddItem
             {
                 Quantity = 5,
@@ -69,17 +70,18 @@ namespace Microsoft.Its.Domain.Api.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-            var updatedOrder = new SqlEventSourcedRepository<Order>().GetLatest(order.Id);
+            var updatedOrder = await new SqlEventSourcedRepository<Order>().GetLatest(order.Id);
 
             updatedOrder.Items.Single().Quantity.Should().Be(5);
         }
 
         [Test]
-        public void Posting_an_invalid_command_does_not_affect_the_aggregate_state()
+        public async Task Posting_an_invalid_command_does_not_affect_the_aggregate_state()
         {
             var order = new Order(Guid.NewGuid(),
                                   new Order.CustomerInfoChanged { CustomerName = "Joe" },
-                                  new Order.Fulfilled()).SaveToEventStore();
+                                  new Order.Fulfilled());
+            await order.SaveToEventStore();
             var json = new AddItem
             {
                 Quantity = 5,
@@ -99,7 +101,7 @@ namespace Microsoft.Its.Domain.Api.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-            var updatedOrder = new SqlEventSourcedRepository<Order>().GetLatest(order.Id);
+            var updatedOrder = await new SqlEventSourcedRepository<Order>().GetLatest(order.Id);
 
             updatedOrder.Items.Count().Should().Be(0);
         }
@@ -130,11 +132,12 @@ namespace Microsoft.Its.Domain.Api.Tests
         }
 
         [Test]
-        public void Posting_unauthorized_command_JSON_returns_403_Forbidden()
+        public async Task Posting_unauthorized_command_JSON_returns_403_Forbidden()
         {
             var order = new Order(Guid.NewGuid(),
                                   new Order.CustomerInfoChanged { CustomerName = "Joe" },
-                                  new Order.Fulfilled()).SaveToEventStore();
+                                  new Order.Fulfilled());
+            await order.SaveToEventStore();
 
             Command<Order>.AuthorizeDefault = (o, command) => false;
             var request = new HttpRequestMessage(HttpMethod.Post, string.Format("http://contoso.com/orders/{0}/cancel", order.Id))
@@ -144,7 +147,7 @@ namespace Microsoft.Its.Domain.Api.Tests
 
             var client = new TestApi<Order>().GetClient();
 
-            var response = client.SendAsync(request).Result;
+            var response = await client.SendAsync(request);
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
@@ -157,7 +160,7 @@ namespace Microsoft.Its.Domain.Api.Tests
             var testApi = new TestApi<Order>();
             var repository = new Mock<IEventSourcedRepository<Order>>();
             repository.Setup(r => r.GetLatest(It.IsAny<Guid>()))
-                      .Returns(order);
+                      .Returns(Task.FromResult(order));
             repository.Setup(r => r.Save(It.IsAny<Order>()))
                       .Throws(new ConcurrencyException("oops!", new IEvent[0], new Exception("inner oops")));
             testApi.Container.Register(c => repository.Object);
@@ -204,7 +207,8 @@ namespace Microsoft.Its.Domain.Api.Tests
         public async Task An_ETag_header_is_applied_to_the_command()
         {
             var order = new Order(Guid.NewGuid(),
-                                  new Order.CustomerInfoChanged { CustomerName = "Joe" }).SaveToEventStore();
+                                  new Order.CustomerInfoChanged { CustomerName = "Joe" });
+            await order.SaveToEventStore();
             var json = new AddItem
             {
                 Quantity = 5,
@@ -235,7 +239,7 @@ namespace Microsoft.Its.Domain.Api.Tests
             response1.ShouldSucceed(HttpStatusCode.OK);
             response2.ShouldFailWith(HttpStatusCode.NotModified);
 
-            var updatedOrder = new SqlEventSourcedRepository<Order>().GetLatest(order.Id);
+            var updatedOrder = await new SqlEventSourcedRepository<Order>().GetLatest(order.Id);
             updatedOrder.Items.Single().Quantity.Should().Be(5);
         }
     }

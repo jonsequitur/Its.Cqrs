@@ -17,17 +17,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [TestFixture]
     public class EventStoreSeedingTests
     {
-        private EventStoreDatabaseInitializer<EventStoreDbContext> eventStoreInitializer;
-
         private const string EventStoreConnectionString =
             @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsEventStoreSeedingTests";
 
         [SetUp]
         public void SetUp()
         {
-            Database.Delete(EventStoreConnectionString);
-            eventStoreInitializer = new EventStoreDatabaseInitializer<EventStoreDbContext>();
-            Database.SetInitializer(eventStoreInitializer);
+            if (Database.Exists(EventStoreConnectionString))
+            {
+                Database.Delete(EventStoreConnectionString);
+            }
+            Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
             EventStoreDbContext.NameOrConnectionString = EventStoreConnectionString;
         }
 
@@ -37,7 +37,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var numberOfEventsToSeed = Any.PositiveInt(100);
             var methodName = MethodBase.GetCurrentMethod().Name;
 
-            eventStoreInitializer.OnSeed = ctx =>
+            var eventStoreInitializer1 = new EventStoreDatabaseInitializer<EventStoreDbContext>();
+            eventStoreInitializer1.OnSeed = ctx =>
             {
                 var aggregateId = Guid.NewGuid();
                 Enumerable.Range(20, numberOfEventsToSeed)
@@ -53,7 +54,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var eventStore = new EventStoreDbContext())
             {
-                eventStoreInitializer.InitializeDatabase(eventStore);
+                eventStoreInitializer1.InitializeDatabase(eventStore);
                 eventStore.Events.Count().Should().Be(numberOfEventsToSeed);
             }
         }
@@ -61,7 +62,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void SeedFromFile_can_be_used_to_seed_the_event_store_from_config()
         {
-            eventStoreInitializer.OnSeed = ctx =>
+            var eventStoreInitializer1 = new EventStoreDatabaseInitializer<EventStoreDbContext>();
+            eventStoreInitializer1.OnSeed = ctx =>
             {
                 var file = Settings.GetFile(f => f.Name == "Events.json");
                 ctx.SeedFromFile(file);
@@ -69,7 +71,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var eventStore = new EventStoreDbContext())
             {
-                eventStoreInitializer.InitializeDatabase(eventStore);
+                eventStoreInitializer1.InitializeDatabase(eventStore);
 
                 eventStore.Events.Count().Should().Be(8);
             }

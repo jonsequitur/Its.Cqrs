@@ -2,7 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.Its.Domain.Serialization;
 using log = Its.Log.Lite.Log;
@@ -36,20 +39,19 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        private TAggregate Get(Guid id, long? version = null, DateTimeOffset? asOfDate = null)
+        private async Task<TAggregate> Get(Guid id, long? version = null, DateTimeOffset? asOfDate = null)
         {
             TAggregate aggregate = null;
             ISnapshot snapshot = null;
-            
+
             if (AggregateType<TAggregate>.SupportsSnapshots)
             {
-                snapshot = Configuration.Current
-                                        .SnapshotRepository()
-                                        .GetSnapshot(id, version, asOfDate)
-                                        .Result;
+                snapshot = await Configuration.Current
+                                              .SnapshotRepository()
+                                              .GetSnapshot(id, version, asOfDate);
             }
 
-            using (new TransactionScope(TransactionScopeOption.Suppress))
+            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var context = GetEventStoreContext())
             {
                 var streamName = AggregateType<TAggregate>.EventStreamName;
@@ -72,7 +74,7 @@ namespace Microsoft.Its.Domain.Sql
                     events = events.Where(e => e.UtcTime <= d);
                 }
 
-                var eventsArray = events.ToArray();
+                var eventsArray = await events.ToArrayAsync();
 
                 if (snapshot != null)
                 {
@@ -96,9 +98,9 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public TAggregate GetLatest(Guid aggregateId)
+        public async Task<TAggregate> GetLatest(Guid aggregateId)
         {
-            return Get(aggregateId);
+            return await Get(aggregateId);
         }
 
         /// <summary>
@@ -107,9 +109,9 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="version">The version at which to retrieve the aggregate.</param>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public TAggregate GetVersion(Guid aggregateId, long version)
+        public async Task<TAggregate> GetVersion(Guid aggregateId, long version)
         {
-            return Get(aggregateId, version: version);
+            return await Get(aggregateId, version: version);
         }
 
         /// <summary>
@@ -120,9 +122,9 @@ namespace Microsoft.Its.Domain.Sql
         /// <returns>
         /// The deserialized aggregate, or null if none exists with the specified id.
         /// </returns>
-        public TAggregate GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate)
+        public async Task<TAggregate> GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate)
         {
-            return Get(aggregateId, asOfDate: asOfDate);
+            return await Get(aggregateId, asOfDate: asOfDate);
         }
 
         /// <summary>
@@ -130,24 +132,25 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="aggregate">The aggregate to refresh.</param>
         /// <remarks>Events not present in the in-memory aggregate will not be re-fetched from the event store.</remarks>
-        public void Refresh(TAggregate aggregate)
+        public async Task Refresh(TAggregate aggregate)
         {
             IEvent[] events;
 
-            using (new TransactionScope(TransactionScopeOption.Suppress))
+            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var context = GetEventStoreContext())
             {
                 var streamName = AggregateType<TAggregate>.EventStreamName;
 
-                events = context.Events
-                                .Where(e => e.StreamName == streamName)
-                                .Where(e => e.AggregateId == aggregate.Id)
-                                .Where(e => e.SequenceNumber > aggregate.Version)
-                                .ToArray()
-                                .Select(e => e.ToDomainEvent())
-                                .ToArray();
+                var storedEvents = await context.Events
+                                                .Where(e => e.StreamName == streamName)
+                                                .Where(e => e.AggregateId == aggregate.Id)
+                                                .Where(e => e.SequenceNumber > aggregate.Version)
+                                                .ToArrayAsync();
+                events = storedEvents
+                    .Select(e => e.ToDomainEvent())
+                    .ToArray();
             }
-            
+
             aggregate.Update(events);
         }
 
@@ -156,7 +159,7 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="aggregate">The aggregate to persist.</param>
         /// <exception cref="ConcurrencyException"></exception>
-        public void Save(TAggregate aggregate)
+        public async Task Save(TAggregate aggregate)
         {
             if (aggregate == null)
             {
@@ -183,7 +186,8 @@ namespace Microsoft.Its.Domain.Sql
                                                    new TransactionOptions
                                                    {
                                                        IsolationLevel = IsolationLevel.ReadCommitted
-                                                   }))
+                                                   }, 
+                                                   TransactionScopeAsyncFlowOption.Enabled))
             using (var context = GetEventStoreContext())
             {
                 foreach (var storableEvent in storableEvents)
@@ -193,7 +197,7 @@ namespace Microsoft.Its.Domain.Sql
 
                 try
                 {
-                    context.SaveChanges();
+                    await context.SaveChangesAsync();
                     tran.Complete();
                 }
                 catch (Exception exception)
@@ -228,7 +232,7 @@ namespace Microsoft.Its.Domain.Sql
             // publish the events
             bus.PublishAsync(events)
                .Subscribe(
-                   onNext: e => { },
+                   onNext: _ => { },
                    onError: ex => log.Write(() => ex));
         }
 

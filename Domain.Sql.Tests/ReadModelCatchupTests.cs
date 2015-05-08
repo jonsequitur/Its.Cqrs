@@ -35,7 +35,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         private readonly TimeSpan MaxWaitTime = TimeSpan.FromSeconds(5);
 
         [Test]
-        public void ReadModelCatchup_only_queries_events_since_the_last_consumed_event_id()
+        public async Task ReadModelCatchup_only_queries_events_since_the_last_consumed_event_id()
         {
             var bus = new FakeEventBus();
             var repository = new SqlEventSourcedRepository<Order>(bus);
@@ -47,14 +47,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Price = 1m,
                 ProductName = "Widget"
             });
-            repository.Save(order);
+            await repository.Save(order);
 
             // subscribe one projector for catchup
             var projector1 = new Projector1();
             using (var catchup = CreateReadModelCatchup(projector1))
             {
                 catchup.Progress.ForEachAsync(s => Console.WriteLine(s));
-                catchup.Run();
+                await catchup.Run();
             }
 
             order.Apply(new AddItem
@@ -62,14 +62,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Price = 1m,
                 ProductName = "Widget"
             });
-            repository.Save(order);
+            await repository.Save(order);
 
             // subscribe both projectors
             var projector2 = new Projector2();
             using (var catchup = CreateReadModelCatchup(projector1, projector2))
             {
                 catchup.Progress.ForEachAsync(s => Console.WriteLine(s));
-                catchup.Run();
+                await catchup.Run();
             }
 
             projector1.CallCount.Should().Be(2, "A given event should only be passed to a given projector once");
@@ -77,7 +77,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelCatchup_does_not_query_events_that_no_subscribed_projector_is_interested_in()
+        public async Task ReadModelCatchup_does_not_query_events_that_no_subscribed_projector_is_interested_in()
         {
             Events.Write(100, _ => Events.Any());
             Events.Write(1, _ => new Order.Created());
@@ -103,7 +103,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                            }
                            eventsQueried++;
                        });
-                catchup.DisposeAfter(r => r.Run());
+                await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -118,7 +119,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
 
         [Test]
-        public void ReadModelCatchup_queries_events_that_match_both_aggregate_and_event_type()
+        public async Task ReadModelCatchup_queries_events_that_match_both_aggregate_and_event_type()
         {
             const int numOfOrderCreatedEvents = 5;
 
@@ -134,7 +135,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 catchup.Progress
                        .Where(s => !s.IsStartOfBatch)
                        .ForEachAsync(s => { eventsQueried++; });
-                catchup.DisposeAfter(r => r.Run());
+                await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -142,7 +144,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelCatchup_queries_all_events_if_IEvent_is_subscribed()
+        public async Task ReadModelCatchup_queries_all_events_if_IEvent_is_subscribed()
         {
             Events.Write(100, _ => Events.Any());
 
@@ -154,7 +156,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 catchup.Progress
                        .Where(s => !s.IsStartOfBatch)
                        .ForEachAsync(s => { eventsQueried++; });
-                catchup.DisposeAfter(r => r.Run());
+                 await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -162,7 +165,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelCatchup_queries_all_events_if_Event_is_subscribed()
+        public async Task ReadModelCatchup_queries_all_events_if_Event_is_subscribed()
         {
             Events.Write(100, _ => Events.Any());
 
@@ -174,7 +177,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 catchup.Progress
                        .Where(s => !s.IsStartOfBatch)
                        .ForEachAsync(s => { eventsQueried++; });
-                catchup.DisposeAfter(r => r.Run());
+                
+                await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
+
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -182,7 +188,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelCatchup_queries_all_events_for_the_aggregate_if_IEvent_T_is_subscribed()
+        public async Task ReadModelCatchup_queries_all_events_for_the_aggregate_if_IEvent_T_is_subscribed()
         {
             var orderEvents = 0;
             Events.Write(100, _ =>
@@ -203,7 +209,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 catchup.Progress
                        .Where(s => !s.IsStartOfBatch)
                        .ForEachAsync(s => { eventsQueried++; });
-                catchup.DisposeAfter(r => r.Run());
+                 await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -211,7 +218,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelCatchup_queries_all_events_for_the_aggregate_if_Event_T_is_subscribed()
+        public async Task ReadModelCatchup_queries_all_events_for_the_aggregate_if_Event_T_is_subscribed()
         {
             var orderEvents = 0;
             Events.Write(100, _ =>
@@ -231,8 +238,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 catchup.Progress
                        .Where(s => !s.IsStartOfBatch)
-                       .ForEachAsync(s => { eventsQueried++; });
-                catchup.DisposeAfter(r => r.Run());
+                       .ForEachAsync(s =>
+                       {
+                           eventsQueried++;
+                       });
+                await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -240,7 +251,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelCatchup_queries_event_subtypes_correctly()
+        public async Task ReadModelCatchup_queries_event_subtypes_correctly()
         {
             var subclassedEventsWritten = 0;
             Events.Write(100, _ =>
@@ -265,7 +276,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 catchup.Progress
                        .Where(s => !s.IsStartOfBatch)
                        .ForEachAsync(s => { eventsQueried++; });
-                catchup.DisposeAfter(r => r.Run());
+                await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -273,7 +285,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelCatchup_queries_scheduled_commands_if_IScheduledCommand_is_subscribed()
+        public async Task ReadModelCatchup_queries_scheduled_commands_if_IScheduledCommand_is_subscribed()
         {
             var scheduledCommandsWritten = 0;
             var scheduledCommandsQueried = 0;
@@ -310,7 +322,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                            }
                            eventsQueried++;
                        });
-                catchup.DisposeAfter(r => r.Run());
+                await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -318,7 +331,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
         
         [Test]
-        public void ReadModelCatchup_queries_scheduled_commands_if_IScheduledCommandT_is_subscribed()
+        public async Task ReadModelCatchup_queries_scheduled_commands_if_IScheduledCommandT_is_subscribed()
         {
             var scheduledCommandsWritten = 0;
             var scheduledCommandsQueried = 0;
@@ -355,7 +368,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                            }
                            eventsQueried++;
                        });
-                catchup.DisposeAfter(r => r.Run());
+                await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -363,7 +377,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelCatchup_queries_scheduled_commands_if_CommandScheduled_is_subscribed()
+        public async Task ReadModelCatchup_queries_scheduled_commands_if_CommandScheduled_is_subscribed()
         {
             var scheduledCommandsWritten = 0;
             var scheduledCommandsQueried = 0;
@@ -400,7 +414,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                            }
                            eventsQueried++;
                        });
-                catchup.DisposeAfter(r => r.Run());
+                await catchup.Run()
+                             .ContinueWith(r => catchup.Dispose());
                 Console.WriteLine(new { eventsQueried });
             }
 
@@ -408,13 +423,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelCatchup_StartAtEventId_can_be_used_to_avoid_requery_of_previous_events()
+        public async Task ReadModelCatchup_StartAtEventId_can_be_used_to_avoid_requery_of_previous_events()
         {
             var lastEventId = Events.Write(50, _ => Events.Any());
 
             var eventsProjected = 0;
 
-            var projector = Projector.Create<Event>(e => { eventsProjected++; }).Named(MethodBase.GetCurrentMethod().Name);
+            var projector = Projector.Create<Event>(e => { eventsProjected++; })
+                                     .Named(MethodBase.GetCurrentMethod().Name);
 
             using (var catchup = new ReadModelCatchup(projector)
             {
@@ -428,7 +444,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void When_Run_is_called_while_already_running_then_it_skips_the_run()
+        public async Task When_Run_is_called_while_already_running_then_it_skips_the_run()
         {
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
             new Order().Apply(new AddItem
@@ -436,16 +452,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Price = 1m,
                 ProductName = MethodBase.GetCurrentMethod().Name
             });
-            repository.Save(new Order());
+            await repository.Save(new Order());
             var mre = new ManualResetEventSlim();
             var progress = new List<ReadModelCatchupStatus>();
 
-            var signal = new ReplaySubject<Unit>();
             var projector = new Projector<Order.ItemAdded>(() => new ReadModelDbContext())
             {
                 OnUpdate = (work, e) =>
                 {
-                    signal.OnNext(Unit.Default);
                     mre.Wait(20000);
                 }
             };
@@ -455,20 +469,23 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 catchup.Progress.ForEachAsync(s =>
                 {
                     progress.Add(s);
-                    Console.WriteLine(s);
+                    Console.WriteLine("progress: " + s);
                 });
 
-                Task.Run(() => { catchup.Run(); });
+#pragma warning disable 4014
+                // don't await
+                catchup.Run();
+#pragma warning restore 4014
 
                 mre.Set();
-                catchup.Run();
+                await catchup.Run();
             }
 
             progress.Should().ContainSingle(s => s.IsStartOfBatch);
         }
 
         [Test]
-        public void When_a_projector_update_fails_then_an_entry_is_added_to_EventHandlingErrors()
+        public async Task When_a_projector_update_fails_then_an_entry_is_added_to_EventHandlingErrors()
         {
             // arrange
             var errorMessage = Any.Paragraph(10);
@@ -484,12 +501,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Price = 1m,
                 ProductName = productName
             });
-            repository.Save(order);
+            await repository.Save(order);
 
             // act
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             // assert
@@ -504,7 +521,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void Events_that_cannot_be_deserialized_to_the_expected_type_are_logged_as_EventHandlingErrors()
+        public async Task Events_that_cannot_be_deserialized_to_the_expected_type_are_logged_as_EventHandlingErrors()
         {
             var badEvent = new StorableEvent
             {
@@ -520,12 +537,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (var eventStore = new EventStoreDbContext())
             {
                 eventStore.Events.Add(badEvent);
-                eventStore.SaveChanges();
+                await eventStore.SaveChangesAsync();
             }
 
             using (var catchup = CreateReadModelCatchup(new Projector1()))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             using (var readModels = new ReadModelDbContext())
@@ -545,7 +562,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void When_an_exception_is_thrown_during_a_read_model_update_then_it_is_logged_on_its_bus()
+        public async Task When_an_exception_is_thrown_during_a_read_model_update_then_it_is_logged_on_its_bus()
         {
             var projector = new Projector<Order.ItemAdded>(() => new ReadModelDbContext())
             {
@@ -562,13 +579,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
 
             var errors = new List<Domain.EventHandlingError>();
-            using (var readModelCatchup = CreateReadModelCatchup(projector))
+            using (var catchup = CreateReadModelCatchup(projector))
             using (var db = new EventStoreDbContext())
             {
                 db.Events.Add(itemAdded.ToStorableEvent());
                 db.SaveChanges();
-                readModelCatchup.EventBus.Errors.Subscribe(errors.Add);
-                readModelCatchup.Run();
+                catchup.EventBus.Errors.Subscribe(errors.Add);
+                await catchup.Run();
             }
 
             var error = errors.Single(e => e.AggregateId == itemAdded.AggregateId);
@@ -581,7 +598,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         [Ignore("Test needs rebuilding")]
         [Test]
-        public void Database_command_timeouts_during_catchup_do_not_interrupt_catchup()
+        public async Task Database_command_timeouts_during_catchup_do_not_interrupt_catchup()
         {
             // reset read model tracking to 0
             new ReadModelDbContext().DisposeAfter(c =>
@@ -597,7 +614,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var exceptions = new Stack<Exception>(Enumerable.Range(1, 2)
                                                             .Select(_ => new InvalidOperationException("Invalid attempt to call IsDBNull when reader is closed.")));
 
-            int count = 0;
+            var count = 0;
             var flakyEvents = new FlakyEventStream(
                 Enumerable.Range(1, 1000)
                           .Select(i => new StorableEvent
@@ -632,7 +649,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             projector.CallCount.Should().Be(1000);
@@ -640,7 +657,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void Insertion_of_new_events_during_catchup_does_not_interrupt_catchup()
+        public async Task Insertion_of_new_events_during_catchup_does_not_interrupt_catchup()
         {
             var barrier = new Barrier(2);
 
@@ -654,10 +671,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             });
             Enumerable.Range(1, 100).ForEach(_ => addEvent());
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
-            repository.Save(order);
+            await repository.Save(order);
 
             // queue the catchup on a background task
+#pragma warning disable 4014
+            // don't await
             Task.Run(() =>
+#pragma warning restore 4014
             {
                 var projector = new Projector1
                 {
@@ -678,7 +698,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 {
                     var events = db.Events.Where(e => e.Id > HighestEventId);
                     Console.WriteLine(string.Format("starting read model catchup for {0} events", events.Count()));
-                    catchup.Run();
+                    catchup.Run().Wait();
                     Console.WriteLine("done with read model catchup");
                     barrier.SignalAndWait(MaxWaitTime); //3
                 }
@@ -713,7 +733,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 using (var catchup = CreateReadModelCatchup(projector2))
                 {
-                    catchup.Run();
+                    await catchup.Run();
                 }
 
                 readModels.Entry(readModelInfo).Reload();
@@ -722,7 +742,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void When_not_using_Update_then_failed_writes_do_not_interrupt_catchup()
+        public async Task When_not_using_Update_then_failed_writes_do_not_interrupt_catchup()
         {
             // arrange
             // preload some events for the catchup. replay will hit the barrier on the last one.
@@ -736,8 +756,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             });
             Enumerable.Range(1, 30).ForEach(_ => addEvent());
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
-            repository.Save(order);
-            int count = 0;
+            await repository.Save(order);
+            var count = 0;
             var projector = new Projector1
             {
                 OnUpdate = (work, e) =>
@@ -757,7 +777,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // act
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             // assert
@@ -765,7 +785,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void When_using_Update_then_failed_writes_do_not_interrupt_catchup()
+        public async Task When_using_Update_then_failed_writes_do_not_interrupt_catchup()
         {
             // preload some events for the catchup. replay will hit the barrier on the last one.
             var order = new Order();
@@ -778,8 +798,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             });
             Enumerable.Range(1, 30).ForEach(_ => addEvent());
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
-            repository.Save(order);
-            int count = 0;
+            await repository.Save(order);
+            var count = 0;
             Projector1 projector = null;
             projector = new Projector1
             {
@@ -811,7 +831,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // act
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             // assert
@@ -819,7 +839,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void When_using_Update_then_failed_writes_are_logged_to_EventHandlingErrors()
+        public async Task When_using_Update_then_failed_writes_are_logged_to_EventHandlingErrors()
         {
             // preload some events for the catchup. replay will hit the barrier on the last one.
             var order = new Order();
@@ -831,7 +851,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Price = .01m
             });
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
-            repository.Save(order);
+            await repository.Save(order);
             Projector1 projector = null;
             projector = new Projector1
             {
@@ -860,7 +880,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // act
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             // assert
@@ -903,27 +923,27 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void Run_returns_CatchupRanAndHandledNewEvents_if_the_catchup_was_not_currently_running()
+        public async Task Run_returns_CatchupRanAndHandledNewEvents_if_the_catchup_was_not_currently_running()
         {
             Events.Write(5);
 
             using (var catchup = CreateReadModelCatchup(Projector.Create<IEvent>(e => { })))
             {
-                catchup.Run().Should().Be(ReadModelCatchupResult.CatchupRanAndHandledNewEvents);
+                (await catchup.Run()).Should().Be(ReadModelCatchupResult.CatchupRanAndHandledNewEvents);
             }
         }
 
         [Test]
-        public void Run_returns_CatchupRanAndHandledNewEvents_if_the_catchup_was_not_currently_running_and_there_were_no_events()
+        public async Task Run_returns_CatchupRanAndHandledNewEvents_if_the_catchup_was_not_currently_running_and_there_were_no_events()
         {
             using (var catchup = CreateReadModelCatchup(Projector.Create<IEvent>(e => { })))
             {
-                catchup.Run().Should().Be(ReadModelCatchupResult.CatchupRanButNoNewEvents);
+                (await catchup.Run()).Should().Be(ReadModelCatchupResult.CatchupRanButNoNewEvents);
             }
         }
 
         [Test]
-        public void Run_returns_CatchupAlreadyInProgress_if_the_catchup_was_currently_running()
+        public async Task Run_returns_CatchupAlreadyInProgress_if_the_catchup_was_currently_running()
         {
             Events.Write(1);
             var barrier = new Barrier(2);
@@ -933,9 +953,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 barrier.SignalAndWait(1000);
             })))
             {
-                Task.Run(() => catchup.Run());
-                barrier.SignalAndWait(1000);
-                catchup.Run().Should().Be(ReadModelCatchupResult.CatchupAlreadyInProgress);  
+#pragma warning disable 4014
+                // don't await catchup
+                catchup.Run();
+#pragma warning restore 4014
+                barrier.SignalAndWait(500);
+                (await catchup.Run()).Should().Be(ReadModelCatchupResult.CatchupAlreadyInProgress);  
             }
         }
 
@@ -952,12 +975,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     Console.WriteLine(s);
                     lastEventId = s.CurrentEventId;
                 });
-
-                Task.Run(() =>
-                {
-                    catchup.Run();
-                    catchup.Dispose();
-                });
+                
+#pragma warning disable 4014
+                // don't await
+                catchup.Run()
+                       .ContinueWith(r => catchup.Dispose());
+#pragma warning restore 4014
 
                 await catchup.Progress;
             }
@@ -974,7 +997,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 var statuses = await catchup.SingleBatchAsync().ToArray();
                 
-                var ids = statuses.Select(s => s.CurrentEventId);
+                var ids = statuses.Select(s => s.CurrentEventId).ToArray();
                 
                 Console.WriteLine(new { ids }.ToLogString());
                 
@@ -1032,7 +1055,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Thread.Sleep(1000);
             })))
             {
-                Task.Run(() => catchup.Run());
+#pragma warning disable 4014
+                // don't await
+                catchup.Run();
+#pragma warning restore 4014
                 Thread.Sleep(1000);
                 var status = await catchup.SingleBatchAsync();
 
@@ -1043,10 +1069,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void When_a_Progress_subscriber_throws_then_catchup_continues()
+        public async Task When_a_Progress_subscriber_throws_then_catchup_continues()
         {
             Events.Write(10);
-            int projectedEventCount = 0;
+            var projectedEventCount = 0;
 
             using (var catchup = CreateReadModelCatchup(Projector.Create<IEvent>(e =>
             {
@@ -1058,7 +1084,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     throw new Exception("oops!");
                 });
 
-                catchup.Run();
+                await catchup.Run();
             }
 
             projectedEventCount.Should().Be(10);

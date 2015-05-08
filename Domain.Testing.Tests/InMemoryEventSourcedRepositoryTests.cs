@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Tests;
@@ -45,17 +46,17 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public override void When_storage_fails_then_no_events_are_published()
+        public override async Task When_storage_fails_then_no_events_are_published()
         {
             var repository = CreateRepository<Order>(onSave: () => { throw new ConcurrencyException("oops!"); });
 
             var order = new Order();
             Action save = () =>
-                          repository.Save(order);
+                          repository.Save(order).Wait();
 
             save.ShouldThrow<ConcurrencyException>();
 
-            (Configuration.Current.EventBus as FakeEventBus)
+            ((FakeEventBus)Configuration.Current.EventBus)
                 .PublishedEvents()
                 .Count()
                 .Should()
@@ -63,7 +64,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public override void Events_at_the_end_of_the_sequence_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_Version_to_be_incorrect()
+        public override async Task Events_at_the_end_of_the_sequence_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_Version_to_be_incorrect()
         {
             var orderId = Guid.NewGuid();
             var events = new List<IStoredEvent>
@@ -87,16 +88,16 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             var repository = CreateRepository<Order>();
 
-            var order = repository.GetLatest(orderId);
+            var order = await repository.GetLatest(orderId);
 
             order.Version.Should().Be(2);
         }
 
         [Test]
-        public override void Events_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_sourcing_to_fail()
+        public override async Task Events_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_sourcing_to_fail()
         {
             var orderId = Guid.NewGuid();
-            var events = new List<IStoredEvent>
+            var events = new[]
             {
                 new InMemoryStoredEvent
                 {
@@ -114,17 +115,17 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 }.ToStoredEvent()
             };
 
-            SaveEventsDirectly(events.ToArray());
+            await SaveEventsDirectly(events);
 
             var repository = CreateRepository<Order>();
 
-            var order = repository.GetLatest(orderId);
+            var order = await repository.GetLatest(orderId);
 
             order.CustomerName.Should().Be("Waylon Jennings");
         }
 
         [Test]
-        public override void Events_that_cannot_be_deserialized_due_to_unknown_member_do_not_cause_sourcing_to_fail()
+        public override async Task Events_that_cannot_be_deserialized_due_to_unknown_member_do_not_cause_sourcing_to_fail()
         {
             var orderId = Guid.NewGuid();
             var goodEvent = new Order.CustomerInfoChanged
@@ -146,25 +147,18 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 Timestamp = DateTimeOffset.UtcNow
             };
 
-            SaveEventsDirectly(goodEvent, badEvent);
+            await SaveEventsDirectly(goodEvent, badEvent);
 
             var repository = CreateRepository<Order>();
 
-            var order = repository.GetLatest(orderId);
+            var order = await repository.GetLatest(orderId);
 
             order.CustomerName.Should().Be("Willie Nelson");
         }
 
-        protected override void SaveEventsDirectly(params object[] events)
+        protected override async Task SaveEventsDirectly(params IStoredEvent[] events)
         {
-            eventStream.Append(
-                events
-                    .Select(e => e.IfTypeIs<IStoredEvent>()
-                                  .Else(() => e.IfTypeIs<IEvent>()
-                                               .Then(ee => ee.ToStoredEvent()))
-                                  .ElseDefault())
-                    .ToArray())
-                       .Wait();
+            await eventStream.Append(events);
         }
     }
 }

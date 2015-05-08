@@ -5,6 +5,7 @@ using System;
 using System.Data.Entity;
 using System.Linq;
 using System.Reactive.Concurrency;
+using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -34,7 +35,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public abstract CatchupWrapper PollEventStore(TimeSpan? interval = null,
                                                       IScheduler scheduler = null);
 
-        public abstract ReadModelCatchupResult Run();
+        public abstract Task<ReadModelCatchupResult> Run();
 
         public abstract IObservable<ReadModelCatchupStatus> SingleBatchAsync(IScheduler scheduler = null);
 
@@ -128,9 +129,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             return this;
         }
 
-        public override ReadModelCatchupResult Run()
+        public override Task<ReadModelCatchupResult> Run()
         {
-            return catchup.Run();
+            return Task.Run(() => catchup.Run());
         }
 
         public override IObservable<ReadModelCatchupStatus> SingleBatchAsync(

@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Sql
 
             int count;
 
-            using (new TransactionScope(TransactionScopeOption.Suppress))
+            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var db = createEventStoreDbContext.IfNotNull()
                                                      .Then(create => create())
                                                      .Else(() => new EventStoreDbContext()))
@@ -34,7 +34,7 @@ namespace Microsoft.Its.Domain.Sql
             var now = Clock.Now();
             var progress = new List<EventHandlerProgress>();
 
-            using (new TransactionScope(TransactionScopeOption.Suppress))
+            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var db = createDbContext())
             {
                 db.Set<ReadModelInfo>()

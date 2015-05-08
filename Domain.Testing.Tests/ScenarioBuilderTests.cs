@@ -12,6 +12,7 @@ using Sample.Domain.Ordering.Commands;
 using System;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
@@ -86,7 +87,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public void If_no_aggregate_id_is_specified_when_calling_GetLatest_and_a_single_instance_is_in_the_scenario_then_it_is_returned()
+        public async Task If_no_aggregate_id_is_specified_when_calling_GetLatest_and_a_single_instance_is_in_the_scenario_then_it_is_returned()
         {
             var aggregateId = Any.Guid();
             var created = new Order.Created
@@ -96,7 +97,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             var scenario = CreateScenarioBuilder().AddEvents(created).Prepare();
 
-            var aggregate = scenario.GetLatest<Order>();
+            var aggregate = await scenario.GetLatest<Order>();
 
             aggregate.Should().NotBeNull();
             aggregate.Id.Should().Be(aggregateId);
@@ -114,7 +115,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     AggregateId = Any.Guid()
                 }).Prepare();
 
-            Action getLatest = () => scenario.GetLatest<Order>();
+            Action getLatest = () => scenario.GetLatest<Order>().Wait();
 
             getLatest.ShouldThrow<InvalidOperationException>();
         }
@@ -124,7 +125,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             var scenario = CreateScenarioBuilder().Prepare();
 
-            Action getLatest = () => scenario.GetLatest<Order>();
+            Action getLatest = () => scenario.GetLatest<Order>().Wait();
 
             getLatest.ShouldThrow<InvalidOperationException>();
         }
@@ -155,37 +156,38 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             var firstShipHandled = false;
             var secondShipHandled = false;
+            var handler = Domain.Projector.CreateDynamic(dynamicEvent =>
+            {
+                var @event = dynamicEvent as IEvent;
+                @event.IfTypeIs<CommandScheduled<Order>>()
+                      .ThenDo(c =>
+                      {
+                          var shipmentId = (c.Command as Ship).ShipmentId;
+                          Console.WriteLine("Handling [{0}] Shipment", shipmentId);
+                          if (shipmentId == "first")
+                          {
+                              firstShipHandled = true;
+                          }
+                          else if (shipmentId == "second")
+                          {
+                              secondShipHandled = true;
+                          }
+                      });
+            },
+                                                         "Order.Scheduled:Ship");
             CreateScenarioBuilder()
-                .AddHandler(Domain.Projector.CreateDynamic(dynamicEvent =>
-                                                           {
-                                                               var @event = dynamicEvent as IEvent;
-                                                               @event.IfTypeIs<CommandScheduled<Order>>()
-                                                                     .ThenDo(c =>
-                                                                             {
-                                                                                 var shipmentId = (c.Command as Ship).ShipmentId;
-                                                                                 Console.WriteLine("Handling [{0}] Shipment", shipmentId);
-                                                                                 if (shipmentId == "first")
-                                                                                 {
-                                                                                     firstShipHandled = true;
-                                                                                 }
-                                                                                 else if (shipmentId == "second")
-                                                                                 {
-                                                                                     secondShipHandled = true;
-                                                                                 }
-                                                                             });
-                                                           },
-                                                           "Order.Scheduled:Ship"))
+                .AddHandler(handler)
                 .AddEvents(
-                           new CommandScheduled<Order>
-                           {
-                               Command = new Ship() {ShipmentId = "first"},
-                               DueTime = DateTime.Now
-                           },
-                           new CommandScheduled<Order>
-                           {
-                               Command = new Ship() {ShipmentId = "second"},
-                               DueTime = DateTime.Now
-                           })
+                    new CommandScheduled<Order>
+                    {
+                        Command = new Ship { ShipmentId = "first" },
+                        DueTime = DateTime.Now
+                    },
+                    new CommandScheduled<Order>
+                    {
+                        Command = new Ship { ShipmentId = "second" },
+                        DueTime = DateTime.Now
+                    })
                 .Prepare();
 
             firstShipHandled.Should().BeTrue();
@@ -305,7 +307,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public void Projectors_added_after_Prepare_is_called_are_subscribed_to_future_events()
+        public async Task Projectors_added_after_Prepare_is_called_are_subscribed_to_future_events()
         {
             // arrange
             var onDeliveredCalls = 0;
@@ -331,8 +333,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
             customer.Apply(new ChangeEmailAddress(Any.Email()));
 
             // act
-            scenario.Save(order);
-            scenario.Save(customer);
+            await scenario.Save(order);
+            await scenario.Save(customer);
 
             // assert
             onDeliveredCalls.Should().Be(1);
@@ -365,7 +367,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public void When_event_handling_errors_occur_after_Prepare_then_they_can_be_verified_during_the_test()
+        public async Task When_event_handling_errors_occur_after_Prepare_then_they_can_be_verified_during_the_test()
         {
             // arrange
             var scenarioBuilder = CreateScenarioBuilder();
@@ -375,7 +377,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             }).Prepare();
             var order = new Order();
             order.Apply(new Deliver());
-            scenario.Save(order);
+            await scenario.Save(order);
 
             // act
             Action verify = () => scenario.VerifyNoEventHandlingErrors();
@@ -406,7 +408,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     new Order.Delivered())
                 .AddHandler(new Consequenter
                 {
-                    OnDelivered = e => onDeliveredCalls++,
+                    OnDelivered = e => onDeliveredCalls++
                 });
 
             // act
@@ -417,7 +419,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public void Events_that_are_saved_as_a_result_of_commands_can_be_verified_using_the_EventBus()
+        public async Task Events_that_are_saved_as_a_result_of_commands_can_be_verified_using_the_EventBus()
         {
             // arrange
             var builder = CreateScenarioBuilder();
@@ -425,7 +427,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var customerName = Any.FullName();
 
             // act
-            scenario.Save(new Order(new CreateOrder(customerName)));
+            await scenario.Save(new Order(new CreateOrder(customerName)));
 
             // assert
             builder.EventBus
@@ -550,7 +552,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public void Scheduled_commands_in_initial_events_are_executed_if_they_become_due_after_Prepare_is_called()
+        public async Task Scheduled_commands_in_initial_events_are_executed_if_they_become_due_after_Prepare_is_called()
         {
             using (VirtualClock.Start())
             {
@@ -575,7 +577,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
                 scenario.AdvanceClockBy(TimeSpan.FromDays(103));
 
-                scenario.GetLatest<Order>()
+                (await scenario.GetLatest<Order>())
                         .EventHistory
                         .Last()
                         .Should()
@@ -584,7 +586,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public void Recursive_scheduling_is_supported_when_the_scenario_clock_is_advanced()
+        public async Task Recursive_scheduling_is_supported_when_the_scenario_clock_is_advanced()
         {
             // arrange
             using (VirtualClock.Start(DateTimeOffset.Parse("2014-10-08 06:52:10 AM -07:00")))
@@ -597,14 +599,18 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     .Prepare();
 
                 // act
-                var account = scenario.GetLatest<CustomerAccount>()
+                var account = (await scenario.GetLatest<CustomerAccount>())
                                       .Apply(new RequestSpam())
                                       .Apply(new SendMarketingEmail());
-                scenario.Save(account);
+                await scenario.Save(account);
 
                 scenario.AdvanceClockBy(TimeSpan.FromDays((7*4) + 2));
 
-                account = scenario.GetLatest<CustomerAccount>();
+                Console.WriteLine("Waiting for scheduler to drain");
+
+                await Task.Delay(500);
+
+                account = await scenario.GetLatest<CustomerAccount>();
 
                 // assert
                 account.Events()
@@ -656,7 +662,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public void Recursive_scheduling_is_supported_when_the_virtual_clock_is_advanced()
+        public async Task Recursive_scheduling_is_supported_when_the_virtual_clock_is_advanced()
         {
             // arrange
             using (VirtualClock.Start(DateTimeOffset.Parse("2014-10-08 06:52:10 AM -07:00")))
@@ -669,14 +675,16 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     .Prepare();
 
                 // act
-                var account = scenario.GetLatest<CustomerAccount>()
+                var account = (await scenario.GetLatest<CustomerAccount>())
                                       .Apply(new RequestSpam())
                                       .Apply(new SendMarketingEmail());
-                scenario.Save(account);
+                await scenario.Save(account);
 
                 VirtualClock.Current.AdvanceBy(TimeSpan.FromDays((7*4) + 2));
 
-                account = scenario.GetLatest<CustomerAccount>();
+                await Task.Delay(500);
+
+                account = await scenario.GetLatest<CustomerAccount>();
 
                 // assert
                 account.Events()
@@ -728,7 +736,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public void Scheduled_commands_in_initial_events_are_not_executed_if_they_become_due_before_Prepare_is_called()
+        public async Task Scheduled_commands_in_initial_events_are_not_executed_if_they_become_due_before_Prepare_is_called()
         {
             var aggregateId = Any.Guid();
 
@@ -744,7 +752,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     .AdvanceClockBy(TimeSpan.FromDays(3))
                     .Prepare();
 
-                scenario.GetLatest<Order>(aggregateId)
+                (await scenario.GetLatest<Order>(aggregateId))
                         .EventHistory
                         .Last()
                         .Should()
@@ -753,7 +761,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public void Handlers_can_be_added_by_type_and_are_instantiated_by_the_internal_container()
+        public async Task Handlers_can_be_added_by_type_and_are_instantiated_by_the_internal_container()
         {
             var customerId = Guid.NewGuid();
             var customerName = Any.FullName();
@@ -767,11 +775,12 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var scenario = scenarioBuilder.Prepare();
             scenarioBuilder.AddHandlers(typeof (SideEffectingConsequenter));
 
-            var customerAccount = scenario.GetLatest<CustomerAccount>(customerId);
+            var customerAccount = await scenario.GetLatest<CustomerAccount>(customerId);
             customerAccount.Apply(new RequestNoSpam());
-            scenario.Save(customerAccount);
+            await scenario.Save(customerAccount);
 
-            scenario.GetLatest<CustomerAccount>(customerId).EmailAddress.Should().Be("devnull@nowhere.com");
+            var latest = await scenario.GetLatest<CustomerAccount>(customerId);
+            latest.EmailAddress.Should().Be("devnull@nowhere.com");
         }
 
         [Test]
@@ -834,7 +843,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             public void HaveConsequences(CustomerAccount.RequestedNoSpam @event)
             {
-                var customer = customerRepository.GetLatest(@event.AggregateId);
+                var customer = customerRepository.GetLatest(@event.AggregateId).Result;
                 customer.Apply(new ChangeEmailAddress
                 {
                     NewEmailAddress = "devnull@nowhere.com"

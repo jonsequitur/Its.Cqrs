@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
 
@@ -20,6 +19,7 @@ namespace Microsoft.Its.Domain.Sql
         private readonly long expectedNumberOfEvents;
         private readonly IEnumerable<StorableEvent> events;
         private readonly long startAtId;
+        private readonly IQueryable<StorableEvent> eventQuery;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExclusiveEventStoreCatchupQuery"/> class.
@@ -60,7 +60,7 @@ namespace Microsoft.Its.Domain.Sql
                     }
                 }
 
-                Debug.WriteLine(new { eventQuery });
+                this.eventQuery = eventQuery;
                 
                 expectedNumberOfEvents = eventQuery.Count(e => e.Id >= startAtId);
                 events = DurableStreamFrom(eventQuery, startAtId);
@@ -154,6 +154,11 @@ namespace Microsoft.Its.Domain.Sql
         public void Dispose()
         {
             appLockDisposer.Dispose();
+        }
+
+        public override string ToString()
+        {
+            return new  { lockResourceName, startAtId, eventQuery }.ToString();
         }
     }
 }

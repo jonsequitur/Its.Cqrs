@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 using Microsoft.Its.Domain.Api.Documentation;
 using Microsoft.Its.Domain.Api.Serialization;
@@ -51,18 +52,18 @@ namespace Microsoft.Its.Domain.Api
         /// <param name="command">The command to apply.</param>
         /// <returns></returns>
         [AcceptVerbs("POST")]
-        public object Apply(
+        public async Task<object> Apply(
             [FromUri] Guid id,
             [FromUri] string commandName,
             [FromBody] JObject command)
         {
-            var aggregate = GetAggregate(id);
+            var aggregate = await GetAggregate(id);
             
             var existingVersion = aggregate.Version;
 
             ApplyCommand(aggregate, commandName, command);
 
-            repository.Save(aggregate);
+            await repository.Save(aggregate);
 
             return Request.CreateResponse(aggregate.Version == existingVersion
                                               ? HttpStatusCode.NotModified
@@ -70,7 +71,7 @@ namespace Microsoft.Its.Domain.Api
         }
 
         [AcceptVerbs("POST")]
-        public object Create(
+        public async Task<object> Create(
             [FromUri] Guid id,
             [FromUri] string commandName,
             [FromBody] JObject command)
@@ -82,7 +83,7 @@ namespace Microsoft.Its.Domain.Api
 
             var aggregate = (TAggregate) ctor.Invoke(new[] { c });
 
-            repository.Save(aggregate);
+            await repository.Save(aggregate);
 
             return Request.CreateResponse(HttpStatusCode.Created);
         }
@@ -132,11 +133,11 @@ namespace Microsoft.Its.Domain.Api
         /// <param name="batch">The batch of commands to apply.</param>
         /// <returns></returns>
         [AcceptVerbs("POST")]
-        public object ApplyBatch(
+        public async Task<object> ApplyBatch(
             [FromUri] Guid id,
             [FromBody] JArray batch)
         {
-            var aggregate = GetAggregate(id);
+            var aggregate = await GetAggregate(id);
 
             foreach (var command in batch)
             {
@@ -159,7 +160,7 @@ namespace Microsoft.Its.Domain.Api
                 }
             }
 
-            repository.Save(aggregate);
+            await repository.Save(aggregate);
 
             return new HttpResponseMessage(HttpStatusCode.Accepted);
         }
@@ -168,7 +169,7 @@ namespace Microsoft.Its.Domain.Api
         /// Validates an aggregate having the specified id.
         /// </summary>
         [AcceptVerbs("POST")]
-        public object Validate(
+        public async Task<object> Validate(
             [FromUri] Guid id,
             [FromUri] string commandName,
             [FromBody] JObject command)
@@ -189,7 +190,7 @@ namespace Microsoft.Its.Domain.Api
                                              .Then(json => json.ToObject(commandType))
                                              .Else(() => Activator.CreateInstance(commandType)) as Command<TAggregate>;
 
-            var aggregate = GetAggregate(id);
+            var aggregate = await GetAggregate(id);
 
             var validationReport = aggregate.Validate(deserializedCommand);
 
@@ -225,9 +226,9 @@ namespace Microsoft.Its.Domain.Api
 #if !DEBUG
         [NonAction]
 #endif
-        public TAggregate GetAggregate(Guid id)
+        public async Task<TAggregate> GetAggregate(Guid id)
         {
-            var aggregate = repository.GetLatest(id);
+            var aggregate = await repository.GetLatest(id);
 
             if (aggregate == null)
             {

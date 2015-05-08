@@ -31,7 +31,7 @@ namespace Microsoft.Its.Domain
                     return FailScheduledCommand(repository, scheduled);
                 }
 
-                aggregate = repository.GetLatest(scheduled.AggregateId);
+                aggregate = await repository.GetLatest(scheduled.AggregateId);
 
                 if (aggregate == null)
                 {
@@ -54,7 +54,8 @@ namespace Microsoft.Its.Domain
                     aggregate.Apply(scheduled.Command);
                 }
 
-                repository.Save(aggregate);
+                await repository.Save(aggregate);
+
                 return new CommandSucceeded(scheduled);
             }
             catch (Exception exception)

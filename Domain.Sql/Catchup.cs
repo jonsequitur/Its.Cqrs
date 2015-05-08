@@ -99,7 +99,7 @@ namespace Microsoft.Its.Domain.Sql
 
                 var disposables = new CompositeDisposable { subscription };
 
-                return scheduler.ScheduleAsync((sched, token) =>
+                return scheduler.ScheduleAsync(async (sched, token) =>
                 {
                     if (catchup.Run() == ReadModelCatchupResult.CatchupAlreadyInProgress)
                     {

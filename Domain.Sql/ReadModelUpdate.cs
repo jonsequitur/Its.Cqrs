@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
@@ -34,10 +35,11 @@ namespace Microsoft.Its.Domain.Sql
         {
             var update = new ReadModelUpdate
             {
-                Transaction = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions
-                {
-                    IsolationLevel = IsolationLevel.ReadCommitted
-                })
+                Transaction = new TransactionScope(TransactionScopeOption.RequiresNew,
+                                                   new TransactionOptions
+                                                   {
+                                                       IsolationLevel = IsolationLevel.ReadCommitted
+                                                   }, TransactionScopeAsyncFlowOption.Enabled)
             };
             setSubject(update);
         }
@@ -99,7 +101,7 @@ namespace Microsoft.Its.Domain.Sql
 
             log.Write(() => errorText);
 
-            using (var transaction = new TransactionScope(TransactionScopeOption.Suppress))
+            using (var transaction = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var db = createDbContext())
             {
                 var dbSet = db.Set<ReadModelInfo>();

@@ -36,7 +36,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void CreateDynamic_queries_all_events()
+        public async Task CreateDynamic_queries_all_events()
         {
             Events.Write(10);
             var projectedEventCount = 0;
@@ -46,14 +46,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 projectedEventCount++;
             })))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             projectedEventCount.Should().Be(10);
         }
 
         [Test]
-        public void A_dynamic_projector_can_access_the_properties_of_known_event_types_dynamically()
+        public async Task A_dynamic_projector_can_access_the_properties_of_known_event_types_dynamically()
         {
             var expectedName = Any.FullName();
             string actualName = null;
@@ -67,14 +67,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 actualName = e.CustomerName;
             })))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             actualName.Should().Be(expectedName);
         }
 
         [Test]
-        public void A_dynamic_projector_receives_known_event_types_as_their_actual_type()
+        public async Task A_dynamic_projector_receives_known_event_types_as_their_actual_type()
         {
             IEvent receivedEvent = null;
             Events.Write(1, _ => new Order.CustomerInfoChanged());
@@ -84,14 +84,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 receivedEvent = e;
             })))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             receivedEvent.Should().BeOfType<Order.CustomerInfoChanged>();
         }
 
         [Test]
-        public void A_dynamic_projector_can_access_the_properties_of_unknown_event_types_dynamically()
+        public async Task A_dynamic_projector_can_access_the_properties_of_unknown_event_types_dynamically()
         {
             using (var db = new EventStoreDbContext())
             {
@@ -102,7 +102,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     Type = Any.CamelCaseName(),
                     Body = new { SomeValue = i }.ToJson()
                 }));
-                db.SaveChanges();
+                await db.SaveChangesAsync();
             }
             var total = 0;
 
@@ -111,14 +111,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 total += (int) e.SomeValue;
             })))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             total.Should().Be(55);
         }
 
         [Test]
-        public void A_dynamic_projector_can_specify_which_events_to_query()
+        public async Task A_dynamic_projector_can_specify_which_events_to_query()
         {
             var eventsQueried = 0;
             var expectedEventsQueried = 0;
@@ -155,14 +155,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                                                                 "Order.ItemAdded",
                                                                                 "Order.ItemRemoved")))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             eventsQueried.Should().Be(expectedEventsQueried);
         }
 
         [Test]
-        public void When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_only_the_corresponding_events_are_queried()
+        public async Task When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_only_the_corresponding_events_are_queried()
         {
             var eventsQueried = 0;
             var expectedEventsQueried = 0;
@@ -203,14 +203,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector1, projector2))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             eventsQueried.Should().Be(expectedEventsQueried);
         }
 
         [Test]
-        public void When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_properties_are_duck_deserialized()
+        public async Task When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_properties_are_duck_deserialized()
         {
             using (var db = new EventStoreDbContext())
             {
@@ -230,7 +230,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     Body = new { Quacks = i }.ToJson()
                 }));
 
-                db.SaveChanges();
+                await db.SaveChangesAsync();
             }
             var unNestedDuckQuacks = 0;
             var nestedDuckQuacks = 0;
@@ -246,7 +246,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector1, projector2))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             nestedDuckQuacks.Should().Be(15);
@@ -254,7 +254,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_nested_classes_can_be_used_to_specify_stream_names()
+        public async Task When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_nested_classes_can_be_used_to_specify_stream_names()
         {
             using (var db = new EventStoreDbContext())
             {
@@ -274,7 +274,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     Body = new { Quacks = i }.ToJson()
                 }));
 
-                db.SaveChanges();
+                await db.SaveChangesAsync();
             }
             var unNestedDucks = 0;
             var nestedDucks = 0;
@@ -290,7 +290,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector1, projector2))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             nestedDucks.Should().Be(5);
@@ -298,7 +298,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_non_nested_classes_have_their_EventStreamName_set_correctly()
+        public async Task When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_non_nested_classes_have_their_EventStreamName_set_correctly()
         {
             Events.Write(1, _ => new Order.Cancelled());
             Cancelled cancelled = null;
@@ -309,14 +309,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             cancelled.EventStreamName.Should().Be("Order");
         }
 
         [Test]
-        public void Dynamic_projectors_can_access_the_event_properties_of_received_events()
+        public async Task Dynamic_projectors_can_access_the_event_properties_of_received_events()
         {
             var expectedTimestamp = DateTimeOffset.Parse("2014-07-03");
             var expectedAggregateId = Any.Guid();
@@ -339,7 +339,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     Body = new { Quacks = 9000 }.ToJson()
                 });
 
-                db.SaveChanges();
+                await db.SaveChangesAsync();
             }
 
             var projector = Projector.CreateDynamic(e =>
@@ -353,7 +353,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             receivedAggregateId.Should().Be(expectedAggregateId);
@@ -364,7 +364,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void Duck_projectors_can_access_the_event_properties_of_received_events()
+        public async Task Duck_projectors_can_access_the_event_properties_of_received_events()
         {
             var expectedTimestamp = DateTimeOffset.Parse("2014-07-03");
             var expectedAggregateId = Any.Guid();
@@ -387,7 +387,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     Body = new { Quacks = 9000 }.ToJson()
                 });
 
-                db.SaveChanges();
+                await db.SaveChangesAsync();
             }
 
             var projector = Projector.CreateFor<Reporting.DuckEvent>(e =>
@@ -401,7 +401,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             receivedAggregateId.Should().Be(expectedAggregateId);
@@ -412,7 +412,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void Report_projections_can_be_created_using_anonymous_projectors_over_multiple_event_types()
+        public async Task Report_projections_can_be_created_using_anonymous_projectors_over_multiple_event_types()
         {
             var projector = Projector.Combine(
                 Projector.CreateFor<Placed>(e =>
@@ -448,7 +448,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             using (var db = new ReadModelDbContext())
@@ -472,7 +472,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void Report_projections_can_be_created_using_EventHandlerBase_over_multiple_event_types()
+        public async Task Report_projections_can_be_created_using_EventHandlerBase_over_multiple_event_types()
         {
             var projector = new OrderTallyProjector();
 
@@ -482,7 +482,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             using (var db = new ReadModelDbContext())
@@ -506,7 +506,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void Report_projections_can_be_created_using_EventHandlerBase_including_dynamic_event_types()
+        public async Task Report_projections_can_be_created_using_EventHandlerBase_including_dynamic_event_types()
         {
             var projector = new OrderTallyProjector();
 
@@ -516,7 +516,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             using (var db = new ReadModelDbContext())
@@ -536,7 +536,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         [Ignore("This would require some sort of proxy to access properties that are not on Event")]
         [Test]
-        public void All_events_can_be_subscribed_using_EventHandlerBase_On_Event()
+        public async Task All_events_can_be_subscribed_using_EventHandlerBase_On_Event()
         {
             var projector = new EventTallyProjector<Event>();
 
@@ -546,14 +546,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             projector.EventCount.Should().Be(90);
         }
 
         [Test]
-        public void All_events_can_be_subscribed_using_EventHandlerBase_On_IEvent()
+        public async Task All_events_can_be_subscribed_using_EventHandlerBase_On_IEvent()
         {
             var projector = new EventTallyProjector<IEvent>();
 
@@ -563,14 +563,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             projector.EventCount.Should().Be(90);
         }
 
         [Test]
-        public void All_events_can_be_subscribed_using_EventHandlerBase_On_object()
+        public async Task All_events_can_be_subscribed_using_EventHandlerBase_On_object()
         {
             var projector = new EventTallyProjector<object>();
 
@@ -580,7 +580,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             projector.EventCount.Should().Be(90);

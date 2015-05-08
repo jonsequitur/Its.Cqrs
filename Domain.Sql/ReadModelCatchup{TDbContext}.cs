@@ -12,6 +12,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Unit = System.Reactive.Unit;
@@ -171,6 +172,8 @@ namespace Microsoft.Its.Domain.Sql
                         CatchupName = Name
                     });
 
+                    Debug.WriteLine(new { query });
+
                     if (query.ExpectedNumberOfEvents == 0)
                     {
                         return ReadModelCatchupResult.CatchupRanButNoNewEvents;
@@ -253,25 +256,30 @@ namespace Microsoft.Its.Domain.Sql
                             bus.PublishAsync(@event).Wait();
                              
                             var infos = work.Resource<DbContext>().Set<ReadModelInfo>();
+                            
                             subscribedReadModelInfos.ForEach(i =>
                             {
                                 var eventsRemaining = query.ExpectedNumberOfEvents - eventsProcessed;
+                                
                                 infos.Attach(i);
                                 i.LastUpdated = now;
                                 i.CurrentAsOfEventId = storedEvent.Id;
                                 i.LatencyInMilliseconds = (now - @event.Timestamp).TotalMilliseconds;
                                 i.BatchRemainingEvents = eventsRemaining;
+                                
                                 if (eventsProcessed == 1)
                                 {
                                     i.BatchStartTime = now;
                                     i.BatchTotalEvents = query.ExpectedNumberOfEvents;
                                 }
+                                
                                 if (i.InitialCatchupStartTime == null)
                                 {
                                     i.InitialCatchupStartTime = now;
                                     i.InitialCatchupEvents = query.ExpectedNumberOfEvents;
                                 }
-                                if (eventsRemaining == 0 & i.InitialCatchupEndTime == null)
+                                
+                                if (eventsRemaining == 0 && i.InitialCatchupEndTime == null)
                                 {
                                     i.InitialCatchupEndTime = now;
                                 }
@@ -336,6 +344,7 @@ namespace Microsoft.Its.Domain.Sql
         private long GetStartingId()
         {
             var readModelInfos = subscribedReadModelInfos.Concat(unsubscribedReadModelInfos).ToArray();
+
             using (var db = CreateReadModelDbContext())
             {
                 foreach (var readModelInfo in readModelInfos)
@@ -348,7 +357,7 @@ namespace Microsoft.Its.Domain.Sql
 
             var existingReadModelInfosCount = readModelInfos.Length;
             long startAtId = 0;
-           
+
             if (GetProjectorNames().Count() == existingReadModelInfosCount)
             {
                 // if all of the read models have been previously updated, we don't have to start at event 0

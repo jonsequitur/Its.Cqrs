@@ -53,7 +53,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void Serialized_events_are_deserialized_in_their_correct_sequence_and_type()
+        public async Task Serialized_events_are_deserialized_in_their_correct_sequence_and_type()
         {
             var order = new Order();
             var repository = CreateRepository<Order>();
@@ -66,8 +66,8 @@ namespace Microsoft.Its.Domain.Tests
                 })
                 .Apply(new ChangeFufillmentMethod { FulfillmentMethod = FulfillmentMethod.DirectShip });
 
-            repository.Save(order);
-            var rehydratedOrder = repository.GetLatest(order.Id);
+            await repository.Save(order);
+            var rehydratedOrder = await repository.GetLatest(order.Id);
 
             rehydratedOrder.EventHistory.Count().Should().Be(3);
             rehydratedOrder.EventHistory.Skip(1).First().Should().BeOfType<Order.ItemAdded>();
@@ -75,15 +75,15 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void When_an_aggregate_id_is_not_found_then_GetLatest_returns_null()
+        public async Task When_an_aggregate_id_is_not_found_then_GetLatest_returns_null()
         {
-            var aggregate = CreateRepository<Order>().GetLatest(Any.Guid());
+            var aggregate = await CreateRepository<Order>().GetLatest(Any.Guid());
 
             aggregate.Should().BeNull();
         }
 
         [Test]
-        public void GetVersion_does_not_pull_versions_after_the_specified_one()
+        public async Task GetVersion_does_not_pull_versions_after_the_specified_one()
         {
             var order = new Order();
             var repository = CreateRepository<Order>();
@@ -95,8 +95,8 @@ namespace Microsoft.Its.Domain.Tests
                 Quantity = i
             }));
 
-            repository.Save(order);
-            var rehydratedOrder = repository.GetVersion(order.Id, 4);
+            await repository.Save(order);
+            var rehydratedOrder = await repository.GetVersion(order.Id, 4);
 
             rehydratedOrder.Version().Should().Be(4);
             rehydratedOrder.EventHistory.Count().Should().Be(4);
@@ -104,7 +104,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void GetAsOfDate_does_not_pull_events_after_the_specified_date()
+        public async Task GetAsOfDate_does_not_pull_events_after_the_specified_date()
         {
             var order = new Order();
             var repository = CreateRepository<Order>();
@@ -121,8 +121,8 @@ namespace Microsoft.Its.Domain.Tests
                 });
             });
 
-            repository.Save(order);
-            var rehydratedOrder = repository.GetAsOfDate(order.Id, startTime.AddDays(3.1));
+            await repository.Save(order);
+            var rehydratedOrder = await repository.GetAsOfDate(order.Id, startTime.AddDays(3.1));
 
             rehydratedOrder.Version().Should().Be(4);
             rehydratedOrder.EventHistory.Count().Should().Be(4);
@@ -130,7 +130,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void Deserialized_events_are_used_to_rebuild_the_state_of_the_aggregate()
+        public async Task Deserialized_events_are_used_to_rebuild_the_state_of_the_aggregate()
         {
             var order = new Order();
             var repository = CreateRepository<Order>();
@@ -148,14 +148,14 @@ namespace Microsoft.Its.Domain.Tests
                     Quantity = 3
                 });
 
-            repository.Save(order);
-            var rehydratedOrder = repository.GetLatest(order.Id);
+            await repository.Save(order);
+            var rehydratedOrder = await repository.GetLatest(order.Id);
 
             rehydratedOrder.Items.Single().Quantity.Should().Be(5);
         }
 
         [Test]
-        public void When_Save_is_called_then_each_added_event_is_published()
+        public async Task When_Save_is_called_then_each_added_event_is_published()
         {
             var order = new Order();
             var repository = CreateRepository<Order>();
@@ -171,9 +171,9 @@ namespace Microsoft.Its.Domain.Tests
                 {
                     FulfillmentMethod = FulfillmentMethod.Delivery
                 });
-            repository.Save(order);
+            await repository.Save(order);
 
-            var bus = Configuration.Current.EventBus as FakeEventBus;
+            var bus = (FakeEventBus) Configuration.Current.EventBus;
             bus.PublishedEvents().Count()
                .Should().Be(3);
             bus.PublishedEvents().Skip(1).First()
@@ -183,11 +183,11 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void When_Save_is_called_then_published_events_have_incrementing_sequence_ids()
+        public async Task When_Save_is_called_then_published_events_have_incrementing_sequence_ids()
         {
             // set up the repository so we're not starting from the beginning
             var order = new Order();
-            var bus = Configuration.Current.EventBus as FakeEventBus;
+            var bus = (FakeEventBus) Configuration.Current.EventBus;
             var repository = CreateRepository<Order>();
             order.Apply(new AddItem
             {
@@ -195,15 +195,15 @@ namespace Microsoft.Its.Domain.Tests
                 Price = 10m,
                 Quantity = 2
             });
-            repository.Save(order);
+            await repository.Save(order);
             bus.Clear();
 
             // apply 2 commands
-            var order2 = repository.GetLatest(order.Id);
+            var order2 = await repository.GetLatest(order.Id);
             order2
                 .Apply(new ChangeFufillmentMethod { FulfillmentMethod = FulfillmentMethod.Delivery })
                 .Apply(new ChangeCustomerInfo { CustomerName = "Wanda" });
-            repository.Save(order2);
+            await repository.Save(order2);
 
             bus.PublishedEvents().Count().Should().Be(2);
             bus.PublishedEvents().First().SequenceNumber.Should().Be(3);
@@ -211,10 +211,10 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public abstract void When_storage_fails_then_no_events_are_published();
+        public abstract Task When_storage_fails_then_no_events_are_published();
 
         [Test]
-        public void Concurrency_on_event_storage_is_optimistic_and_exceptions_have_informative_messages()
+        public async Task Concurrency_on_event_storage_is_optimistic_and_exceptions_have_informative_messages()
         {
             var repository = CreateRepository<Order>();
             var order = new Order()
@@ -228,22 +228,22 @@ namespace Microsoft.Its.Domain.Tests
                 {
                     CustomerName = "Wanda"
                 });
-            repository.Save(order);
+            await repository.Save(order);
 
-            var order2 = repository.GetLatest(order.Id)
+            var order2 = (await repository.GetLatest(order.Id))
                                    .Apply(new ChangeCustomerInfo
                                    {
                                        CustomerName = "Alice"
                                    });
-            var order3 = repository.GetLatest(order.Id)
+            var order3 = (await repository.GetLatest(order.Id))
                                    .Apply(new ChangeCustomerInfo
                                    {
                                        CustomerName = "Bob"
                                    });
 
-            repository.Save(order2);
+            await repository.Save(order2);
 
-            repository.Invoking(r => r.Save(order3))
+            repository.Invoking(r => r.Save(order3).Wait())
                       .ShouldThrow<ConcurrencyException>()
                       .And
                       .Message
@@ -256,54 +256,54 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public abstract void Events_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_sourcing_to_fail();
+        public abstract Task Events_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_sourcing_to_fail();
 
         [Test]
-        public abstract void Events_at_the_end_of_the_sequence_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_Version_to_be_incorrect();
+        public abstract Task Events_at_the_end_of_the_sequence_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_Version_to_be_incorrect();
 
         [Test]
-        public abstract void Events_that_cannot_be_deserialized_due_to_unknown_member_do_not_cause_sourcing_to_fail();
+        public abstract Task Events_that_cannot_be_deserialized_due_to_unknown_member_do_not_cause_sourcing_to_fail();
 
-        protected abstract void SaveEventsDirectly(params object[] events);
+        protected abstract Task SaveEventsDirectly(params IStoredEvent[] events);
 
         [Test]
-        public void Save_transfers_pending_events_to_event_history()
+        public async Task Save_transfers_pending_events_to_event_history()
         {
             var order = new Order();
             var repository = CreateRepository<Order>();
             order.Apply(new AddItem { Price = 1m, ProductName = "Widget" });
-            repository.Save(order);
+            await repository.Save(order);
 
             order.EventHistory.Count().Should().Be(2);
         }
 
         [Test]
-        public void After_Save_additional_events_continue_in_the_correct_sequence()
+        public async Task After_Save_additional_events_continue_in_the_correct_sequence()
         {
             var order = new Order();
-            var bus = Configuration.Current.EventBus as FakeEventBus;
+            var bus = (FakeEventBus) Configuration.Current.EventBus;
             var repository = CreateRepository<Order>();
             var addEvent = new Action(() =>
                                       order.Apply(new AddItem { Price = 1m, ProductName = "Widget" }));
 
             addEvent();
-            repository.Save(order);
+            await repository.Save(order);
             bus.PublishedEvents().Last().SequenceNumber.Should().Be(2);
 
             addEvent();
             addEvent();
-            repository.Save(order);
+            await repository.Save(order);
             bus.PublishedEvents().Last().SequenceNumber.Should().Be(4);
 
             addEvent();
             addEvent();
             addEvent();
-            repository.Save(order);
+            await repository.Save(order);
             bus.PublishedEvents().Last().SequenceNumber.Should().Be(7);
         }
 
         [Test]
-        public void Refresh_can_be_used_to_update_an_aggregate_in_memory_with_the_latest_events_from_the_stream()
+        public async Task Refresh_can_be_used_to_update_an_aggregate_in_memory_with_the_latest_events_from_the_stream()
         {
             // arrange
             var order = new Order()
@@ -313,10 +313,10 @@ namespace Microsoft.Its.Domain.Tests
                 });
 
             var repository = CreateRepository<Order>();
-            repository.Save(order);
+            await repository.Save(order);
 
-            repository.Save(
-                repository.GetLatest(order.Id)
+            await repository.Save(
+                (await repository.GetLatest(order.Id))
                           .Apply(new AddItem
                           {
                               Price = 1,
@@ -328,27 +328,27 @@ namespace Microsoft.Its.Domain.Tests
                           }));
 
             // act
-            repository.Refresh(order);
+            await repository.Refresh(order);
 
             // assert
             order.Version().Should().Be(4);
         }
         
         [Test]
-        public void After_Refresh_is_called_then_future_events_are_added_at_the_correct_sequence_number()
+        public async Task After_Refresh_is_called_then_future_events_are_added_at_the_correct_sequence_number()
         {
             // arrange
             var order = new Order()
                 .Apply(new ChangeCustomerInfo
                 {
-                    CustomerName = Any.FullName(),
+                    CustomerName = Any.FullName()
                 });
 
             var repository = CreateRepository<Order>();
-            repository.Save(order);
+            await repository.Save(order);
 
-            repository.Save(
-                repository.GetLatest(order.Id)
+            await repository.Save(
+                (await repository.GetLatest(order.Id))
                           .Apply(new AddItem
                           {
                               Price = 1,
@@ -358,7 +358,7 @@ namespace Microsoft.Its.Domain.Tests
                               Price = 2,
                               ProductName = Any.Word()
                           }));
-            repository.Refresh(order);
+            await repository.Refresh(order);
 
             // act
             order.Apply(new Cancel());
@@ -382,7 +382,7 @@ namespace Microsoft.Its.Domain.Tests
             var repository = CreateRepository<Order>();
 
             // act
-            Action refresh = () => repository.Refresh(order);
+            Action refresh = () => repository.Refresh(order).Wait();
 
             // assert
             refresh.ShouldThrow<InvalidOperationException>()
@@ -393,7 +393,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void GetAggregate_can_be_used_within_a_consequenter_to_access_an_aggregate_without_having_to_re_source()
+        public async Task GetAggregate_can_be_used_within_a_consequenter_to_access_an_aggregate_without_having_to_re_source()
         {
             // arrange
             var order = new Order()
@@ -428,19 +428,21 @@ namespace Microsoft.Its.Domain.Tests
                                                                                     throw new Exception("GetAggregate should not be triggering this call.");
                                                                                 });
             Order aggregate = null;
+#pragma warning disable 612
             var consquenter = Consequenter.Create<Order.Placed>(e => { aggregate = e.GetAggregate(); });
+#pragma warning restore 612
             var bus = Configuration.Current.EventBus as FakeEventBus;
             bus.Subscribe(consquenter);
 
             // act
-            repository.Save(order);
+            await repository.Save(order);
 
             // assert
             aggregate.Should().Be(order);
         }
 
         [Test]
-        public void GetAggregate_can_be_used_when_no_aggregate_was_previously_sourced()
+        public async Task GetAggregate_can_be_used_when_no_aggregate_was_previously_sourced()
         {
             var order = new Order()
                 .Apply(new ChangeCustomerInfo
@@ -449,11 +451,13 @@ namespace Microsoft.Its.Domain.Tests
                 });
 
             var repository = CreateRepository<Order>();
-            repository.Save(order);
+            await repository.Save(order);
             Order aggregate = null;
             var consquenter = Consequenter.Create<Order.Placed>(e =>
             {
+#pragma warning disable 612
                 aggregate = e.GetAggregate();
+#pragma warning restore 612
             });
             consquenter.HaveConsequences(new Order.Placed
             {
@@ -483,7 +487,7 @@ namespace Microsoft.Its.Domain.Tests
             await snapshotRepository.SaveSnapshot(snapshot);
 
             // act
-            var account = CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
+            var account = await CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
 
             // assert
             account.Id.Should().Be(snapshot.AggregateId);
@@ -518,7 +522,7 @@ namespace Microsoft.Its.Domain.Tests
             await snapshotRepository.SaveSnapshot(snapshot);
 
             // act
-            var account = CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
+            var account = await CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
             account.Apply(new RequestSpam());
 
             // assert
@@ -544,15 +548,14 @@ namespace Microsoft.Its.Domain.Tests
                            };
 
             await snapshotRepository.SaveSnapshot(snapshot);
-            SaveEventsDirectly(new CustomerAccount.RequestedSpam
+            await SaveEventsDirectly(new CustomerAccount.RequestedSpam
             {
                 AggregateId = snapshot.AggregateId,
                 SequenceNumber = snapshot.Version + 1
-            });
-            
+            }.ToStoredEvent());
 
             // act
-            var account = CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
+            var account = await CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
             account.Apply(new RequestSpam());
 
             // assert
@@ -577,14 +580,14 @@ namespace Microsoft.Its.Domain.Tests
                                ETags = new[] { Any.Word(), Any.Word() }
                            };
             await snapshotRepository.SaveSnapshot(snapshot);
-            SaveEventsDirectly(new CustomerAccount.RequestedSpam
+            await SaveEventsDirectly(new CustomerAccount.RequestedSpam
                                {
                                    AggregateId = snapshot.AggregateId,
                                    SequenceNumber = 124
-                               });
+                               }.ToStoredEvent());
 
             // act
-            var account = CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
+            var account = await CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
 
             // assert
             account.Version.Should().Be(124);
@@ -605,11 +608,11 @@ namespace Microsoft.Its.Domain.Tests
                 .Apply(new SendOrderConfirmationEmail(Any.AlphanumericString(8, 8)));
 
             var eventSourcedRepository = CreateRepository<CustomerAccount>();
-            eventSourcedRepository.Save(account);
+            await eventSourcedRepository.Save(account);
             await snapshotRepository.SaveSnapshot(account);
 
             // act
-            account = eventSourcedRepository.GetLatest(account.Id);
+            account = await eventSourcedRepository.GetLatest(account.Id);
 
             // assert
             account.Events().Count()

@@ -49,7 +49,7 @@ namespace Microsoft.Its.Domain.Testing
 
                 lock (this.events)
                 {
-                    foreach (var storedEvent in events.Select(e => e.ToStoredEvent()))
+                    foreach (var storedEvent in events)
                     {
                         if (this.events.Contains(storedEvent))
                         {

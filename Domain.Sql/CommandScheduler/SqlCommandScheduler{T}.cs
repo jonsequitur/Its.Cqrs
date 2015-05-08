@@ -93,9 +93,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 using (var db = createCommandSchedulerDbContext())
                 {
-                    var storedCommand = db.ScheduledCommands
-                                          .Single(c => c.AggregateId == scheduledCommand.AggregateId &&
-                                                       c.SequenceNumber == scheduledCommand.SequenceNumber);
+                    var storedCommand = await db.ScheduledCommands
+                                                .SingleAsync(c => c.AggregateId == scheduledCommand.AggregateId &&
+                                                                  c.SequenceNumber == scheduledCommand.SequenceNumber);
 
                     if (result.WasSuccessful)
                     {
@@ -128,7 +128,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                       });
                     }
 
-                    db.SaveChanges();
+                    await db.SaveChangesAsync();
                 }
             }
         }

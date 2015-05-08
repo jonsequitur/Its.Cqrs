@@ -58,7 +58,7 @@ namespace Microsoft.Its.Domain.Api.Tests
             var response = await client.SendAsync(request);
             response.ShouldSucceed();
 
-            order = repository.GetLatest(order.Id);
+            order = await repository.GetLatest(order.Id);
 
             order.Items.Count.Should().Be(2);
             order.Balance.Should().Be(3);

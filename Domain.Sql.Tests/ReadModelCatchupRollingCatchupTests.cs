@@ -82,12 +82,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 // TODO: (Events_committed_to_the_event_store_are_caught_up_by_multiple_independent_read_model_stores) is this leading to intermittent test failures by leaving a dangling app lock?
                 startThread("catchup1", () =>
                 {
-                    catchup1.Run();
+                    catchup1.Run().Wait();
                     catchup1.Dispose();
                 });
                 startThread("catchup2", () =>
                 {
-                    catchup2.Run();
+                    catchup2.Run().Wait();
                     catchup2.Dispose();
                 });
 
@@ -191,6 +191,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     }
                 }
             };
+
             var statusReports = new List<ReadModelCatchupStatus>();
             using (var catchup = CreateReadModelCatchup<ReadModels1DbContext>(projector))
             {
@@ -211,7 +212,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void EventStore_polling_waits_for_specified_interval_if_no_new_events_have_been_written()
+        public async Task EventStore_polling_waits_for_specified_interval_if_no_new_events_have_been_written()
         {
             Events.Write(1);
             var projector = new Projector<Order.Shipped>(() => new ReadModels1DbContext());
@@ -220,7 +221,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (var catchup = CreateReadModelCatchup<ReadModels1DbContext>(projector))
             {
                 // catch up to the event store
-                catchup.Run();
+                await catchup.Run();
 
                 catchup.Progress
                        .ForEachAsync(s =>
@@ -291,7 +292,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 scheduler.AdvanceBy(TimeSpan.FromSeconds(9).Ticks);
 
                 statusReports.Count(s => s.IsStartOfBatch)
-                             .Should().Be(3);
+                             .Should()
+                             .Be(3);
             }
         }
 

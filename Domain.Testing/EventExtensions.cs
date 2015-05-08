@@ -5,13 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Its.Domain.Serialization;
+using Microsoft.Its.Domain.Sql;
 using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain.Testing
 {
     public static class EventExtensions
     {
-        public static IEventStream ToEventStream(this IEnumerable<IEvent> events, string name)
+        internal static IEventStream ToEventStream(this IEnumerable<IEvent> events, string name)
         {
             var stream = new InMemoryEventStream(name);
 
@@ -24,7 +25,7 @@ namespace Microsoft.Its.Domain.Testing
             return stream;
         }
 
-        public static IEnumerable<IEvent> AssignSequenceNumbers(this IEnumerable<IEvent> events)
+        internal static IEnumerable<IEvent> AssignSequenceNumbers(this IEnumerable<IEvent> events)
         {
             // use EventSequences to set SequenceNumbers as needed
             var sequencesPerAggregate = new Dictionary<Guid, EventSequence>();
@@ -41,22 +42,25 @@ namespace Microsoft.Its.Domain.Testing
                 Timestamp = e.Timestamp,
                 Type = e.EventName(),
                 Body = e.ToJson(),
-                ETag = e.ETag
+                ETag = e.ETag,
+                StreamName = e.EventStreamName()
             };
         }
 
-        internal static InMemoryStoredEvent ToStoredEvent(this IStoredEvent e)
+        public static IStoredEvent ToStoredEvent(this StorableEvent e)
         {
             return new InMemoryStoredEvent
             {
                 SequenceNumber = e.SequenceNumber,
-                AggregateId = e.AggregateId,
+                AggregateId = e.AggregateId.ToString(),
                 Timestamp = e.Timestamp,
                 Type = e.Type,
                 Body = e.Body,
-                ETag = e.ETag
+                ETag = e.ETag,
+                StreamName = e.StreamName
             };
         }
+
         private static readonly Lazy<JsonSerializerSettings> serializerSettings = new Lazy<JsonSerializerSettings>(() =>
         {
             var settings = Serializer.CloneSettings();

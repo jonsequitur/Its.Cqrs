@@ -146,7 +146,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void When_the_aggregate_is_saved_then_the_reservation_is_confirmed()
+        public async Task When_the_aggregate_is_saved_then_the_reservation_is_confirmed()
         {
             // arrange
             var username = Any.Email();
@@ -162,7 +162,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var repository = new SqlEventSourcedRepository<CustomerAccount>(bus);
 
             // act
-            repository.Save(account);
+            await repository.Save(account);
 
             // assert
             using (var db = new ReservationServiceDbContext())

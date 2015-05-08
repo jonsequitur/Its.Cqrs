@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
@@ -63,7 +64,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void Scheduled_commands_are_reserialized_and_invoked_by_a_command_scheduler()
+        public async Task Scheduled_commands_are_reserialized_and_invoked_by_a_command_scheduler()
         {
             // arrange
             var bus = new FakeEventBus();
@@ -78,20 +79,20 @@ namespace Microsoft.Its.Domain.Tests
             {
                 ShipmentId = shipmentId
             });
-            repository.Save(order);
+            await repository.Save(order);
 
             // act
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
 
             //assert 
-            order = repository.GetLatest(order.Id);
+            order = await repository.GetLatest(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
             order.ShipmentId.Should().Be(shipmentId, "Properties should be transferred correctly from the serialized command");
         }
 
         [Test]
-        public void InMemoryCommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
+        public async Task InMemoryCommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
         {
             // arrange
             var bus = new InProcessEventBus();
@@ -102,66 +103,68 @@ namespace Microsoft.Its.Domain.Tests
 
             // act
             order.Apply(new ShipOn(Clock.Now().Subtract(TimeSpan.FromDays(2))));
-            repository.Save(order);
+            await repository.Save(order);
+
+            await Task.Delay(500);
 
             //assert 
-            order = repository.GetLatest(order.Id);
+            order = await repository.GetLatest(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
         }
 
         [Test]
-        public void When_a_scheduled_command_fails_validation_then_a_failure_event_can_be_recorded_in_HandleScheduledCommandException_method()
+        public async Task When_a_scheduled_command_fails_validation_then_a_failure_event_can_be_recorded_in_HandleScheduledCommandException_method()
         {
             // arrange
-            var order = CreateOrder(customerAccountId: scenario.GetLatest<CustomerAccount>().Id);
+            var order = CreateOrder(customerAccountId: (await scenario.GetLatest<CustomerAccount>()).Id);
             // by the time Ship is applied, it will fail because of the cancellation
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
             order.Apply(new Cancel());
-            scenario.Save(order);
+            await scenario.Save(order);
 
             // act
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
 
             //assert 
-            order = scenario.GetLatest<Order>();
+            order = await scenario.GetLatest<Order>();
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
         }
 
         [Test]
-        public void When_applying_a_scheduled_command_throws_unexpectedly_then_further_command_scheduling_is_not_interrupted()
+        public async Task When_applying_a_scheduled_command_throws_unexpectedly_then_further_command_scheduling_is_not_interrupted()
         {
             // arrange
-            var customerAccountId = scenario.GetLatest<CustomerAccount>().Id;
+            var customerAccountId = (await scenario.GetLatest<CustomerAccount>()).Id;
             var order1 = CreateOrder(customerAccountId: customerAccountId)
                 .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date))
                 .Apply(new Cancel());
-            scenario.Save(order1);
+            await scenario.Save(order1);
             var order2 = CreateOrder(customerAccountId: customerAccountId)
                 .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
-            scenario.Save(order2);
+            await scenario.Save(order2);
 
             // act
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
 
             // assert 
-            order1 = scenario.GetLatest<Order>(order1.Id);
+            order1 = await scenario.GetLatest<Order>(order1.Id);
             var lastEvent = order1.Events().Last();
             lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
 
-            order2 = scenario.GetLatest<Order>(order2.Id);
+            order2 = await scenario.GetLatest<Order>(order2.Id);
             lastEvent = order2.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
         }
 
         [Test]
-        public void A_command_can_be_scheduled_against_another_aggregate()
+        public async Task A_command_can_be_scheduled_against_another_aggregate()
         {
             var order = new Order(
                 new CreateOrder(Any.FullName())
                 {
-                    CustomerId = scenario.GetLatest<CustomerAccount>().Id
+                    CustomerId = (await scenario.GetLatest<CustomerAccount>()).Id
                 })
                 .Apply(new AddItem
                 {
@@ -169,9 +172,9 @@ namespace Microsoft.Its.Domain.Tests
                     Price = 12.99m
                 })
                 .Apply(new Cancel());
-            scenario.Save(order);
+            await scenario.Save(order);
 
-            var customerAccount = scenario.GetLatest<CustomerAccount>();
+            var customerAccount = await scenario.GetLatest<CustomerAccount>();
 
             customerAccount.Events()
                            .Last()
