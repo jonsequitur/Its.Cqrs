@@ -2,9 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Data.Entity;
+using Microsoft.Its.Domain.Sql;
 
 namespace Sample.Domain.Api.ReadModels
 {
+    [DbConfigurationType(typeof(SqlClientDbConfiguration))]
     public class OrderHistoryDbContext : DbContext
     {
         public OrderHistoryDbContext() : base("ReadModels")

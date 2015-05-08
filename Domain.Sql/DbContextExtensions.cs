@@ -132,6 +132,17 @@ namespace Microsoft.Its.Domain.Sql
             context.WaitUntilDatabaseCreated();
         }
 
+        public static void CreateReadonlyUser(this DbContext context, DbReadonlyUser readonlyUser)
+        {
+            var createUserCmd = string.Format("CREATE USER [{0}] FOR LOGIN [{1}]", 
+                readonlyUser.UserName, readonlyUser.LoginName);
+            ExecuteNonQuery(context.Database.Connection.ConnectionString, createUserCmd);
+
+            var addRoleToUserCmd = string.Format("EXEC sp_addrolemember N'db_datareader', N'{0}'",
+                readonlyUser.UserName);
+            ExecuteNonQuery(context.Database.Connection.ConnectionString, addRoleToUserCmd);
+        }
+
         private static void WaitUntilDatabaseCreated(this DbContext context)
         {
             // wait up to 60 seconds
