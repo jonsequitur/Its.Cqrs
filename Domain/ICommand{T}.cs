@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading.Tasks;
 using Its.Validation;
 
 namespace Microsoft.Its.Domain
@@ -23,6 +24,18 @@ namespace Microsoft.Its.Domain
         ///     indicating the specifics of the failure.
         /// </exception>
         void ApplyTo(T aggregate);
+
+        /// <summary>
+        ///     Performs the action of the command upon the aggregate.
+        /// </summary>
+        /// <param name="aggregate">The aggregate to which to apply the command.</param>
+        /// <exception cref="CommandValidationException">
+        ///     If the command cannot be applied due its state or the state of the aggregate, it should throw a
+        ///     <see
+        ///         cref="CommandValidationException" />
+        ///     indicating the specifics of the failure.
+        /// </exception>
+        Task ApplyToAsync(T aggregate);
 
         /// <summary>
         ///     Gets a validator that can be used to check the valididty of the command against the state of the aggregate before it is applied.

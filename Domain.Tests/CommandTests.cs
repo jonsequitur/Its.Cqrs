@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Recipes;
 using Its.Validation;
@@ -356,6 +357,44 @@ namespace Microsoft.Its.Domain.Tests
                  .Last()
                  .Should()
                  .BeOfType<Order.ChargeAccountChargeRejected>();
+        }
+
+        [Test]
+        public async Task A_command_can_be_applied_asynchronously()
+        {
+            Configuration.Current.UseDependency<IPaymentService>(_ => new CreditCardPaymentGateway());
+            var order = new Order(new CreateOrder(Any.FullName()));
+            order.Apply(new AddItem
+            {
+                Price = 5m,
+                ProductName = Any.Word()
+            });
+
+            await order.ApplyAsync(new Ship());
+
+            order.Events()
+                 .Last()
+                 .Should()
+                 .BeOfType<Order.Shipped>();
+        }
+
+        [Test]
+        public async Task Asynchronously_applied_commands_cannot_be_handled_without_a_command_handler()
+        {
+            Configuration.Current.UseDependency<IPaymentService>(_ => new CreditCardPaymentGateway());
+
+            var order = new Order(new CreateOrder(Any.FullName()));
+            Action apply = () => order.ApplyAsync(new AddItem
+            {
+                Price = 5m,
+                ProductName = Any.Word()
+            }).Wait();
+
+            apply.ShouldThrow<NotImplementedException>()
+                 .And
+                 .Message
+                 .Should()
+                 .Contain("No command handler is defined for handling this command asynchronously");
         }
 
         public class FakeAggregateWithEnactCommandConvention : EventSourcedAggregate<FakeAggregateWithEnactCommandConvention>
