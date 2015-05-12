@@ -159,7 +159,7 @@ namespace Microsoft.Its.Domain
         {
             throw new NotImplementedException(
                 string.Format(
-                    @"No command of type {0} is accepted by the {1} aggregate. If you wish to add support for this command, either:\n
+                    @"No command of type {0} is accepted by the {1} aggregate. If you wish to add support for this command, either:
     1) add the following to {1}:
 
           public void EnactCommand({0} command)

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Its.Validation;
@@ -30,6 +31,22 @@ namespace Microsoft.Its.Domain
             where TAggregate : class
         {
             command.ApplyTo(aggregate);
+            return aggregate;
+        }
+
+        /// <summary>
+        ///     Applies a command to an aggregate.
+        /// </summary>
+        /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+        /// <param name="aggregate">The aggregate.</param>
+        /// <param name="command">The command.</param>
+        /// <returns>The same aggregate with the command applied and any applicable updates performed.</returns>
+        public static async Task<TAggregate> ApplyAsync<TAggregate>(
+            this TAggregate aggregate,
+            ICommand<TAggregate> command)
+            where TAggregate : class
+        {
+            await command.ApplyToAsync(aggregate);
             return aggregate;
         }
 
