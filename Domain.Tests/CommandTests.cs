@@ -378,25 +378,6 @@ namespace Microsoft.Its.Domain.Tests
                  .BeOfType<Order.Shipped>();
         }
 
-        [Test]
-        public async Task Asynchronously_applied_commands_cannot_be_handled_without_a_command_handler()
-        {
-            Configuration.Current.UseDependency<IPaymentService>(_ => new CreditCardPaymentGateway());
-
-            var order = new Order(new CreateOrder(Any.FullName()));
-            Action apply = () => order.ApplyAsync(new AddItem
-            {
-                Price = 5m,
-                ProductName = Any.Word()
-            }).Wait();
-
-            apply.ShouldThrow<NotImplementedException>()
-                 .And
-                 .Message
-                 .Should()
-                 .Contain("No command handler is defined for handling this command asynchronously");
-        }
-
         public class FakeAggregateWithEnactCommandConvention : EventSourcedAggregate<FakeAggregateWithEnactCommandConvention>
         {
             public FakeAggregateWithEnactCommandConvention(ConstructorCommand<FakeAggregateWithEnactCommandConvention> createCommand) : base(createCommand)

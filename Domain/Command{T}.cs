@@ -147,11 +147,8 @@ namespace Microsoft.Its.Domain
         {
             if (Handler == null)
             {
-                throw new NotImplementedException(
-                string.Format(
-                    @"No command handler is defined for handling this command asynchronously. You should create an implementation of ICommandHandler<{1}, {0}>.",
-                    GetType(),
-                    aggregate.GetType()));
+                await Task.Run(() => EnactCommand(aggregate));
+                return;
             }
             
             await Handler.EnactCommand((dynamic) aggregate, (dynamic) this);

@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 using Microsoft.Its.Domain.Api.Documentation;
 using Microsoft.Its.Domain.Api.Serialization;
@@ -51,7 +52,7 @@ namespace Microsoft.Its.Domain.Api
         /// <param name="command">The command to apply.</param>
         /// <returns></returns>
         [AcceptVerbs("POST")]
-        public object Apply(
+        public async Task<object> Apply(
             [FromUri] Guid id,
             [FromUri] string commandName,
             [FromBody] JObject command)
@@ -60,7 +61,7 @@ namespace Microsoft.Its.Domain.Api
             
             var existingVersion = aggregate.Version;
 
-            ApplyCommand(aggregate, commandName, command);
+            await ApplyCommand(aggregate, commandName, command);
 
             repository.Save(aggregate);
 
@@ -70,7 +71,7 @@ namespace Microsoft.Its.Domain.Api
         }
 
         [AcceptVerbs("POST")]
-        public object Create(
+        public async Task<object> Create(
             [FromUri] Guid id,
             [FromUri] string commandName,
             [FromBody] JObject command)
@@ -87,7 +88,7 @@ namespace Microsoft.Its.Domain.Api
             return Request.CreateResponse(HttpStatusCode.Created);
         }
 
-        private void ApplyCommand(TAggregate aggregate, string commandName, JObject command)
+        private async Task ApplyCommand(TAggregate aggregate, string commandName, JObject command)
         {
             var c = CreateCommand(commandName, command);
 
@@ -104,7 +105,7 @@ namespace Microsoft.Its.Domain.Api
                 c.ETag = etag;
             }
 
-            aggregate.Apply((ICommand<TAggregate>) c);
+            await aggregate.ApplyAsync((ICommand<TAggregate>) c);
         }
 
         private dynamic CreateCommand(string commandName, JObject command)
@@ -132,7 +133,7 @@ namespace Microsoft.Its.Domain.Api
         /// <param name="batch">The batch of commands to apply.</param>
         /// <returns></returns>
         [AcceptVerbs("POST")]
-        public object ApplyBatch(
+        public async Task<object> ApplyBatch(
             [FromUri] Guid id,
             [FromBody] JArray batch)
         {
@@ -144,7 +145,7 @@ namespace Microsoft.Its.Domain.Api
                 {
                     try
                     {
-                        ApplyCommand(aggregate, property.Name, property.Value as JObject);
+                        await ApplyCommand(aggregate, property.Name, property.Value as JObject);
                     }
                     catch (HttpResponseException ex)
                     {

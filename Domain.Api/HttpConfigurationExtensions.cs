@@ -169,7 +169,7 @@ namespace Microsoft.Its.Domain.Api
                 defaults: new
                 {
                     controller = apiController,
-                    action = "apply",
+                    action = "apply"
                 },
                 constraints: new
                 {
