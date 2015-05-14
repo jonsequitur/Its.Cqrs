@@ -81,6 +81,48 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
+        ///     Performs the action of the command upon the aggregate.
+        /// </summary>
+        /// <param name="aggregate">The aggregate to which to apply the command.</param>
+        /// <exception cref="CommandValidationException">
+        ///     If the command cannot be applied due its state or the state of the aggregate, it should throw a
+        ///     <see
+        ///         cref="CommandValidationException" />
+        ///     indicating the specifics of the failure.
+        /// </exception>
+        public virtual async Task ApplyToAsync(TAggregate aggregate)
+        {
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException("aggregate");
+            }
+
+            if (!string.IsNullOrWhiteSpace(ETag))
+            {
+                var eventSourced = aggregate as IEventSourced;
+                if (eventSourced.HasETag(ETag))
+                {
+                    return;
+                }
+            }
+
+            // validate that the command's state is valid in and of itself
+            var validationReport = RunAllValidations(aggregate, false);
+
+            using (CommandContext.Establish(this))
+            {
+                if (validationReport.HasFailures)
+                {
+                    HandleCommandValidationFailure(aggregate, validationReport);
+                }
+                else
+                {
+                    await EnactCommandAsync(aggregate);
+                }
+            }
+        }
+
+        /// <summary>
         /// Enacts the command once authorizations and validations have succeeded.
         /// </summary>
         /// <param name="aggregate">The aggregate upon which to enact the command.</param>
@@ -95,6 +137,21 @@ namespace Microsoft.Its.Domain
                 Task handle = Handler.EnactCommand((dynamic) aggregate, (dynamic) this);
                 handle.Wait();
             }
+        }
+        
+        /// <summary>
+        /// Enacts the command once authorizations and validations have succeeded.
+        /// </summary>
+        /// <param name="aggregate">The aggregate upon which to enact the command.</param>
+        protected virtual async Task EnactCommandAsync(TAggregate aggregate)
+        {
+            if (Handler == null)
+            {
+                await Task.Run(() => EnactCommand(aggregate));
+                return;
+            }
+            
+            await Handler.EnactCommand((dynamic) aggregate, (dynamic) this);
         }
 
         private bool CommandHandlerIsRegistered()

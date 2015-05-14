@@ -61,7 +61,7 @@ namespace Microsoft.Its.Domain.Api
             
             var existingVersion = aggregate.Version;
 
-            ApplyCommand(aggregate, commandName, command);
+            await ApplyCommand(aggregate, commandName, command);
 
             await repository.Save(aggregate);
 
@@ -88,7 +88,7 @@ namespace Microsoft.Its.Domain.Api
             return Request.CreateResponse(HttpStatusCode.Created);
         }
 
-        private void ApplyCommand(TAggregate aggregate, string commandName, JObject command)
+        private async Task ApplyCommand(TAggregate aggregate, string commandName, JObject command)
         {
             var c = CreateCommand(commandName, command);
 
@@ -105,7 +105,7 @@ namespace Microsoft.Its.Domain.Api
                 c.ETag = etag;
             }
 
-            aggregate.Apply((ICommand<TAggregate>) c);
+            await aggregate.ApplyAsync((ICommand<TAggregate>) c);
         }
 
         private dynamic CreateCommand(string commandName, JObject command)
@@ -145,7 +145,7 @@ namespace Microsoft.Its.Domain.Api
                 {
                     try
                     {
-                        ApplyCommand(aggregate, property.Name, property.Value as JObject);
+                        await ApplyCommand(aggregate, property.Name, property.Value as JObject);
                     }
                     catch (HttpResponseException ex)
                     {
