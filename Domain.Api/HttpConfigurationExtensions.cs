@@ -47,7 +47,7 @@ namespace Microsoft.Its.Domain.Api
                 defaults: new
                 {
                     controller = apiController,
-                    action = "GetAggregate",
+                    action = "GetAggregate"
                 },
                 constraints: new
                 {

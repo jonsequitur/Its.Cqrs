@@ -465,13 +465,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
 
             using (var catchup = CreateReadModelCatchup(projector))
+            using (catchup.Progress.Subscribe(s =>
             {
-                catchup.Progress.ForEachAsync(s =>
-                {
-                    progress.Add(s);
-                    Console.WriteLine("progress: " + s);
-                });
-
+                progress.Add(s);
+                Console.WriteLine("progress: " + s);
+            }))
+            {
 #pragma warning disable 4014
                 // don't await
                 catchup.Run();
@@ -479,6 +478,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 mre.Set();
                 await catchup.Run();
+                await Task.Delay(5000);
             }
 
             progress.Should().ContainSingle(s => s.IsStartOfBatch);

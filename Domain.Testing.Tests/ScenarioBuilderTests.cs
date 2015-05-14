@@ -779,6 +779,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
             customerAccount.Apply(new RequestNoSpam());
             await scenario.Save(customerAccount);
 
+            await Task.Delay(100);
+
             var latest = await scenario.GetLatest<CustomerAccount>(customerId);
             latest.EmailAddress.Should().Be("devnull@nowhere.com");
         }

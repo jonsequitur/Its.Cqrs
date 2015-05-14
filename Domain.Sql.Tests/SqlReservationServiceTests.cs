@@ -272,21 +272,22 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             // given a fixed quantity of some resource, e.g. promo codes:
             var word = Any.Word();
-            var ownerToken = Any.Guid().ToString();
+            var ownerToken = "ownerToken-" + Any.Guid();
             var promoCode = "promo-code-" + word;
-            var reservedValue = Any.Guid().ToString();
-            var userConfirmationCode = Any.Guid().ToString();
+            var reservedValue = "reservedValue-" + Any.Guid();
+            var confirmationToken = "userConfirmationCode-" + Any.Guid();
             await reservationService.Reserve(reservedValue, promoCode, reservedValue, TimeSpan.FromDays(-1));
 
             //act
             var result = await reservationService.ReserveAny(
                 scope: promoCode,
                 ownerToken: ownerToken,
-                lease: TimeSpan.FromMinutes(2), confirmationToken: userConfirmationCode);
+                lease: TimeSpan.FromMinutes(2), 
+                confirmationToken: confirmationToken);
 
             result.Should().Be(reservedValue);
 
-            await reservationService.Confirm(userConfirmationCode, promoCode, ownerToken);
+            await reservationService.Confirm(confirmationToken, promoCode, ownerToken);
 
             // assert
             using (var db = new ReservationServiceDbContext())
@@ -342,8 +343,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             // given a fixed quantity of some resource, e.g. promo codes:
             var promoCode = "promo-code-" + Any.Word();
-            var reservedValue1 = "firstValue:" + Any.Guid().ToString();
-            var reservedValue2 = "SecondValue:" + Any.Guid().ToString();
+            var reservedValue1 = "firstValue:" + Any.Guid();
+            var reservedValue2 = "SecondValue:" + Any.Guid();
             await reservationService1.Reserve(reservedValue1, promoCode, Any.CamelCaseName(), TimeSpan.FromDays(-1));
             await reservationService2.Reserve(reservedValue2, promoCode, Any.CamelCaseName(), TimeSpan.FromDays(-1));
 
@@ -364,19 +365,21 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 entry2
             });
 
-            reservationService1.GetValueToReserve = (reservedValues, scope, now) => entry1;
-            reservationService2.GetValueToReserve = (reservedValues, scope, now) => queue.Dequeue();
+            reservationService1.GetValueToReserve = (reservedValues, scope, now) => Task.FromResult(entry1);
+            reservationService2.GetValueToReserve = (reservedValues, scope, now) => Task.FromResult(queue.Dequeue());
 
             //act
             var result = await reservationService1.ReserveAny(
                 scope: promoCode,
                 ownerToken: Any.FullName(),
-                lease: TimeSpan.FromMinutes(2), confirmationToken: Any.CamelCaseName());
+                lease: TimeSpan.FromMinutes(2), 
+                confirmationToken: Any.CamelCaseName());
 
             var result2 = await reservationService2.ReserveAny(
                 scope: promoCode,
                 ownerToken: Any.FullName(),
-                lease: TimeSpan.FromMinutes(2), confirmationToken: Any.CamelCaseName());
+                lease: TimeSpan.FromMinutes(2), 
+                confirmationToken: Any.CamelCaseName());
 
             //assert
             result.Should().NotBe(result2);
