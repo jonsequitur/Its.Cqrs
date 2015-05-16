@@ -41,11 +41,11 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         public Func<EventStoreDbContext> CreateEventStoreDbContext = () => new EventStoreDbContext();
 
-        internal EventStoreDbContext CreateOpenEventStoreDbContext()
+        internal async Task<EventStoreDbContext> CreateOpenEventStoreDbContext()
         {
             var context = CreateEventStoreDbContext();
             var dbConnection = ((IObjectContextAdapter) context).ObjectContext.Connection;
-            dbConnection.Open();
+            await dbConnection.OpenAsync();
             return context;
         }
 
@@ -141,7 +141,7 @@ namespace Microsoft.Its.Domain.Sql
         /// Runs a single catchup operation, which will catch up the subscribed projectors through the latest recorded event.
         /// </summary>
         /// <remarks>This method will return immediately without performing any updates if another catchup is currently in progress for the same read model database.</remarks>
-        public ReadModelCatchupResult Run()
+        public async Task<ReadModelCatchupResult> Run()
         {
             // perform a re-entrancy check so that multiple catchups do not try to run concurrently
             if (Interlocked.CompareExchange(ref running, 1, 0) != 0)
@@ -159,7 +159,7 @@ namespace Microsoft.Its.Domain.Sql
             try
             {
                 using (var query = new ExclusiveEventStoreCatchupQuery(
-                    CreateOpenEventStoreDbContext(),
+                    await CreateOpenEventStoreDbContext(),
                     lockResourceName,
                     GetStartingId,
                     matchEvents))
@@ -183,7 +183,7 @@ namespace Microsoft.Its.Domain.Sql
 
                     stopwatch.Start();
 
-                    eventsProcessed = StreamEventsToProjections(query);
+                    eventsProcessed = await StreamEventsToProjections(query);
                 }
             }
             catch (Exception exception)
@@ -214,7 +214,7 @@ namespace Microsoft.Its.Domain.Sql
             return ReadModelCatchupResult.CatchupRanAndHandledNewEvents;
         }
 
-        private long StreamEventsToProjections(ExclusiveEventStoreCatchupQuery query)
+        private async Task<long> StreamEventsToProjections(ExclusiveEventStoreCatchupQuery query)
         {
             long eventsProcessed = 0;
 
@@ -222,19 +222,7 @@ namespace Microsoft.Its.Domain.Sql
             {
                 eventsProcessed++;
 
-                if (unsubscribedReadModelInfos.Count > 0)
-                {
-                    foreach (var readmodelInfo in unsubscribedReadModelInfos.ToArray())
-                    {
-                        if (storedEvent.Id >= readmodelInfo.CurrentAsOfEventId + 1)
-                        {
-                            var handler = projectors.Single(p => ReadModelInfo.NameForProjector(p) == readmodelInfo.Name);
-                            disposables.Add(bus.Subscribe(handler));
-                            unsubscribedReadModelInfos.Remove(readmodelInfo);
-                            subscribedReadModelInfos.Add(readmodelInfo);
-                        }
-                    }
-                }
+                IncludeReadModelsNeeding(storedEvent);
 
                 if (cancellationDisposable.IsDisposed)
                 {
@@ -253,7 +241,7 @@ namespace Microsoft.Its.Domain.Sql
                     {
                         using (var work = CreateUnitOfWork(@event))
                         {
-                            bus.PublishAsync(@event).Wait();
+                            await bus.PublishAsync(@event);
                              
                             var infos = work.Resource<DbContext>().Set<ReadModelInfo>();
                             
@@ -327,6 +315,23 @@ namespace Microsoft.Its.Domain.Sql
                 ReportStatus(status);
             }
             return eventsProcessed;
+        }
+
+        private void IncludeReadModelsNeeding(StorableEvent storedEvent)
+        {
+            if (unsubscribedReadModelInfos.Count > 0)
+            {
+                foreach (var readmodelInfo in unsubscribedReadModelInfos.ToArray())
+                {
+                    if (storedEvent.Id >= readmodelInfo.CurrentAsOfEventId + 1)
+                    {
+                        var handler = projectors.Single(p => ReadModelInfo.NameForProjector(p) == readmodelInfo.Name);
+                        disposables.Add(bus.Subscribe(handler));
+                        unsubscribedReadModelInfos.Remove(readmodelInfo);
+                        subscribedReadModelInfos.Add(readmodelInfo);
+                    }
+                }
+            }
         }
 
         private void ReportStatus(ReadModelCatchupStatus status)
