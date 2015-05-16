@@ -23,12 +23,13 @@ namespace Microsoft.Its.Domain
             where TAggregate : class, IEventSourced
         {
             TAggregate aggregate = null;
+            Exception exception = null;
 
             try
             {
                 if (verifyPrecondition != null && !await verifyPrecondition())
                 {
-                    return FailScheduledCommand(repository, scheduled);
+                    return await FailScheduledCommand(repository, scheduled);
                 }
 
                 aggregate = await repository.GetLatest(scheduled.AggregateId);
@@ -58,13 +59,15 @@ namespace Microsoft.Its.Domain
 
                 return new CommandSucceeded(scheduled);
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
-                return FailScheduledCommand(repository, scheduled, exception, aggregate);
+                exception = ex;
             }
+
+            return await FailScheduledCommand(repository, scheduled, exception, aggregate);
         }
 
-        private static ScheduledCommandResult FailScheduledCommand<TAggregate>(
+        private static async Task<ScheduledCommandResult> FailScheduledCommand<TAggregate>(
             IEventSourcedRepository<TAggregate> repository,
             IScheduledCommand<TAggregate> scheduled,
             Exception exception = null,
@@ -100,7 +103,7 @@ namespace Microsoft.Its.Domain
                 {
                     try
                     {
-                        repository.Save(aggregate);
+                        await repository.Save(aggregate);
                     }
                     catch (Exception ex)
                     {

@@ -185,7 +185,6 @@ namespace Microsoft.Its.Domain
                                                     .Then(b => MatchBasedOnEventType(b.EventType))
                                                     .Else(() =>
                                                     {
-                                                        // QUESTION: (MatchesEvents) shuld this be a wildcard match?
                                                         return Enumerable.Empty<MatchEvent>();
                                                     })));
         }

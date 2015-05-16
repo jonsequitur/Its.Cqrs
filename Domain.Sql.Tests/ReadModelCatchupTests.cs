@@ -447,11 +447,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_Run_is_called_while_already_running_then_it_skips_the_run()
         {
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
-            new Order().Apply(new AddItem
-            {
-                Price = 1m,
-                ProductName = MethodBase.GetCurrentMethod().Name
-            });
             await repository.Save(new Order());
             var mre = new ManualResetEventSlim();
             var progress = new List<ReadModelCatchupStatus>();
@@ -478,7 +473,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 mre.Set();
                 await catchup.Run();
-                await Task.Delay(5000);
+                await Task.Delay(2000);
             }
 
             progress.Should().ContainSingle(s => s.IsStartOfBatch);
