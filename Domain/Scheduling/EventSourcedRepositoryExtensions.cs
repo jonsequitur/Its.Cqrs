@@ -51,7 +51,7 @@ namespace Microsoft.Its.Domain
                 }
                 else
                 {
-                    aggregate.Apply(scheduled.Command);
+                    await aggregate.ApplyAsync(scheduled.Command);
                 }
 
                 repository.Save(aggregate);
