@@ -437,7 +437,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 StartAtEventId = lastEventId - 20
             })
             {
-                catchup.Run();
+                await catchup.Run();
             }
 
             eventsProjected.Should().Be(21);
@@ -468,7 +468,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
 #pragma warning disable 4014
                 // don't await
-                catchup.Run();
+                Task.Run(() => catchup.Run());
 #pragma warning restore 4014
 
                 mre.Set();
@@ -950,7 +950,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
 #pragma warning disable 4014
                 // don't await catchup
-                catchup.Run();
+                Task.Run(() => catchup.Run());
 #pragma warning restore 4014
                 barrier.SignalAndWait(500);
                 (await catchup.Run()).Should().Be(ReadModelCatchupResult.CatchupAlreadyInProgress);  
@@ -970,11 +970,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     Console.WriteLine(s);
                     lastEventId = s.CurrentEventId;
                 });
-                
+
 #pragma warning disable 4014
                 // don't await
-                catchup.Run()
-                       .ContinueWith(r => catchup.Dispose());
+                Task.Run(() => catchup.Run())
+                    .ContinueWith(r => catchup.Dispose());
 #pragma warning restore 4014
 
                 await catchup.Progress;
@@ -1052,7 +1052,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
 #pragma warning disable 4014
                 // don't await
-                catchup.Run();
+                Task.Run(() => catchup.Run());
 #pragma warning restore 4014
                 Thread.Sleep(1000);
                 var status = await catchup.SingleBatchAsync();

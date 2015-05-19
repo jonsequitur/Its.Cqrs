@@ -129,9 +129,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             return this;
         }
 
-        public override Task<ReadModelCatchupResult> Run()
+        public override async Task<ReadModelCatchupResult> Run()
         {
-            return Task.Run(() => catchup.Run());
+            return await catchup.Run();
         }
 
         public override IObservable<ReadModelCatchupStatus> SingleBatchAsync(

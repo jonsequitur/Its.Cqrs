@@ -177,6 +177,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void EventStore_polling_polls_again_immediately_if_new_events_were_written_while_the_previous_batch_was_processing()
         {
+            TaskScheduler.UnobservedTaskException += (sender, args) =>
+            {
+                Console.WriteLine(args.Exception.ToLogString());
+            };
+
             Events.Write(1);
             var writeAdditionalEvent = true;
             var scheduler = new TestScheduler();
@@ -194,20 +199,18 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var statusReports = new List<ReadModelCatchupStatus>();
             using (var catchup = CreateReadModelCatchup<ReadModels1DbContext>(projector))
+            using (catchup.Progress.Subscribe(s =>
             {
-                catchup.Progress
-                       .ForEachAsync(s =>
-                       {
-                           statusReports.Add(s);
-                           Console.WriteLine(s);
-                       });
-
+                statusReports.Add(s);
+            }))
+            {
                 catchup.PollEventStore(TimeSpan.FromSeconds(30), scheduler);
 
                 scheduler.AdvanceBy(TimeSpan.FromSeconds(30).Ticks);
 
                 statusReports.Count(s => s.IsStartOfBatch)
-                             .Should().Be(2);
+                             .Should()
+                             .Be(2);
             }
         }
 
