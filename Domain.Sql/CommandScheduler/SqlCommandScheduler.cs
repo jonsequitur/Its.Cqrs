@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
+using System.Data.Entity;
 using System.Data.Entity.Core;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
@@ -128,7 +128,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             using (var db = CreateCommandSchedulerDbContext())
             {
-                var clock = db.Clocks.SingleOrDefault(c => c.Name == clockName);
+                var clock = await db.Clocks.SingleOrDefaultAsync(c => c.Name == clockName);
 
                 if (clock == null)
                 {
@@ -149,7 +149,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 var result = new SchedulerAdvancedResult(to.Value);
 
                 clock.UtcNow = to.Value;
-                db.SaveChanges();
+                await db.SaveChangesAsync();
 
                 var commands = db.ScheduledCommands
                                  .Due(asOf: to)
@@ -161,7 +161,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 }
 
                 // ToArray closes the connection so that when we perform saves during the loop there are no connection errors
-                foreach (var scheduled in commands.ToArray())
+                foreach (var scheduled in await commands.ToArrayAsync())
                 {
                     //clock.UtcNow = scheduled.DueTime ?? to.Value;
                     await Trigger(scheduled, result, db);
@@ -229,7 +229,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             scheduled.Attempts++;
 
-            db.SaveChanges();
+            await db.SaveChangesAsync();
         }
 
         public void CreateClock(

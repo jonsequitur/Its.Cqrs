@@ -27,7 +27,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             scenario.Save(new Order(new CreateOrder(Any.FullName())
             {
                 AggregateId = id
-            }));
+            })).Wait();
 
             var order = scenario.GetLatest<Order>(id);
 

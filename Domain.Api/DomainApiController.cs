@@ -57,13 +57,13 @@ namespace Microsoft.Its.Domain.Api
             [FromUri] string commandName,
             [FromBody] JObject command)
         {
-            var aggregate = GetAggregate(id);
+            var aggregate = await GetAggregate(id);
             
             var existingVersion = aggregate.Version;
 
             await ApplyCommand(aggregate, commandName, command);
 
-            repository.Save(aggregate);
+            await repository.Save(aggregate);
 
             return Request.CreateResponse(aggregate.Version == existingVersion
                                               ? HttpStatusCode.NotModified
@@ -83,7 +83,7 @@ namespace Microsoft.Its.Domain.Api
 
             var aggregate = (TAggregate) ctor.Invoke(new[] { c });
 
-            repository.Save(aggregate);
+            await repository.Save(aggregate);
 
             return Request.CreateResponse(HttpStatusCode.Created);
         }
@@ -137,7 +137,7 @@ namespace Microsoft.Its.Domain.Api
             [FromUri] Guid id,
             [FromBody] JArray batch)
         {
-            var aggregate = GetAggregate(id);
+            var aggregate = await GetAggregate(id);
 
             foreach (var command in batch)
             {
@@ -160,7 +160,7 @@ namespace Microsoft.Its.Domain.Api
                 }
             }
 
-            repository.Save(aggregate);
+            await repository.Save(aggregate);
 
             return new HttpResponseMessage(HttpStatusCode.Accepted);
         }
@@ -169,7 +169,7 @@ namespace Microsoft.Its.Domain.Api
         /// Validates an aggregate having the specified id.
         /// </summary>
         [AcceptVerbs("POST")]
-        public object Validate(
+        public async Task<object> Validate(
             [FromUri] Guid id,
             [FromUri] string commandName,
             [FromBody] JObject command)
@@ -190,7 +190,7 @@ namespace Microsoft.Its.Domain.Api
                                              .Then(json => json.ToObject(commandType))
                                              .Else(() => Activator.CreateInstance(commandType)) as Command<TAggregate>;
 
-            var aggregate = GetAggregate(id);
+            var aggregate = await GetAggregate(id);
 
             var validationReport = aggregate.Validate(deserializedCommand);
 
@@ -226,9 +226,9 @@ namespace Microsoft.Its.Domain.Api
 #if !DEBUG
         [NonAction]
 #endif
-        public TAggregate GetAggregate(Guid id)
+        public async Task<TAggregate> GetAggregate(Guid id)
         {
-            var aggregate = repository.GetLatest(id);
+            var aggregate = await repository.GetLatest(id);
 
             if (aggregate == null)
             {

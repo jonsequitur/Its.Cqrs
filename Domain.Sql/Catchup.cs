@@ -59,7 +59,7 @@ namespace Microsoft.Its.Domain.Sql
                         // dispose any previous catchup query immediately, to release its app lock and dispose database connections
                         if (status.BatchCount > 0)
                         {
-                            using (var eventStore = readModelCatchup.CreateOpenEventStoreDbContext())
+                            using (var eventStore = readModelCatchup.CreateOpenEventStoreDbContext().Result)
                             {
                                 if (eventStore.Events.Max(e => e.Id) > status.CurrentEventId)
                                 {
@@ -99,9 +99,9 @@ namespace Microsoft.Its.Domain.Sql
 
                 var disposables = new CompositeDisposable { subscription };
 
-                return scheduler.ScheduleAsync((sched, token) =>
+                return scheduler.ScheduleAsync(async (sched, token) =>
                 {
-                    if (catchup.Run() == ReadModelCatchupResult.CatchupAlreadyInProgress)
+                    if (await catchup.Run() == ReadModelCatchupResult.CatchupAlreadyInProgress)
                     {
                         // monitor for the end of the batch
                         var currentBatch = catchup.Progress

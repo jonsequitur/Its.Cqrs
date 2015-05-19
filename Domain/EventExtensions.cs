@@ -156,6 +156,7 @@ namespace Microsoft.Its.Domain
                       }));
         }
 
+        [Obsolete]
         public static T GetAggregate<T>(this Event<T> @event) where T : class, IEventSourced
         {
             // TODO: (GetAggregate) this is possibly awkward to use, e.g. expects the handler to know that the aggregate was sourced.
@@ -168,7 +169,7 @@ namespace Microsoft.Its.Domain
                 .Else<T>(() =>
                 {
                     var repository = Configuration.Current.Container.Resolve<IEventSourcedRepository<T>>();
-                    return repository.GetLatest(@event.AggregateId);
+                    return repository.GetLatest(@event.AggregateId).Result;
                 });
         }
 

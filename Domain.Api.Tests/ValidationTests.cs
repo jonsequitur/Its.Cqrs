@@ -3,6 +3,7 @@
 
 using System;
 using System.Data.Entity;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Api.Serialization;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
@@ -34,11 +35,12 @@ namespace Microsoft.Its.Domain.Api.Tests
         }
 
         [Test]
-        public void Command_properties_can_be_validated()
+        public async Task Command_properties_can_be_validated()
         {
             var order = new Order(
                 Guid.NewGuid(),
-                new Order.Fulfilled()).SaveToEventStore();
+                new Order.Fulfilled());
+            await order.SaveToEventStore();
 
             Console.WriteLine(order.Id);
 

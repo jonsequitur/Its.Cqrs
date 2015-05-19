@@ -23,6 +23,8 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         DateTimeOffset Timestamp { get; }
 
+        string StreamName { get; set; }
+
         string Type { get; set; }
 
         string Body { get; set; }

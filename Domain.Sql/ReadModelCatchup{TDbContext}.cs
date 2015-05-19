@@ -12,6 +12,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Unit = System.Reactive.Unit;
@@ -40,11 +41,11 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         public Func<EventStoreDbContext> CreateEventStoreDbContext = () => new EventStoreDbContext();
 
-        internal EventStoreDbContext CreateOpenEventStoreDbContext()
+        internal async Task<EventStoreDbContext> CreateOpenEventStoreDbContext()
         {
             var context = CreateEventStoreDbContext();
             var dbConnection = ((IObjectContextAdapter) context).ObjectContext.Connection;
-            dbConnection.Open();
+            await dbConnection.OpenAsync();
             return context;
         }
 
@@ -140,7 +141,7 @@ namespace Microsoft.Its.Domain.Sql
         /// Runs a single catchup operation, which will catch up the subscribed projectors through the latest recorded event.
         /// </summary>
         /// <remarks>This method will return immediately without performing any updates if another catchup is currently in progress for the same read model database.</remarks>
-        public ReadModelCatchupResult Run()
+        public async Task<ReadModelCatchupResult> Run()
         {
             // perform a re-entrancy check so that multiple catchups do not try to run concurrently
             if (Interlocked.CompareExchange(ref running, 1, 0) != 0)
@@ -158,7 +159,7 @@ namespace Microsoft.Its.Domain.Sql
             try
             {
                 using (var query = new ExclusiveEventStoreCatchupQuery(
-                    CreateOpenEventStoreDbContext(),
+                    await CreateOpenEventStoreDbContext(),
                     lockResourceName,
                     GetStartingId,
                     matchEvents))
@@ -171,6 +172,8 @@ namespace Microsoft.Its.Domain.Sql
                         CatchupName = Name
                     });
 
+                    Debug.WriteLine(new { query });
+
                     if (query.ExpectedNumberOfEvents == 0)
                     {
                         return ReadModelCatchupResult.CatchupRanButNoNewEvents;
@@ -180,7 +183,7 @@ namespace Microsoft.Its.Domain.Sql
 
                     stopwatch.Start();
 
-                    eventsProcessed = StreamEventsToProjections(query);
+                    eventsProcessed = await StreamEventsToProjections(query);
                 }
             }
             catch (Exception exception)
@@ -211,7 +214,7 @@ namespace Microsoft.Its.Domain.Sql
             return ReadModelCatchupResult.CatchupRanAndHandledNewEvents;
         }
 
-        private long StreamEventsToProjections(ExclusiveEventStoreCatchupQuery query)
+        private async Task<long> StreamEventsToProjections(ExclusiveEventStoreCatchupQuery query)
         {
             long eventsProcessed = 0;
 
@@ -219,19 +222,7 @@ namespace Microsoft.Its.Domain.Sql
             {
                 eventsProcessed++;
 
-                if (unsubscribedReadModelInfos.Count > 0)
-                {
-                    foreach (var readmodelInfo in unsubscribedReadModelInfos.ToArray())
-                    {
-                        if (storedEvent.Id >= readmodelInfo.CurrentAsOfEventId + 1)
-                        {
-                            var handler = projectors.Single(p => ReadModelInfo.NameForProjector(p) == readmodelInfo.Name);
-                            disposables.Add(bus.Subscribe(handler));
-                            unsubscribedReadModelInfos.Remove(readmodelInfo);
-                            subscribedReadModelInfos.Add(readmodelInfo);
-                        }
-                    }
-                }
+                IncludeReadModelsNeeding(storedEvent);
 
                 if (cancellationDisposable.IsDisposed)
                 {
@@ -250,28 +241,33 @@ namespace Microsoft.Its.Domain.Sql
                     {
                         using (var work = CreateUnitOfWork(@event))
                         {
-                            bus.PublishAsync(@event).Wait();
+                            await bus.PublishAsync(@event);
                              
                             var infos = work.Resource<DbContext>().Set<ReadModelInfo>();
+                            
                             subscribedReadModelInfos.ForEach(i =>
                             {
                                 var eventsRemaining = query.ExpectedNumberOfEvents - eventsProcessed;
+                                
                                 infos.Attach(i);
                                 i.LastUpdated = now;
                                 i.CurrentAsOfEventId = storedEvent.Id;
                                 i.LatencyInMilliseconds = (now - @event.Timestamp).TotalMilliseconds;
                                 i.BatchRemainingEvents = eventsRemaining;
+                                
                                 if (eventsProcessed == 1)
                                 {
                                     i.BatchStartTime = now;
                                     i.BatchTotalEvents = query.ExpectedNumberOfEvents;
                                 }
+                                
                                 if (i.InitialCatchupStartTime == null)
                                 {
                                     i.InitialCatchupStartTime = now;
                                     i.InitialCatchupEvents = query.ExpectedNumberOfEvents;
                                 }
-                                if (eventsRemaining == 0 & i.InitialCatchupEndTime == null)
+                                
+                                if (eventsRemaining == 0 && i.InitialCatchupEndTime == null)
                                 {
                                     i.InitialCatchupEndTime = now;
                                 }
@@ -321,6 +317,23 @@ namespace Microsoft.Its.Domain.Sql
             return eventsProcessed;
         }
 
+        private void IncludeReadModelsNeeding(StorableEvent storedEvent)
+        {
+            if (unsubscribedReadModelInfos.Count > 0)
+            {
+                foreach (var readmodelInfo in unsubscribedReadModelInfos.ToArray())
+                {
+                    if (storedEvent.Id >= readmodelInfo.CurrentAsOfEventId + 1)
+                    {
+                        var handler = projectors.Single(p => ReadModelInfo.NameForProjector(p) == readmodelInfo.Name);
+                        disposables.Add(bus.Subscribe(handler));
+                        unsubscribedReadModelInfos.Remove(readmodelInfo);
+                        subscribedReadModelInfos.Add(readmodelInfo);
+                    }
+                }
+            }
+        }
+
         private void ReportStatus(ReadModelCatchupStatus status)
         {
             try
@@ -336,6 +349,7 @@ namespace Microsoft.Its.Domain.Sql
         private long GetStartingId()
         {
             var readModelInfos = subscribedReadModelInfos.Concat(unsubscribedReadModelInfos).ToArray();
+
             using (var db = CreateReadModelDbContext())
             {
                 foreach (var readModelInfo in readModelInfos)
@@ -348,7 +362,7 @@ namespace Microsoft.Its.Domain.Sql
 
             var existingReadModelInfosCount = readModelInfos.Length;
             long startAtId = 0;
-           
+
             if (GetProjectorNames().Count() == existingReadModelInfosCount)
             {
                 // if all of the read models have been previously updated, we don't have to start at event 0

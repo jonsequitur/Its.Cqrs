@@ -98,7 +98,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void Timestamp_round_trips_correctly_to_database()
         {
-            Guid id = Guid.NewGuid();
+            var id = Guid.NewGuid();
             var now = Clock.Now();
 
             using (var db = new EventStoreDbContext())

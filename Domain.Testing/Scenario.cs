@@ -123,11 +123,12 @@ namespace Microsoft.Its.Domain.Testing
         ///     Persists the state of the specified aggregate by adding new events to the event store.
         /// </summary>
         /// <param name="aggregate">The aggregate to persist.</param>
-        public void Save<TAggregate>(TAggregate aggregate)
+        public async Task Save<TAggregate>(TAggregate aggregate)
             where TAggregate : class, IEventSourced
         {
             aggregates.Add(aggregate);
-            builder.GetRepository(aggregate.GetType()).Save(aggregate);
+            await builder.GetRepository(aggregate.GetType())
+                         .Save(aggregate);
         }
 
         /// <summary>
@@ -135,7 +136,7 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="aggregateId">The id of the aggregate. If null, and there's only a single aggregate of the specified type, it returns that; otherwise, it throws.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public TAggregate GetLatest<TAggregate>(Guid? aggregateId = null)
+        public async Task<TAggregate> GetLatest<TAggregate>(Guid? aggregateId = null)
             where TAggregate : class, IEventSourced
         {
             if (!aggregateId.HasValue)
@@ -143,7 +144,8 @@ namespace Microsoft.Its.Domain.Testing
                 aggregateId = Aggregates.OfType<TAggregate>().Single().Id;
             }
 
-            return builder.GetRepository(typeof (TAggregate)).GetLatest(aggregateId.Value);
+            return await builder.GetRepository(typeof (TAggregate))
+                                .GetLatest(aggregateId.Value);
         }
 
         /// <summary>
@@ -152,10 +154,11 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="version">The version at which to retrieve the aggregate.</param>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public TAggregate GetVersion<TAggregate>(Guid aggregateId, long version)
+        public async Task<TAggregate> GetVersion<TAggregate>(Guid aggregateId, long version)
             where TAggregate : class, IEventSourced
         {
-            return builder.GetRepository(typeof (TAggregate)).GetVersion(aggregateId, version);
+            return await builder.GetRepository(typeof (TAggregate))
+                                .GetVersion(aggregateId, version);
         }
 
         /// <summary>
@@ -166,10 +169,11 @@ namespace Microsoft.Its.Domain.Testing
         /// <returns>
         /// The deserialized aggregate, or null if none exists with the specified id.
         /// </returns>
-        public TAggregate GetAsOfDate<TAggregate>(Guid aggregateId, DateTimeOffset asOfDate)
+        public async Task<TAggregate> GetAsOfDate<TAggregate>(Guid aggregateId, DateTimeOffset asOfDate)
             where TAggregate : class, IEventSourced
         {
-            return builder.GetRepository(typeof (TAggregate)).GetAsOfDate(aggregateId, asOfDate);
+            return await builder.GetRepository(typeof (TAggregate))
+                                .GetAsOfDate(aggregateId, asOfDate);
         }
 
         /// <summary>

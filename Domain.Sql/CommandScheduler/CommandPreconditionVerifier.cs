@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -35,12 +36,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             using (var eventStore = createEventStoreDbContext())
             {
-                var preconditionMet =
-                    eventStore.Events.Any(
-                        e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
-                             e.ETag == scheduledCommand.DeliveryPrecondition.ETag);
-
-                return preconditionMet;
+                return await eventStore.Events.AnyAsync(
+                    e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
+                         e.ETag == scheduledCommand.DeliveryPrecondition.ETag);
             }
         }
     }

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
@@ -16,7 +17,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        TAggregate GetLatest(Guid aggregateId);
+        Task<TAggregate> GetLatest(Guid aggregateId);
 
         /// <summary>
         ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
@@ -24,7 +25,7 @@ namespace Microsoft.Its.Domain
         /// <param name="version">The version at which to retrieve the aggregate.</param>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        TAggregate GetVersion(Guid aggregateId, long version);
+        Task<TAggregate> GetVersion(Guid aggregateId, long version);
 
         /// <summary>
         /// Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
@@ -34,19 +35,19 @@ namespace Microsoft.Its.Domain
         /// <returns>
         /// The deserialized aggregate, or null if none exists with the specified id.
         /// </returns>
-        TAggregate GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate);
+        Task<TAggregate> GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate);
 
         /// <summary>
         ///     Persists the state of the specified aggregate by adding new events to the event store.
         /// </summary>
         /// <param name="aggregate">The aggregate to persist.</param>
-        void Save(TAggregate aggregate);
+        Task Save(TAggregate aggregate);
 
         /// <summary>
         /// Refreshes an aggregate with the latest events from the event stream.
         /// </summary>
         /// <param name="aggregate">The aggregate to refresh.</param>
         /// <remarks>Events not present in the in-memory aggregate will not be re-fetched from the event store.</remarks>
-        void Refresh(TAggregate aggregate);
+        Task Refresh(TAggregate aggregate);
     }
 }

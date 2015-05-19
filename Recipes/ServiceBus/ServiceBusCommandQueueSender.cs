@@ -113,7 +113,7 @@ namespace Microsoft.Its.Domain.ServiceBus
 
             messageSubject.OnNext(scheduledCommand);
 
-            using (new TransactionScope(TransactionScopeOption.Suppress))
+            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
                 await queueClient.SendAsync(message);
             }

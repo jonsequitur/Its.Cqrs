@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
@@ -19,7 +20,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
               // these tests behave a little oddly sometimes if the database has just been rebuilt and no events have yet been caught up, so run a quick catchup to start
             Events.Write(1);
-            RunCatchup(new TestProjector());
+            RunCatchup(new TestProjector()).Wait();
         }
 
         [SetUp]
@@ -35,7 +36,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void If_events_have_been_processed_during_initial_replay_then_the_remaining_time_is_estimated_correctly()
+        public async Task If_events_have_been_processed_during_initial_replay_then_the_remaining_time_is_estimated_correctly()
         {
             //arrange
             IEnumerable<EventHandlerProgress> progress = null;
@@ -55,27 +56,28 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
 
             //act
-            RunCatchup(projector);
+            await RunCatchup(projector);
             progress.First(p => p.Name == EventHandler.FullName(projector))
-                    .TimeRemainingForCatchup.Value
+                    .TimeRemainingForCatchup
+                    .Value
                     .Should()
                     .Be(TimeSpan.FromSeconds(5));
         }
 
         [Test]
-        public void If_events_have_been_processed_after_initial_replay_then_the_remaining_time_is_estimated_correctly()
+        public async Task If_events_have_been_processed_after_initial_replay_then_the_remaining_time_is_estimated_correctly()
         {
             //arrange
             //Initial replay
             Events.Write(10);
             var projector = new TestProjector();
-            RunCatchup(projector);
+            await RunCatchup(projector);
 
             //new set of events come in
             IEnumerable<EventHandlerProgress> progress = null;
             Events.Write(10);
             var eventsProcessed = 0;
-            projector.DoSomething = (e) =>
+            projector.DoSomething = e =>
             {
                 if (eventsProcessed == 5)
                 {
@@ -86,7 +88,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
 
             //act
-            RunCatchup(projector);
+            await RunCatchup(projector);
             progress.First(p => p.Name == EventHandler.FullName(projector))
                     .TimeRemainingForCatchup.Value
                     .Should()
@@ -94,7 +96,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void If_events_have_been_processed_after_initial_replay_then_the_time_taken_for_initial_replay_is_saved()
+        public async Task If_events_have_been_processed_after_initial_replay_then_the_time_taken_for_initial_replay_is_saved()
         {
             //arrange
             ResetReadModelInfo();
@@ -104,13 +106,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
             //Initial replay
             Events.Write(10);
-            RunCatchup(projector);
+            await RunCatchup(projector);
 
             //new set of events come in
             Events.Write(5);
 
             //act
-            RunCatchup(projector);
+            await RunCatchup(projector);
             var progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
 
             //assert
@@ -121,7 +123,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void If_events_have_been_processed_after_initial_replay_then_the_number_of_events_for_initial_replay_is_saved()
+        public async Task If_events_have_been_processed_after_initial_replay_then_the_number_of_events_for_initial_replay_is_saved()
         {
             //arrange
             ResetReadModelInfo();
@@ -131,11 +133,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
             //Initial replay
             Events.Write(10);
-            RunCatchup(projector);
+            await RunCatchup(projector);
 
             //new set of events come in
             Events.Write(5);
-            RunCatchup(projector);
+            await RunCatchup(projector);
 
             //act
             var progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
@@ -148,7 +150,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void If_events_have_been_processed_then_the_correct_number_of_remaining_events_is_returned()
+        public async Task If_events_have_been_processed_then_the_correct_number_of_remaining_events_is_returned()
         {
             //arrange
             IEnumerable<EventHandlerProgress> progress = null;
@@ -168,7 +170,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
 
             //act
-            RunCatchup(projector);
+            await RunCatchup(projector);
 
             //assert
             progress.First(p => p.Name == EventHandler.FullName(projector))
@@ -196,12 +198,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void If_all_events_have_been_processed_then_the_remaining_time_is_zero()
+        public async Task If_all_events_have_been_processed_then_the_remaining_time_is_zero()
         {
             //arrange
             var projector = new TestProjector();
             Events.Write(5);
-            RunCatchup(projector);
+            await RunCatchup(projector);
 
             //act
             var progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
@@ -215,12 +217,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void If_all_events_have_been_processed_then_the_percentage_completed_is_100()
+        public async Task If_all_events_have_been_processed_then_the_percentage_completed_is_100()
         {
             //arrange
             Events.Write(5);
             var projector = new TestProjector();
-            RunCatchup(projector);
+            await RunCatchup(projector);
 
             //act
             var progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
@@ -248,11 +250,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
-        private void RunCatchup(TestProjector projector)
+        private async Task RunCatchup(TestProjector projector)
         {
             using (var catchup = CreateReadModelCatchup(projector))
             {
-                catchup.Run();
+                await catchup.Run();
             }
         }
     }

@@ -104,7 +104,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                                              .Select(_ => Guid.NewGuid())
                                              .ToArray();
 
-                aggregateIds.ForEach(id =>
+                aggregateIds.ForEach(async id =>
                 {
                     var order = CommandSchedulingTests.CreateOrder(orderId: id);
 
@@ -114,15 +114,15 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                     Console.WriteLine(new { ShipOrderId = order.Id, due });
 
-                    orderRepository.Save(order);
+                    await orderRepository.Save(order);
                 });
 
-                RunCatchup();
+                await RunCatchup();
 
                 // reset the clock so that when the messages are delivered, the target commands are now due
                 Clock.Reset();
 
-                queueReceiver.StartReceivingMessages();
+                await queueReceiver.StartReceivingMessages();
 
                 var activity = await scheduler.Activity
                                               .Where(a => aggregateIds.Contains(a.ScheduledCommand.AggregateId))
@@ -151,12 +151,12 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                         
                 });
 
-                RunCatchup();
+                await RunCatchup();
 
                 // reset the clock so that when the messages are delivered, the target commands are now due
                 Clock.Reset();
 
-                queueReceiver.StartReceivingMessages();
+                await queueReceiver.StartReceivingMessages();
 
                 var activity = await scheduler.Activity
                                               .Where(a => aggregateIds.Contains(a.ScheduledCommand.AggregateId))
@@ -182,14 +182,14 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
             using (var receiver = CreateQueueReceiver())
             {
-                receiver.StartReceivingMessages();
+                await receiver.StartReceivingMessages();
 
                 // due enough in the future that the scheduler won't apply the commands immediately
                 var order = CommandSchedulingTests.CreateOrder(orderId: aggregateId)
                                                   .Apply(new ShipOn(Clock.Now().AddSeconds(5)));
-                orderRepository.Save(order);
+                await orderRepository.Save(order);
 
-                RunCatchup();
+                await RunCatchup();
 
                 await receiver.Messages
                               .FirstAsync(c => c.AggregateId == aggregateId)
@@ -220,9 +220,9 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                                               .Apply(new ShipOn(Clock.Now().AddSeconds(-5)));
             queueSender.MessageDeliveryOffsetFromCommandDueTime = TimeSpan.FromSeconds(0);
 
-            orderRepository.Save(order);
+            await orderRepository.Save(order);
 
-            RunCatchup();
+            await RunCatchup();
 
             using (var receiver = CreateQueueReceiver())
             {
@@ -262,12 +262,12 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
             return receiver;
         }
 
-        private void RunCatchup()
+        private async Task RunCatchup()
         {
             using (var catchup = CreateReadModelCatchup(queueSender))
             {
                 catchup.CreateReadModelDbContext = () => new CommandSchedulerDbContext();
-                catchup.Run();
+                await catchup.Run();
             }
         }
     }

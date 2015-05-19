@@ -20,6 +20,8 @@ namespace Microsoft.Its.Domain.Testing
 
         public DateTimeOffset Timestamp { get; set; }
 
+        public string StreamName { get; set; }
+
         public string Type { get; set; }
 
         public long SequenceNumber { get; set; }

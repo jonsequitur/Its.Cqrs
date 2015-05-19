@@ -24,7 +24,8 @@ namespace Microsoft.Its.Domain.Api.Tests
         {
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
             var order = new Order();
-            repository.Save(order);
+            await repository.Save(order);
+            
             var json = new[]
             {
                 new
@@ -58,7 +59,7 @@ namespace Microsoft.Its.Domain.Api.Tests
             var response = await client.SendAsync(request);
             response.ShouldSucceed();
 
-            order = repository.GetLatest(order.Id);
+            order = await repository.GetLatest(order.Id);
 
             order.Items.Count.Should().Be(2);
             order.Balance.Should().Be(3);
