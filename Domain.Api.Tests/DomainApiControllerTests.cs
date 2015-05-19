@@ -24,7 +24,8 @@ namespace Microsoft.Its.Domain.Api.Tests
         {
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
             var order = new Order();
-            repository.Save(order);
+            await repository.Save(order);
+            
             var json = new[]
             {
                 new

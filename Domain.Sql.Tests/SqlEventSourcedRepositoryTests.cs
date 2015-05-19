@@ -195,7 +195,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             try
             {
-                repository.Save(order);
+                await repository.Save(order);
             }
             catch
             {

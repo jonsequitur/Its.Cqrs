@@ -850,7 +850,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 {
                     NewEmailAddress = "devnull@nowhere.com"
                 });
-                customerRepository.Save(customer);
+                customerRepository.Save(customer).Wait();
             }
         }
     }
