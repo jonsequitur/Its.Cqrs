@@ -401,7 +401,7 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="events">The events.</param>
         public void RunWhen(IObservable<Unit> events)
         {
-            disposables.Add(events.Subscribe(es => Run()));
+            disposables.Add(events.Subscribe(es => Run().Wait()));
         }
 
         private void EnsureInitialized()
