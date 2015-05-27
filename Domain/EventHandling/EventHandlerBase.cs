@@ -34,10 +34,6 @@ namespace Microsoft.Its.Domain.EventHandling
             {
                 return name ?? (name = GetType().Name);
             }
-            protected set
-            {
-                name = value;
-            }
         }
     }
 }

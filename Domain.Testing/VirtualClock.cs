@@ -2,9 +2,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Subjects;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing
@@ -22,10 +27,10 @@ namespace Microsoft.Its.Domain.Testing
 
         private VirtualClock(DateTimeOffset now)
         {
-            Scheduler = new HistoricalScheduler(now);
+            Scheduler = new RxScheduler(now);
         }
 
-        private readonly HistoricalScheduler Scheduler;
+        private readonly RxScheduler Scheduler;
 
         /// <summary>
         /// Gets the current clock as a <see cref="VirtualClock" />. If the current clock is not a <see cref="VirtualClock" />, it throws.
@@ -59,12 +64,14 @@ namespace Microsoft.Its.Domain.Testing
         {
             Scheduler.AdvanceTo(time);
             movements.OnNext(Scheduler.Now);
+            Scheduler.Done().Wait();
         }
 
         public void AdvanceBy(TimeSpan time)
         {
             Scheduler.AdvanceBy(time);
             movements.OnNext(Scheduler.Now);
+            Scheduler.Done().Wait();
         }
 
         /// <summary>
@@ -128,6 +135,55 @@ namespace Microsoft.Its.Domain.Testing
         public override string ToString()
         {
             return GetType() + ": " + Now().ToString("O");
+        }
+
+        private class RxScheduler : HistoricalScheduler
+        {
+            private readonly IDictionary<IScheduledCommand, DateTimeOffset> pending = new ConcurrentDictionary<IScheduledCommand, DateTimeOffset>();
+
+            private readonly ManualResetEventSlim resetEvent = new ManualResetEventSlim();
+
+            public RxScheduler(DateTimeOffset initialClock) : base(initialClock)
+            {
+            }
+
+            public override IDisposable ScheduleAbsolute<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
+            {
+                var schedule = base.ScheduleAbsolute(state, dueTime, (scheduler, command) =>
+                {
+                    var cancel = action(scheduler, command);
+
+                    pending.Remove((IScheduledCommand) command);
+
+                    resetEvent.Set();
+
+                    return cancel;
+                });
+
+                resetEvent.Reset();
+
+                pending.Add((IScheduledCommand) state, dueTime);
+
+                return schedule;
+            }
+
+            public async Task Done()
+            {
+                await Task.Yield();
+
+                while (CommandsAreDue)
+                {
+                    resetEvent.Wait();
+                }
+            }
+
+            private bool CommandsAreDue
+            {
+                get
+                {
+                    return pending.Any(p => p.Value <= Now);
+                }
+            }
         }
     }
 }

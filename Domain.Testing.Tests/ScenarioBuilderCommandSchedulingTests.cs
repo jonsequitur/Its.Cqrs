@@ -29,13 +29,13 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 // TODO: (In_memory_command_scheduling_is_enabled_by_default) 
                 var scenario = new ScenarioBuilder().Prepare();
 
-                await scenario.Save(new CustomerAccount()
+                await scenario.SaveAsync(new CustomerAccount()
                                         .Apply(new ChangeEmailAddress(Any.Email()))
                                         .Apply(new SendMarketingEmailOn(Clock.Now().AddDays(1))));
 
                 VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1.0000001));
 
-                var account = await scenario.GetLatest<CustomerAccount>();
+                var account = await scenario.GetLatestAsync<CustomerAccount>();
 
                 account.Events().Last().Should().BeOfType<SentMarketingEmail>();
             }

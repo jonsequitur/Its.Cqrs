@@ -29,7 +29,9 @@ namespace Microsoft.Its.Domain.Sql
             if (context.Database.Exists())
             {
                 if (context.Database.CompatibleWithModel(true))
+                {
                     return;
+                }
                 context.Database.Delete();
             }
 

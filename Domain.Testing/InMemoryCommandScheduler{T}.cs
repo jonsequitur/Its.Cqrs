@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive.Disposables;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Testing
@@ -17,6 +18,7 @@ namespace Microsoft.Its.Domain.Testing
     {
         private readonly IEventSourcedRepository<TAggregate> repository;
         private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
+        private readonly ManualResetEventSlim resetEvent = new ManualResetEventSlim();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InMemoryCommandScheduler{TAggregate}"/> class.
@@ -49,8 +51,11 @@ namespace Microsoft.Its.Domain.Testing
             {
                 Debug.WriteLine(string.Format("Schedule (applying {1} immediately): @ {0}", domainNow, scheduledCommand.Command.CommandName));
 
+                resetEvent.Reset();
+
                 // schedule immediately
                 await Deliver(scheduledCommand);
+
                 return;
             }
 
@@ -59,6 +64,8 @@ namespace Microsoft.Its.Domain.Testing
                                   dueTime.Value,
                                   (s, command) =>
                                   {
+                                      resetEvent.Reset();
+
                                       try
                                       {
                                           Deliver(command).Wait();
@@ -83,7 +90,16 @@ namespace Microsoft.Its.Domain.Testing
             using (CommandContext.Establish(scheduledCommand.Command))
             {
                 await repository.ApplyScheduledCommand(scheduledCommand);
+
             }
+
+            resetEvent.Set();
+        }
+
+        public async Task Done()
+        {
+            await Task.Yield();
+            resetEvent.Wait();
         }
 
         IEnumerable<IEventHandlerBinder> IEventHandler.GetBinders()

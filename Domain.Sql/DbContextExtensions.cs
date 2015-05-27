@@ -102,16 +102,19 @@ namespace Microsoft.Its.Domain.Sql
         }
 
         /// <summary>
-        /// See https://msdn.microsoft.com/en-us/library/dn268335.aspx for more info.
-        /// 
-        /// MAXSIZE = ( [ 100 MB | 500 MB ] | [ { 1 | 5 | 10 | 20 | 30 … 150…500 } GB  ] )
-        /// | EDITION = { 'web' | 'business' | 'basic' | 'standard' | 'premium' } 
-        /// | SERVICE_OBJECTIVE = { 'shared' | 'basic' | 'S0' | 'S1' | 'S2' | 'P1' | 'P2' | 'P3' } 
+        /// Creates an Azure database.
         /// </summary>
-        /// <param name="context"> The DbContext </param>
-        /// <param name="dbSizeInGB"> Size of database in GB </param>
-        /// <param name="edition"> Edition of database </param>
-        /// <param name="serviceObjective"> Service objective of database </param>
+        /// <param name="context">The DbContext</param>
+        /// <param name="dbSizeInGB">Size of database in GB</param>
+        /// <param name="edition">Edition of database</param>
+        /// <param name="serviceObjective">Service objective of database</param>
+        /// <exception cref="System.ArgumentException">Not Azure database based on ConnectionString</exception>
+        /// <remarks>
+        /// See https://msdn.microsoft.com/en-us/library/dn268335.aspx for more info.
+        /// MAXSIZE = ( [ 100 MB | 500 MB ] | [ { 1 | 5 | 10 | 20 | 30 … 150…500 } GB  ] )
+        /// | EDITION = { 'web' | 'business' | 'basic' | 'standard' | 'premium' }
+        /// | SERVICE_OBJECTIVE = { 'shared' | 'basic' | 'S0' | 'S1' | 'S2' | 'P1' | 'P2' | 'P3' }
+        /// </remarks>
         public static void CreateAzureDatabase(this DbContext context, int dbSizeInGB, string edition, string serviceObjective)
         {
             if (!context.IsAzureDatabase())
