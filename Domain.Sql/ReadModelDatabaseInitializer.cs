@@ -46,7 +46,6 @@ namespace Microsoft.Its.Domain.Sql
                 context.Database.Create();
             }
 
-            Seed(context);
             context.SaveChanges();
         }
 
