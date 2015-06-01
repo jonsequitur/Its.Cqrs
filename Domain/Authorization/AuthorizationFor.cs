@@ -5,6 +5,7 @@ using System;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Security.Principal;
 using Its.Validation;
 using Its.Validation.Configuration;
@@ -133,9 +134,18 @@ namespace Microsoft.Its.Domain.Authorization
                             body,
                             principal, command, resource).Compile();
 
-                        typeof (ToApply<>.ToA<>).MakeGenericType(typeof (TPrincipal), tcommand, typeof (TResource))
-                                                .Member()
-                                                .Requires(requirement2, message ?? "Requirement for all commands for resource " + typeof (TResource));
+                        typeof(ToApply<>.ToA<>)
+                            .MakeGenericType(typeof(TPrincipal), tcommand, typeof(TResource))
+                            .GetMethod("Requires",
+                                BindingFlags.FlattenHierarchy |
+                                BindingFlags.Public |
+                                BindingFlags.Static)
+                            .Invoke(null,
+                                new object[]
+                                {
+                                    requirement2,
+                                    message ?? "Requirement for all commands for resource " + typeof (TResource)
+                                });
                     });
                 }
             }
