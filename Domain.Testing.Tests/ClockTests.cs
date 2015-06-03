@@ -18,6 +18,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         public void SetUp()
         {
             Command<Order>.AuthorizeDefault = (order, command) => true;
+            Clock.Reset();
         }
 
         [Test]

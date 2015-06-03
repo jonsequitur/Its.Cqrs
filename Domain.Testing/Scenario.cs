@@ -44,6 +44,7 @@ namespace Microsoft.Its.Domain.Testing
                                .IfTypeIs<string>()
                                .ElseDefault();
 
+            // subscribe to VirtualClock movements and advance the scheduler clock accordingly
             Clock.Current
                  .IfTypeIs<VirtualClock>()
                  .ThenDo(virtualClock =>
@@ -102,6 +103,26 @@ namespace Microsoft.Its.Domain.Testing
             {
                 var scheduler = builder.Configuration.Container.Resolve<SqlCommandScheduler>();
                 await scheduler.AdvanceClock(clockName, to);
+            }
+        }
+
+        /// <summary>
+        /// Allows awaiting delivery of all commands that are currently due on the command scheduler.
+        /// </summary>
+        public async Task CommandSchedulerDone()
+        {
+            if (builder.useInMemoryCommandScheduling)
+            {
+                var virtualClock = Clock.Current as VirtualClock;
+                if (virtualClock != null)
+                {
+                    await virtualClock.Done();
+                }
+            }
+            else
+            {
+                var scheduler = builder.Configuration.Container.Resolve<SqlCommandScheduler>();
+                await scheduler.Done(clockName);
             }
         }
 

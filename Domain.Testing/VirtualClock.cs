@@ -132,6 +132,11 @@ namespace Microsoft.Its.Domain.Testing
             return clock.Scheduler.Schedule(scheduledCommand, dueTime, func);
         }
 
+        public async Task Done()
+        {
+            await Scheduler.Done();
+        }
+
         public override string ToString()
         {
             return GetType() + ": " + Now().ToString("O");
@@ -141,7 +146,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             private readonly IDictionary<IScheduledCommand, DateTimeOffset> pending = new ConcurrentDictionary<IScheduledCommand, DateTimeOffset>();
 
-            private readonly ManualResetEventSlim resetEvent = new ManualResetEventSlim();
+            private readonly ManualResetEventSlim resetEvent = new ManualResetEventSlim(true);
 
             public RxScheduler(DateTimeOffset initialClock) : base(initialClock)
             {

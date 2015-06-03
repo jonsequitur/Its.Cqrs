@@ -21,7 +21,7 @@ namespace Microsoft.Its.Domain
         {
             get
             {
-                return   scheduledCommand;
+                return scheduledCommand;
             }
         }
     }

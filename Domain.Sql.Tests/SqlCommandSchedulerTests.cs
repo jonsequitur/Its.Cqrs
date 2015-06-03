@@ -2,24 +2,24 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Log.Instrumentation;
-using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
 using Moq;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
@@ -35,6 +35,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         private FakeEventBus bus;
         private CompositeDisposable disposables;
         private SqlCommandScheduler scheduler;
+        private string clockName;
 
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
@@ -73,14 +74,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Clock.Reset();
             disposables.Add(Disposable.Create(Clock.Reset));
 
-            using (var db = new CommandSchedulerDbContext())
-            {
-                db.Clocks
-                  .SingleOrDefault(c => c.Name == "default")
-                  .IfNotNull()
-                  .ThenDo(c => c.UtcNow = Clock.Now());
-                db.SaveChanges();
-            }
+            clockName = Any.CamelCaseName();
+            Console.WriteLine(new { clockName });
+            scheduler.CreateClock(clockName, Clock.Now());
+            scheduler.GetClockName = e => clockName;
         }
 
         [TearDown]
@@ -136,8 +133,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // act
             await scheduler.AdvanceClock(clockName: shipmentId,
                                    by: TimeSpan.FromDays(33));
-
-            Console.WriteLine(scheduler.ReadClock(shipmentId));
 
             //assert 
             order = await orderRepository.GetLatest(order.Id);
@@ -210,7 +205,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             order.Apply(new ShipOn(Clock.Now().Subtract(TimeSpan.FromDays(2))));
             await orderRepository.Save(order);
             
-            await Task.Delay(500);
+            await scheduler.Done(clockName);
 
             //assert 
             order = await orderRepository.GetLatest(order.Id);
@@ -251,16 +246,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var activity = new List<ICommandSchedulerActivity>();
 
-            using (Configuration.Current.Container
+            using (Configuration.Current
+                                .Container
                                 .Resolve<SqlCommandScheduler>()
                                 .Activity
-                                .Subscribe(activity.Add))
+                                .Subscribe(a => activity.Add(a)))
             {
                 // act
                 order.Apply(new ShipOn(Clock.Now().Subtract(TimeSpan.FromDays(2))));
                 await orderRepository.Save(order);
 
-                await Task.Delay(500);
+                await scheduler.Done(clockName);
 
                 //assert 
                 activity.Should()
@@ -283,7 +279,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (scheduler.Activity.Subscribe(activity.Add))
             {
                 // act
-                await scheduler.AdvanceClock("default", TimeSpan.FromDays(3));
+                await scheduler.AdvanceClock(clockName, TimeSpan.FromDays(3));
 
                 //assert 
                 activity.Should()
@@ -297,15 +293,20 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var order = CommandSchedulingTests.CreateOrder();
-            var clockName = Any.AlphanumericString(9, 9);
-            scheduler.CreateClock(clockName, Clock.Now().AddDays(10));
+
+            Console.WriteLine(Clock.Now());
+            Console.WriteLine("Advancing clock");
+            await scheduler.AdvanceClock(clockName, scheduler.ReadClock(clockName).AddDays(10));
+            Console.WriteLine(scheduler.ReadClock(clockName));
 
             // act
-            order.Apply(new ShipOn(Clock.Now().AddDays(5)));
+            var shipOn = scheduler.ReadClock(clockName).AddDays(-5);
+            Console.WriteLine(new{shipOn});
+            order.Apply(new ShipOn(shipOn));
             order.PendingEvents.Last().As<IHaveExtensibleMetada>().Metadata.ClockName = clockName;
             await orderRepository.Save(order);
 
-            await Task.Delay(500);
+            await scheduler.Done(clockName);
 
             //assert 
             order = await orderRepository.GetLatest(order.Id);
@@ -317,8 +318,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_clock_is_advanced_then_unassociated_commands_are_not_triggered()
         {
             // arrange
-            var clockOne = Any.AlphanumericString(8, 8);
-            var clockTwo = Any.AlphanumericString(8, 8);
+            var clockOne = Any.CamelCaseName();
+            var clockTwo = Any.CamelCaseName();
 
             scheduler.CreateClock(clockTwo, Clock.Now());
 
@@ -361,7 +362,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void Two_clocks_cannot_be_created_having_the_same_name()
         {
-            var name = Any.AlphanumericString(8, 8);
+            var name = Any.CamelCaseName();
             scheduler.CreateClock(name, DateTimeOffset.UtcNow);
 
             Action createAgain = () =>
@@ -378,11 +379,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task A_clock_can_be_associated_with_an_aggregate_so_that_its_scheduled_commands_can_be_advanced_later()
         {
             // arrange
-            var clockName = Any.AlphanumericString(8, 8);
             var order = CommandSchedulingTests.CreateOrder();
-
+            scheduler.GetClockName = e => null;
             scheduler.ClockLookupFor<Order>(cmd => cmd.AggregateId.ToString());
-
             scheduler.AssociateWithClock(clockName, order.Id.ToString());
 
             // act
@@ -404,7 +403,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public void When_an_association_is_made_with_an_existing_value_then_an_exception_is_thrown()
         {
             // arrange
-            var clockName = Any.AlphanumericString(10, 10);
             var value = Any.FullName();
             scheduler.AssociateWithClock(clockName, value);
 
@@ -423,38 +421,29 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_scheduled_command_fails_and_the_clock_is_advanced_again_then_it_can_be_retried()
         {
             // ARRANGE
-            var clockName = Any.AlphanumericString(8, 8);
             var account = new CustomerAccount()
                 .Apply(new ChangeEmailAddress
                 {
                     NewEmailAddress = Any.Email()
                 });
-            var eventBus = new FakeEventBus();
-            var repository = new SqlEventSourcedRepository<CustomerAccount>(eventBus);
 
-            var configuration = new Configuration().UseSqlEventStore();
-            configuration.Container.Register<IEventSourcedRepository<CustomerAccount>>(c => repository);
-            var commandScheduler = new SqlCommandScheduler(configuration);
-            commandScheduler.ClockLookupFor<CustomerAccount>(cmd => cmd.AggregateId.ToString());
-            eventBus.Subscribe(commandScheduler);
-            commandScheduler.AssociateWithClock(clockName, account.Id.ToString());
             account
                 .Apply(new SendMarketingEmailOn(Clock.Now().AddDays(5)))
                 .Apply(new RequestNoSpam());
-            await repository.Save(account);
+            await accountRepository.Save(account);
 
             // ACT
-            await commandScheduler.AdvanceClock(clockName, TimeSpan.FromDays(6));
+            await scheduler.AdvanceClock(clockName, TimeSpan.FromDays(6));
             account.CommunicationsSent.Count().Should().Be(0);
 
             // requesting spam will unblock the original scheduled command if it is re-attempted
             account = await accountRepository.GetLatest(account.Id);
             account.Apply(new RequestSpam());
-            await repository.Save(account);
-            await commandScheduler.AdvanceClock(clockName, TimeSpan.FromMinutes(1));
+            await accountRepository.Save(account);
+            await scheduler.AdvanceClock(clockName, TimeSpan.FromMinutes(1));
 
             // ASSERT 
-            account = await repository.GetLatest(account.Id);
+            account = await accountRepository.GetLatest(account.Id);
             account.CommunicationsSent.Count().Should().Be(1);
         }
 
@@ -462,21 +451,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_it_is_not_marked_as_applied()
         {
             // arrange 
-            var clockName = Any.Paragraph(4);
             var order = CommandSchedulingTests.CreateOrder();
-            scheduler.ClockLookupFor<Order>(cmd => cmd.AggregateId.ToString());
-            scheduler.AssociateWithClock(clockName, order.Id.ToString());
             var ship = new Ship();
-            Console.WriteLine(new { Ship = ship.ToJson() });
 
             order.Apply(ship);
 
-            var chargeCreditCardOn = order.Apply(new ChargeCreditCardOn
+            order.Apply(new ChargeCreditCardOn
             {
                 Amount = 10,
                 ChargeDate = Clock.Now().AddDays(10)
             });
-            Console.WriteLine(new { ChargeCreditCardOn = chargeCreditCardOn.ToJson() });
 
             await orderRepository.Save(order);
 
@@ -514,10 +498,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task A_command_is_not_marked_as_applied_if_no_handler_is_registered()
         {
             // arrange
-            var clockName = Any.Paragraph(4);
             var order = CommandSchedulingTests.CreateOrder();
-            scheduler.ClockLookupFor<Order>(cmd => cmd.AggregateId.ToString());
-            scheduler.AssociateWithClock(clockName, order.Id.ToString());
             order.Apply(
                 new ChargeCreditCardOn
                 {
@@ -544,7 +525,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_scheduled_command_fails_then_the_error_is_recorded()
         {
             // arrange
-            var clockName = Any.AlphanumericString(8, 8);
             var order = CommandSchedulingTests.CreateOrder();
             var eventBus = new FakeEventBus();
             var innerRepository = new SqlEventSourcedRepository<Order>(eventBus);
@@ -601,10 +581,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_two_different_callers_advance_the_same_clock_at_the_same_time_then_commands_are_only_run_once()
         {
             // arrange
-            var clockName = MethodBase.GetCurrentMethod().Name;
             var order = CommandSchedulingTests.CreateOrder();
-            scheduler.ClockLookupFor<Order>(cmd => cmd.AggregateId.ToString());
-            scheduler.AssociateWithClock(clockName, order.Id.ToString());
             var barrier = new Barrier(2);
 
             // act
@@ -640,10 +617,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task The_aggregate_can_control_retries_of_a_failed_command()
         {
             // arrange
-            var clockName = Any.AlphanumericString(8, 8);
             var order = CommandSchedulingTests.CreateOrder();
-            scheduler.ClockLookupFor<Order>(cmd => cmd.AggregateId.ToString());
-            scheduler.AssociateWithClock(clockName, order.Id.ToString());
             order.Apply(
                 new ChargeCreditCardOn
                 {
@@ -678,10 +652,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task The_aggregate_can_retry_a_failed_command_as_soon_as_possible()
         {
             // arrange
-            var clockName = Any.AlphanumericString(8, 8);
             var order = CommandSchedulingTests.CreateOrder();
-            scheduler.ClockLookupFor<Order>(cmd => cmd.AggregateId.ToString());
-            scheduler.AssociateWithClock(clockName, order.Id.ToString());
             order.Apply(
                 new ChargeCreditCardOn
                 {
@@ -755,13 +726,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task A_scheduled_command_can_schedule_other_commands()
         {
             // ARRANGE
-            var clockName = Any.AlphanumericString(8, 8);
             var email = Any.Email();
             Console.WriteLine(new { clockName, email });
             var account = new CustomerAccount()
                 .Apply(new ChangeEmailAddress(email));
-            scheduler.AssociateWithClock(clockName, account.Id.ToString());
-            scheduler.ClockLookupFor<CustomerAccount>(cmd => cmd.AggregateId.ToString());
             account.Apply(new SendMarketingEmailOn(Clock.Now().AddDays(1)))
                    .Apply(new RequestSpam());
             await accountRepository.Save(account);
@@ -770,7 +738,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var result = await scheduler.AdvanceClock(clockName, TimeSpan.FromDays(10));
             Console.WriteLine(result.ToLogString());
 
-            await Task.Delay(500);
+            await scheduler.Done(clockName);
 
             // ASSERT
             account = await accountRepository.GetLatest(account.Id);
@@ -923,7 +891,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_a_command_is_scheduled_but_an_exception_is_thrown_in_a_handler_then_an_error_is_recorded()
         {
-            var clockName = Any.CamelCaseName();
             scheduler.GetClockName = @event => clockName;
 
             Configuration.Current.UseDependency(_ => new CustomerAccount.OrderEmailConfirmer
@@ -998,7 +965,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_command_is_scheduled_but_the_aggregate_it_applies_to_is_not_found_then_the_command_is_retried()
         {
             // arrange
-            var clockName = Any.CamelCaseName();
             scheduler.GetClockName = e => clockName;
 
             // create and cancel an order for a nonexistent customer account 
@@ -1189,6 +1155,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_an_immediately_scheduled_command_depends_on_an_event_then_delivery_in_memory_waits_on_the_event_being_saved()
         {
             var container = Configuration.Current.Container;
+            scheduler.GetClockName = e => clockName;
             var commandScheduler = container.Resolve<ICommandScheduler<Order>>();
 
             var orderId = Any.Guid();
@@ -1226,7 +1193,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                                  ETag = prerequisiteETag
                                              }));
 
-            await Task.Delay(100);
+            await scheduler.Done(clockName);
 
             // assert
             // now the order should have been created
@@ -1258,6 +1225,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var configuration = new Configuration()
                 .UseSqlEventStore()
                 .UseSqlCommandScheduling(catchup => catchup.StartAtEventId = HighestEventId);
+            configuration.SqlCommandScheduler().GetClockName = e => clockName;
             disposables.Add(configuration);
 
             var aggregateIds = Enumerable.Range(1, 5).Select(_ => Any.Guid()).ToArray();
@@ -1266,7 +1234,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 Command = new CreateOrder(Any.FullName()),
                 AggregateId = aggregateIds[i - 1],
-                SequenceNumber = -1
+                SequenceNumber = -DateTimeOffset.UtcNow.Ticks 
             });
 
             await configuration.Container

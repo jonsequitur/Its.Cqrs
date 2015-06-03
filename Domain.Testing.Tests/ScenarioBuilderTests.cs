@@ -608,7 +608,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
                 Console.WriteLine("Waiting for scheduler to drain");
 
-                await Task.Delay(500);
+                await scenario.CommandSchedulerDone();
 
                 account = await scenario.GetLatestAsync<CustomerAccount>();
 
@@ -682,7 +682,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
                 VirtualClock.Current.AdvanceBy(TimeSpan.FromDays((7*4) + 2));
 
-                await Task.Delay(500);
+                await scenario.CommandSchedulerDone();
 
                 account = await scenario.GetLatestAsync<CustomerAccount>();
 
@@ -779,7 +779,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             customerAccount.Apply(new RequestNoSpam());
             await scenario.SaveAsync(customerAccount);
 
-            await Task.Delay(100);
+            await scenario.CommandSchedulerDone();
 
             var latest = await scenario.GetLatestAsync<CustomerAccount>(customerId);
             latest.EmailAddress.Should().Be("devnull@nowhere.com");

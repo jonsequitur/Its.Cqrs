@@ -96,6 +96,9 @@ namespace Microsoft.Its.Domain.Testing
             resetEvent.Set();
         }
 
+        /// <summary>
+        /// Allows awaiting delivery of all commands that are currently due on the command scheduler.
+        /// </summary>
         public async Task Done()
         {
             await Task.Yield();

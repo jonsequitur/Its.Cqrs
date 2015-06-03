@@ -162,7 +162,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 foreach (var scheduled in await commands.ToArrayAsync())
                 {
                     //clock.UtcNow = scheduled.DueTime ?? to.Value;
-                    await Trigger(scheduled, result, db);
+                    await Trigger(scheduled, db);
                 }
 
                 return result;
@@ -194,16 +194,17 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 foreach (var scheduled in commands)
                 {
-                    await Trigger(scheduled, result, db);
+                    await Trigger(scheduled, db);
+                    result.Add(scheduled.Result);
                 }
             }
 
             return result;
         }
 
-        private async Task Trigger(ScheduledCommand scheduled,
-                                   SchedulerAdvancedResult result,
-                                   CommandSchedulerDbContext db)
+        internal async Task Trigger(
+            ScheduledCommand scheduled,
+            CommandSchedulerDbContext db)
         {
             var deliver = commandDispatchers.IfContains(scheduled.AggregateType)
                                             .ElseDefault();
@@ -221,8 +222,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             else
             {
                 await deliver(scheduled);
-
-                result.Add(scheduled.Result);
             }
 
             scheduled.Attempts++;
@@ -350,8 +349,16 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
         }
 
+        /// <summary>
+        /// Provides a method so that delegates can point to the always-up-to-date GetClockName implementation, rather than capture a prior version of the delegate.
+        /// </summary>
         internal string ClockName(IEvent @event)
         {
+            if (GetClockName == null)
+            {
+                return null;
+            }
+
             return GetClockName(@event);
         }
 

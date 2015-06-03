@@ -83,6 +83,7 @@
     <Compile Include="AggregateBuilder{T}.cs" />
     <Compile Include="AssertionException.cs" />
     <Compile Include="AssertionExtensions.cs" />
+    <Compile Include="CommandScheduler.cs" />
     <Compile Include="EventComparer.cs" />
     <Compile Include="EventStreamExtensions.cs" />
     <Compile Include="IEventStream.cs" />
