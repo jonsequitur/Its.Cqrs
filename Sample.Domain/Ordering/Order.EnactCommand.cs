@@ -43,7 +43,7 @@ namespace Sample.Domain.Ordering
                 Address = command.Address,
                 PhoneNumber = command.PhoneNumber,
                 PostalCode = command.PostalCode,
-                RegionOrCountry = command.RegionOrCountry,
+                RegionOrCountry = command.RegionOrCountry
             });
         }
 

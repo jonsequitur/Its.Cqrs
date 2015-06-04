@@ -56,7 +56,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
             this.eventBus = eventBus;
             this.commandPreconditionVerifier = commandPreconditionVerifier;
-            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(async e => await Schedule(e));
+            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e => Schedule(e).Wait());
         }
 
         public async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
@@ -97,14 +97,15 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                                 .SingleAsync(c => c.AggregateId == scheduledCommand.AggregateId &&
                                                                   c.SequenceNumber == scheduledCommand.SequenceNumber);
 
+                    storedCommand.Attempts ++;
+
                     if (result.WasSuccessful)
                     {
                         storedCommand.AppliedTime = Domain.Clock.Now();
                     }
                     else
                     {
-                        var failure = result as CommandFailed;
-                        storedCommand.Attempts ++;
+                        var failure = (CommandFailed) result;
 
                         // reschedule as appropriate
                         var now = Domain.Clock.Now();
@@ -185,6 +186,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 if (schedulerClock == null)
                 {
+                    Debug.WriteLine(string.Format("SqlCommandScheduler: Creating clock '{0}'", clockName) );
+
                     schedulerClock = new Clock
                                      {
                                          Name = clockName,
@@ -212,6 +215,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     storedScheduledCommand.NonDurable = true;
                     return storedScheduledCommand;
                 }
+
+                Debug.WriteLine(string.Format("SqlCommandScheduler: Storing command '{0}' ({1}:{2}) on clock '{3}'",
+                                              scheduledCommandEvent.Command.CommandName,
+                                              scheduledCommandEvent.AggregateId,
+                                              scheduledCommandEvent.SequenceNumber,
+                                              clockName));
 
                 db.ScheduledCommands.Add(storedScheduledCommand);
 
@@ -271,24 +280,23 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                                            .Then(v => v.ToString())))
                                      .ElseDefault();
 
-            if (clockName != null)
+            if (clockName == null)
             {
-                return clockName;
+                clockName = GetClockName(scheduledCommandEvent);
+
+                if (clockName == null)
+                {
+                    var lookupValue = GetClockLookupKey(scheduledCommandEvent);
+                    clockName = db.ClockMappings
+                                  .Include(m => m.Clock)
+                                  .SingleOrDefault(c => c.Value == lookupValue)
+                                  .IfNotNull()
+                                  .Then(c => c.Clock.Name)
+                                  .Else(() => SqlCommandScheduler.DefaultClockName);
+                }
             }
 
-            clockName = GetClockName(scheduledCommandEvent);
-            if (clockName != null)
-            {
-                return clockName;
-            }
-
-            var lookupValue = GetClockLookupKey(scheduledCommandEvent);
-            return db.ClockMappings
-                     .Include(m => m.Clock)
-                     .SingleOrDefault(c => c.Value == lookupValue)
-                     .IfNotNull()
-                     .Then(c => c.Clock.Name)
-                     .Else(() => SqlCommandScheduler.DefaultClockName);
+            return clockName;
         }
 
         private static string Description(IScheduledCommand<TAggregate> scheduledCommand)

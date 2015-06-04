@@ -24,12 +24,12 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var scenario = CreateScenarioBuilder().Prepare();
 
             var id = Any.Guid();
-            scenario.Save(new Order(new CreateOrder(Any.FullName())
+            scenario.SaveAsync(new Order(new CreateOrder(Any.FullName())
             {
                 AggregateId = id
             })).Wait();
 
-            var order = scenario.GetLatest<Order>(id);
+            var order = scenario.GetLatestAsync<Order>(id);
 
             order.Should().NotBeNull();
         }

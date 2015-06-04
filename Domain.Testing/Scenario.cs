@@ -44,12 +44,13 @@ namespace Microsoft.Its.Domain.Testing
                                .IfTypeIs<string>()
                                .ElseDefault();
 
+            // subscribe to VirtualClock movements and advance the scheduler clock accordingly
             Clock.Current
                  .IfTypeIs<VirtualClock>()
-                 .ThenDo(c =>
+                 .ThenDo(virtualClock =>
                  {
                      subscribedToVirtualClock = true;
-                     disposables.Add(c.Subscribe(onNext: t => AdvanceClock(t).Wait()));
+                     disposables.Add(virtualClock.Subscribe(onNext: t => AdvanceClock(t).Wait()));
                  });
         }
 
@@ -91,20 +92,6 @@ namespace Microsoft.Its.Domain.Testing
             eventHandlingErrors.Add(error);
         }
 
-        internal async Task AdvanceClock(TimeSpan byTimeSpan)
-        {
-            if (!subscribedToVirtualClock)
-            {
-                VirtualClock.Current.AdvanceBy(byTimeSpan);
-            }
-
-            if (!builder.useInMemoryCommandScheduling)
-            {
-                var scheduler = builder.Configuration.Container.Resolve<SqlCommandScheduler>();
-                await scheduler.AdvanceClock(clockName, byTimeSpan);
-            }
-        }
-
         internal async Task AdvanceClock(DateTimeOffset to)
         {
             if (!subscribedToVirtualClock)
@@ -120,10 +107,40 @@ namespace Microsoft.Its.Domain.Testing
         }
 
         /// <summary>
+        /// Allows awaiting delivery of all commands that are currently due on the command scheduler.
+        /// </summary>
+        public async Task CommandSchedulerDone()
+        {
+            if (builder.useInMemoryCommandScheduling)
+            {
+                var virtualClock = Clock.Current as VirtualClock;
+                if (virtualClock != null)
+                {
+                    await virtualClock.Done();
+                }
+            }
+            else
+            {
+                var scheduler = builder.Configuration.Container.Resolve<SqlCommandScheduler>();
+                await scheduler.Done(clockName);
+            }
+        }
+
+        /// <summary>
         ///     Persists the state of the specified aggregate by adding new events to the event store.
         /// </summary>
         /// <param name="aggregate">The aggregate to persist.</param>
-        public async Task Save<TAggregate>(TAggregate aggregate)
+        public void Save<TAggregate>(TAggregate aggregate)
+            where TAggregate : class, IEventSourced
+        {
+            SaveAsync(aggregate).Wait();
+        }
+
+        /// <summary>
+        ///     Persists the state of the specified aggregate by adding new events to the event store.
+        /// </summary>
+        /// <param name="aggregate">The aggregate to persist.</param>
+        public async Task SaveAsync<TAggregate>(TAggregate aggregate)
             where TAggregate : class, IEventSourced
         {
             aggregates.Add(aggregate);
@@ -136,7 +153,18 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="aggregateId">The id of the aggregate. If null, and there's only a single aggregate of the specified type, it returns that; otherwise, it throws.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public async Task<TAggregate> GetLatest<TAggregate>(Guid? aggregateId = null)
+        public TAggregate GetLatest<TAggregate>(Guid? aggregateId = null)
+            where TAggregate : class, IEventSourced
+        {
+            return GetLatestAsync<TAggregate>(aggregateId).Result;
+        }
+
+        /// <summary>
+        ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
+        /// </summary>
+        /// <param name="aggregateId">The id of the aggregate. If null, and there's only a single aggregate of the specified type, it returns that; otherwise, it throws.</param>
+        /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
+        public async Task<TAggregate> GetLatestAsync<TAggregate>(Guid? aggregateId = null)
             where TAggregate : class, IEventSourced
         {
             if (!aggregateId.HasValue)
@@ -154,7 +182,19 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="version">The version at which to retrieve the aggregate.</param>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public async Task<TAggregate> GetVersion<TAggregate>(Guid aggregateId, long version)
+        public TAggregate GetVersion<TAggregate>(Guid aggregateId, long version)
+            where TAggregate : class, IEventSourced
+        {
+            return GetVersionAsync<TAggregate>(aggregateId, version).Result;
+        }
+
+        /// <summary>
+        ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
+        /// </summary>
+        /// <param name="version">The version at which to retrieve the aggregate.</param>
+        /// <param name="aggregateId">The id of the aggregate.</param>
+        /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
+        public async Task<TAggregate> GetVersionAsync<TAggregate>(Guid aggregateId, long version)
             where TAggregate : class, IEventSourced
         {
             return await builder.GetRepository(typeof (TAggregate))
@@ -169,7 +209,21 @@ namespace Microsoft.Its.Domain.Testing
         /// <returns>
         /// The deserialized aggregate, or null if none exists with the specified id.
         /// </returns>
-        public async Task<TAggregate> GetAsOfDate<TAggregate>(Guid aggregateId, DateTimeOffset asOfDate)
+        public TAggregate GetAsOfDate<TAggregate>(Guid aggregateId, DateTimeOffset asOfDate)
+            where TAggregate : class, IEventSourced
+        {
+            return GetAsOfDateAsync<TAggregate>(aggregateId, asOfDate).Result;
+        }
+        
+        /// <summary>
+        /// Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
+        /// </summary>
+        /// <param name="aggregateId">The id of the aggregate.</param>
+        /// <param name="asOfDate">The date at which the aggregate should be sourced.</param>
+        /// <returns>
+        /// The deserialized aggregate, or null if none exists with the specified id.
+        /// </returns>
+        public async Task<TAggregate> GetAsOfDateAsync<TAggregate>(Guid aggregateId, DateTimeOffset asOfDate)
             where TAggregate : class, IEventSourced
         {
             return await builder.GetRepository(typeof (TAggregate))

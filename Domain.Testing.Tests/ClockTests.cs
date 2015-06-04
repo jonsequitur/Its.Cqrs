@@ -2,15 +2,25 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
+using Sample.Domain.Ordering;
+using Sample.Domain.Ordering.Commands;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
     [TestFixture]
     public class ClockTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            Command<Order>.AuthorizeDefault = (order, command) => true;
+            Clock.Reset();
+        }
+
         [Test]
         public void VirtualClock_Start_can_be_used_to_specify_a_virtual_time_that_Clock_Now_will_return()
         {
@@ -65,6 +75,33 @@ namespace Microsoft.Its.Domain.Testing.Tests
             VirtualClock.Start();
             Action startAgain = () => VirtualClock.Start();
             startAgain.ShouldThrow<InvalidOperationException>();
+        }
+
+        [Test]
+        public async Task Advancing_the_clock_blocks_until_triggered_commands_are_completed()
+        {
+            VirtualClock.Start();
+
+            var repository = new InMemoryEventSourcedRepository<Order>();
+
+            var scheduler = new InMemoryCommandScheduler<Order>(repository);
+
+            var aggregateId = Any.Guid();
+            await scheduler.Schedule(new CommandScheduled<Order>
+            {
+                Command = new CreateOrder(Any.FullName())
+                {
+                    AggregateId = aggregateId
+                },
+                DueTime = Clock.Now().AddHours(1),
+                AggregateId = aggregateId
+            });
+
+            VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
+
+            var order = await repository.GetLatest(aggregateId);
+
+            order.Should().NotBeNull();
         }
     }
 }

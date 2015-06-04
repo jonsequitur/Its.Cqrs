@@ -97,7 +97,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             var scenario = CreateScenarioBuilder().AddEvents(created).Prepare();
 
-            var aggregate = await scenario.GetLatest<Order>();
+            var aggregate = await scenario.GetLatestAsync<Order>();
 
             aggregate.Should().NotBeNull();
             aggregate.Id.Should().Be(aggregateId);
@@ -115,7 +115,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     AggregateId = Any.Guid()
                 }).Prepare();
 
-            Action getLatest = () => scenario.GetLatest<Order>().Wait();
+            Action getLatest = () => scenario.GetLatestAsync<Order>().Wait();
 
             getLatest.ShouldThrow<InvalidOperationException>();
         }
@@ -125,7 +125,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             var scenario = CreateScenarioBuilder().Prepare();
 
-            Action getLatest = () => scenario.GetLatest<Order>().Wait();
+            Action getLatest = () => scenario.GetLatestAsync<Order>().Wait();
 
             getLatest.ShouldThrow<InvalidOperationException>();
         }
@@ -333,8 +333,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
             customer.Apply(new ChangeEmailAddress(Any.Email()));
 
             // act
-            await scenario.Save(order);
-            await scenario.Save(customer);
+            await scenario.SaveAsync(order);
+            await scenario.SaveAsync(customer);
 
             // assert
             onDeliveredCalls.Should().Be(1);
@@ -377,7 +377,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             }).Prepare();
             var order = new Order();
             order.Apply(new Deliver());
-            await scenario.Save(order);
+            await scenario.SaveAsync(order);
 
             // act
             Action verify = () => scenario.VerifyNoEventHandlingErrors();
@@ -427,7 +427,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var customerName = Any.FullName();
 
             // act
-            await scenario.Save(new Order(new CreateOrder(customerName)));
+            await scenario.SaveAsync(new Order(new CreateOrder(customerName)));
 
             // assert
             builder.EventBus
@@ -577,7 +577,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
                 scenario.AdvanceClockBy(TimeSpan.FromDays(103));
 
-                (await scenario.GetLatest<Order>())
+                (await scenario.GetLatestAsync<Order>())
                         .EventHistory
                         .Last()
                         .Should()
@@ -599,18 +599,18 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     .Prepare();
 
                 // act
-                var account = (await scenario.GetLatest<CustomerAccount>())
+                var account = (await scenario.GetLatestAsync<CustomerAccount>())
                                       .Apply(new RequestSpam())
                                       .Apply(new SendMarketingEmail());
-                await scenario.Save(account);
+                await scenario.SaveAsync(account);
 
                 scenario.AdvanceClockBy(TimeSpan.FromDays((7*4) + 2));
 
                 Console.WriteLine("Waiting for scheduler to drain");
 
-                await Task.Delay(500);
+                await scenario.CommandSchedulerDone();
 
-                account = await scenario.GetLatest<CustomerAccount>();
+                account = await scenario.GetLatestAsync<CustomerAccount>();
 
                 // assert
                 account.Events()
@@ -675,16 +675,16 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     .Prepare();
 
                 // act
-                var account = (await scenario.GetLatest<CustomerAccount>())
+                var account = (await scenario.GetLatestAsync<CustomerAccount>())
                                       .Apply(new RequestSpam())
                                       .Apply(new SendMarketingEmail());
-                await scenario.Save(account);
+                await scenario.SaveAsync(account);
 
                 VirtualClock.Current.AdvanceBy(TimeSpan.FromDays((7*4) + 2));
 
-                await Task.Delay(500);
+                await scenario.CommandSchedulerDone();
 
-                account = await scenario.GetLatest<CustomerAccount>();
+                account = await scenario.GetLatestAsync<CustomerAccount>();
 
                 // assert
                 account.Events()
@@ -752,7 +752,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     .AdvanceClockBy(TimeSpan.FromDays(3))
                     .Prepare();
 
-                (await scenario.GetLatest<Order>(aggregateId))
+                (await scenario.GetLatestAsync<Order>(aggregateId))
                         .EventHistory
                         .Last()
                         .Should()
@@ -775,13 +775,13 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var scenario = scenarioBuilder.Prepare();
             scenarioBuilder.AddHandlers(typeof (SideEffectingConsequenter));
 
-            var customerAccount = await scenario.GetLatest<CustomerAccount>(customerId);
+            var customerAccount = await scenario.GetLatestAsync<CustomerAccount>(customerId);
             customerAccount.Apply(new RequestNoSpam());
-            await scenario.Save(customerAccount);
+            await scenario.SaveAsync(customerAccount);
 
-            await Task.Delay(100);
+            await scenario.CommandSchedulerDone();
 
-            var latest = await scenario.GetLatest<CustomerAccount>(customerId);
+            var latest = await scenario.GetLatestAsync<CustomerAccount>(customerId);
             latest.EmailAddress.Should().Be("devnull@nowhere.com");
         }
 
