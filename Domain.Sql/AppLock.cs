@@ -8,6 +8,8 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 
+using System.Reactive.Disposables;
+
 namespace Microsoft.Its.Domain.Sql
 {
     /// <summary>
@@ -24,6 +26,12 @@ namespace Microsoft.Its.Domain.Sql
         private readonly string lockResourceName;
         private readonly int? resultCode;
         private readonly DbConnection connection;
+        private readonly IDisposable disposables;
+
+#if DEBUG
+        public static readonly ConcurrentDictionary<AppLock, AppLock> Active = new ConcurrentDictionary<AppLock, AppLock>();
+        private readonly Stopwatch timeSpentInAppLockStopwatch = Stopwatch.StartNew();
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppLock"/> class.
@@ -36,7 +44,7 @@ namespace Microsoft.Its.Domain.Sql
             this.lockResourceName = lockResourceName;
             connection = db.OpenConnection();
 
-            var cmd = @"
+            const string cmd = @"
 DECLARE @result int;
 EXEC @result = sp_getapplock @Resource = @lockResource,
                                 @LockMode = 'Exclusive',
@@ -44,45 +52,50 @@ EXEC @result = sp_getapplock @Resource = @lockResource,
                                 @LockTimeout = 60000;
 SELECT @result";
 
-            Debug.WriteLine(String.Format("Trying to acquire app lock '{0}' (#{1})", lockResourceName, GetHashCode()));
-
-            var getAppLock = connection.CreateCommand();
-            getAppLock.Parameters.Add(new SqlParameter("lockResource", lockResourceName));
-            getAppLock.CommandText = cmd;
-
             var result = -1000;
-            try
-            {
-                result = (int) getAppLock.ExecuteScalar();
-            }
-            catch (SqlException exception)
-            {
-                if (exception.Message.StartsWith("Timeout expired."))
-                {
-                    Debug.WriteLine("Timeout expired waiting for sp_getapplock. (#{0})", GetHashCode());
-                    DebugWriteLocks();
-                    return;
-                }
 
-                throw;
+            using (var getAppLock = connection.CreateCommand())
+            {
+                getAppLock.Parameters.Add(new SqlParameter("lockResource", lockResourceName));
+                getAppLock.CommandText = cmd;
+                
+                try
+                {
+                    Debug.WriteLine("Trying to acquire app lock '{0}' (#{1})", lockResourceName, GetHashCode());
+
+                    result = (int)getAppLock.ExecuteScalar();
+                }
+                catch (SqlException exception)
+                {
+                    if (exception.Message.StartsWith("Timeout expired."))
+                    {
+                        Debug.WriteLine("Timeout expired waiting for sp_getapplock. (#{0})", GetHashCode());
+                        DebugWriteLocks();
+                        return;
+                    }
+
+                    throw;
+                }
             }
 
             resultCode = result;
 
             if (result >= 0)
             {
-                Debug.WriteLine(String.Format("Acquired app lock '{0}' with result {1} (#{2})",
+                Debug.WriteLine("Acquired app lock '{0}' with result {1} (#{2})",
                                               lockResourceName,
                                               result,
-                                              GetHashCode()));
+                                              GetHashCode());
             }
             else
             {
-                Debug.WriteLine(String.Format("Failed to acquire app lock '{0}' with code {1} (#{2})",
+                Debug.WriteLine("Failed to acquire app lock '{0}' with code {1} (#{2})",
                                               lockResourceName,
                                               result,
-                                              GetHashCode()));
+                                              GetHashCode());
             }
+
+            disposables = Disposable.Create(OnDispose);
 
 #if DEBUG
             Active[this] = this;
@@ -127,23 +140,54 @@ SELECT @result";
             }
         }
 
-        public void Dispose()
+        private void TryReleaseSqlAppLock()
+        {
+            const string cmd = @"
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = @lockResource,
+                                 @LockOwner = 'Session';
+SELECT @result";
+
+            Debug.WriteLine("Trying to release app lock '{0}' (#{1})", lockResourceName, GetHashCode());
+
+            try
+            {
+                using (var releaseAppLock = connection.CreateCommand())
+                {
+                    releaseAppLock.Parameters.Add(new SqlParameter("lockResource", lockResourceName));
+                    releaseAppLock.CommandText = cmd;
+                    var result = (int)releaseAppLock.ExecuteScalar();
+                    Debug.WriteLine("Releasing app lock '{0}' succeeded with result {1} (#{2})", lockResourceName, result, GetHashCode());
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Exception occurred while releasing app lock. {0} (#{1})", ex, GetHashCode());
+            }
+        }
+
+        private void OnDispose()
         {
 #if DEBUG
-            AppLock lok;
-            Active.TryRemove(this, out lok);
-#endif  
-
-            Debug.WriteLine(String.Format("Disposing {0} AppLock for '{1}' (#{2})",
+            Debug.WriteLine("Disposing {0} AppLock after {1}ms for '{2}' (#{3})",
                                           IsAcquired ? "acquired" : "unacquired",
+                                          timeSpentInAppLockStopwatch.Elapsed.TotalMilliseconds,
                                           lockResourceName,
-                                          GetHashCode()));
+                                          GetHashCode());
+
+            AppLock @lock;
+            Active.TryRemove(this, out @lock);
+#endif
+
+            TryReleaseSqlAppLock();
+
             connection.Dispose();
             db.Dispose();
         }
 
-#if DEBUG
-        public readonly static ConcurrentDictionary<AppLock, AppLock> Active = new ConcurrentDictionary<AppLock, AppLock>();
-#endif
+        public void Dispose()
+        {
+            disposables.Dispose();
+        }
     }
 }

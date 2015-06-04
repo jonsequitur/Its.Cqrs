@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Tests;
-using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain.Ordering;
 
@@ -84,7 +83,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 }
             };
 
-            SaveEventsDirectly(events.ToArray());
+            await SaveEventsDirectly(events.ToArray());
 
             var repository = CreateRepository<Order>();
 
