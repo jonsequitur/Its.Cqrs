@@ -142,6 +142,7 @@
     <Compile Include="OptionalTests.cs" />
     <Compile Include="PrimitiveConverterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReservationServiceTests.cs" />
     <Compile Include="SerializerTests.cs" />
     <Compile Include="Infrastructure\TestConsequenter.cs" />
     <Compile Include="SnapshotRepositoryExtensionsTests.cs" />

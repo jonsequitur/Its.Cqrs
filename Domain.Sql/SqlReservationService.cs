@@ -108,22 +108,21 @@ namespace Microsoft.Its.Domain.Sql
 
             using (var db = CreateReservationServiceDbContext())
             {
-                var reservedValue = db.Set<ReservedValue>()
-                                      .SingleOrDefault(v => v.Scope == scope && v.ConfirmationToken == value);
+                var reservedValues = db.Set<ReservedValue>().Where(v => v.Scope == scope &&
+                                                                        v.ConfirmationToken == value &&
+                                                                        v.OwnerToken == ownerToken);
 
-                if (reservedValue != null)
+                if (await reservedValues.AnyAsync())
                 {
-                    if (VerifyOwnerToken(ownerToken, reservedValue))
+                    foreach (var reservedValue in reservedValues)
                     {
                         reservedValue.Expiration = null;
-                        await db.SaveChangesAsync();
-                        return true;
                     }
-
-                    return false;
+                    await db.SaveChangesAsync();
+                    return true;
                 }
 
-                return true;
+                return false;
             }
         }
 
@@ -147,16 +146,13 @@ namespace Microsoft.Its.Domain.Sql
                 var reservedValues = db.Set<ReservedValue>();
 
                 var reservedValue = await reservedValues
-                    .SingleOrDefaultAsync(v => v.Scope == scope && v.Value == value);
+                    .SingleOrDefaultAsync(v => v.Scope == scope && v.Value == value && v.OwnerToken == ownerToken);
 
                 if (reservedValue != null)
                 {
-                    if (VerifyOwnerToken(ownerToken, reservedValue))
-                    {
-                        reservedValues.Remove(reservedValue);
-                        await db.SaveChangesAsync();
-                        return true;
-                    }
+                    reservedValues.Remove(reservedValue);
+                    await db.SaveChangesAsync();
+                    return true;
                 }
 
                 return false;
@@ -164,11 +160,6 @@ namespace Microsoft.Its.Domain.Sql
         }
 
         public Func<DbContext> CreateReservationServiceDbContext = () => new ReservationServiceDbContext();
-
-        private static bool VerifyOwnerToken(string ownerToken, ReservedValue reservedValue)
-        {
-            return reservedValue.OwnerToken == ownerToken;
-        }
 
         public Func<DbSet<ReservedValue>, string, DateTimeOffset, Task<ReservedValue>> GetValueToReserve =
             async (reservedValues, scope, now) =>
@@ -228,7 +219,7 @@ namespace Microsoft.Its.Domain.Sql
                     {
                         if (!exception.IsConcurrencyException() || exception.IsUniquenessConstraint())
                         {
-                            throw;
+                            return null;
                         }
                         db.Entry(valueToReserve).State = EntityState.Unchanged;
                     }

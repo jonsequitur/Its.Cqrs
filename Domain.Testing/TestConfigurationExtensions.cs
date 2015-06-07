@@ -75,5 +75,25 @@ namespace Microsoft.Its.Domain.Testing
 
             return null;
         }
+
+        public static Configuration UseInMemoryReservationService(this Configuration configuration)
+        {
+            var inMemoryReservationService = new InMemoryReservationService();
+            configuration.Container.RegisterSingle<IReservationService>(c => inMemoryReservationService);
+            configuration.Container.RegisterSingle<IQueryReservationService>(c => inMemoryReservationService);
+            return configuration;
+        }
+
+        public static Configuration UseSqlReservationService(this Configuration configuration)
+        {
+            configuration.Container.Register<IReservationService>(c => new SqlReservationService());
+            configuration.Container.Register<IQueryReservationService>(c => new SqlQueryReservationService());
+            return configuration;
+        }
+
+        public static IQueryReservationService QueryReservationService(this Configuration configuration)
+        {
+            return configuration.Container.Resolve<IQueryReservationService>();
+        }
     }
 }
