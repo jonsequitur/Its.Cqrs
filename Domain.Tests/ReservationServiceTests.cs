@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Data.Entity.Infrastructure;
 using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
@@ -155,33 +156,6 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task Two_reservations_from_same_owner_with_same_confirmationtoken_can_be_confirmed_by_the_owner()
-        {
-            // arrange
-            var value = Any.FullName();
-            var secondValue = Any.FullName();
-            var ownerToken = Any.Guid().ToString();
-            var scope = "default-scope" + Any.Guid();
-            var reservationService = CreateReservationService();
-            await reservationService.Reserve(value, scope, ownerToken, TimeSpan.FromMinutes(5));
-
-            await reservationService.Reserve(secondValue, scope, Any.Guid().ToString(), TimeSpan.FromMinutes(-2));
-            await reservationService.ReserveAny(scope, ownerToken, TimeSpan.FromMinutes(5));
-
-            // act
-            var confirmed = await reservationService.Confirm(value, scope, ownerToken);
-
-            // assert
-            confirmed.Should().BeTrue();
-
-            var queryReservation = CreateQueryReservationService();
-            queryReservation.GetReservedValue(value, scope).Result
-                .Expiration.Should().BeNull();
-            queryReservation.GetReservedValue(secondValue, scope).Result
-                .Expiration.Should().BeNull();
-        }
-
-        [Test]
         public async Task A_reservation_cannot_be_confirmed_using_the_wrong_owner_token()
         {
             // arrange
@@ -286,6 +260,37 @@ namespace Microsoft.Its.Domain.Tests
                 confirmationToken: Any.Guid().ToString());
 
             result.Should().BeNull();
+        }
+        [Test]
+        public async Task old_Confirmation_token_cant_be_used_twice_by_different_owners_for_the_same_resource()
+        {
+            var reservationService = CreateReservationService();
+
+            // given a fixed quantity of some resource where the resource has been used
+            var word = Any.Word();
+            var ownerToken = Any.Guid().ToString();
+            var promoCode = "promo-code-" + word;
+            var reservedValue = Any.Guid().ToString();
+            var confirmationToken = Any.Guid().ToString();
+            await reservationService.Reserve(reservedValue, promoCode, reservedValue, TimeSpan.FromDays(-1));
+            await reservationService.Reserve(Any.Guid().ToString(), promoCode, reservedValue, TimeSpan.FromDays(-1));
+
+            //act
+            await reservationService.ReserveAny(
+                scope: promoCode,
+                ownerToken: ownerToken,
+                confirmationToken: confirmationToken);
+
+            //assert
+            Action reserve = () =>
+            {
+                var result = reservationService.ReserveAny(
+                    scope: promoCode,
+                    ownerToken: Any.FullName(),
+                    lease: TimeSpan.FromMinutes(2), confirmationToken: confirmationToken)
+                                               .Result;
+            };
+            reserve.ShouldThrow<DbUpdateException>();
         }
 
         [Test]

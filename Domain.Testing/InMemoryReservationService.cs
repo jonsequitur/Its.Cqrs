@@ -88,16 +88,15 @@ namespace Microsoft.Its.Domain.Testing
                 throw new ArgumentNullException("ownerToken");
             }
 
-            var reservedValuesInDictionary = reservedValues.Where(kvp => kvp.Value.Scope == scope &&
-                kvp.Value.ConfirmationToken == value &&
-                kvp.Value.OwnerToken == ownerToken);
+            var reservedValueInDictionary = reservedValues.SingleOrDefault(kvp => kvp.Value.Scope == scope &&
+                kvp.Value.ConfirmationToken == value).Value;
 
-            if (reservedValuesInDictionary.Any())
+            if (reservedValueInDictionary != null)
             {
-                foreach (var reservedValue in reservedValuesInDictionary)
+                // Make sure to create a new object. Don't use the object from Dictionary directly.
+                var oldReservedValue = new ReservedValue(reservedValueInDictionary);    
+                if (oldReservedValue.OwnerToken == ownerToken)
                 {
-                    // Make sure to create a new object. Don't use the object from Dictionary directly.
-                    var oldReservedValue = new ReservedValue(reservedValue.Value);
                     var newReservedValue = new ReservedValue(oldReservedValue) { Expiration = null };
                     var key = Tuple.Create(newReservedValue.Value, newReservedValue.Scope);
                     return reservedValues.TryUpdate(key, newReservedValue, oldReservedValue);

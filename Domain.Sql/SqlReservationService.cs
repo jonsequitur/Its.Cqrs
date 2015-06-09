@@ -3,6 +3,7 @@
 
 using System;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -108,16 +109,14 @@ namespace Microsoft.Its.Domain.Sql
 
             using (var db = CreateReservationServiceDbContext())
             {
-                var reservedValues = db.Set<ReservedValue>().Where(v => v.Scope == scope &&
-                                                                        v.ConfirmationToken == value &&
-                                                                        v.OwnerToken == ownerToken);
+                var reservedValue = await db.Set<ReservedValue>()
+                    .SingleOrDefaultAsync(v => v.Scope == scope &&
+                                               v.ConfirmationToken == value &&
+                                               v.OwnerToken == ownerToken);
 
-                if (await reservedValues.AnyAsync())
+                if (reservedValue != null)
                 {
-                    foreach (var reservedValue in reservedValues)
-                    {
-                        reservedValue.Expiration = null;
-                    }
+                    reservedValue.Expiration = null;
                     await db.SaveChangesAsync();
                     return true;
                 }
@@ -215,7 +214,7 @@ namespace Microsoft.Its.Domain.Sql
                         await db.SaveChangesAsync();
                         return valueToReserve.Value;
                     }
-                    catch (Exception exception)
+                    catch (DbUpdateException exception)
                     {
                         if (!exception.IsConcurrencyException() || exception.IsUniquenessConstraint())
                         {
