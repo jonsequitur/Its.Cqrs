@@ -123,7 +123,7 @@ namespace Microsoft.Its.Domain.Sql
                     return false;
                 }
 
-                return true;
+                return false;
             }
         }
 
