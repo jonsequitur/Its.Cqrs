@@ -3,8 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -18,7 +20,7 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="events">The events.</param>
         /// <param name="relatedToAggregateIds">The aggregate ids to which the events relate.</param>
-        public static IEnumerable<StorableEvent> RelatedEvents(
+        public static async Task<IEnumerable<StorableEvent>> RelatedEvents(
             this IQueryable<StorableEvent> events,
             params Guid[] relatedToAggregateIds)
         {
@@ -34,7 +36,7 @@ namespace Microsoft.Its.Domain.Sql
 
                 var unqueriedIds = ids.Where(id => ! relatedEvents.Select(e => e.AggregateId).Contains(id));
 
-                var newEvents = events.Where(e => unqueriedIds.Any(id => id == e.AggregateId)).ToArray();
+                var newEvents = await events.Where(e => unqueriedIds.Any(id => id == e.AggregateId)).ToArrayAsync();
 
                 relatedEvents.UnionWith(newEvents);
 

@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Serialization;
@@ -15,7 +16,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     public class QueryableExtensionsTests : EventStoreDbTest
     {
         [Test]
-        public void RelatedEvents_returns_all_events_in_related_aggregates()
+        public async Task RelatedEvents_returns_all_events_in_related_aggregates()
         {
             // arrange
             var relatedId1 = Any.Guid();
@@ -91,7 +92,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (var db = new EventStoreDbContext())
             {
                 //act
-                var events = db.Events.RelatedEvents(relatedId1).ToArray();
+                var events = (await db.Events.RelatedEvents(relatedId1)).ToArray();
 
                 // assert
                 events.Count().Should().Be(80);
@@ -104,7 +105,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void RelatedEvents_handles_circular_references()
+        public async Task RelatedEvents_handles_circular_references()
         {
             var relatedId1 = Any.Guid();
             var relatedId2 = Any.Guid();
@@ -154,7 +155,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // assert
             using (var db = new EventStoreDbContext())
             {
-                var events = db.Events.RelatedEvents(relatedId1).ToArray();
+                var events = (await db.Events.RelatedEvents(relatedId1)).ToArray();
 
                 events.Count().Should().Be(3);
                 events.Should().Contain(e => e.AggregateId == relatedId1);
@@ -164,7 +165,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void RelatedEvents_can_return_several_nonintersecting_graphs_at_once()
+        public async Task RelatedEvents_can_return_several_nonintersecting_graphs_at_once()
         {
             var graph1Id1 = Any.Guid();
             var graph1Id2 = Any.Guid();
@@ -226,7 +227,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // assert
             using (var db = new EventStoreDbContext())
             {
-                var events = db.Events.RelatedEvents(graph1Id1, graph2Id1).ToArray();
+                var events = (await db.Events.RelatedEvents(graph1Id1, graph2Id1)).ToArray();
 
                 events.Count().Should().Be(4);
                 events.Should().Contain(e => e.AggregateId == graph1Id1);
