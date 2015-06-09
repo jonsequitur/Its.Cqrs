@@ -110,15 +110,5 @@ namespace Microsoft.Its.Domain.Sql.Tests
             //assert
             result.Should().NotBe(result2);
         }
-
-        [Test]
-        public async Task When_Confirm_is_called_for_a_nonexistent_reservation_then_it_returns_false()
-        {
-            var reservationService = new SqlReservationService();
-
-            var value = await reservationService.Confirm(Any.CamelCaseName(), Any.CamelCaseName(), Any.CamelCaseName());
-
-            value.Should().BeFalse();
-        }
     }
 }

@@ -174,19 +174,13 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task A_reservation_cannot_be_confirmed_when_the_reservation_does_not_exist()
+        public async Task When_Confirm_is_called_for_a_nonexistent_reservation_then_it_returns_false()
         {
-            // arrange
-            var value = Any.FullName();
-            var ownerToken = Any.Guid().ToString();
-            var scope = "default-scope";
             var reservationService = CreateReservationService();
 
-            // act
-            var confirmed = reservationService.Confirm(value, scope, ownerToken).Result;
+            var value = await reservationService.Confirm(Any.CamelCaseName(), Any.CamelCaseName(), Any.CamelCaseName());
 
-            // assert
-            confirmed.Should().BeFalse();
+            value.Should().BeFalse();
         }
 
         [Test]
