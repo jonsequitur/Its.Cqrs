@@ -3,6 +3,7 @@
 
 using System;
 using System.Data.Entity;
+using System.Data.Entity.Core;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Threading.Tasks;
@@ -216,11 +217,18 @@ namespace Microsoft.Its.Domain.Sql
                     }
                     catch (DbUpdateException exception)
                     {
-                        if (!exception.IsConcurrencyException() || exception.IsUniquenessConstraint())
+                        if (exception.InnerException is OptimisticConcurrencyException)
+                        {
+                            db.Entry(valueToReserve).State = EntityState.Unchanged;
+                        }
+                        else if (exception.IsUniquenessConstraint())
                         {
                             return null;
                         }
-                        db.Entry(valueToReserve).State = EntityState.Unchanged;
+                        else
+                        {
+                            throw;
+                        }
                     }
                 } while (valueToReserve != null); //retry on concurrency exception
             }

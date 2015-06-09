@@ -88,19 +88,18 @@ namespace Microsoft.Its.Domain.Testing
                 throw new ArgumentNullException("ownerToken");
             }
 
-            var reservedValueInDictionary = reservedValues.SingleOrDefault(kvp => kvp.Value.Scope == scope &&
-                kvp.Value.ConfirmationToken == value).Value;
+            var reservedValueInDictionary = reservedValues.SingleOrDefault(kvp => 
+                kvp.Value.Scope == scope &&
+                kvp.Value.ConfirmationToken == value && 
+                kvp.Value.OwnerToken == ownerToken).Value;
 
             if (reservedValueInDictionary != null)
             {
                 // Make sure to create a new object. Don't use the object from Dictionary directly.
                 var oldReservedValue = new ReservedValue(reservedValueInDictionary);    
-                if (oldReservedValue.OwnerToken == ownerToken)
-                {
-                    var newReservedValue = new ReservedValue(oldReservedValue) { Expiration = null };
-                    var key = Tuple.Create(newReservedValue.Value, newReservedValue.Scope);
-                    return reservedValues.TryUpdate(key, newReservedValue, oldReservedValue);
-                }
+                var newReservedValue = new ReservedValue(oldReservedValue) { Expiration = null };
+                var key = Tuple.Create(newReservedValue.Value, newReservedValue.Scope);
+                return reservedValues.TryUpdate(key, newReservedValue, oldReservedValue);
             }
 
             return false;
@@ -183,11 +182,27 @@ namespace Microsoft.Its.Domain.Testing
                 var key = Tuple.Create(newReservedValue.Value, newReservedValue.Scope);
                 if (reservedValues.TryUpdate(key, newReservedValue, oldReservedValue))
                 {
+                    if (HasUniquenessConstraintViolation(newReservedValue.Scope, newReservedValue.ConfirmationToken))
+                    {
+                        // put the old Value back when there is a uniqueness violation
+                        reservedValues.TryUpdate(key, oldReservedValue, newReservedValue);
+                        return null;
+                    }
                     return newReservedValue.Value;
                 }
             } while (newReservedValue != null);
             
             return null;
+        }
+
+        // Scope + ConfirmationToken have to be unique in the dictionary
+        private bool HasUniquenessConstraintViolation(string scope, string confirmationToken)
+        {
+            var reservations = reservedValues.Where(kvp =>
+                kvp.Value.Scope == scope &&
+                kvp.Value.ConfirmationToken == confirmationToken);
+
+            return reservations.Count() > 1;
         }
 
         public async Task<ReservedValue> GetReservedValue(string value, string scope)

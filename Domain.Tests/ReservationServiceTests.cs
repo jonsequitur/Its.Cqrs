@@ -261,38 +261,7 @@ namespace Microsoft.Its.Domain.Tests
 
             result.Should().BeNull();
         }
-        [Test]
-        public async Task old_Confirmation_token_cant_be_used_twice_by_different_owners_for_the_same_resource()
-        {
-            var reservationService = CreateReservationService();
-
-            // given a fixed quantity of some resource where the resource has been used
-            var word = Any.Word();
-            var ownerToken = Any.Guid().ToString();
-            var promoCode = "promo-code-" + word;
-            var reservedValue = Any.Guid().ToString();
-            var confirmationToken = Any.Guid().ToString();
-            await reservationService.Reserve(reservedValue, promoCode, reservedValue, TimeSpan.FromDays(-1));
-            await reservationService.Reserve(Any.Guid().ToString(), promoCode, reservedValue, TimeSpan.FromDays(-1));
-
-            //act
-            await reservationService.ReserveAny(
-                scope: promoCode,
-                ownerToken: ownerToken,
-                confirmationToken: confirmationToken);
-
-            //assert
-            Action reserve = () =>
-            {
-                var result = reservationService.ReserveAny(
-                    scope: promoCode,
-                    ownerToken: Any.FullName(),
-                    lease: TimeSpan.FromMinutes(2), confirmationToken: confirmationToken)
-                                               .Result;
-            };
-            reserve.ShouldThrow<DbUpdateException>();
-        }
-
+ 
         [Test]
         public async Task Confirmation_token_cant_be_used_twice_by_different_owners_for_the_same_resource()
         {
@@ -400,9 +369,8 @@ namespace Microsoft.Its.Domain.Tests
             var reservationService = CreateReservationService();
 
             // given a fixed quantity of some resource, e.g. promo codes:
-            var word = Any.Word();
             var ownerToken = "ownerToken-" + Any.Guid();
-            var promoCode = "promo-code-" + word;
+            var promoCode = "promo-code-" + Any.Guid();
             var reservedValue = "reservedValue-" + Any.Guid();
             var confirmationToken = "userConfirmationCode-" + Any.Guid();
             await reservationService.Reserve(reservedValue, promoCode, reservedValue, TimeSpan.FromDays(-1));
