@@ -101,13 +101,5 @@ namespace Microsoft.Its.Domain
         {
             return configuration.Container.Resolve<ISnapshotRepository>();
         }
-
-        /// <summary>
-        /// Gets an <see cref="IReservationService"/>
-        /// </summary>
-        public static IReservationService ReservationService(this Configuration configuration)
-        {
-            return configuration.Container.Resolve<IReservationService>();
-        }
     }
 }

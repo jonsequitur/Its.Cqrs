@@ -2,23 +2,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq.Expressions;
 
 namespace Microsoft.Its.Domain.Sql
 {
     public class ReservedValue
     {
-        public ReservedValue()
-        {
-        }
-
-        public ReservedValue(ReservedValue other)
-        {
-            OwnerToken = other.OwnerToken;
-            Value = other.Value;
-            ConfirmationToken = other.ConfirmationToken;
-            Scope = other.Scope;
-            Expiration = other.Expiration;
-        }
+        private static readonly Lazy<Func<ReservedValue, ReservedValue>> cloneReservedValue =
+            new Lazy<Func<ReservedValue, ReservedValue>>(
+                () => MappingExpression.From<ReservedValue>
+                    .ToNew<ReservedValue>()
+                    .Compile());
 
         public string OwnerToken { get; set; }
         
@@ -29,6 +23,11 @@ namespace Microsoft.Its.Domain.Sql
         public string Scope { get; set; }
 
         public DateTimeOffset? Expiration { get; set; }
+
+        public ReservedValue Clone()
+        {
+            return cloneReservedValue.Value(this);
+        }
 
         public override bool Equals(object obj)
         {

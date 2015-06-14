@@ -12,7 +12,7 @@ namespace Microsoft.Its.Domain.Testing
     /// <summary>
     /// An in-memory reservation service 
     /// </summary>
-    public class InMemoryReservationService : IReservationService, IQueryReservationService
+    public class InMemoryReservationService : IReservationService, IReservationQuery
     {
         private readonly ConcurrentDictionary<Tuple<string, string>, ReservedValue> reservedValues = new ConcurrentDictionary<Tuple<string, string>, ReservedValue>();
 
@@ -38,7 +38,7 @@ namespace Microsoft.Its.Domain.Testing
             reservedValues.TryGetValue(key, out reservedValueInDictionary);
 
             // Make sure to create a new object. Don't use the object from Dictionary directly.
-            var reservedValue = reservedValueInDictionary == null ? null : new ReservedValue(reservedValueInDictionary);
+            var reservedValue = reservedValueInDictionary == null ? null : reservedValueInDictionary.Clone();
 
             if (reservedValue == null)
             {
@@ -60,13 +60,16 @@ namespace Microsoft.Its.Domain.Testing
             else if (reservedValue.OwnerToken == ownerToken)
             {
                 // if it's the same, extend the lease
-                var newReservedValue = new ReservedValue(reservedValue) {Expiration = expiration};
+                var newReservedValue = reservedValue.Clone();
+                newReservedValue.Expiration = expiration;
                 return reservedValues.TryUpdate(key, newReservedValue, reservedValue);
             }
             else if (reservedValue.Expiration < now)
             {
                 // take ownership if the reserved value has expired
-                var newReservedValue = new ReservedValue(reservedValue) { OwnerToken = ownerToken, Expiration = expiration };
+                var newReservedValue = reservedValue.Clone();
+                newReservedValue.OwnerToken = ownerToken;
+                newReservedValue.Expiration = expiration;
                 return reservedValues.TryUpdate(key, newReservedValue, reservedValue);
             }
 
@@ -96,8 +99,9 @@ namespace Microsoft.Its.Domain.Testing
             if (reservedValueInDictionary != null)
             {
                 // Make sure to create a new object. Don't use the object from Dictionary directly.
-                var oldReservedValue = new ReservedValue(reservedValueInDictionary);    
-                var newReservedValue = new ReservedValue(oldReservedValue) { Expiration = null };
+                var oldReservedValue = reservedValueInDictionary.Clone();
+                var newReservedValue = oldReservedValue.Clone();
+                newReservedValue.Expiration = null;
                 var key = Tuple.Create(newReservedValue.Value, newReservedValue.Scope);
                 return reservedValues.TryUpdate(key, newReservedValue, oldReservedValue);
             }
@@ -126,7 +130,7 @@ namespace Microsoft.Its.Domain.Testing
             if (reservedValues.TryGetValue(key, out reservedValueInDictionary))
             {
                 // Make sure to create a new object. Don't use the object from Dictionary directly.
-                var oldReservedValue = new ReservedValue(reservedValueInDictionary);
+                var oldReservedValue = reservedValueInDictionary.Clone();
                 if (oldReservedValue.OwnerToken == ownerToken)
                 {
                     return reservedValues.TryRemove(key, out oldReservedValue);
@@ -167,12 +171,10 @@ namespace Microsoft.Its.Domain.Testing
                 }
 
                 // Make sure to create a new object. Don't use the object from Dictionary directly.
-                var oldReservedValue = new ReservedValue(reservedValueInDictionary);
-                newReservedValue = new ReservedValue(oldReservedValue)
-                {
-                    Expiration = expiration,
-                    OwnerToken = ownerToken
-                };
+                var oldReservedValue = reservedValueInDictionary.Clone();
+                newReservedValue = oldReservedValue.Clone();
+                newReservedValue.Expiration = expiration;
+                newReservedValue.OwnerToken = ownerToken;
 
                 if (confirmationToken != null)
                 {

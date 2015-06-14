@@ -25,12 +25,12 @@ namespace Microsoft.Its.Domain.Tests
 
         private IReservationService CreateReservationService()
         {
-            return Configuration.Current.ReservationService();
+            return Configuration.Current.ReservationService;
         }
 
-        private IQueryReservationService CreateQueryReservationService()
+        private IReservationQuery CreateReservationQuery()
         {
-            return Configuration.Current.QueryReservationService();
+            return Configuration.Current.ReservationQuery();
         }
 
         [SetUp]
@@ -353,7 +353,7 @@ namespace Microsoft.Its.Domain.Tests
 
             // assert
             attempt.ShouldBeValid();
-            var reservation = await CreateQueryReservationService().GetReservedValue(username, scope);
+            var reservation = await CreateReservationQuery().GetReservedValue(username, scope);
             reservation.Expiration.Should().Be(Clock.Now().AddMinutes(1));
         }
 
@@ -381,7 +381,7 @@ namespace Microsoft.Its.Domain.Tests
             await reservationService.Confirm(confirmationToken, promoCode, ownerToken);
 
             // assert
-            var reservation = await CreateQueryReservationService().GetReservedValue(reservedValue, promoCode);
+            var reservation = await CreateReservationQuery().GetReservedValue(reservedValue, promoCode);
             reservation.Expiration.Should().BeNull();
         }
 
@@ -410,7 +410,7 @@ namespace Microsoft.Its.Domain.Tests
             await reservationService.Confirm(value, promoCode, ownerToken);
 
             // assert
-            var reservation = await CreateQueryReservationService().GetReservedValue(reservedValue, promoCode);
+            var reservation = await CreateReservationQuery().GetReservedValue(reservedValue, promoCode);
             reservation.Expiration.Should().BeNull();
             reservation.ConfirmationToken.Should().Be(value);
         }
@@ -434,7 +434,7 @@ namespace Microsoft.Its.Domain.Tests
             await repository.Save(account);
 
             // assert
-            var reservation = await CreateQueryReservationService().GetReservedValue(username, "UserName");
+            var reservation = await CreateReservationQuery().GetReservedValue(username, "UserName");
             reservation.Expiration.Should().BeNull();
         }
     }
