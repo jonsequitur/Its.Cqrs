@@ -50,7 +50,6 @@ namespace Microsoft.Its.Domain.Testing
                  .ThenDo(virtualClock =>
                  {
                      subscribedToVirtualClock = true;
-                     disposables.Add(virtualClock.Subscribe(onNext: t => AdvanceClock(t).Wait()));
                  });
         }
 
@@ -122,7 +121,7 @@ namespace Microsoft.Its.Domain.Testing
             else
             {
                 var scheduler = builder.Configuration.Container.Resolve<SqlCommandScheduler>();
-                await scheduler.Done(clockName);
+                await scheduler.AdvanceClock(clockName, Clock.Now());
             }
         }
 
@@ -144,8 +143,7 @@ namespace Microsoft.Its.Domain.Testing
             where TAggregate : class, IEventSourced
         {
             aggregates.Add(aggregate);
-            await builder.GetRepository(aggregate.GetType())
-                         .Save(aggregate);
+            await builder.GetRepository<TAggregate>().Save(aggregate);
         }
 
         /// <summary>
@@ -172,7 +170,7 @@ namespace Microsoft.Its.Domain.Testing
                 aggregateId = Aggregates.OfType<TAggregate>().Single().Id;
             }
 
-            return await builder.GetRepository(typeof (TAggregate))
+            return await builder.GetRepository<TAggregate>()
                                 .GetLatest(aggregateId.Value);
         }
 
@@ -197,7 +195,7 @@ namespace Microsoft.Its.Domain.Testing
         public async Task<TAggregate> GetVersionAsync<TAggregate>(Guid aggregateId, long version)
             where TAggregate : class, IEventSourced
         {
-            return await builder.GetRepository(typeof (TAggregate))
+            return await builder.GetRepository<TAggregate>()
                                 .GetVersion(aggregateId, version);
         }
 
@@ -226,7 +224,7 @@ namespace Microsoft.Its.Domain.Testing
         public async Task<TAggregate> GetAsOfDateAsync<TAggregate>(Guid aggregateId, DateTimeOffset asOfDate)
             where TAggregate : class, IEventSourced
         {
-            return await builder.GetRepository(typeof (TAggregate))
+            return await builder.GetRepository<TAggregate>()
                                 .GetAsOfDate(aggregateId, asOfDate);
         }
 

@@ -24,5 +24,7 @@ namespace Microsoft.Its.Domain
                 return scheduledCommand;
             }
         }
+
+        public string ClockName { get; set; }
     }
 }

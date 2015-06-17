@@ -135,7 +135,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 to = to ?? clock.UtcNow.Add(@by.Value);
 
-                if (to <= clock.UtcNow)
+                if (to < clock.UtcNow)
                 {
                     throw new InvalidOperationException(string.Format("A clock cannot be moved backward. ({0})", new
                     {

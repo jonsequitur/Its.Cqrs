@@ -10,6 +10,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing
@@ -20,17 +21,16 @@ namespace Microsoft.Its.Domain.Testing
     [DebuggerStepThrough]
     public class VirtualClock :
         IClock,
-        IObservable<DateTimeOffset>,
         IDisposable
     {
         private readonly Subject<DateTimeOffset> movements = new Subject<DateTimeOffset>();
+        private readonly RxScheduler Scheduler;
+        private readonly HashSet<string> schedulerClocks = new HashSet<string>();
 
         private VirtualClock(DateTimeOffset now)
         {
             Scheduler = new RxScheduler(now);
         }
-
-        private readonly RxScheduler Scheduler;
 
         /// <summary>
         /// Gets the current clock as a <see cref="VirtualClock" />. If the current clock is not a <see cref="VirtualClock" />, it throws.
@@ -60,18 +60,42 @@ namespace Microsoft.Its.Domain.Testing
             return Scheduler.Clock;
         }
 
+        /// <summary>
+        /// Advances the clock to the specified time.
+        /// </summary>
         public void AdvanceTo(DateTimeOffset time)
         {
             Scheduler.AdvanceTo(time);
             movements.OnNext(Scheduler.Now);
-            Scheduler.Done().Wait();
+            WaitForScheduler();
         }
 
+        /// <summary>
+        /// Advances the clock by the specified amount of time.
+        /// </summary>
         public void AdvanceBy(TimeSpan time)
         {
             Scheduler.AdvanceBy(time);
             movements.OnNext(Scheduler.Now);
+            WaitForScheduler();
+        }
+
+        private void WaitForScheduler()
+        {
             Scheduler.Done().Wait();
+
+            if (schedulerClocks.Any())
+            {
+                var configuration = Configuration.Current;
+                if (configuration.UsesSqlCommandScheduling())
+                {
+                    foreach (var clockName in schedulerClocks)
+                    {
+                        var sqlCommandScheduler = configuration.SqlCommandScheduler();
+                        sqlCommandScheduler.AdvanceClock(clockName, Clock.Now()).Wait();
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -189,6 +213,11 @@ namespace Microsoft.Its.Domain.Testing
                     return pending.Any(p => p.Value <= Now);
                 }
             }
+        }
+
+        internal void OnAdvanceTriggerSchedulerClock(string clockName)
+        {
+            schedulerClocks.Add(clockName);
         }
     }
 }

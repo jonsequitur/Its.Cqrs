@@ -133,12 +133,7 @@ namespace Microsoft.Its.Domain.Testing
                      .ThenDo(a => a.ConfirmSave());
 
             // publish the events
-            bus.PublishAsync(events)
-               .Do(onNext: e =>
-               {
-               },
-                   onError: ex => Console.WriteLine(ex.ToString()))
-               .Wait();
+            await bus.PublishAsync(events);
         }
 
         /// <summary>

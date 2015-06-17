@@ -13,10 +13,29 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public void InitializeDatabase(CommandSchedulerDbContext context)
         {
             var dbMigrator = new DbMigrator(new CommandSchedulerMigrationConfiguration());
-            
+
             if (dbMigrator.GetPendingMigrations().Any())
             {
                 dbMigrator.Update("201407120005564_v0_8_2");
+
+                EnsureDefaultClockExists(context);
+            }
+        }
+
+        private static void EnsureDefaultClockExists(CommandSchedulerDbContext context)
+        {
+            var now = Domain.Clock.Now();
+
+            if (!context.Clocks.Any(c => c.Name == SqlCommandScheduler.DefaultClockName))
+            {
+                context.Clocks.Add(new Clock
+                {
+                    Name = SqlCommandScheduler.DefaultClockName,
+                    StartTime = now,
+                    UtcNow = now
+                });
+
+                context.SaveChanges();
             }
         }
     }

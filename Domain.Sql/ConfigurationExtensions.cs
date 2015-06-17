@@ -54,7 +54,7 @@ namespace Microsoft.Its.Domain.Sql
             {
                 var catchup = new ReadModelCatchup<CommandSchedulerDbContext>(scheduler)
                 {
-                    CreateReadModelDbContext = scheduler.CreateCommandSchedulerDbContext,
+                    CreateReadModelDbContext = scheduler.CreateCommandSchedulerDbContext
                 };
                 configureCatchup(catchup);
                 catchup.PollEventStore();
@@ -62,19 +62,35 @@ namespace Microsoft.Its.Domain.Sql
                 configuration.RegisterForDisposal(catchup);
             }
 
+            configuration.UsesSqlCommandScheduling(true);
+
             return configuration;
         }
 
         public static SqlCommandScheduler SqlCommandScheduler(this Configuration configuration)
         {
-            if (!configuration.Container.Any(reg => reg.Key == typeof (SqlCommandScheduler)))
+            if (!configuration.UsesSqlCommandScheduling())
             {
                 throw new InvalidOperationException("You must first call UseSqlCommandScheduling to enable the use of the SqlCommandScheduler.");
             }
             return configuration.Container.Resolve<SqlCommandScheduler>();
         }
 
-        internal static void UsesSqlEventStore(this Configuration configuration, bool value)
+        internal static void UsesSqlCommandScheduling(this Configuration configuration, bool value)
+        {
+            configuration.Properties["UsesSqlCommandScheduling"] = value;
+        }
+
+        internal static bool UsesSqlCommandScheduling(this Configuration configuration)
+        {
+            return configuration.Properties
+                                .IfContains("UsesSqlCommandScheduling")
+                                .And()
+                                .IfTypeIs<bool>()
+                                .ElseDefault();
+        }
+
+         internal static void UsesSqlEventStore(this Configuration configuration, bool value)
         {
             configuration.Properties["UsesSqlEventStore"] = value;
         }

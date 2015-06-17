@@ -33,7 +33,7 @@ namespace Microsoft.Its.Domain.Testing
             }
             this.repository = repository;
 
-            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(async e => await Schedule(e));
+            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e => Schedule(e).Wait());
         }
 
         /// <summary>

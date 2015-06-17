@@ -259,10 +259,9 @@ namespace Microsoft.Its.Domain.Testing
                          });
         }
 
-        internal dynamic GetRepository(Type aggregateType)
+        internal IEventSourcedRepository<TAggregate> GetRepository<TAggregate>() where TAggregate : class, IEventSourced
         {
-            return Configuration.Container
-                                .Resolve(typeof (IEventSourcedRepository<>).MakeGenericType(aggregateType));
+            return Configuration.Container.Resolve<IEventSourcedRepository<TAggregate>>();
         }
 
         private void PersistEventsToSql(IEnumerable<IEvent> events)

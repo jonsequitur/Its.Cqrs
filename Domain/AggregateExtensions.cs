@@ -57,6 +57,11 @@ namespace Microsoft.Its.Domain
         /// <returns></returns>
         public static IEnumerable<IEvent> Events(this EventSourcedAggregate aggregate)
         {
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException("aggregate");
+            }
+
             if (aggregate.sourceSnapshot != null)
             {
                 throw new InvalidOperationException("Aggregate was sourced from a snapshot, so event history is unavailable.");

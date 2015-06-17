@@ -184,7 +184,9 @@ namespace Microsoft.Its.Domain.Testing
             builder.EnsureScenarioHasNotBeenPrepared();
             builder.useInMemoryCommandScheduling = false;
 
-            builder.Configuration.UseSqlCommandScheduling();
+            builder.Configuration
+                   .UseSqlCommandScheduling()
+                   .TriggerSqlCommandSchedulerWithVirtualClock();
 
             var scheduler = builder.Configuration.SqlCommandScheduler();
 
