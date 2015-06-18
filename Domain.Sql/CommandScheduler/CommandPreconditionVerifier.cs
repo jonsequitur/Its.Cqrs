@@ -8,8 +8,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    internal class CommandPreconditionVerifier<TAggregate>
-        where TAggregate : class, IEventSourced
+    internal class CommandPreconditionVerifier : ICommandPreconditionVerifier
     {
         private readonly Func<EventStoreDbContext> createEventStoreDbContext;
 
@@ -22,7 +21,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             this.createEventStoreDbContext = createEventStoreDbContext;
         }
 
-        public async Task<bool> VerifyPrecondition(IScheduledCommand<TAggregate> scheduledCommand)
+        public async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
         {
             if (scheduledCommand == null)
             {

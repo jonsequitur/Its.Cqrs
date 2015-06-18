@@ -12,7 +12,8 @@ namespace Microsoft.Its.Domain.Testing
     /// <summary>
     /// Provides in-memory persistence for event sourced aggregates.
     /// </summary>
-    public class InMemoryEventSourcedRepository<TAggregate> : IEventSourcedRepository<TAggregate> where TAggregate : class, IEventSourced
+    public class InMemoryEventSourcedRepository<TAggregate> : 
+        IEventSourcedRepository<TAggregate> where TAggregate : class, IEventSourced
     {
         private readonly IEventStream eventStream;
         private readonly IEventBus bus;

@@ -26,6 +26,11 @@ namespace Microsoft.Its.Domain
 
             var domainNow = Clock.Current.Now();
 
+            if (scheduledCommand.DeliveryPrecondition != null)
+            {
+                throw new InvalidOperationException("The ImmediateCommandScheduler does not support delivery preconditions.");
+            }
+
             if (dueTime == null || dueTime <= domainNow)
             {
                 await Deliver(scheduledCommand);

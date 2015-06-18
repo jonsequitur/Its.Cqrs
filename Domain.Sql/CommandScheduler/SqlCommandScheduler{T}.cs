@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public IObserver<ICommandSchedulerActivity> Activity = Observer.Create<ICommandSchedulerActivity>(a => { });
         public Func<IScheduledCommand<TAggregate>, string> GetClockLookupKey = cmd => null;
         public Func<IEvent, string> GetClockName = cmd => null;
-        private readonly CommandPreconditionVerifier<TAggregate> commandPreconditionVerifier;
+        private readonly CommandPreconditionVerifier commandPreconditionVerifier;
         private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
         private readonly IEventBus eventBus;
@@ -34,7 +34,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             Func<IEventSourcedRepository<TAggregate>> getRepository,
             Func<CommandSchedulerDbContext> createCommandSchedulerDbContext,
             IEventBus eventBus,
-            CommandPreconditionVerifier<TAggregate> commandPreconditionVerifier)
+            CommandPreconditionVerifier commandPreconditionVerifier)
         {
             if (getRepository == null)
             {
@@ -149,32 +149,17 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 ClockName = storedScheduledCommand.Clock.Name
             });
-            
+
             // deliver the command immediately if appropriate
             if (storedScheduledCommand.ShouldBeDeliveredImmediately())
             {
                 // sometimes the command depends on a precondition event that hasn't been saved
                 if (!await commandPreconditionVerifier.VerifyPrecondition(scheduledCommand))
                 {
-                    eventBus.Events<IEvent>()
-                            .Where(
-                                e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
-                                     e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
-                            .Take(1)
-                            .Timeout(TimeSpan.FromSeconds(10))
-                            .Subscribe(
-                                e =>
-                                {
-                                    Debug.WriteLine(string.Format("SqlCommandScheduler: in-memory delayed immediate delivery: {0} ({1})",
-                                                                  scheduledCommand.Command.CommandName, 
-                                                                  scheduledCommand.AggregateId));
-                                    Deliver(scheduledCommand).Wait();
-                                },
-                                onError: ex =>
-                                         {
-                                             // TODO: (Schedule) this should probably go somewhere else
-                                             eventBus.PublishErrorAsync(new Domain.EventHandlingError(ex, this));
-                                         });
+                    this.DeliverIfPreconditionIsSatisfiedWithin(
+                        TimeSpan.FromSeconds(10),
+                        scheduledCommand,
+                        eventBus);
                 }
                 else
                 {

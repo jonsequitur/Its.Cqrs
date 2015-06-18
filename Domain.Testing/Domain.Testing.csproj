@@ -89,6 +89,7 @@
     <Compile Include="EventStreamExtensions.cs" />
     <Compile Include="IEventStream.cs" />
     <Compile Include="IgnoreCommandScheduling{T}.cs" />
+    <Compile Include="InMemoryCommandPreconditionVerifier.cs" />
     <Compile Include="IStoredEvent.cs" />
     <Compile Include="TestConfigurationExtensions.cs" />
     <Compile Include="EventExtensions.cs" />

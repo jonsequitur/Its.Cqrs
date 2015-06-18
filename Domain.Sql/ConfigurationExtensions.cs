@@ -30,7 +30,9 @@ namespace Microsoft.Its.Domain.Sql
             createEventStoreDbContext = createEventStoreDbContext ??
                                         (() => new EventStoreDbContext());
 
-            configuration.Container.Register(c => createEventStoreDbContext());
+            configuration.Container
+                         .Register(c => createEventStoreDbContext())
+                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<CommandPreconditionVerifier>());
 
             return configuration;
         }

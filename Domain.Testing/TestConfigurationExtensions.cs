@@ -40,7 +40,8 @@ namespace Microsoft.Its.Domain.Testing
         {
             configuration.Container
                          .RegisterSingle(c => new ConcurrentDictionary<string, IEventStream>(StringComparer.OrdinalIgnoreCase))
-                         .AddStrategy(type => InMemoryEventSourcedRepositoryStrategy(type, configuration.Container));
+                         .AddStrategy(type => InMemoryEventSourcedRepositoryStrategy(type, configuration.Container))
+                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>());
 
             configuration.UsesSqlEventStore(false);
 
