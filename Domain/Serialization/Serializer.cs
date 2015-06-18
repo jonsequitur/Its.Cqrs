@@ -23,8 +23,19 @@ namespace Microsoft.Its.Domain.Serialization
 
         private static readonly Lazy<JsonSerializerSettings> diagnosticSettings = new Lazy<JsonSerializerSettings>(() =>
         {
-            var jsonSerializerSettings = cloneSettings.Value(Settings);
-            jsonSerializerSettings.TypeNameHandling = TypeNameHandling.Objects;
+            var jsonSerializerSettings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Objects,
+                MissingMemberHandling = MissingMemberHandling.Ignore,
+                NullValueHandling = NullValueHandling.Include,
+                ContractResolver = new OptionalContractResolver(),
+                DefaultValueHandling = DefaultValueHandling.Include,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+
+            AddConverter(new OptionalConverter());
+            AddConverter(new UriConverter());
+
             return jsonSerializerSettings;
         }); 
 

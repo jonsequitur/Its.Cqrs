@@ -151,7 +151,7 @@ namespace Microsoft.Its.Domain
                 return;
             }
             
-            await Handler.EnactCommand((dynamic) aggregate, (dynamic) this);
+            await (Task) Handler.EnactCommand((dynamic) aggregate, (dynamic) this);
         }
 
         private bool CommandHandlerIsRegistered()

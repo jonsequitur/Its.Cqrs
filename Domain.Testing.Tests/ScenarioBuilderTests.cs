@@ -13,6 +13,7 @@ using System;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
@@ -733,6 +734,42 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     }
                 }
             }
+        }
+
+        [Test]
+        public async Task Recursive_scheduling_is_supported_when_scheduled_command_preconditions_are_satisfied_in_process()
+        {
+            var scenarioBuilder = CreateScenarioBuilder();
+            var scenario = scenarioBuilder.Prepare();
+
+            var customer = new CustomerAccount();
+            customer.Apply(new ChangeEmailAddress(Any.Email()));
+
+            var scheduler = scenarioBuilder.Configuration.CommandScheduler<Order>();
+
+            var orderId = Any.Guid();
+
+            await scheduler.Schedule(
+                orderId,
+                new CreateOrder(Any.FullName())
+                {
+                    AggregateId = orderId
+                }, deliveryDependsOn: customer.Events().First());
+
+            await Task.Delay(100);
+
+            var order = scenario.GetLatest<Order>(orderId);
+
+            order.Should().BeNull();
+
+            // act
+            Console.WriteLine("SAVING");
+            
+            scenario.Save(customer);
+
+            order = scenario.GetLatest<Order>(orderId);
+
+            order.Should().NotBeNull();
         }
 
         [Test]

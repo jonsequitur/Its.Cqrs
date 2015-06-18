@@ -65,9 +65,9 @@ namespace Microsoft.Its.Domain
             where TAggregate : class, IEventSourced
         {
             var consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(
-                async e =>
+                e =>
                 {
-                    await scheduler.Schedule(e);
+                    scheduler.Schedule(e).Wait();
                 });
 
             return bus.Subscribe(consequenter);

@@ -4,6 +4,8 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain.Ordering;
@@ -19,6 +21,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             Command<Order>.AuthorizeDefault = (order, command) => true;
             Clock.Reset();
+            CommandSchedulerDbContext.NameOrConnectionString =
+                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
         }
 
         [Test]
@@ -78,7 +82,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public async Task Advancing_the_clock_blocks_until_triggered_commands_are_completed()
+        public async Task Advancing_the_clock_blocks_until_triggered_commands_on_the_InMemoryCommandScheduler_are_completed()
         {
             VirtualClock.Start();
 
@@ -102,6 +106,44 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var order = await repository.GetLatest(aggregateId);
 
             order.Should().NotBeNull();
+        }
+
+        [Test]
+        public async Task Advancing_the_clock_blocks_until_triggered_commands_on_the_SqllCommandScheduler_are_completed()
+        {
+            var configuration = new Configuration()
+                .UseInMemoryEventStore()
+                .UseSqlCommandScheduling()
+                .TriggerSqlCommandSchedulerWithVirtualClock();
+
+            VirtualClock.Start();
+
+            configuration.SqlCommandScheduler()
+                         .GetClockName = e => Any.CamelCaseName();
+
+            using (ConfigurationContext.Establish(configuration))
+            {
+                var scheduler = configuration.CommandScheduler<Order>();
+                var repository = configuration.Repository<Order>();
+
+                var aggregateId = Any.Guid();
+
+                await scheduler.Schedule(new CommandScheduled<Order>
+                {
+                    Command = new CreateOrder(Any.FullName())
+                    {
+                        AggregateId = aggregateId
+                    },
+                    DueTime = Clock.Now().AddHours(1),
+                    AggregateId = aggregateId
+                });
+
+                VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
+
+                var order = await repository.GetLatest(aggregateId);
+
+                order.Should().NotBeNull();
+            }
         }
     }
 }

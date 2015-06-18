@@ -123,6 +123,7 @@
     <Compile Include="IClock.cs" />
     <Compile Include="EventHandling\Projector.cs" />
     <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />
+    <Compile Include="ICommandPreconditionVerifier.cs" />
     <Compile Include="Scheduling\ICommandSchedulerActivity.cs" />
     <Compile Include="Scheduling\CommandScheduled.cs" />
     <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />

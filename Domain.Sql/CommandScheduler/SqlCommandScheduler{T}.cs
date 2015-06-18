@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public IObserver<ICommandSchedulerActivity> Activity = Observer.Create<ICommandSchedulerActivity>(a => { });
         public Func<IScheduledCommand<TAggregate>, string> GetClockLookupKey = cmd => null;
         public Func<IEvent, string> GetClockName = cmd => null;
-        private readonly CommandPreconditionVerifier<TAggregate> commandPreconditionVerifier;
+        private readonly CommandPreconditionVerifier commandPreconditionVerifier;
         private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
         private readonly IEventBus eventBus;
@@ -34,7 +34,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             Func<IEventSourcedRepository<TAggregate>> getRepository,
             Func<CommandSchedulerDbContext> createCommandSchedulerDbContext,
             IEventBus eventBus,
-            CommandPreconditionVerifier<TAggregate> commandPreconditionVerifier)
+            CommandPreconditionVerifier commandPreconditionVerifier)
         {
             if (getRepository == null)
             {
@@ -56,7 +56,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
             this.eventBus = eventBus;
             this.commandPreconditionVerifier = commandPreconditionVerifier;
-            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e => Schedule(e).Wait());
+            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e =>
+            {
+                Schedule(e).Wait();
+            });
         }
 
         public async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
@@ -138,31 +141,25 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             Debug.WriteLine("SqlCommandScheduler.Schedule: " + Description(scheduledCommandEvent));
 
-            var storedScheduledCommand = StoreScheduledCommand(scheduledCommandEvent);
+            var storedScheduledCommand = await StoreScheduledCommand(scheduledCommandEvent);
 
             var scheduledCommand = storedScheduledCommand.ToScheduledCommand<TAggregate>();
             
-            Activity.OnNext(new CommandScheduled(scheduledCommand));
-            
+            Activity.OnNext(new CommandScheduled(scheduledCommand)
+            {
+                ClockName = storedScheduledCommand.Clock.Name
+            });
+
             // deliver the command immediately if appropriate
             if (storedScheduledCommand.ShouldBeDeliveredImmediately())
             {
-                // sometimes the command depends on a precondition even that hasn't been saved
+                // sometimes the command depends on a precondition event that hasn't been saved
                 if (!await commandPreconditionVerifier.VerifyPrecondition(scheduledCommand))
                 {
-                    eventBus.Events<IEvent>()
-                            .Where(
-                                e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
-                                     e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
-                            .Take(1)
-                            .Timeout(TimeSpan.FromSeconds(10))
-                            .Subscribe(
-                                async e => { await Deliver(scheduledCommand); },
-                                onError: ex =>
-                                         {
-                                             // TODO: (Schedule) this should probably go somewhere else
-                                             eventBus.PublishErrorAsync(new Domain.EventHandlingError(ex, this));
-                                         });
+                    this.DeliverIfPreconditionIsSatisfiedWithin(
+                        TimeSpan.FromSeconds(10),
+                        scheduledCommand,
+                        eventBus);
                 }
                 else
                 {
@@ -172,7 +169,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
         }
 
-        private ScheduledCommand StoreScheduledCommand(IScheduledCommand<TAggregate> scheduledCommandEvent)
+        private async Task<ScheduledCommand> StoreScheduledCommand(IScheduledCommand<TAggregate> scheduledCommandEvent)
         {
             ScheduledCommand storedScheduledCommand;
 
@@ -181,8 +178,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 var domainTime = Domain.Clock.Now();
 
                 // store the scheduled command
-                var clockName = ClockNameForEvent(scheduledCommandEvent, db);
-                var schedulerClock = db.Clocks.SingleOrDefault(c => c.Name == clockName);
+                var clockName = await ClockNameForEvent(scheduledCommandEvent, db);
+                var schedulerClock = await db.Clocks.SingleOrDefaultAsync(c => c.Name == clockName);
 
                 if (schedulerClock == null)
                 {
@@ -195,7 +192,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                          StartTime = domainTime
                                      };
                     db.Clocks.Add(schedulerClock);
-                    db.SaveChanges();
+                    await db.SaveChangesAsync();
                 }
 
                 storedScheduledCommand = new ScheduledCommand
@@ -267,7 +264,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             return bus.Subscribe(consequenter);
         }
 
-        private string ClockNameForEvent(
+        private async Task<string> ClockNameForEvent(
             IScheduledCommand<TAggregate> scheduledCommandEvent,
             CommandSchedulerDbContext db)
         {
@@ -287,12 +284,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 if (clockName == null)
                 {
                     var lookupValue = GetClockLookupKey(scheduledCommandEvent);
-                    clockName = db.ClockMappings
-                                  .Include(m => m.Clock)
-                                  .SingleOrDefault(c => c.Value == lookupValue)
-                                  .IfNotNull()
-                                  .Then(c => c.Clock.Name)
-                                  .Else(() => SqlCommandScheduler.DefaultClockName);
+                    clockName = (await db.ClockMappings
+                                         .Include(m => m.Clock)
+                                         .SingleOrDefaultAsync(c => c.Value == lookupValue))
+                        .IfNotNull()
+                        .Then(c => c.Clock.Name)
+                        .Else(() => SqlCommandScheduler.DefaultClockName);
                 }
             }
 

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace Microsoft.Its.Domain.Testing
             }
             this.repository = repository;
 
-            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(async e => await Schedule(e));
+            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e => Schedule(e).Wait());
         }
 
         /// <summary>
@@ -49,12 +50,22 @@ namespace Microsoft.Its.Domain.Testing
 
             if (dueTime == null || dueTime <= domainNow)
             {
-                Debug.WriteLine(string.Format("Schedule (applying {1} immediately): @ {0}", domainNow, scheduledCommand.Command.CommandName));
+                if (!await VerifyPrecondition(scheduledCommand))
+                {
+                    this.DeliverIfPreconditionIsSatisfiedWithin(
+                        TimeSpan.FromSeconds(3),
+                        scheduledCommand,
+                        Configuration.Current.EventBus);
+                }
+                else
+                {
+                    Debug.WriteLine(string.Format("Schedule (applying {1} immediately): @ {0}", domainNow, scheduledCommand.Command.CommandName));
 
-                resetEvent.Reset();
+                    resetEvent.Reset();
 
-                // schedule immediately
-                await Deliver(scheduledCommand);
+                    // schedule immediately
+                    await Deliver(scheduledCommand);
+                }
 
                 return;
             }
@@ -77,6 +88,12 @@ namespace Microsoft.Its.Domain.Testing
 
                                       return Disposable.Empty;
                                   });
+        }
+
+        private async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
+        {
+            var verifier = Configuration.Current.Container.Resolve<ICommandPreconditionVerifier>();
+            return await verifier.VerifyPrecondition(scheduledCommand);
         }
 
         /// <summary>

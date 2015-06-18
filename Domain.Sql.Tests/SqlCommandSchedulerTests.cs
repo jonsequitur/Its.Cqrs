@@ -19,7 +19,6 @@ using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
 using Moq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
@@ -1254,7 +1253,35 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_a_command_is_non_durable_then_immediate_scheduling_does_not_result_in_command_scheduler_db_entry()
+        public async Task When_command_is_durable_but_immediate_delivery_succeeds_then_it_is_not_redelivered()
+        {
+            VirtualClock.Start();
+            Configuration.Current.TriggerSqlCommandSchedulerWithVirtualClock();
+
+            var orderId = Any.Guid();
+            var activity = new ConcurrentBag<ICommandSchedulerActivity>();
+            scheduler.Activity.Subscribe(a => activity.Add(a));
+            await Configuration.Current.CommandScheduler<Order>().Schedule(
+                new CommandScheduled<Order>
+                {
+                    DueTime = Clock.Now().AddDays(-1),
+                    AggregateId = orderId,
+                    Command = new CreateOrder(Any.FullName())
+                    {
+                        AggregateId = orderId
+                    }
+                });
+
+            VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
+
+            activity.Should()
+                    .ContainSingle(a => a is CommandSucceeded)
+                    .And
+                    .ContainSingle(a => a is CommandScheduled);
+        }
+
+        [Test]
+        public async Task When_a_command_is_non_durable_then_immediate_scheduling_does_not_result_in_a_command_scheduler_db_entry()
         {
             var commandScheduler = Configuration.Current.Container.Resolve<ICommandScheduler<CustomerAccount>>();
             var reserverationService = new Mock<IReservationService>();

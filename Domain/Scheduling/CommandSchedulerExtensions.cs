@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Recipes;
 
@@ -35,8 +36,8 @@ namespace Microsoft.Its.Domain
                 if (string.IsNullOrWhiteSpace(deliveryDependsOn.ETag))
                 {
                     deliveryDependsOn.IfTypeIs<Event>()
-                             .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N"))
-                             .ElseDo(() => { throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends."); });
+                                     .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N"))
+                                     .ElseDo(() => { throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends."); });
                 }
 
                 precondition = new ScheduledCommandPrecondition
@@ -51,9 +52,28 @@ namespace Microsoft.Its.Domain
                 Command = command,
                 DueTime = dueTime,
                 AggregateId = aggregateId,
-                SequenceNumber = - DateTimeOffset.UtcNow.Ticks,
+                SequenceNumber = -DateTimeOffset.UtcNow.Ticks,
                 DeliveryPrecondition = precondition
             });
+        }
+
+        internal static void DeliverIfPreconditionIsSatisfiedWithin<TAggregate>(this ICommandScheduler<TAggregate> scheduler, TimeSpan timespan, IScheduledCommand<TAggregate> scheduledCommand, IEventBus eventBus) where TAggregate : IEventSourced
+        {
+            eventBus.Events<IEvent>()
+                    .Where(
+                        e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
+                             e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
+                    .Take(1)
+                    .Timeout(timespan)
+                    .Subscribe(
+                        e =>
+                        {
+                            scheduler.Deliver(scheduledCommand).Wait();
+                        },
+                        onError: ex =>
+                        {
+                            eventBus.PublishErrorAsync(new EventHandlingError(ex, scheduler));
+                        });
         }
     }
 }

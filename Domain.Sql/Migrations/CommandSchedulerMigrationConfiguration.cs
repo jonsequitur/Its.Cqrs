@@ -14,22 +14,5 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler.Migrations
             AutomaticMigrationsEnabled = false;
             AutomaticMigrationDataLossAllowed = false;
         }
-
-        protected override void Seed(CommandSchedulerDbContext context)
-        {
-            var now = Domain.Clock.Now();
-
-            if (!context.Clocks.Any(c => c.Name == SqlCommandScheduler.DefaultClockName))
-            {
-                context.Clocks.Add(new Clock
-                {
-                    Name = SqlCommandScheduler.DefaultClockName,
-                    StartTime = now,
-                    UtcNow = now
-                });
-
-                context.SaveChanges();
-            }
-        }
     }
 }

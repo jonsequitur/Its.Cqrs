@@ -3,8 +3,8 @@
 
 using System;
 using System.Data.Entity;
-using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.Its.Domain.Serialization;
@@ -230,10 +230,7 @@ namespace Microsoft.Its.Domain.Sql
                      .ThenDo(a => a.ConfirmSave());
 
             // publish the events
-            bus.PublishAsync(events)
-               .Subscribe(
-                   onNext: _ => { },
-                   onError: ex => log.Write(() => ex));
+            await bus.PublishAsync(events);
         }
 
         public Func<EventStoreDbContext> GetEventStoreContext = () => new EventStoreDbContext();
