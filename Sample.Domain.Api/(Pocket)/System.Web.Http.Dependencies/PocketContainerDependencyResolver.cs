@@ -9,13 +9,14 @@
 // 
 // PM> Get-Package -Updates
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Security.Policy;
-using Pocket;
+using System.Web.Http.Dependencies;
 
-namespace System.Web.Http.Dependencies
+namespace Pocket
 {
     /// <summary>
     /// A Web API dependency resolver that uses PocketContainer to resolve dependencies.
