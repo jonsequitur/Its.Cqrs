@@ -144,6 +144,7 @@
     <Compile Include="StorableEventTests.cs" />
     <Compile Include="SqlReservationServiceTests.cs" />
     <Compile Include="Events.cs" />
+    <Compile Include="SynchronousSqlReservationServiceTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Domain.Tests\.config\Events.json">
