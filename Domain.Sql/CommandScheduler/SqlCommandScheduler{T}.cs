@@ -57,7 +57,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             this.commandPreconditionVerifier = commandPreconditionVerifier;
             consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(async e =>
             {
-                Task.Run(() => Schedule(e).Wait()).Wait();
+                Task.Run(() => Schedule(e)).Wait();
             });
         }
 
@@ -81,7 +81,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 var repository = getRepository();
 
                 var result = await repository.ApplyScheduledCommand(scheduledCommand,
-                                                                    async () => await commandPreconditionVerifier.VerifyPrecondition(scheduledCommand));
+                                                                    () => commandPreconditionVerifier.VerifyPrecondition(scheduledCommand));
 
                 Activity.OnNext(result);
 
