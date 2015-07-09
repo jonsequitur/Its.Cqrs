@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Diagnostics;
-using System.Reactive.Linq;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -56,9 +55,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
             this.eventBus = eventBus;
             this.commandPreconditionVerifier = commandPreconditionVerifier;
-            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e =>
+            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(async e =>
             {
-                Schedule(e).Wait();
+                Task.Run(() => Schedule(e).Wait()).Wait();
             });
         }
 
@@ -183,7 +182,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 if (schedulerClock == null)
                 {
-                    Debug.WriteLine(string.Format("SqlCommandScheduler: Creating clock '{0}'", clockName) );
+                    Debug.WriteLine(string.Format("SqlCommandScheduler: Creating clock '{0}' @ {1}", clockName, domainTime));
 
                     schedulerClock = new Clock
                                      {

@@ -135,7 +135,7 @@ namespace Microsoft.Its.Domain
             else
             {
                 Task handle = Handler.EnactCommand((dynamic) aggregate, (dynamic) this);
-                handle.Wait();
+                Task.Run(() => handle.Wait()).Wait();
             }
         }
         

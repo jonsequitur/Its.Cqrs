@@ -68,7 +68,7 @@ namespace Microsoft.Its.Domain
                     .Subscribe(
                         e =>
                         {
-                            scheduler.Deliver(scheduledCommand).Wait();
+                            Task.Run(() => scheduler.Deliver(scheduledCommand).Wait()).Wait();
                         },
                         onError: ex =>
                         {

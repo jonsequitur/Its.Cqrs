@@ -33,7 +33,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         internal bool ShouldBeDeliveredImmediately()
         {
-            return DueTime == null || DueTime <= Clock.UtcNow;
+            return DueTime == null || DueTime <= Clock.Now();
         }
     }
 }
