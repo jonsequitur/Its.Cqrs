@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 
@@ -169,7 +170,7 @@ namespace Microsoft.Its.Domain
                 .Else<T>(() =>
                 {
                     var repository = Configuration.Current.Container.Resolve<IEventSourcedRepository<T>>();
-                    return repository.GetLatest(@event.AggregateId).Result;
+                    return Task.Run(() => repository.GetLatest(@event.AggregateId)).Result;
                 });
         }
 
