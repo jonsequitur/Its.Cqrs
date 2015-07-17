@@ -190,8 +190,9 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 await receiver.StartReceivingMessages();
 
                 // due enough in the future that the scheduler won't apply the commands immediately
-                var order = CommandSchedulingTests.CreateOrder(orderId: aggregateId)
-                                                  .Apply(new ShipOn(Clock.Now().AddMinutes(2)));
+                var order = await CommandSchedulingTests.CreateOrder(orderId: aggregateId)
+                                                        .ApplyAsync(new ShipOn(Clock.Now().AddMinutes(2)));
+
                 await orderRepository.Save(order);
 
                 await RunCatchup();

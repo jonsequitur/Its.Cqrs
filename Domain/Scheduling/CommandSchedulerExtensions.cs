@@ -57,7 +57,11 @@ namespace Microsoft.Its.Domain
             });
         }
 
-        internal static void DeliverIfPreconditionIsSatisfiedWithin<TAggregate>(this ICommandScheduler<TAggregate> scheduler, TimeSpan timespan, IScheduledCommand<TAggregate> scheduledCommand, IEventBus eventBus) where TAggregate : IEventSourced
+        internal static void DeliverIfPreconditionIsSatisfiedWithin<TAggregate>(
+            this ICommandScheduler<TAggregate> scheduler, 
+            TimeSpan timespan, 
+            IScheduledCommand<TAggregate> scheduledCommand, 
+            IEventBus eventBus) where TAggregate : IEventSourced
         {
             eventBus.Events<IEvent>()
                     .Where(

@@ -55,7 +55,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
             this.eventBus = eventBus;
             this.commandPreconditionVerifier = commandPreconditionVerifier;
-            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(async e =>
+            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e =>
             {
                 Task.Run(() => Schedule(e)).Wait();
             });

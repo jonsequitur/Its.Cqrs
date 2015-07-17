@@ -86,18 +86,16 @@ namespace Microsoft.Its.Domain
             if (aggregate != null)
             {
                 // TODO: (FailScheduledCommand) refactor so that getting hold of the handler is simpler
-                scheduled.Command
-                         .IfTypeIs<Command<TAggregate>>()
-                         .ThenDo(c =>
-                         {
-                             if (c.Handler != null)
-                             {
-                                 Task task = c.Handler
-                                              .HandleScheduledCommandException((dynamic) aggregate,
-                                                                               (dynamic) failure);
-                                 task.Wait();
-                             }
-                         });
+                var scheduledCommandOfT = scheduled.Command as Command<TAggregate>;
+                if (scheduledCommandOfT != null)
+                {
+                    if (scheduledCommandOfT.Handler != null)
+                    {
+                        await scheduledCommandOfT.Handler
+                                                 .HandleScheduledCommandException((dynamic) aggregate,
+                                                                                  (dynamic) failure);
+                    }
+                }
 
                 if (!(exception is ConcurrencyException))
                 {
@@ -116,7 +114,7 @@ namespace Microsoft.Its.Domain
             {
                 if (failure.NumberOfPreviousAttempts < 5)
                 {
-                    failure.Retry(TimeSpan.FromMinutes(failure.NumberOfPreviousAttempts + 1));
+                    failure.Retry(TimeSpan.FromMinutes(Math.Pow(failure.NumberOfPreviousAttempts + 1, 2)));
                 }
             }
 

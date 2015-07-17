@@ -52,7 +52,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void When_a_commands_is_scheduled_for_later_execution_then_a_CommandScheduled_event_is_added()
+        public void When_a_command_is_scheduled_for_later_execution_then_a_CommandScheduled_event_is_added()
         {
             var order = CreateOrder();
 
