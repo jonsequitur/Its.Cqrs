@@ -85,6 +85,8 @@
     </Compile>
     <Compile Include="AggregateType.cs" />
     <Compile Include="AggregateType{T}.cs" />
+    <Compile Include="Annotate.cs" />
+    <Compile Include="Annotated.cs" />
     <Compile Include="AnonymousClock.cs" />
     <Compile Include="Authorization\AuthorizationExtensions.cs" />
     <Compile Include="Authorization\AuthorizationPolicy.cs" />

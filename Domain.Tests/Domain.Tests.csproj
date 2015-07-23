@@ -122,6 +122,7 @@
     <Compile Include="%28Its.Recipes%29\System.Linq\EnumerableExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\TestInputGenerator.cs" />
     <Compile Include="%28Pocket%29\PocketContainer.cs" />
+    <Compile Include="AnnotationEventTests.cs" />
     <Compile Include="AuthorizationTests.cs" />
     <Compile Include="CommandContextTests.cs" />
     <Compile Include="CommandSchedulingTests.cs" />
