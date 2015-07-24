@@ -108,5 +108,10 @@ namespace Microsoft.Its.Domain
         {
             HandleCommandValidationFailure(command, validationReport);
         }
+
+        public void EnactCommand(Annotate<T> command)
+        {
+            RecordEvent(new Annotated<T>(command.Message));
+        }
     }
 }

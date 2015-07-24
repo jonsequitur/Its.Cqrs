@@ -18,7 +18,8 @@ namespace Microsoft.Its.Domain
                     .Concat(new[]
                     {
                         // add known generic variants for TAggregate
-                        typeof (CommandScheduled<TAggregate>)
+                        typeof (CommandScheduled<TAggregate>),
+                        typeof (Annotated<TAggregate>)
                     })
                     .ToArray();
 
