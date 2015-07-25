@@ -238,7 +238,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                             }
                             else
                             {
-                                // this is not a scheduler-assigned sequence number, so the concurrency exception indicates
+                                // this is not a scheduler-assigned sequence number, so the concurrency exception indicates an actual issue
                                 break;
                             }
                         }

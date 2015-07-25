@@ -3,7 +3,7 @@
   <metadata>
     <id>Its.Recipes-Its.Domain.ServiceBusCommandScheduling</id>
     <title>Its.Recipes - Azure Service Bus Command Scheduling</title>
-    <version>0.3.0-beta</version>
+    <version>0.4.0-beta</version>
     <authors>Microsoft,jonsequitur</authors>
     <owners>Microsoft,jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/Its.Cqrs</projectUrl>
@@ -14,7 +14,7 @@
     <dependencies>
       <dependency id="Its.Domain" version="[0.11.9-beta,1)" />
       <dependency id="Its.Domain.Sql" version="[0.11.9-beta,1)" />
-      <dependency id="Its.Recipes-ServiceBusConfiguration" version="[0.3.0,1)" />
+      <dependency id="Its.Recipes-ServiceBusConfiguration" version="[0.4.0,1)" />
     </dependencies>
   </metadata>
   <files>

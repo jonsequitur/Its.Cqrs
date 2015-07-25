@@ -445,6 +445,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_Run_is_called_while_already_running_then_it_skips_the_run()
         {
+            // FIX: (When_Run_is_called_while_already_running_then_it_skips_the_run) flaky test
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
             await repository.Save(new Order());
             var mre = new ManualResetEventSlim();
@@ -471,7 +472,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
 #pragma warning restore 4014
 
                 mre.Set();
-                await catchup.Run();
+                ReadModelCatchupResult result = await catchup.Run();
+                result.Should().Be(ReadModelCatchupResult.CatchupAlreadyInProgress);
                 await Task.Delay(2000);
             }
 

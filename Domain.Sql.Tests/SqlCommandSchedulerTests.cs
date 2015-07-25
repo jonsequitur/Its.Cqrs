@@ -794,6 +794,56 @@ namespace Microsoft.Its.Domain.Sql.Tests
                   .OnlyContain(c => c.AppliedTime != null);
             }
         }
+        
+        [Test]
+        public async Task When_a_command_is_triggering_and_succeeds_then_result_SuccessfulCommands_references_it()
+        {
+            // arrange
+            var shipmentId = Any.AlphanumericString(8, 8);
+            var customerAccountId = Any.Guid();
+            await accountRepository.Save(new CustomerAccount(customerAccountId)
+                                       .Apply(new ChangeEmailAddress(Any.Email())));
+            var order = CommandSchedulingTests.CreateOrder(customerAccountId: customerAccountId);
+
+            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
+            {
+                ShipmentId = shipmentId
+            });
+            await orderRepository.Save(order);
+
+            // act
+            var result = await scheduler.Trigger(commands => commands.Where(cmd => cmd.AggregateId == order.Id));
+
+            //assert 
+            result.SuccessfulCommands
+                  .Should()
+                  .ContainSingle(c => c.ScheduledCommand.AggregateId == order.Id);
+        }
+
+        [Test]
+        public async Task When_a_clock_is_advanced_then_result_SuccessfulCommands_are_included_in_the_result()
+        {
+            // arrange
+            var shipmentId = Any.AlphanumericString(8, 8);
+            var customerAccountId = Any.Guid();
+            await accountRepository.Save(new CustomerAccount(customerAccountId)
+                                       .Apply(new ChangeEmailAddress(Any.Email())));
+            var order = CommandSchedulingTests.CreateOrder(customerAccountId: customerAccountId);
+
+            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
+            {
+                ShipmentId = shipmentId
+            });
+            await orderRepository.Save(order);
+
+            // act
+            var result = await scheduler.AdvanceClock(clockName, Clock.Now().AddMonths(2));
+
+            //assert 
+            result.SuccessfulCommands
+                  .Should()
+                  .ContainSingle(c => c.ScheduledCommand.AggregateId == order.Id);
+        }
 
         [Test]
         public async Task When_triggering_specific_commands_then_the_result_can_be_used_to_evaluate_failures()

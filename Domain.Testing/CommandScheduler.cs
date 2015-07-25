@@ -44,7 +44,7 @@ namespace Microsoft.Its.Domain.Testing
                     foreach (var scheduledCommand in commands)
                     {
                         Debug.WriteLine(string.Format("SqlCommandScheduler: Triggering {0}:{1}", scheduledCommand.AggregateId, scheduledCommand.SequenceNumber));
-                        await scheduler.Trigger(scheduledCommand, db);
+                        await scheduler.Trigger(scheduledCommand, new SchedulerAdvancedResult(), db);
                     }
 
                     await Task.Delay(400);

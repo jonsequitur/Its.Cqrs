@@ -162,7 +162,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 foreach (var scheduled in await commands.ToArrayAsync())
                 {
                     //clock.UtcNow = scheduled.DueTime ?? to.Value;
-                    await Trigger(scheduled, db);
+                    await Trigger(scheduled, result, db);
                 }
 
                 return result;
@@ -194,8 +194,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 foreach (var scheduled in commands)
                 {
-                    await Trigger(scheduled, db);
-                    result.Add(scheduled.Result);
+                    await Trigger(scheduled, result, db);
                 }
             }
 
@@ -204,6 +203,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         internal async Task Trigger(
             ScheduledCommand scheduled,
+             SchedulerAdvancedResult result,
             CommandSchedulerDbContext db)
         {
             var deliver = commandDispatchers.IfContains(scheduled.AggregateType)
@@ -222,6 +222,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             else
             {
                 await deliver(scheduled);
+                result.Add(scheduled.Result);
             }
 
             scheduled.Attempts++;
