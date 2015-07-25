@@ -82,8 +82,6 @@ namespace Microsoft.Its.Domain.Tests
         {
             private class EventSourceRepositoryWithoutMigrationSupport : IEventSourcedRepository<Order> //, IMigratableEventSourcedRepository<Order> 
             {
-                #region NotImpl
-
                 Task<Order> IEventSourcedRepository<Order>.GetLatest(Guid aggregateId)
                 {
                     throw new NotImplementedException();
@@ -108,8 +106,6 @@ namespace Microsoft.Its.Domain.Tests
                 {
                     throw new NotImplementedException();
                 }
-
-                #endregion
             }
 
             [Test]
