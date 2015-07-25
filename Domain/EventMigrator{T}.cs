@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
@@ -33,11 +32,23 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        public class PendingRenameList : List<Tuple<TAggregate, EventMigrator.Rename>>
+        public class PendingRenameList
         {
+            private readonly List<Tuple<TAggregate, EventMigrator.Rename>> renames = new List<Tuple<TAggregate, EventMigrator.Rename>>();
+
             public void Add(TAggregate aggregate, long sequenceNumber, string newName)
             {
-                base.Add(Tuple.Create(aggregate, new EventMigrator.Rename(sequenceNumber, newName)));
+                renames.Add(Tuple.Create(aggregate, new EventMigrator.Rename(sequenceNumber, newName)));
+            }
+
+            public ILookup<TAggregate, EventMigrator.Rename> ToLookup()
+            {
+                return renames.ToLookup(_ => _.Item1, _ => _.Item2);
+            }
+
+            public void Clear()
+            {
+                renames.Clear();
             }
         }
 
@@ -45,7 +56,7 @@ namespace Microsoft.Its.Domain
 
         public async Task Save(TAggregate aggregate)
         {
-            var lookup = PendingRenames.ToLookup(_ => _.Item1, _ => _.Item2);
+            var lookup = PendingRenames.ToLookup();
             foreach (var aggregateRename in lookup)
             {
                 await repository.SaveWithRenames(aggregateRename.Key, aggregateRename);
