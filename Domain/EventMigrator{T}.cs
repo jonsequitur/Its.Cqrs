@@ -54,7 +54,11 @@ namespace Microsoft.Its.Domain
 
         public readonly PendingRenameList PendingRenames = new PendingRenameList();
 
-        public async Task Save(TAggregate aggregate)
+        /// <summary>
+        /// Save any pending migrations + other pending changes on this aggreage.
+        /// </summary>
+        /// <returns></returns>
+        public async Task SaveAll()
         {
             var lookup = PendingRenames.ToLookup();
             foreach (var aggregateRename in lookup)

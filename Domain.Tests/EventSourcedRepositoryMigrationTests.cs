@@ -44,7 +44,7 @@ namespace Microsoft.Its.Domain.Tests
             var order = await repository.GetLatest(aggregateId);
             migrator.PendingRenames.Add(order, order.EventHistory.Last().SequenceNumber, "ItemAdded2");
 
-            await migrator.Save(order);
+            await migrator.SaveAll();
             (await repository.GetLatest(aggregateId)).EventHistory.Last().Should().BeOfType<Order.ItemAdded2>();
         }
 
@@ -63,7 +63,7 @@ namespace Microsoft.Its.Domain.Tests
             var order = await repository.GetLatest(aggregateId);
             migrator.PendingRenames.Add(order, order.EventHistory.Last().SequenceNumber, "ItemAdded (ignored)");
 
-            await migrator.Save(order);
+            await migrator.SaveAll();
             (await repository.GetLatest(aggregateId)).EventHistory.Last().GetType().Name.Should().Be("AnonymousEvent`1");
         }
 
@@ -72,7 +72,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var order = await repository.GetLatest(aggregateId);
             migrator.PendingRenames.Add(order, 99999, "ItemAdded (ignored)");
-            migrator.Invoking(_ => _.Save(order).Wait())
+            migrator.Invoking(_ => _.SaveAll().Wait())
                     .ShouldThrow<EventMigrator.SequenceNumberNotFoundException>()
                     .And.Message.Should().StartWith("Migration failed, because no event with sequence number 99999 on aggregate ");
         }
