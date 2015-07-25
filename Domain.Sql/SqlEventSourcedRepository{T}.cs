@@ -163,10 +163,10 @@ namespace Microsoft.Its.Domain.Sql
         /// <exception cref="ConcurrencyException"></exception>
         public async Task Save(TAggregate aggregate)
         {
-            await Save(aggregate, new List<EventMigrator.Rename>());
+            await Save(aggregate, Enumerable.Empty<EventMigrator.Rename>());
         }
 
-        async Task Save(TAggregate aggregate, IList<EventMigrator.Rename> pendingRenames)
+        async Task Save(TAggregate aggregate, IEnumerable<EventMigrator.Rename> pendingRenames)
         {
             if (aggregate == null)
             {

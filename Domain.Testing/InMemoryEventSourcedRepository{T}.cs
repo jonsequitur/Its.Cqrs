@@ -120,10 +120,10 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="aggregate">The aggregate to persist.</param>
         public async Task Save(TAggregate aggregate)
         {
-            await Save(aggregate, new List<EventMigrator.Rename>());
+            await Save(aggregate, Enumerable.Empty<EventMigrator.Rename>());
         }
 
-        async Task Save(TAggregate aggregate, IList<EventMigrator.Rename> pendingRenames)
+        async Task Save(TAggregate aggregate, IEnumerable<EventMigrator.Rename> pendingRenames)
         {
             var events = aggregate.PendingEvents.ToArray();
 
