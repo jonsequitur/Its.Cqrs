@@ -51,6 +51,10 @@ namespace Microsoft.Its.Domain
 
             public Rename(long sequenceNumber, string newName)
             {
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    throw new ArgumentOutOfRangeException("newName");
+                }
                 SequenceNumber = sequenceNumber;
                 NewName = newName;
             }
