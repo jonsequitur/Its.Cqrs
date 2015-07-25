@@ -445,17 +445,18 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_Run_is_called_while_already_running_then_it_skips_the_run()
         {
-            // FIX: (When_Run_is_called_while_already_running_then_it_skips_the_run) flaky test
             var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
             await repository.Save(new Order());
             var mre = new ManualResetEventSlim();
+            var barrier = new Barrier(2);
             var progress = new List<ReadModelCatchupStatus>();
-
+            Events.Write(10);
             var projector = new Projector<Order.ItemAdded>(() => new ReadModelDbContext())
             {
                 OnUpdate = (work, e) =>
                 {
-                    mre.Wait(20000);
+                    barrier.SignalAndWait(1000);
+                    mre.Wait(5000);
                 }
             };
 
@@ -471,12 +472,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Task.Run(() => catchup.Run());
 #pragma warning restore 4014
 
-                mre.Set();
-                ReadModelCatchupResult result = await catchup.Run();
+                // make sure the first catchup is blocked inside the projector
+                barrier.SignalAndWait(1000);
+
+                // try to start another catchup
+                var result = await catchup.Run();
+              
                 result.Should().Be(ReadModelCatchupResult.CatchupAlreadyInProgress);
                 await Task.Delay(2000);
             }
 
+            mre.Set();
             progress.Should().ContainSingle(s => s.IsStartOfBatch);
         }
 
