@@ -15,13 +15,13 @@ namespace Microsoft.Its.Domain.Testing
     public class InMemoryEventSourcedRepository<TAggregate> : 
         IEventSourcedRepository<TAggregate> where TAggregate : class, IEventSourced
     {
-        private readonly IEventStream eventStream;
+        private readonly InMemoryEventStream eventStream;
         private readonly IEventBus bus;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InMemoryEventSourcedRepository{TAggregate}"/> class.
         /// </summary>
-        public InMemoryEventSourcedRepository(IEventStream eventStream = null, IEventBus bus = null)
+        public InMemoryEventSourcedRepository(InMemoryEventStream eventStream = null, IEventBus bus = null)
         {
             this.eventStream = eventStream ?? new InMemoryEventStream(AggregateType<TAggregate>.EventStreamName);
             this.bus = bus ?? new FakeEventBus();
