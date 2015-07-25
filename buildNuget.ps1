@@ -8,5 +8,5 @@ mkdir NuGet
 	".\Domain.Testing\Domain.Testing.csproj",
 	".\Recipes\Recipes.csproj"
 ) | foreach {
-	nuget pack $_ -Properties "Configuration=Release;Platform=AnyCPU" -OutputDirectory ".\NuGet"
+	nuget pack $_ -Properties "Configuration=Release;Platform=AnyCPU" -OutputDirectory ".\NuGet" -Symbols
 }
