@@ -17,9 +17,6 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// A variation of <see cref="IEventSourcedRepository{TAggregate}.Save"/> that renames existing events in the same transaction."/>
         /// </summary>
-        /// <param name="aggregate"></param>
-        /// <param name="pendingRenames"></param>
-        /// <returns></returns>
         Task SaveWithRenames(TAggregate aggregate, IEnumerable<EventMigrator.Rename> pendingRenames);
     }
 }
