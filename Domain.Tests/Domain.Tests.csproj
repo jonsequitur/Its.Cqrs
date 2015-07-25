@@ -134,6 +134,7 @@
     <Compile Include="EventHandlingTests.cs" />
     <Compile Include="EventSequenceTests.cs" />
     <Compile Include="EventSourcedAggregateTests.cs" />
+    <Compile Include="EventSourcedRepositoryMigrationTests.cs" />
     <Compile Include="EventSourcedRepositoryTests.cs" />
     <Compile Include="EventTests.cs" />
     <Compile Include="Infrastructure\Logging.cs" />
