@@ -44,12 +44,12 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        public class RenameRequest
+        public class Rename
         {
             public readonly long SequenceNumber;
             public readonly string NewName;
 
-            public RenameRequest(long sequenceNumber, string newName)
+            public Rename(long sequenceNumber, string newName)
             {
                 SequenceNumber = sequenceNumber;
                 NewName = newName;

@@ -120,10 +120,10 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="aggregate">The aggregate to persist.</param>
         public async Task Save(TAggregate aggregate)
         {
-            await Save(aggregate, new List<EventSourcedRepositoryMigrator.RenameRequest>());
+            await Save(aggregate, new List<EventSourcedRepositoryMigrator.Rename>());
         }
 
-        async Task Save(TAggregate aggregate, IList<EventSourcedRepositoryMigrator.RenameRequest> pendingRenames)
+        async Task Save(TAggregate aggregate, IList<EventSourcedRepositoryMigrator.Rename> pendingRenames)
         {
             var events = aggregate.PendingEvents.ToArray();
 
@@ -168,7 +168,7 @@ namespace Microsoft.Its.Domain.Testing
             aggregate.Update(newEvents);
         }
 
-        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventSourcedRepositoryMigrator.RenameRequest> pendingRenames)
+        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventSourcedRepositoryMigrator.Rename> pendingRenames)
         {
             await Save(aggregate, pendingRenames);
         }

@@ -163,10 +163,10 @@ namespace Microsoft.Its.Domain.Sql
         /// <exception cref="ConcurrencyException"></exception>
         public async Task Save(TAggregate aggregate)
         {
-            await Save(aggregate, new List<EventSourcedRepositoryMigrator.RenameRequest>());
+            await Save(aggregate, new List<EventSourcedRepositoryMigrator.Rename>());
         }
 
-        async Task Save(TAggregate aggregate, IList<EventSourcedRepositoryMigrator.RenameRequest> pendingRenames)
+        async Task Save(TAggregate aggregate, IList<EventSourcedRepositoryMigrator.Rename> pendingRenames)
         {
             if (aggregate == null)
             {
@@ -252,7 +252,7 @@ namespace Microsoft.Its.Domain.Sql
 
         public Func<EventStoreDbContext> GetEventStoreContext = () => new EventStoreDbContext();
 
-        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventSourcedRepositoryMigrator.RenameRequest> pendingRenames)
+        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventSourcedRepositoryMigrator.Rename> pendingRenames)
         {
             await Save(aggregate, pendingRenames);
         }

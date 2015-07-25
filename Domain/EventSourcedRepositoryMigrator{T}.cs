@@ -33,11 +33,11 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        public class PendingRenameList : List<Tuple<TAggregate, EventSourcedRepositoryMigrator.RenameRequest>>
+        public class PendingRenameList : List<Tuple<TAggregate, EventSourcedRepositoryMigrator.Rename>>
         {
             public void Add(TAggregate aggregate, long sequenceNumber, string newName)
             {
-                base.Add(Tuple.Create(aggregate, new EventSourcedRepositoryMigrator.RenameRequest(sequenceNumber, newName)));
+                base.Add(Tuple.Create(aggregate, new EventSourcedRepositoryMigrator.Rename(sequenceNumber, newName)));
             }
         }
 
