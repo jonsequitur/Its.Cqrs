@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.Its.Domain
 {
-    public static class EventSourcedRepositoryMigrator
+    public static class EventMigrator
     {
         public class SequenceNumberNotFoundException : ArgumentOutOfRangeException
         {

@@ -9,7 +9,7 @@ using Sample.Domain.Ordering;
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
-    public class SqlEventSourcedRepositoryMigrationTests : EventSourcedRepositoryMigrationTests
+    public class SqlEventSourcedRepositoryMigrationTests : EventMigrationTests
     {
         static SqlEventSourcedRepositoryMigrationTests()
         {

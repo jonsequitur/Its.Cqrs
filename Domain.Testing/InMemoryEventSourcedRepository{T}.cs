@@ -120,10 +120,10 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="aggregate">The aggregate to persist.</param>
         public async Task Save(TAggregate aggregate)
         {
-            await Save(aggregate, new List<EventSourcedRepositoryMigrator.Rename>());
+            await Save(aggregate, new List<EventMigrator.Rename>());
         }
 
-        async Task Save(TAggregate aggregate, IList<EventSourcedRepositoryMigrator.Rename> pendingRenames)
+        async Task Save(TAggregate aggregate, IList<EventMigrator.Rename> pendingRenames)
         {
             var events = aggregate.PendingEvents.ToArray();
 
@@ -142,7 +142,7 @@ namespace Microsoft.Its.Domain.Testing
                 var eventToRename = eventStream.Events.SingleOrDefault(e => e.SequenceNumber == rename.SequenceNumber);
                 if (eventToRename == null)
                 {
-                    throw new EventSourcedRepositoryMigrator.SequenceNumberNotFoundException(aggregate.Id, rename.SequenceNumber);
+                    throw new EventMigrator.SequenceNumberNotFoundException(aggregate.Id, rename.SequenceNumber);
                 }
                 eventToRename.Type = rename.NewName;
             }
@@ -168,7 +168,7 @@ namespace Microsoft.Its.Domain.Testing
             aggregate.Update(newEvents);
         }
 
-        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventSourcedRepositoryMigrator.Rename> pendingRenames)
+        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventMigrator.Rename> pendingRenames)
         {
             await Save(aggregate, pendingRenames);
         }

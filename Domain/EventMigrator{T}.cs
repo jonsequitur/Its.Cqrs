@@ -15,12 +15,12 @@ namespace Microsoft.Its.Domain
     /// event stream.
     /// </summary>
     /// <remarks>Note that existing snapshots and in-memory aggregates are not affected by these migrations.</remarks>
-    public class EventSourcedRepositoryMigrator<TAggregate>
+    public class EventMigrator<TAggregate>
         where TAggregate : EventSourcedAggregate<TAggregate>
     {
         private readonly IMigratableEventSourcedRepository<TAggregate> repository;
 
-        public EventSourcedRepositoryMigrator(IEventSourcedRepository<TAggregate> repository)
+        public EventMigrator(IEventSourcedRepository<TAggregate> repository)
         {
             if (repository == null)
             {
@@ -29,15 +29,15 @@ namespace Microsoft.Its.Domain
             this.repository = repository as IMigratableEventSourcedRepository<TAggregate>;
             if (this.repository == null)
             {
-                throw new EventSourcedRepositoryMigrator.RepositoryMustSupportMigrationsException(repository.GetType());
+                throw new EventMigrator.RepositoryMustSupportMigrationsException(repository.GetType());
             }
         }
 
-        public class PendingRenameList : List<Tuple<TAggregate, EventSourcedRepositoryMigrator.Rename>>
+        public class PendingRenameList : List<Tuple<TAggregate, EventMigrator.Rename>>
         {
             public void Add(TAggregate aggregate, long sequenceNumber, string newName)
             {
-                base.Add(Tuple.Create(aggregate, new EventSourcedRepositoryMigrator.Rename(sequenceNumber, newName)));
+                base.Add(Tuple.Create(aggregate, new EventMigrator.Rename(sequenceNumber, newName)));
             }
         }
 

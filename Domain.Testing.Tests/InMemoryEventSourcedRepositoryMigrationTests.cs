@@ -8,7 +8,7 @@ using Sample.Domain.Ordering;
 namespace Microsoft.Its.Domain.Testing.Tests
 {
     [TestFixture]
-    public class InMemoryEventSourcedRepositoryMigrationTests : EventSourcedRepositoryMigrationTests
+    public class InMemoryEventSourcedRepositoryMigrationTests : EventMigrationTests
     {
         protected override IEventSourcedRepository<Order> CreateRepository()
         {

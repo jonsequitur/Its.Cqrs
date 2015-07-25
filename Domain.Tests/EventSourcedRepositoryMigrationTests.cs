@@ -11,10 +11,10 @@ using Sample.Domain.Ordering.Commands;
 
 namespace Microsoft.Its.Domain.Tests
 {
-    public abstract class EventSourcedRepositoryMigrationTests
+    public abstract class EventMigrationTests
     {
         private IEventSourcedRepository<Order> repository;
-        private EventSourcedRepositoryMigrator<Order> migrator;
+        private EventMigrator<Order> migrator;
         private Guid aggregateId;
 
         protected abstract IEventSourcedRepository<Order> CreateRepository();
@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             Command<Order>.AuthorizeDefault = delegate { return true; };
             repository = CreateRepository();
-            migrator = new EventSourcedRepositoryMigrator<Order>(repository);
+            migrator = new EventMigrator<Order>(repository);
 
             var order = new Order().Apply(new AddItem
             {
@@ -73,7 +73,7 @@ namespace Microsoft.Its.Domain.Tests
             var order = await repository.GetLatest(aggregateId);
             migrator.PendingRenames.Add(order, 99999, "ItemAdded (ignored)");
             migrator.Invoking(_ => _.Save(order).Wait())
-                    .ShouldThrow<EventSourcedRepositoryMigrator.SequenceNumberNotFoundException>()
+                    .ShouldThrow<EventMigrator.SequenceNumberNotFoundException>()
                     .And.Message.Should().StartWith("Migration failed, because no event with sequence number 99999 on aggregate ");
         }
 
@@ -109,10 +109,10 @@ namespace Microsoft.Its.Domain.Tests
             }
 
             [Test]
-            public void EventSourcedRepositoryMigrator_refuses_to_accept_it()
+            public void EventMigrator_refuses_to_accept_it()
             {
-                Action action = delegate { new EventSourcedRepositoryMigrator<Order>(new EventSourceRepositoryWithoutMigrationSupport()); };
-                action.ShouldThrow<EventSourcedRepositoryMigrator.RepositoryMustSupportMigrationsException>()
+                Action action = delegate { new EventMigrator<Order>(new EventSourceRepositoryWithoutMigrationSupport()); };
+                action.ShouldThrow<EventMigrator.RepositoryMustSupportMigrationsException>()
                       .And.Message.Should()
                       .Be("Repository type 'EventSourceRepositoryWithoutMigrationSupport' cannot be used for migrations because it does not implement 'IMigratableEventSourcedRepository`1'");
             }
