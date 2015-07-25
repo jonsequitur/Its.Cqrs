@@ -20,6 +20,6 @@ namespace Microsoft.Its.Domain
         /// <param name="aggregate"></param>
         /// <param name="pendingRenames"></param>
         /// <returns></returns>
-        Task SaveWithRenames(TAggregate aggregate, IList<EventSourcedRepositoryMigrator.RenameRequest> pendingRenames);
+        Task SaveWithRenames(TAggregate aggregate, IEnumerable<EventSourcedRepositoryMigrator.RenameRequest> pendingRenames);
     }
 }

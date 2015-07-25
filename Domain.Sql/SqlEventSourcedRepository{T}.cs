@@ -252,7 +252,7 @@ namespace Microsoft.Its.Domain.Sql
 
         public Func<EventStoreDbContext> GetEventStoreContext = () => new EventStoreDbContext();
 
-        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IList<EventSourcedRepositoryMigrator.RenameRequest> pendingRenames)
+        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventSourcedRepositoryMigrator.RenameRequest> pendingRenames)
         {
             await Save(aggregate, pendingRenames);
         }

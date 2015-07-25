@@ -48,7 +48,7 @@ namespace Microsoft.Its.Domain
             var lookup = PendingRenames.ToLookup(_ => _.Item1, _ => _.Item2);
             foreach (var aggregateRename in lookup)
             {
-                await repository.SaveWithRenames(aggregateRename.Key, aggregateRename.ToList());
+                await repository.SaveWithRenames(aggregateRename.Key, aggregateRename);
             }
             PendingRenames.Clear();
         }
