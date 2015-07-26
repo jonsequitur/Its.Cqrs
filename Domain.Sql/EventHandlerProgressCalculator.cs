@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.Its.Recipes;
 
@@ -31,46 +32,60 @@ namespace Microsoft.Its.Domain.Sql
                 count = db.Events.Count();
             }
 
+            if (count == 0)
+            {
+                return Enumerable.Empty<EventHandlerProgress>();
+            }
+
             var now = Clock.Now();
             var progress = new List<EventHandlerProgress>();
 
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var db = createDbContext())
             {
-                db.Set<ReadModelInfo>()
-                  .ForEach(i =>
-                  {
-                      var eventsProcessed = i.InitialCatchupEndTime.HasValue
-                                                ? i.BatchTotalEvents - i.BatchRemainingEvents
-                                                : i.InitialCatchupEvents - i.BatchRemainingEvents;
+                var readModelInfos = db.Set<ReadModelInfo>().ToArray();
+                
+                readModelInfos
+                    .ForEach(i =>
+                    {
+                        var eventsProcessed = i.InitialCatchupEndTime.HasValue
+                            ? i.BatchTotalEvents - i.BatchRemainingEvents
+                            : i.InitialCatchupEvents - i.BatchRemainingEvents;
 
-                      long? timeTakenForProcessedEvents = null;
-                      if (i.BatchStartTime.HasValue && i.InitialCatchupStartTime.HasValue)
-                      {
-                          timeTakenForProcessedEvents = i.InitialCatchupEndTime.HasValue
-                                                            ? (now - i.BatchStartTime).Value.Ticks
-                                                            : (now - i.InitialCatchupStartTime).Value.Ticks;
-                      }
+                        long? timeTakenForProcessedEvents = null;
+                        if (i.BatchStartTime.HasValue && i.InitialCatchupStartTime.HasValue)
+                        {
+                            timeTakenForProcessedEvents = i.InitialCatchupEndTime.HasValue
+                                ? (now - i.BatchStartTime).Value.Ticks
+                                : (now - i.InitialCatchupStartTime).Value.Ticks;
+                        }
 
-                      progress.Add(new EventHandlerProgress
-                      {
-                          Name = i.Name,
-                          InitialCatchupEvents = i.InitialCatchupEvents,
-                          TimeTakenForInitialCatchup = i.InitialCatchupStartTime.HasValue
-                                                           ? (i.InitialCatchupEndTime.HasValue ? i.InitialCatchupEndTime : now) - i.InitialCatchupStartTime
-                                                           : null,
-                          TimeRemainingForCatchup = eventsProcessed != 0 && timeTakenForProcessedEvents.HasValue
-                                                        ? (TimeSpan?) TimeSpan.FromTicks((long) (timeTakenForProcessedEvents*(i.BatchRemainingEvents/(decimal) eventsProcessed)))
-                                                        : null,
-                          EventsRemaining = i.BatchRemainingEvents,
-                          PercentageCompleted = (1 - ((decimal) i.BatchRemainingEvents/count))*100,
-                          LatencyInMilliseconds = i.LatencyInMilliseconds,
-                          LastUpdated = i.LastUpdated,
-                          CurrentAsOfEventId = i.CurrentAsOfEventId,
-                          FailedOnEventId = i.FailedOnEventId,
-                          Error = i.Error
-                      });
-                  });
+                        if (eventsProcessed == 0)
+                        {
+                            return;
+                        }
+
+                        var eventHandlerProgress = new EventHandlerProgress
+                        {
+                            Name = i.Name,
+                            InitialCatchupEvents = i.InitialCatchupEvents,
+                            TimeTakenForInitialCatchup = i.InitialCatchupStartTime.HasValue
+                                ? (i.InitialCatchupEndTime.HasValue ? i.InitialCatchupEndTime : now) - i.InitialCatchupStartTime
+                                : null,
+                            TimeRemainingForCatchup = eventsProcessed != 0 && timeTakenForProcessedEvents.HasValue
+                                ? (TimeSpan?) TimeSpan.FromTicks((long) (timeTakenForProcessedEvents*(i.BatchRemainingEvents/(decimal) eventsProcessed)))
+                                : null,
+                            EventsRemaining = i.BatchRemainingEvents,
+                            PercentageCompleted = (1 - ((decimal) i.BatchRemainingEvents/count))*100,
+                            LatencyInMilliseconds = i.LatencyInMilliseconds,
+                            LastUpdated = i.LastUpdated,
+                            CurrentAsOfEventId = i.CurrentAsOfEventId,
+                            FailedOnEventId = i.FailedOnEventId,
+                            Error = i.Error
+                        };
+
+                        progress.Add(eventHandlerProgress);
+                    });
             }
 
             return progress;

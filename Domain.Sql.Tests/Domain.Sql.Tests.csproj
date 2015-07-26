@@ -136,7 +136,7 @@
     <Compile Include="ReadModelCatchupTests.cs" />
     <Compile Include="ReadModels1DbContext.cs" />
     <Compile Include="ReadModels2DbContext.cs" />
-    <Compile Include="RemainingTimeCatchupTests.cs" />
+    <Compile Include="RemainingCatchupTimeTests.cs" />
     <Compile Include="ReportingProjectorTests.cs" />
     <Compile Include="ReadModelCatchupRollingCatchupTests.cs" />
     <Compile Include="SqlCommandSchedulerTests.cs" />

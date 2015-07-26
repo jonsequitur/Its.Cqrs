@@ -14,7 +14,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     [Category("Catchups")]
     [TestFixture]
-    public class RemainingTimeCatchupTests : EventStoreDbTest
+    public class RemainingCatchupTimeTests : EventStoreDbTest
     {
         protected override void AfterClassIsInitialized()
         {
@@ -180,7 +180,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void If_no_events_have_been_processed_then_the_remaining_time_is_null()
+        public async Task If_no_events_have_been_processed_then_the_remaining_time_is_null()
         {
             //arrange
             ResetReadModelInfo();

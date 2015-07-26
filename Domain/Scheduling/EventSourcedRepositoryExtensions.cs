@@ -29,7 +29,9 @@ namespace Microsoft.Its.Domain
             {
                 if (verifyPrecondition != null && !await verifyPrecondition())
                 {
-                    return await FailScheduledCommand(repository, scheduled);
+                    return await FailScheduledCommand(repository, 
+                        scheduled,
+                        new PreconditionNotMetException());
                 }
 
                 aggregate = await repository.GetLatest(scheduled.AggregateId);
@@ -108,6 +110,10 @@ namespace Microsoft.Its.Domain
                         // TODO: (FailScheduledCommand) surface this more clearly
                         Trace.Write(ex);
                     }
+                }
+                else if (scheduled.Command is ConstructorCommand<TAggregate>)
+                {
+                    failure.Cancel();
                 }
             }
             else

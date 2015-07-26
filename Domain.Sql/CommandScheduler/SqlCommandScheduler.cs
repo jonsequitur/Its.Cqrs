@@ -203,7 +203,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         internal async Task Trigger(
             ScheduledCommand scheduled,
-             SchedulerAdvancedResult result,
+            SchedulerAdvancedResult result,
             CommandSchedulerDbContext db)
         {
             var deliver = commandDispatchers.IfContains(scheduled.AggregateType)

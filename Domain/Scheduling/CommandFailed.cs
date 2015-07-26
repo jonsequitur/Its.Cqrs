@@ -4,7 +4,6 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
@@ -19,7 +18,6 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets or sets the exception that caused the command to fail.
         /// </summary>
-        [JsonIgnore]
         public Exception Exception { get; private set; }
 
         public void Cancel()
