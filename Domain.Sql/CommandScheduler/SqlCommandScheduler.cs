@@ -87,11 +87,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <returns>
         /// A result summarizing the triggered commands.
         /// </returns>
-        public Task<SchedulerAdvancedResult> AdvanceClock(string clockName,
+        public async Task<SchedulerAdvancedResult> AdvanceClock(string clockName,
                                                           TimeSpan by,
                                                           Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
         {
-            return Advance(clockName, by: @by, query: query);
+            return await Advance(clockName, by: @by, query: query);
         }
 
         /// <summary>
@@ -103,11 +103,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <returns>
         /// A result summarizing the triggered commands.
         /// </returns>
-        public Task<SchedulerAdvancedResult> AdvanceClock(string clockName,
+        public async Task<SchedulerAdvancedResult> AdvanceClock(string clockName,
                                                           DateTimeOffset to,
                                                           Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
         {
-            return Advance(clockName, to, query: query);
+            return await Advance(clockName, to, query: query);
         }
 
         private async Task<SchedulerAdvancedResult> Advance(string clockName,
