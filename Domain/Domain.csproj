@@ -94,6 +94,7 @@
     <Compile Include="Authorization\AuthorizationFor.cs" />
     <Compile Include="Authorization\AuthorizationQuery{TResource,TCommand,TPrincipal}.cs" />
     <Compile Include="Authorization\IAuthorizationQuery{TResource,TCommand,TPrincipal}.cs" />
+    <Compile Include="EventMigrator{T}.cs" />
     <Compile Include="Clock.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="CommandAuthorizationException.cs" />
@@ -122,10 +123,12 @@
     <Compile Include="EventHandling\MatchEvent.cs" />
     <Compile Include="EventHandling\ReflectedEventHandlerBinder.cs" />
     <Compile Include="EventNameAttribute.cs" />
+    <Compile Include="EventMigrator.cs" />
     <Compile Include="IClock.cs" />
     <Compile Include="EventHandling\Projector.cs" />
     <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />
     <Compile Include="ICommandPreconditionVerifier.cs" />
+    <Compile Include="IMigratableEventSourcedRepository.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
     <Compile Include="Scheduling\ICommandSchedulerActivity.cs" />
     <Compile Include="Scheduling\CommandScheduled.cs" />
