@@ -14,7 +14,6 @@ namespace Microsoft.Its.Domain.Tests
     public abstract class EventMigrationTests
     {
         private IEventSourcedRepository<Order> repository;
-        private EventMigrator<Order> migrator;
         private Guid aggregateId;
 
         protected abstract IEventSourcedRepository<Order> CreateRepository();
@@ -24,7 +23,6 @@ namespace Microsoft.Its.Domain.Tests
         {
             Command<Order>.AuthorizeDefault = delegate { return true; };
             repository = CreateRepository();
-            migrator = new EventMigrator<Order>(repository);
 
             var order = new Order().Apply(new AddItem
             {
@@ -42,9 +40,9 @@ namespace Microsoft.Its.Domain.Tests
         public async Task If_renamed_and_saved_When_the_aggregate_is_sourced_then_the_event_is_the_new_name()
         {
             var order = await repository.GetLatest(aggregateId);
-            migrator.PendingRenames.Add(order, order.EventHistory.Last().SequenceNumber, "ItemAdded2");
+            var rename = new EventMigrator.Rename(order.EventHistory.Last().SequenceNumber, "ItemAdded2");
 
-            await migrator.SaveAll();
+            await EventMigrator.SaveWithRenames(repository, order, new[] {rename});
             (await repository.GetLatest(aggregateId)).EventHistory.Last().Should().BeOfType<Order.ItemAdded2>();
         }
 
@@ -52,7 +50,7 @@ namespace Microsoft.Its.Domain.Tests
         public async Task If_renamed_but_not_saved_When_the_aggregate_is_sourced_then_the_event_is_the_old_name()
         {
             var order = await repository.GetLatest(aggregateId);
-            migrator.PendingRenames.Add(order, order.EventHistory.Last().SequenceNumber, "ItemAdded2");
+            var rename = new EventMigrator.Rename(order.EventHistory.Last().SequenceNumber, "ItemAdded2");
 
             (await repository.GetLatest(aggregateId)).EventHistory.Last().Should().BeOfType<Order.ItemAdded>();
         }
@@ -61,9 +59,9 @@ namespace Microsoft.Its.Domain.Tests
         public async Task If_renamed_to_an_unknown_name_When_the_aggregate_is_sourced_then_the_event_is_anonymous()
         {
             var order = await repository.GetLatest(aggregateId);
-            migrator.PendingRenames.Add(order, order.EventHistory.Last().SequenceNumber, "ItemAdded (ignored)");
+            var rename = new EventMigrator.Rename(order.EventHistory.Last().SequenceNumber, "ItemAdded (ignored)");
 
-            await migrator.SaveAll();
+            await EventMigrator.SaveWithRenames(repository, order, new[] {rename});
             (await repository.GetLatest(aggregateId)).EventHistory.Last().GetType().Name.Should().Be("AnonymousEvent`1");
         }
 
@@ -71,10 +69,11 @@ namespace Microsoft.Its.Domain.Tests
         public async Task If_an_unrecognized_event_is_renamed_then_a_useful_exception_is_thrown()
         {
             var order = await repository.GetLatest(aggregateId);
-            migrator.PendingRenames.Add(order, 99999, "ItemAdded (ignored)");
-            migrator.Invoking(_ => _.SaveAll().Wait())
-                    .ShouldThrow<EventMigrator.SequenceNumberNotFoundException>()
-                    .And.Message.Should().StartWith("Migration failed, because no event with sequence number 99999 on aggregate ");
+            var rename = new EventMigrator.Rename(99999, "ItemAdded (ignored)");
+            Func<Task> action = () => EventMigrator.SaveWithRenames(repository, order, new[] {rename});
+
+            action.ShouldThrow<EventMigrator.SequenceNumberNotFoundException>()
+                  .And.Message.Should().StartWith("Migration failed, because no event with sequence number 99999 on aggregate ");
         }
 
         [TestFixture]
@@ -111,7 +110,7 @@ namespace Microsoft.Its.Domain.Tests
             [Test]
             public void EventMigrator_refuses_to_accept_it()
             {
-                Action action = delegate { new EventMigrator<Order>(new EventSourceRepositoryWithoutMigrationSupport()); };
+                Func<Task> action = () => EventMigrator.SaveWithRenames(new EventSourceRepositoryWithoutMigrationSupport(), new Order(), new EventMigrator.Rename[] {});
                 action.ShouldThrow<EventMigrator.RepositoryMustSupportMigrationsException>()
                       .And.Message.Should()
                       .Be("Repository type 'EventSourceRepositoryWithoutMigrationSupport' cannot be used for migrations because it does not implement 'IMigratableEventSourcedRepository`1'");

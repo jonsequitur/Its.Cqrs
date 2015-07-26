@@ -135,6 +135,13 @@ namespace Microsoft.Its.Domain.Testing
             SaveAsync(aggregate).Wait();
         }
 
+        public async Task SaveAndMigrateAsync<TAggregate>(TAggregate aggregate, IEnumerable<EventMigrator.Rename> renames)
+            where TAggregate : EventSourcedAggregate<TAggregate>
+        {
+            aggregates.Add(aggregate);
+            await EventMigrator.SaveWithRenames(builder.GetRepository<TAggregate>(), aggregate, renames);
+        }
+
         /// <summary>
         ///     Persists the state of the specified aggregate by adding new events to the event store.
         /// </summary>

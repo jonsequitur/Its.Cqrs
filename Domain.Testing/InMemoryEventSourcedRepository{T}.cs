@@ -139,7 +139,7 @@ namespace Microsoft.Its.Domain.Testing
 
             foreach (var rename in pendingRenames)
             {
-                var eventToRename = eventStream.Events.SingleOrDefault(e => e.SequenceNumber == rename.SequenceNumber);
+                var eventToRename = eventStream.Events.SingleOrDefault(e => e.AggregateId == aggregate.Id.ToString() && e.SequenceNumber == rename.SequenceNumber);
                 if (eventToRename == null)
                 {
                     throw new EventMigrator.SequenceNumberNotFoundException(aggregate.Id, rename.SequenceNumber);
