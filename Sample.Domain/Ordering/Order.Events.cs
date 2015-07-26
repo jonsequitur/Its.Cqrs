@@ -67,6 +67,10 @@ namespace Sample.Domain.Ordering
             }
         }
 
+        public class ItemAdded2 : ItemAdded
+        {
+        }
+
         public class ItemAdded : Event<Order>
         {
             public ItemAdded()

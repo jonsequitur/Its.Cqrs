@@ -140,6 +140,7 @@
     <Compile Include="ReportingProjectorTests.cs" />
     <Compile Include="ReadModelCatchupRollingCatchupTests.cs" />
     <Compile Include="SqlCommandSchedulerTests.cs" />
+    <Compile Include="SqlEventSourcedRepositoryMigrationTests.cs" />
     <Compile Include="SqlEventSourcedRepositoryTests.cs" />
     <Compile Include="StorableEventTests.cs" />
     <Compile Include="SqlReservationServiceTests.cs" />
