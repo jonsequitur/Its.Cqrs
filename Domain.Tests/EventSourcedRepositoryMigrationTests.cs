@@ -42,8 +42,13 @@ namespace Microsoft.Its.Domain.Tests
             var order = await repository.GetLatest(aggregateId);
             var rename = new EventMigrator.Rename(order.EventHistory.Last().SequenceNumber, "ItemAdded2");
 
-            await EventMigrator.SaveWithRenames(repository, order, new[] {rename});
+            await EventMigrator.SaveWithRenames(MigratableRepository, order, new[] { rename });
             (await repository.GetLatest(aggregateId)).EventHistory.Last().Should().BeOfType<Order.ItemAdded2>();
+        }
+
+        private IMigratableEventSourcedRepository<Order> MigratableRepository
+        {
+            get { return (IMigratableEventSourcedRepository<Order>)repository; }
         }
 
         [Test]
@@ -61,7 +66,7 @@ namespace Microsoft.Its.Domain.Tests
             var order = await repository.GetLatest(aggregateId);
             var rename = new EventMigrator.Rename(order.EventHistory.Last().SequenceNumber, "ItemAdded (ignored)");
 
-            await EventMigrator.SaveWithRenames(repository, order, new[] {rename});
+            await EventMigrator.SaveWithRenames(MigratableRepository, order, new[] { rename });
             (await repository.GetLatest(aggregateId)).EventHistory.Last().GetType().Name.Should().Be("AnonymousEvent`1");
         }
 
@@ -70,51 +75,10 @@ namespace Microsoft.Its.Domain.Tests
         {
             var order = await repository.GetLatest(aggregateId);
             var rename = new EventMigrator.Rename(99999, "ItemAdded (ignored)");
-            Func<Task> action = () => EventMigrator.SaveWithRenames(repository, order, new[] {rename});
+            Func<Task> action = () => EventMigrator.SaveWithRenames(MigratableRepository, order, new[] { rename });
 
             action.ShouldThrow<EventMigrator.SequenceNumberNotFoundException>()
                   .And.Message.Should().StartWith("Migration failed, because no event with sequence number 99999 on aggregate ");
-        }
-
-        [TestFixture]
-        public class Given_an_EventSourcedRepository_that_does_not_support_migration
-        {
-            private class EventSourceRepositoryWithoutMigrationSupport : IEventSourcedRepository<Order> //, IMigratableEventSourcedRepository<Order> 
-            {
-                Task<Order> IEventSourcedRepository<Order>.GetLatest(Guid aggregateId)
-                {
-                    throw new NotImplementedException();
-                }
-
-                Task<Order> IEventSourcedRepository<Order>.GetVersion(Guid aggregateId, long version)
-                {
-                    throw new NotImplementedException();
-                }
-
-                Task<Order> IEventSourcedRepository<Order>.GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate)
-                {
-                    throw new NotImplementedException();
-                }
-
-                Task IEventSourcedRepository<Order>.Save(Order aggregate)
-                {
-                    throw new NotImplementedException();
-                }
-
-                Task IEventSourcedRepository<Order>.Refresh(Order aggregate)
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            [Test]
-            public void EventMigrator_refuses_to_accept_it()
-            {
-                Func<Task> action = () => EventMigrator.SaveWithRenames(new EventSourceRepositoryWithoutMigrationSupport(), new Order(), new EventMigrator.Rename[] {});
-                action.ShouldThrow<EventMigrator.RepositoryMustSupportMigrationsException>()
-                      .And.Message.Should()
-                      .Be("Repository type 'EventSourceRepositoryWithoutMigrationSupport' cannot be used for migrations because it does not implement 'IMigratableEventSourcedRepository`1'");
-            }
         }
     }
 }

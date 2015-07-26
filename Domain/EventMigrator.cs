@@ -62,18 +62,14 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        public static async Task SaveWithRenames<TAggregate>(IEventSourcedRepository<TAggregate> repository, TAggregate aggregate, IEnumerable<Rename> renames)
+        public static async Task SaveWithRenames<TAggregate>(IMigratableEventSourcedRepository<TAggregate> repository, TAggregate aggregate, IEnumerable<Rename> renames)
             where TAggregate : EventSourcedAggregate<TAggregate>
         {
             if (repository == null)
             {
                 throw new ArgumentNullException("repository");
             }
-            if (!(repository is IMigratableEventSourcedRepository<TAggregate>))
-            {
-                throw new RepositoryMustSupportMigrationsException(repository.GetType());
-            }
-            await ((IMigratableEventSourcedRepository<TAggregate>) repository).SaveWithRenames(aggregate, renames);
+            await repository.SaveWithRenames(aggregate, renames);
         }
     }
 }

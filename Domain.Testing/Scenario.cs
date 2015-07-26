@@ -139,7 +139,7 @@ namespace Microsoft.Its.Domain.Testing
             where TAggregate : EventSourcedAggregate<TAggregate>
         {
             aggregates.Add(aggregate);
-            await EventMigrator.SaveWithRenames(builder.GetRepository<TAggregate>(), aggregate, renames);
+            await EventMigrator.SaveWithRenames((IMigratableEventSourcedRepository<TAggregate>)builder.GetRepository<TAggregate>(), aggregate, renames);
         }
 
         /// <summary>
