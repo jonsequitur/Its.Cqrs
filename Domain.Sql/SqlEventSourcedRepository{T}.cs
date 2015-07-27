@@ -163,10 +163,10 @@ namespace Microsoft.Its.Domain.Sql
         /// <exception cref="ConcurrencyException"></exception>
         public async Task Save(TAggregate aggregate)
         {
-            await Save(aggregate, Enumerable.Empty<EventMigrator.Rename>());
+            await Save(aggregate, new EventMigrator.Rename[0]);
         }
 
-        async Task Save(TAggregate aggregate, IEnumerable<EventMigrator.Rename> pendingRenames)
+        async Task Save(TAggregate aggregate, EventMigrator.Rename[] pendingRenames)
         {
             if (aggregate == null)
             {
@@ -204,7 +204,9 @@ namespace Microsoft.Its.Domain.Sql
 
                 foreach (var rename in pendingRenames)
                 {
-                    var eventToRename = await context.Events.SingleOrDefaultAsync(e => e.AggregateId == aggregate.Id && e.SequenceNumber == rename.SequenceNumber);
+                    var renameLocal = rename;
+                    var eventToRename = await context.Events.SingleOrDefaultAsync(e => e.AggregateId == aggregate.Id && e.SequenceNumber == renameLocal.SequenceNumber);
+
                     if (eventToRename == null)
                     {
                         throw new EventMigrator.SequenceNumberNotFoundException(aggregate.Id, rename.SequenceNumber);
@@ -254,7 +256,7 @@ namespace Microsoft.Its.Domain.Sql
 
         async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventMigrator.Rename> pendingRenames)
         {
-            await Save(aggregate, pendingRenames);
+            await Save(aggregate, pendingRenames.ToArray());
         }
     }
 }
