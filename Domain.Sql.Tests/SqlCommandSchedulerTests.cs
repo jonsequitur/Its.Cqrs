@@ -1285,7 +1285,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var commandScheduler = container.Resolve<ICommandScheduler<Order>>();
 
             var orderId = Any.Guid();
-            var customerName = Any.FullName();
+            await orderRepository.Save(new Order(new CreateOrder(Any.FullName())
+            {
+                AggregateId = orderId
+            }));
 
             var prerequisiteEvent = new CustomerAccount.Created
             {
@@ -1299,9 +1302,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                             .Subscribe(schedulerActivity.Add))
             {
                 await commandScheduler.Schedule(orderId,
-                                                new CreateOrder(customerName)
+                                                new AddItem
                                                 {
-                                                    AggregateId = orderId
+                                                  ProductName  = Any.Paragraph(3),
+                                                  Price = 10m
                                                 },
                                                 deliveryDependsOn: prerequisiteEvent);
             }
