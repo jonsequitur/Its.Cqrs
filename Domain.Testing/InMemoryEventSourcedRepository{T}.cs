@@ -146,9 +146,6 @@ namespace Microsoft.Its.Domain.Testing
                 eventToRename.Type = rename.NewName;
             }
 
-            aggregate.IfTypeIs<IEventMigratingAggregate>()
-                .ThenDo(_ => _.PendingRenames.Clear());
-
             aggregate.ConfirmSave();
 
             // publish the events
