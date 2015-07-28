@@ -243,9 +243,7 @@ namespace Microsoft.Its.Domain.Sql
                                          .IfTypeIs<IHaveExtensibleMetada>()
                                          .ThenDo(e => e.Metadata.AbsoluteSequenceNumber = storableEvent.Id));
 
-            // move pending events to the event history
-            aggregate.IfTypeIs<EventSourcedAggregate>()
-                     .ThenDo(a => a.ConfirmSave());
+            aggregate.ConfirmSave();
 
             // publish the events
             await bus.PublishAsync(events);

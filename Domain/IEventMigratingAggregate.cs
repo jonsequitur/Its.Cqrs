@@ -8,5 +8,6 @@ namespace Microsoft.Its.Domain
     public interface IEventMigratingAggregate
     {
         IList<EventMigrations.Rename> PendingRenames { get; }
+        void ConfirmSave();
     }
 }

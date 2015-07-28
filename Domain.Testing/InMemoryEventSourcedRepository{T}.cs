@@ -149,8 +149,7 @@ namespace Microsoft.Its.Domain.Testing
             aggregate.IfTypeIs<IEventMigratingAggregate>()
                 .ThenDo(_ => _.PendingRenames.Clear());
 
-            aggregate.IfTypeIs<EventSourcedAggregate>()
-                     .ThenDo(a => a.ConfirmSave());
+            aggregate.ConfirmSave();
 
             // publish the events
             await bus.PublishAsync(events);

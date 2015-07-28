@@ -83,5 +83,11 @@ namespace Sample.Domain.Ordering
         {
             get { return pendingRenames; }
         }
+
+        public override void ConfirmSave()
+        {
+            base.ConfirmSave();
+            pendingRenames.Clear();
+        }
     }
 }
