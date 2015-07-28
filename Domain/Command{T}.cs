@@ -128,15 +128,7 @@ namespace Microsoft.Its.Domain
         /// <param name="aggregate">The aggregate upon which to enact the command.</param>
         protected virtual void EnactCommand(TAggregate aggregate)
         {
-            if (Handler == null)
-            {
-                ((dynamic) aggregate).EnactCommand((dynamic) this);
-            }
-            else
-            {
-                Task handle = Handler.EnactCommand((dynamic) aggregate, (dynamic) this);
-                Task.Run(() => handle).Wait();
-            }
+            Task.Run(() => EnactCommandAsync(aggregate)).Wait();
         }
         
         /// <summary>
@@ -147,7 +139,7 @@ namespace Microsoft.Its.Domain
         {
             if (Handler == null)
             {
-                await Task.Run(() => EnactCommand(aggregate));
+                await Task.Run(() => ((dynamic)aggregate).EnactCommand((dynamic)this));
                 return;
             }
             
