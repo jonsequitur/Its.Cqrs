@@ -14,8 +14,7 @@ namespace Microsoft.Its.Domain.Testing
     /// Provides in-memory persistence for event sourced aggregates.
     /// </summary>
     public class InMemoryEventSourcedRepository<TAggregate> :
-        IEventSourcedRepository<TAggregate>,
-        IMigratableEventSourcedRepository<TAggregate>
+        IEventSourcedRepository<TAggregate>
         where TAggregate : class, IEventSourced
     {
         private readonly InMemoryEventStream eventStream;
@@ -120,11 +119,6 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="aggregate">The aggregate to persist.</param>
         public async Task Save(TAggregate aggregate)
         {
-            await Save(aggregate, Enumerable.Empty<EventMigrator.Rename>());
-        }
-
-        async Task Save(TAggregate aggregate, IEnumerable<EventMigrator.Rename> pendingRenames)
-        {
             var events = aggregate.PendingEvents.ToArray();
 
             foreach (var e in events)
@@ -137,15 +131,23 @@ namespace Microsoft.Its.Domain.Testing
                 e.SetAggregate(aggregate);
             }
 
+            var pendingRenames = aggregate.IfTypeIs<IEventMigratingAggregate>()
+                .Then(_ => _.PendingRenames)
+                .ElseDefault()
+                .OrEmpty();
+
             foreach (var rename in pendingRenames)
             {
                 var eventToRename = eventStream.Events.SingleOrDefault(e => e.AggregateId == aggregate.Id.ToString() && e.SequenceNumber == rename.SequenceNumber);
                 if (eventToRename == null)
                 {
-                    throw new EventMigrator.SequenceNumberNotFoundException(aggregate.Id, rename.SequenceNumber);
+                    throw new EventMigrations.SequenceNumberNotFoundException(aggregate.Id, rename.SequenceNumber);
                 }
                 eventToRename.Type = rename.NewName;
             }
+
+            aggregate.IfTypeIs<IEventMigratingAggregate>()
+                .ThenDo(_ => _.PendingRenames.Clear());
 
             aggregate.IfTypeIs<EventSourcedAggregate>()
                      .ThenDo(a => a.ConfirmSave());
@@ -166,11 +168,6 @@ namespace Microsoft.Its.Domain.Testing
                 .Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName));
 
             aggregate.Update(newEvents);
-        }
-
-        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventMigrator.Rename> pendingRenames)
-        {
-            await Save(aggregate, pendingRenames);
         }
     }
 }

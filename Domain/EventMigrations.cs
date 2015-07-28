@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
-    public static class EventMigrator
+    public static class EventMigrations
     {
         public class SequenceNumberNotFoundException : ArgumentOutOfRangeException
         {
@@ -26,26 +26,6 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        public class RepositoryMustSupportMigrationsException : ArgumentOutOfRangeException
-        {
-            private readonly Type eventSourcedRepositoryType;
-
-            public RepositoryMustSupportMigrationsException(Type eventSourcedRepositoryType)
-            {
-                this.eventSourcedRepositoryType = eventSourcedRepositoryType;
-            }
-
-            public override string Message
-            {
-                get
-                {
-                    return String.Format("Repository type '{0}' cannot be used for migrations because it does not implement '{1}'",
-                                         eventSourcedRepositoryType.Name,
-                                         typeof (IMigratableEventSourcedRepository<>).Name);
-                }
-            }
-        }
-
         public class Rename
         {
             public readonly long SequenceNumber;
@@ -60,16 +40,6 @@ namespace Microsoft.Its.Domain
                 SequenceNumber = sequenceNumber;
                 NewName = newName;
             }
-        }
-
-        public static async Task SaveWithRenames<TAggregate>(IMigratableEventSourcedRepository<TAggregate> repository, TAggregate aggregate, IEnumerable<Rename> renames)
-            where TAggregate : EventSourcedAggregate<TAggregate>
-        {
-            if (repository == null)
-            {
-                throw new ArgumentNullException("repository");
-            }
-            await repository.SaveWithRenames(aggregate, renames);
         }
     }
 }

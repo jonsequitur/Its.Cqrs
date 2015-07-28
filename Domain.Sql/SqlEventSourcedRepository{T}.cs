@@ -18,8 +18,7 @@ namespace Microsoft.Its.Domain.Sql
     /// Provides lookup and persistence for event sourced aggregates in a SQL database.
     /// </summary>
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
-    public class SqlEventSourcedRepository<TAggregate> : IEventSourcedRepository<TAggregate>,
-                                                         IMigratableEventSourcedRepository<TAggregate>
+    public class SqlEventSourcedRepository<TAggregate> : IEventSourcedRepository<TAggregate>
         where TAggregate : class, IEventSourced
     {
         private readonly IEventBus bus;
@@ -163,11 +162,6 @@ namespace Microsoft.Its.Domain.Sql
         /// <exception cref="ConcurrencyException"></exception>
         public async Task Save(TAggregate aggregate)
         {
-            await Save(aggregate, new EventMigrator.Rename[0]);
-        }
-
-        async Task Save(TAggregate aggregate, EventMigrator.Rename[] pendingRenames)
-        {
             if (aggregate == null)
             {
                 throw new ArgumentNullException("aggregate");
@@ -176,6 +170,10 @@ namespace Microsoft.Its.Domain.Sql
             var events = aggregate.PendingEvents
                                   .Do(e => e.SetAggregate(aggregate))
                                   .ToArray();
+
+            var pendingRenames = aggregate.IfTypeIs<IEventMigratingAggregate>()
+                                          .Then(_ => _.PendingRenames)
+                                          .Else(() => new List<EventMigrations.Rename>());
 
             if (!events.Any() && !pendingRenames.Any())
             {
@@ -204,12 +202,11 @@ namespace Microsoft.Its.Domain.Sql
 
                 foreach (var rename in pendingRenames)
                 {
-                    var renameLocal = rename;
-                    var eventToRename = await context.Events.SingleOrDefaultAsync(e => e.AggregateId == aggregate.Id && e.SequenceNumber == renameLocal.SequenceNumber);
+                    var eventToRename = await context.Events.SingleOrDefaultAsync(e => e.AggregateId == aggregate.Id && e.SequenceNumber == rename.SequenceNumber);
 
                     if (eventToRename == null)
                     {
-                        throw new EventMigrator.SequenceNumberNotFoundException(aggregate.Id, rename.SequenceNumber);
+                        throw new EventMigrations.SequenceNumberNotFoundException(aggregate.Id, rename.SequenceNumber);
                     }
                     eventToRename.Type = rename.NewName;
                 }
@@ -218,6 +215,8 @@ namespace Microsoft.Its.Domain.Sql
                 {
                     await context.SaveChangesAsync();
                     tran.Complete();
+                    aggregate.IfTypeIs<IEventMigratingAggregate>()
+                        .ThenDo(_ => _.PendingRenames.Clear());
                 }
                 catch (Exception exception)
                 {
@@ -253,10 +252,5 @@ namespace Microsoft.Its.Domain.Sql
         }
 
         public Func<EventStoreDbContext> GetEventStoreContext = () => new EventStoreDbContext();
-
-        async Task IMigratableEventSourcedRepository<TAggregate>.SaveWithRenames(TAggregate aggregate, IEnumerable<EventMigrator.Rename> pendingRenames)
-        {
-            await Save(aggregate, pendingRenames.ToArray());
-        }
     }
 }

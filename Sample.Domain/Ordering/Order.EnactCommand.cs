@@ -185,6 +185,11 @@ namespace Sample.Domain.Ordering
             }, command.ShipDate);
         }
 
+        public void EnactCommand(RenameEvent command)
+        {
+            this.pendingRenames.Add(new EventMigrations.Rename(command.sequenceNumber, command.newName));
+        }
+
         public class OrderShipCommandHandler : ICommandHandler<Order, Ship>
         {
             public async Task HandleScheduledCommandException(Order order, CommandFailed<Ship> command)
