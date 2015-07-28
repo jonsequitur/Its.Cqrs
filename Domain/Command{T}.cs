@@ -3,12 +3,14 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Its.Domain.Authorization;
 using Its.Validation;
 using Its.Validation.Configuration;
+using Microsoft.Its.Domain.Serialization;
 using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
@@ -128,7 +130,12 @@ namespace Microsoft.Its.Domain
         /// <param name="aggregate">The aggregate upon which to enact the command.</param>
         protected virtual void EnactCommand(TAggregate aggregate)
         {
-            Task.Run(() => EnactCommandAsync(aggregate)).Wait();
+            Debug.WriteLine("OuterContext: " + CommandContext.Current.GetHashCode());
+            Task.Run(() =>
+            {
+                Debug.WriteLine("InnerContext: " + CommandContext.Current.GetHashCode());
+                return EnactCommandAsync(aggregate);
+            }).Wait();
         }
         
         /// <summary>
@@ -139,11 +146,13 @@ namespace Microsoft.Its.Domain
         {
             if (Handler == null)
             {
-                await Task.Run(() => ((dynamic)aggregate).EnactCommand((dynamic)this));
-                return;
+                Action enactCommand = () => ((dynamic) aggregate).EnactCommand((dynamic) this);
+                await Task.Run(enactCommand);
             }
-            
-            await (Task) Handler.EnactCommand((dynamic) aggregate, (dynamic) this);
+            else
+            {
+                await (Task) Handler.EnactCommand((dynamic) aggregate,(dynamic) this);
+            }
         }
 
         private bool CommandHandlerIsRegistered()
