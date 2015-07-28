@@ -3,7 +3,7 @@
   <metadata>
     <id>Its.Domain.Testing</id>
     <title>Its.Domain.Testing</title>
-    <version>0.11.13-beta</version>
+    <version>0.11.14-beta</version>
     <authors>Microsoft,jonsequitur</authors>
     <owners>Microsoft,jonsequitur</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -11,8 +11,8 @@
     <copyright>Copyright 2015</copyright>
     <tags>testing CQRS Its.Cqrs</tags>
     <dependencies>
-      <dependency id="Its.Domain" version="[0.11.13-beta,1)" />
-      <dependency id="Its.Domain.Sql" version="[0.11.13-beta,1)" />
+      <dependency id="Its.Domain" version="[0.11.14-beta,1)" />
+      <dependency id="Its.Domain.Sql" version="[0.11.14-beta,1)" />
       <dependency id="Rx-Main" version="[2.2.5,)" />
     </dependencies>
   </metadata>

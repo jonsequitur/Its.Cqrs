@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
 using System.Reflection;
 
 [assembly: AssemblyVersion("0.11.5.0")]
-[assembly: AssemblyFileVersion("0.11.13-beta")]
+[assembly: AssemblyFileVersion("0.11.14-beta")]

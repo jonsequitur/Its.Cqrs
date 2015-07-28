@@ -42,6 +42,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             var command = scheduled.ToScheduledCommand<TAggregate>();
 
+            //here we are setting the command.SequenceNumber to the scheduled.SequenceNumber because when
+            //multiple commands are scheduled simultaniously against the same aggregate we were decrementing the 
+            //scheduled.SequenceNumber correctly, however we were not updating the command.SequenceNumber.
+            //this is to prevent any side effects that may have been caused by that bug
+            command.SequenceNumber = scheduled.SequenceNumber;
+
             await scheduler.Deliver(command);
 
             scheduled.Result = command.Result;
