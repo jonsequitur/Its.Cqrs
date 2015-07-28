@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{99442ACC-A914-4BDF-8DE5-D074FA0447F5}"
 EndProject
@@ -46,6 +46,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{A9C8A1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{161ACB04-1D76-4173-A6FE-99D761CA47FC}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+		AssemblyInfoVersion.cs = AssemblyInfoVersion.cs
+		buildNuget.ps1 = buildNuget.ps1
+		nuget.config = nuget.config
+		README.md = README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Banking.Domain", "Samples\Banking\Banking.Domain\Banking.Domain.csproj", "{0388601C-B785-498D-92DE-5B8C376728C0}"
 EndProject
