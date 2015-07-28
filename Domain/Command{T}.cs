@@ -130,12 +130,7 @@ namespace Microsoft.Its.Domain
         /// <param name="aggregate">The aggregate upon which to enact the command.</param>
         protected virtual void EnactCommand(TAggregate aggregate)
         {
-            Debug.WriteLine("OuterContext: " + CommandContext.Current.GetHashCode());
-            Task.Run(() =>
-            {
-                Debug.WriteLine("InnerContext: " + CommandContext.Current.GetHashCode());
-                return EnactCommandAsync(aggregate);
-            }).Wait();
+            Task.Run(() => EnactCommandAsync(aggregate)).Wait();
         }
         
         /// <summary>
