@@ -7,5 +7,5 @@ using System.Reflection;
 [assembly: AssemblyVersion("0.11.5.0")]
 
 // Edit these for each release + update dependencies in .nuspec files
-[assembly: AssemblyFileVersion("0.11.15-beta")]
-[assembly: AssemblyInformationalVersion("0.11.15-beta")]
+[assembly: AssemblyFileVersion("0.11.16-beta")]
+[assembly: AssemblyInformationalVersion("0.11.16-beta")]
