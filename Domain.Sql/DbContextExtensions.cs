@@ -131,7 +131,9 @@ namespace Microsoft.Its.Domain.Sql
             var dbCreationCmd = string.Format("CREATE DATABASE [{0}] (MAXSIZE={1}GB, EDITION='{2}', SERVICE_OBJECTIVE='{3}')",
                     databaseName, dbSizeInGB, edition, serviceObjective);
 
-            ExecuteNonQuery(connstrBldr.ConnectionString, dbCreationCmd);
+            // With Azure SQL db V12, database creation TSQL became a sync process. 
+            // So we need a 10 minutes command timeout
+            ExecuteNonQuery(connstrBldr.ConnectionString, dbCreationCmd, commandTimeout: 600);
             context.WaitUntilDatabaseCreated();
         }
 
@@ -178,12 +180,13 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        private static void ExecuteNonQuery(string connString, string commandText)
+        private static void ExecuteNonQuery(string connString, string commandText, int commandTimeout = 60)
         {
             using (var conn = new SqlConnection(connString))
             {
                 conn.Open();
                 var cmd = conn.CreateCommand();
+                cmd.CommandTimeout = commandTimeout;
                 cmd.CommandText = commandText;
                 cmd.ExecuteNonQuery();
             }
