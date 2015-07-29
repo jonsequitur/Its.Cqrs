@@ -177,7 +177,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Confirms that a save operation has been successfully completed and that the aggregate should move all pending events to its event history.
         /// </summary>
-        public void ConfirmSave()
+        public virtual void ConfirmSave()
         {
             pendingEvents.TransferTo(eventHistory);
         }

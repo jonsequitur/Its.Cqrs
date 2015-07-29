@@ -76,6 +76,10 @@ namespace Microsoft.Its.Domain.Tests
             }
 
             public IEnumerable<IEvent> PendingEvents { get; private set; }
+            public void ConfirmSave()
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

@@ -9,7 +9,7 @@ using Sample.Domain.Ordering.Commands;
 
 namespace Sample.Domain.Ordering
 {
-    public partial class Order : EventSourcedAggregate<Order>
+    public partial class Order : EventSourcedAggregate<Order>, IEventMigratingAggregate
     {
         private readonly IList<OrderItem> items = new List<OrderItem>();
 
@@ -77,5 +77,17 @@ namespace Sample.Domain.Ordering
         public string RecipientName { get; set; }
 
         public string ShipmentId { get; set; }
+
+        private readonly List<EventMigrations.Rename> pendingRenames = new List<EventMigrations.Rename>();
+        IEnumerable<EventMigrations.Rename> IEventMigratingAggregate.PendingRenames
+        {
+            get { return pendingRenames; }
+        }
+
+        public override void ConfirmSave()
+        {
+            base.ConfirmSave();
+            pendingRenames.Clear();
+        }
     }
 }

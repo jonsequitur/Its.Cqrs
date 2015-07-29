@@ -121,6 +121,7 @@
     <Compile Include="Ordering\Commands\ConfirmPayment.cs" />
     <Compile Include="Ordering\Commands\CreateOrder.cs" />
     <Compile Include="Ordering\Commands\ProvideCreditCardInfo.cs" />
+    <Compile Include="Ordering\Commands\RenameEvent.cs" />
     <Compile Include="Ordering\Commands\Ship.cs" />
     <Compile Include="Ordering\Commands\ShipOn.cs" />
     <Compile Include="Ordering\Commands\ValidationExtensions.cs" />

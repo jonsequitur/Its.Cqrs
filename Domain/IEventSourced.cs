@@ -18,5 +18,10 @@ namespace Microsoft.Its.Domain
         ///     Gets any events for this aggregate that have not yet been committed to the event store.
         /// </summary>
         IEnumerable<IEvent> PendingEvents { get; }
+
+        /// <summary>
+        /// Confirms that a save operation has been successfully completed and that the aggregate should move all pending events to its event history.
+        /// </summary>
+        void ConfirmSave();
     }
 }
