@@ -1,5 +1,5 @@
 rm -Force -Recurse .\NuGet
-mkdir NuGet
+mkdir NuGet | Out-Null
 
 @(
 	".\Domain\Domain.csproj", 
