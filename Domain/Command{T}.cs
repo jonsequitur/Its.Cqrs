@@ -146,7 +146,7 @@ namespace Microsoft.Its.Domain
             }
             else
             {
-                await (Task) Handler.EnactCommand((dynamic) aggregate,(dynamic) this);
+                await (Task) Handler.EnactCommand((dynamic) aggregate, (dynamic) this);
             }
         }
 

@@ -173,7 +173,8 @@ namespace Microsoft.Its.Domain.Sql
 
             var pendingRenames = aggregate.IfTypeIs<IEventMigratingAggregate>()
                                           .Then(_ => _.PendingRenames)
-                                          .Else(() => new List<EventMigrations.Rename>());
+                                          .Else(() => new List<EventMigrations.Rename>())
+                                          .ToArray();
 
             if (!events.Any() && !pendingRenames.Any())
             {
@@ -202,13 +203,16 @@ namespace Microsoft.Its.Domain.Sql
 
                 foreach (var rename in pendingRenames)
                 {
+                    var renameLocal = rename;
                     var eventToRename = await context.Events
-                                                     .SingleOrDefaultAsync(e => e.AggregateId == aggregate.Id && e.SequenceNumber == rename.SequenceNumber);
+                                                     .SingleOrDefaultAsync(e => e.AggregateId == aggregate.Id &&
+                                                                                e.SequenceNumber == renameLocal.SequenceNumber);
 
                     if (eventToRename == null)
                     {
                         throw new EventMigrations.SequenceNumberNotFoundException(aggregate.Id, rename.SequenceNumber);
                     }
+
                     eventToRename.Type = rename.NewName;
                 }
 
