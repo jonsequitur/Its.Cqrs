@@ -12,6 +12,8 @@ namespace Microsoft.Its.Domain
 {
     internal static class EventSourcedRepositoryExtensions
     {
+        internal const int DefaultNumberOfRetriesOnException = 5;
+
         private static readonly MethodInfo createMethod = typeof (CommandFailed)
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(m => m.Name == "Create");
@@ -114,14 +116,13 @@ namespace Microsoft.Its.Domain
                 else if (scheduled.Command is ConstructorCommand<TAggregate>)
                 {
                     failure.Cancel();
+                    return failure;
                 }
             }
-            else
+
+            if (failure.NumberOfPreviousAttempts < DefaultNumberOfRetriesOnException)
             {
-                if (failure.NumberOfPreviousAttempts < 5)
-                {
-                    failure.Retry(TimeSpan.FromMinutes(Math.Pow(failure.NumberOfPreviousAttempts + 1, 2)));
-                }
+                failure.Retry(TimeSpan.FromMinutes(Math.Pow(failure.NumberOfPreviousAttempts + 1, 2)));
             }
 
             return failure;

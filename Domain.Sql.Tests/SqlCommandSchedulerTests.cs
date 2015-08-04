@@ -447,6 +447,95 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
+        public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_it_is_retried_by_default()
+        {
+            var order = CommandSchedulingTests.CreateOrder();
+            await orderRepository.Save(order);
+
+            TriggerConcurrencyExceptionOnOrderCommands(order.Id);
+
+            var orderScheduler = Configuration.Current.CommandScheduler<Order>();
+            await orderScheduler
+                .Schedule(new CommandScheduled<Order>
+                {
+                    AggregateId = order.Id,
+                    Command = new Cancel()
+                });
+
+            for (var i = 1; i < 6; i++)
+            {
+                Console.WriteLine("Advancing clock"); 
+                GetScheduledCommandNumberOfAttempts(order.Id).Should().Be(i);
+                await scheduler.AdvanceClock(clockName, by: TimeSpan.FromDays(20));
+            }
+        }
+
+        [Test]
+        public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_commands_that_its_handler_scheduled_are_not_duplicated()
+        {
+            var order = CommandSchedulingTests.CreateOrder();
+            await accountRepository.Save(new CustomerAccount(order.CustomerId).Apply(new ChangeEmailAddress(Any.Email())));
+            await orderRepository.Save(order);
+
+            TriggerConcurrencyExceptionOnOrderCommands(order.Id);
+
+            var orderScheduler = Configuration.Current.CommandScheduler<Order>();
+            await orderScheduler
+                .Schedule(new CommandScheduled<Order>
+                {
+                    AggregateId = order.Id,
+                    Command = new Cancel()
+                });
+
+            for (var i = 1; i < 3; i++)
+            {
+                await scheduler.AdvanceClock(clockName, by: TimeSpan.FromDays(1));
+            }
+
+            StopTriggeringConcurrencyExceptions();
+
+            await scheduler.AdvanceClock(clockName, by: TimeSpan.FromDays(1));
+
+            var customer = await accountRepository.GetLatest(order.CustomerId);
+
+            customer.Events()
+                    .OfType<CustomerAccount.OrderCancelationConfirmationEmailSent>()
+                    .Count()
+                    .Should()
+                    .Be(1);
+        }
+
+        private void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)
+        {
+            orderRepository.GetEventStoreContext = () =>
+            {
+                // quick, add a new event in order to trigger a concurrency exception at the moment the scheduler tries to apply the command
+                var repository = new SqlEventSourcedRepository<Order>();
+                var o = repository.GetLatest(orderId).Result;
+                o.Apply(new Annotate<Order>("triggering a concurrency exception"));
+                repository.Save(o).Wait();
+
+                return new EventStoreDbContext();
+            };
+        }
+
+        private void StopTriggeringConcurrencyExceptions()
+        {
+            orderRepository.GetEventStoreContext = () => new EventStoreDbContext();
+        }
+
+        private int GetScheduledCommandNumberOfAttempts(Guid aggregateId)
+        {
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var scheduledCommand = db.ScheduledCommands.SingleOrDefault(c => c.AggregateId == aggregateId);
+                return scheduledCommand.IfNotNull()
+                                       .Then(c => c.Attempts)
+                                       .ElseDefault();
+            }
+        }
+
+        [Test]
         public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_it_is_not_marked_as_applied()
         {
             // arrange 
@@ -463,16 +552,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             await orderRepository.Save(order);
 
-            orderRepository.GetEventStoreContext = () =>
-            {
-                // quick, add a new event in order to trigger a concurrency exception at the moment the scheduler tries to apply the command
-                var repository = new SqlEventSourcedRepository<Order>();
-                var o = repository.GetLatest(order.Id).Result;
-                o.Apply(new ChangeCustomerInfo { CustomerName = Any.FullName() });
-                repository.Save(o).Wait();
-
-                return new EventStoreDbContext();
-            };
+            TriggerConcurrencyExceptionOnOrderCommands(order.Id);
 
             // act
             await scheduler.AdvanceClock(clockName, by: TimeSpan.FromDays(20));

@@ -18,9 +18,9 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Initializes a new instance of the <see cref="Command"/> class.
         /// </summary>
-        protected Command()
+        protected Command(string etag = null)
         {
-            ETag = Guid.NewGuid().ToString("N");
+            ETag = etag ?? Guid.NewGuid().ToString("N");
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Microsoft.Its.Domain
                 return true;
             }
         }
-
+        
         private static readonly Lazy<Dictionary<Tuple<Type, string>, Type>> index = new Lazy<Dictionary<Tuple<Type, string>, Type>>
             (() => AggregateType.KnownTypes
                                 .Select(aggregateType =>

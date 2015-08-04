@@ -111,16 +111,16 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                         // reschedule as appropriate
                         var now = Domain.Clock.Now();
-                        if (failure.RetryAfter != null)
-                        {
-                            Debug.WriteLine("SqlCommandScheduler.Deliver (scheduling retry): " + Description(scheduledCommand));
-                            storedCommand.DueTime = now + failure.RetryAfter;
-                        }
-                        else
+                        if (failure.IsCanceled || failure.RetryAfter == null)
                         {
                             Debug.WriteLine("SqlCommandScheduler.Deliver (abandoning): " + Description(scheduledCommand));
                             // no further retries
                             storedCommand.FinalAttemptTime = now;
+                        }
+                        else
+                        {
+                            Debug.WriteLine("SqlCommandScheduler.Deliver (scheduling retry): " + Description(scheduledCommand));
+                            storedCommand.DueTime = now + failure.RetryAfter;
                         }
 
                         db.Errors.Add(new CommandExecutionError
@@ -176,7 +176,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 var domainTime = Domain.Clock.Now();
 
-                // store the scheduled command
+                // get or create a clock to schedule the command on
                 var clockName = await ClockNameForEvent(scheduledCommandEvent, db);
                 var schedulerClock = await db.Clocks.SingleOrDefaultAsync(c => c.Name == clockName);
 
