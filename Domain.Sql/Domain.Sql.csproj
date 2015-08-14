@@ -98,7 +98,6 @@
     <Compile Include="CommandScheduler\CommandSchedulerDbContext.cs" />
     <Compile Include="CommandScheduler\SqlCommandSchedulerExtensions.cs" />
     <Compile Include="DbReadonlyUser.cs" />
-    <Compile Include="SqlClientDbConfiguration.cs" />
     <Compile Include="EventHandlerProgress.cs" />
     <Compile Include="EventHandlerProgressCalculator.cs" />
     <Compile Include="EventStoreDatabaseInitializer{T}.cs" />

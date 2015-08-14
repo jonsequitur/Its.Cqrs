@@ -120,7 +120,9 @@ namespace Microsoft.Its.Domain
                 }
             }
 
-            if (failure.NumberOfPreviousAttempts < DefaultNumberOfRetriesOnException)
+            if (!failure.IsCanceled &&
+                failure.RetryAfter == null &&
+                failure.NumberOfPreviousAttempts < DefaultNumberOfRetriesOnException)
             {
                 failure.Retry(TimeSpan.FromMinutes(Math.Pow(failure.NumberOfPreviousAttempts + 1, 2)));
             }
