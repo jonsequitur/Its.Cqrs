@@ -693,7 +693,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task The_aggregate_can_control_retries_of_a_failed_command()
+        public async Task A_command_handler_can_control_retries_of_a_failed_command()
         {
             // arrange
             var order = CommandSchedulingTests.CreateOrder();
@@ -728,7 +728,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task The_aggregate_can_retry_a_failed_command_as_soon_as_possible()
+        public async Task A_command_handler_can_retry_a_failed_command_as_soon_as_it_wants()
         {
             // arrange
             var order = CommandSchedulingTests.CreateOrder();
@@ -743,7 +743,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             // act
             // initial attempt fails
-            await scheduler.AdvanceClock(clockName, TimeSpan.FromDays(31));
+            await scheduler.AdvanceClock(clockName, TimeSpan.FromDays(30.1));
             order = await orderRepository.GetLatest(order.Id);
             order.Events().Last().Should().BeOfType<CommandScheduled<Order>>();
 
@@ -761,6 +761,40 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var last = order.Events().Last();
             last.Should().BeOfType<Order.Cancelled>();
             last.As<Order.Cancelled>().Reason.Should().Be("Final credit card charge attempt failed.");
+        }
+
+        [Test]
+        public async Task A_command_handler_can_retry_a_failed_command_as_late_as_it_wants()
+        {
+            var order = CommandSchedulingTests.CreateOrder();
+            order.Apply(
+                new ChargeCreditCardOn
+                {
+                    Amount = 10,
+                    ChargeDate = Clock.Now().AddDays(1),
+                    ChargeRetryPeriod = TimeSpan.FromDays(7)
+                });
+            await orderRepository.Save(order);
+
+            // act
+            // initial attempt fails
+            await scheduler.AdvanceClock(clockName, TimeSpan.FromDays(4));
+            order = await orderRepository.GetLatest(order.Id);
+            order.Events().Last().Should().BeOfType<CommandScheduled<Order>>();
+
+            // ship the order so the next retry will succeed
+            order.Apply(new Ship());
+            await orderRepository.Save(order);
+
+            // advance the clock a couple of days, which doesn't trigger a retry yet
+            await scheduler.AdvanceClock(clockName, TimeSpan.FromDays(2));
+            order = await orderRepository.GetLatest(order.Id);
+            order.Events().Should().NotContain(e => e is Order.CreditCardCharged);
+
+            // advance the clock enough to trigger a retry
+            await scheduler.AdvanceClock(clockName, TimeSpan.FromDays(5));
+            order = await orderRepository.GetLatest(order.Id);
+            order.Events().Should().Contain(e => e is Order.CreditCardCharged);
         }
 
         [Test]

@@ -139,7 +139,7 @@ namespace Sample.Domain.Ordering
             {
                 if (command.NumberOfPreviousAttempts < 3)
                 {
-                    command.Retry(after: TimeSpan.FromHours(12));
+                    command.Retry(after: command.Command.ChargeRetryPeriod);
                 }
                 else
                 {
@@ -156,7 +156,8 @@ namespace Sample.Domain.Ordering
             ScheduleCommand(new ChargeCreditCard
             {
                 Amount = command.Amount,
-                PaymentId = command.PaymentId
+                PaymentId = command.PaymentId,
+                ChargeRetryPeriod = command.ChargeRetryPeriod
             }, command.ChargeDate);
         }
 

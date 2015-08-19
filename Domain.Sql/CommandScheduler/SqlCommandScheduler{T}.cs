@@ -113,13 +113,13 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                         var now = Domain.Clock.Now();
                         if (failure.IsCanceled || failure.RetryAfter == null)
                         {
-                            Debug.WriteLine("SqlCommandScheduler.Deliver (abandoning): " + Description(scheduledCommand));
+                            Debug.WriteLine("SqlCommandScheduler.Deliver (abandoning): " + Description(scheduledCommand, failure));
                             // no further retries
                             storedCommand.FinalAttemptTime = now;
                         }
                         else
                         {
-                            Debug.WriteLine("SqlCommandScheduler.Deliver (scheduling retry): " + Description(scheduledCommand));
+                            Debug.WriteLine("SqlCommandScheduler.Deliver (scheduling retry): " + Description(scheduledCommand, failure));
                             storedCommand.DueTime = now + failure.RetryAfter;
                         }
 
@@ -295,18 +295,41 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             return clockName;
         }
 
-        private static string Description(IScheduledCommand<TAggregate> scheduledCommand)
+        private static string Description(
+            IScheduledCommand<TAggregate> scheduledCommand)
         {
             return new
-                   {
-                       Name = scheduledCommand.Command.CommandName,
-                       DueTime = scheduledCommand.DueTime.IfNotNull()
-                                                 .Then(t => t.ToString("O"))
-                                                 .Else(() => "[null]"),
-                       Clocks = Domain.Clock.Current.ToString(),
-                       scheduledCommand.AggregateId,
-                       scheduledCommand.ETag
-                   }.ToString();
+            {
+                Name = scheduledCommand.Command.CommandName,
+                DueTime = scheduledCommand.DueTime
+                                          .IfNotNull()
+                                          .Then(t => t.ToString("O"))
+                                          .Else(() => "[null]"),
+                Clocks = Domain.Clock.Current.ToString(),
+                scheduledCommand.AggregateId,
+                scheduledCommand.ETag
+            }.ToString();
+        }
+        
+        private static string Description(
+            IScheduledCommand<TAggregate> scheduledCommand,
+            CommandFailed failure)
+        {
+            return new
+            {
+                Name = scheduledCommand.Command.CommandName,
+                failure.IsCanceled,
+                failure.NumberOfPreviousAttempts,
+                failure.RetryAfter,
+                failure.Exception,
+                DueTime = scheduledCommand.DueTime
+                                          .IfNotNull()
+                                          .Then(t => t.ToString("O"))
+                                          .Else(() => "[null]"),
+                Clocks = Domain.Clock.Current.ToString(),
+                scheduledCommand.AggregateId,
+                scheduledCommand.ETag
+            }.ToString();
         }
     }
 }
