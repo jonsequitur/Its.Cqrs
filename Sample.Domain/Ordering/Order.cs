@@ -79,9 +79,13 @@ namespace Sample.Domain.Ordering
         public string ShipmentId { get; set; }
 
         private readonly List<EventMigrations.Rename> pendingRenames = new List<EventMigrations.Rename>();
+
         IEnumerable<EventMigrations.Rename> IEventMigratingAggregate.PendingRenames
         {
-            get { return pendingRenames; }
+            get
+            {
+                return pendingRenames;
+            }
         }
 
         public override void ConfirmSave()

@@ -172,7 +172,7 @@ namespace Microsoft.Its.Domain.Sql
                                   .ToArray();
 
             var pendingRenames = aggregate.IfTypeIs<IEventMigratingAggregate>()
-                                          .Then(_ => _.PendingRenames)
+                                          .Then(a => a.PendingRenames)
                                           .Else(() => new List<EventMigrations.Rename>())
                                           .ToArray();
 
