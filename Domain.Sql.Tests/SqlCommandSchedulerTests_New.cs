@@ -6,6 +6,7 @@ using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
+    [Ignore("Not ready")]
     [TestFixture]
     public class SqlCommandSchedulerTests_New : SqlCommandSchedulerTests
     {
