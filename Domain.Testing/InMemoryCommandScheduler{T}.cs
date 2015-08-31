@@ -107,7 +107,6 @@ namespace Microsoft.Its.Domain.Testing
             using (CommandContext.Establish(scheduledCommand.Command))
             {
                 await repository.ApplyScheduledCommand(scheduledCommand);
-
             }
 
             resetEvent.Set();

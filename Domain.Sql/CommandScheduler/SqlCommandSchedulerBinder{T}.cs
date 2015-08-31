@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
     internal class SqlCommandSchedulerBinder<TAggregate> :
-        IEventHandlerBinder
+        ICommandSchedulerDispatcher
         where TAggregate : class, IEventSourced
     {
         private readonly SqlCommandScheduler<TAggregate> scheduler;
@@ -35,6 +35,14 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             get
             {
                 return scheduler;
+            }
+        }
+
+        public string AggregateType
+        {
+            get
+            {
+                return AggregateType<TAggregate>.EventStreamName;
             }
         }
 

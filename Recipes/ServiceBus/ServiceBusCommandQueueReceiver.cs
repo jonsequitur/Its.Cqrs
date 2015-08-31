@@ -46,7 +46,9 @@ namespace Microsoft.Its.Domain.ServiceBus
         /// or
         /// scheduler
         /// </exception>
-        public ServiceBusCommandQueueReceiver(ServiceBusSettings settings, SqlCommandScheduler scheduler)
+        public ServiceBusCommandQueueReceiver(
+            ServiceBusSettings settings, 
+            SqlCommandScheduler scheduler)
         {
             if (settings == null)
             {

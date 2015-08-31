@@ -44,7 +44,7 @@ namespace Microsoft.Its.Domain.Testing
                     foreach (var scheduledCommand in commands)
                     {
                         Debug.WriteLine(string.Format("SqlCommandScheduler: Triggering {0}:{1}", scheduledCommand.AggregateId, scheduledCommand.SequenceNumber));
-                        await scheduler.Trigger(scheduledCommand, new SchedulerAdvancedResult(), db);
+                        await scheduler.ClockTrigger.Trigger(scheduledCommand, new SchedulerAdvancedResult(), db);
                     }
 
                     await Task.Delay(400);
@@ -53,5 +53,7 @@ namespace Microsoft.Its.Domain.Testing
 
             Debug.WriteLine(string.Format("SqlCommandScheduler: Done waiting for clock {0}", clockName));
         }
+
+      
     }
 }

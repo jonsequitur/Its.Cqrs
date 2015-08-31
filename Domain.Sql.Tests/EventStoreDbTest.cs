@@ -15,11 +15,11 @@ using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
-    public class EventStoreDbTest
+    public class EventStoreDbTest 
     {
         private static bool databasesInitialized;
-        private static readonly object lockObj = new object();  
-        protected long HighestEventId;
+        private static readonly object lockObj = new object();
+        public long HighestEventId;
         private CompositeDisposable disposables;
         private bool classInitializeHasBeenCalled;
 

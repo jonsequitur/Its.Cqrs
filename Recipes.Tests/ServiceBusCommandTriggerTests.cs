@@ -152,7 +152,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 
                 aggregateIds.ForEach(id =>
                 {
-                    // FIX: (When_ServiceBusCommandQueueSender_is_subscribed_to_the_service_bus_then_messages_are_scheduled_to_trigger_directly_scheduled_commands) 
+                    // TODO: (When_ServiceBusCommandQueueSender_is_subscribed_to_the_service_bus_then_messages_are_scheduled_to_trigger_directly_scheduled_commands) 
                 });
 
                 await RunCatchup();

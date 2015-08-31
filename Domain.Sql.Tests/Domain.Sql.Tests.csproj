@@ -125,6 +125,7 @@
     <Compile Include="EventStoreDbTest.cs" />
     <Compile Include="DynamicEventTests.cs" />
     <Compile Include="EventExtensionsTests.cs" />
+    <Compile Include="FakeEventSourcedRepository{T}.cs" />
     <Compile Include="OtherEventStoreDbContext.cs" />
     <Compile Include="QueryableExtensionsTests.cs" />
     <Compile Include="DiagnosticTests.cs" />
@@ -140,6 +141,8 @@
     <Compile Include="ReportingProjectorTests.cs" />
     <Compile Include="ReadModelCatchupRollingCatchupTests.cs" />
     <Compile Include="SqlCommandSchedulerTests.cs" />
+    <Compile Include="SqlCommandSchedulerTests_Legacy.cs" />
+    <Compile Include="SqlCommandSchedulerTests_New.cs" />
     <Compile Include="SqlEventSourcedRepositoryMigrationTests.cs" />
     <Compile Include="SqlEventSourcedRepositoryTests.cs" />
     <Compile Include="StorableEventTests.cs" />

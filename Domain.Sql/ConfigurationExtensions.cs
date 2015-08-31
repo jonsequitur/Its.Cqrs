@@ -47,7 +47,18 @@ namespace Microsoft.Its.Domain.Sql
             Action<ReadModelCatchup<CommandSchedulerDbContext>> configureCatchup = null)
         {
             var container = configuration.Container;
-            var scheduler = container.Resolve<SqlCommandScheduler>();
+
+            var scheduler = new SqlCommandScheduler(
+                configuration, 
+                container.Resolve<Func<CommandSchedulerDbContext>>());
+
+            if (container.All(r => r.Key != typeof (SqlCommandScheduler)))
+            {
+                container.Register(c => scheduler)
+                         .Register<ISchedulerClockTrigger>(c => scheduler)
+                         .Register<ISchedulerClockRepository>(c => scheduler);
+            }
+
             var subscription = container.Resolve<IEventBus>().Subscribe(scheduler);
             configuration.RegisterForDisposal(subscription);
             container.RegisterSingle(c => scheduler);
@@ -78,6 +89,28 @@ namespace Microsoft.Its.Domain.Sql
             return configuration.Container.Resolve<SqlCommandScheduler>();
         }
 
+        public static ICommandScheduler<TAggregate> UseSqlStorage<TAggregate>(
+            this ICommandScheduler<TAggregate> scheduler)
+            where TAggregate : class, IEventSourced
+        {
+            Func<CommandSchedulerDbContext> createDbContext = () => Configuration.Current.Container.Resolve<CommandSchedulerDbContext>();
+
+            return scheduler.Wrap(
+                schedule: async (cmd, next) =>
+                {
+                    var storedScheduledCommand = Storage.StoredScheduledCommand(
+                        cmd,
+                        createDbContext,
+                       null );
+
+                    await next(cmd);
+                },
+                deliver: async (cmd, next) =>
+                {
+                    await next(cmd);
+                });
+        }
+
         internal static void UsesSqlCommandScheduling(this Configuration configuration, bool value)
         {
             configuration.Properties["UsesSqlCommandScheduling"] = value;
@@ -92,7 +125,7 @@ namespace Microsoft.Its.Domain.Sql
                                 .ElseDefault();
         }
 
-         internal static void UsesSqlEventStore(this Configuration configuration, bool value)
+        internal static void UsesSqlEventStore(this Configuration configuration, bool value)
         {
             configuration.Properties["UsesSqlEventStore"] = value;
         }

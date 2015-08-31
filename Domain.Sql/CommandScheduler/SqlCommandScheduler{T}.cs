@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
@@ -140,10 +139,13 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             Debug.WriteLine("SqlCommandScheduler.Schedule: " + Description(scheduledCommandEvent));
 
-            var storedScheduledCommand = await StoreScheduledCommand(scheduledCommandEvent);
+            var storedScheduledCommand = await Storage.StoredScheduledCommand(
+                scheduledCommandEvent,
+                createCommandSchedulerDbContext,
+                (scheduledCommandEvent1, db) => ClockNameForEvent(this, scheduledCommandEvent1, db));
 
             var scheduledCommand = storedScheduledCommand.ToScheduledCommand<TAggregate>();
-            
+
             Activity.OnNext(new CommandScheduled(scheduledCommand)
             {
                 ClockName = storedScheduledCommand.Clock.Name
@@ -168,91 +170,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
         }
 
-        private async Task<ScheduledCommand> StoreScheduledCommand(IScheduledCommand<TAggregate> scheduledCommandEvent)
-        {
-            ScheduledCommand storedScheduledCommand;
-
-            using (var db = createCommandSchedulerDbContext())
-            {
-                var domainTime = Domain.Clock.Now();
-
-                // get or create a clock to schedule the command on
-                var clockName = await ClockNameForEvent(scheduledCommandEvent, db);
-                var schedulerClock = await db.Clocks.SingleOrDefaultAsync(c => c.Name == clockName);
-
-                if (schedulerClock == null)
-                {
-                    Debug.WriteLine(string.Format("SqlCommandScheduler: Creating clock '{0}' @ {1}", clockName, domainTime));
-
-                    schedulerClock = new Clock
-                                     {
-                                         Name = clockName,
-                                         UtcNow = domainTime,
-                                         StartTime = domainTime
-                                     };
-                    db.Clocks.Add(schedulerClock);
-                    await db.SaveChangesAsync();
-                }
-
-                storedScheduledCommand = new ScheduledCommand
-                                         {
-                                             AggregateId = scheduledCommandEvent.AggregateId,
-                                             SequenceNumber = scheduledCommandEvent.SequenceNumber,
-                                             AggregateType = eventStreamName,
-                                             SerializedCommand = scheduledCommandEvent.ToJson(),
-                                             CreatedTime = domainTime,
-                                             DueTime = scheduledCommandEvent.DueTime,
-                                             Clock = schedulerClock
-                                         };
-
-                if (storedScheduledCommand.ShouldBeDeliveredImmediately() &&
-                    !scheduledCommandEvent.Command.RequiresDurableScheduling)
-                {
-                    storedScheduledCommand.NonDurable = true;
-                    return storedScheduledCommand;
-                }
-
-                Debug.WriteLine(string.Format("SqlCommandScheduler: Storing command '{0}' ({1}:{2}) on clock '{3}'",
-                                              scheduledCommandEvent.Command.CommandName,
-                                              scheduledCommandEvent.AggregateId,
-                                              scheduledCommandEvent.SequenceNumber,
-                                              clockName));
-
-                db.ScheduledCommands.Add(storedScheduledCommand);
-
-                while (true)
-                {
-                    try
-                    {
-                        db.SaveChanges();
-                        break;
-                    }
-                    catch (DbUpdateException exception)
-                    {
-                        if (exception.IsConcurrencyException())
-                        {
-                            if (storedScheduledCommand.SequenceNumber < 0)
-                            {
-                                // for scheduler-assigned sequence numbers, decrement and retry
-                                storedScheduledCommand.SequenceNumber--;
-                            }
-                            else
-                            {
-                                // this is not a scheduler-assigned sequence number, so the concurrency exception indicates an actual issue
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            throw;
-                        }
-                    }
-                }
-            }
-
-            return storedScheduledCommand;
-        }
-
         public IEnumerable<IEventHandlerBinder> GetBinders()
         {
             return new IEventHandlerBinder[] { this };
@@ -263,7 +180,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             return bus.Subscribe(consequenter);
         }
 
-        private async Task<string> ClockNameForEvent(
+        private static async Task<string> ClockNameForEvent(
+            SqlCommandScheduler<TAggregate> sqlCommandScheduler, 
             IScheduledCommand<TAggregate> scheduledCommandEvent,
             CommandSchedulerDbContext db)
         {
@@ -278,11 +196,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             if (clockName == null)
             {
-                clockName = GetClockName(scheduledCommandEvent);
+                clockName = sqlCommandScheduler.GetClockName(scheduledCommandEvent);
 
                 if (clockName == null)
                 {
-                    var lookupValue = GetClockLookupKey(scheduledCommandEvent);
+                    var lookupValue = sqlCommandScheduler.GetClockLookupKey(scheduledCommandEvent);
                     clockName = (await db.ClockMappings
                                          .Include(m => m.Clock)
                                          .SingleOrDefaultAsync(c => c.Value == lookupValue))

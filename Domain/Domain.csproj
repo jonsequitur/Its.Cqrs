@@ -129,6 +129,8 @@
     <Compile Include="ICommandPreconditionVerifier.cs" />
     <Compile Include="IEventMigratingAggregate.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
+    <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />
+    <Compile Include="Scheduling\CommandScheduler.cs" />
     <Compile Include="Scheduling\ICommandSchedulerActivity.cs" />
     <Compile Include="Scheduling\CommandScheduled.cs" />
     <Compile Include="Scheduling\PreconditionNotMetException.cs" />

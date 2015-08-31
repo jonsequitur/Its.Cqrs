@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 
 namespace Microsoft.Its.Domain
 {
@@ -86,14 +87,37 @@ namespace Microsoft.Its.Domain
         {
             configuration.Container
                          .AddStrategy(t =>
-                                      {
-                                          Func<object> resolveFunc = strategy(t);
-                                          if (resolveFunc != null)
-                                          {
-                                              return container => resolveFunc();
-                                          }
-                                          return null;
-                                      });
+                         {
+                             Func<object> resolveFunc = strategy(t);
+                             if (resolveFunc != null)
+                             {
+                                 return container => resolveFunc();
+                             }
+                             return null;
+                         });
+            return configuration;
+        }
+
+        public static Configuration UseCommandSchedulerPipeline<TAggregate>(
+            this Configuration configuration,
+            Func<ICommandScheduler<TAggregate>, ICommandScheduler<TAggregate>> configure)
+            where TAggregate : class, IEventSourced
+        {
+            var scheduler = Domain.CommandScheduler.Create<TAggregate>(
+                schedule: async cmd =>
+                {
+                    
+                },
+                deliver: async cmd =>
+                {
+                    var repository = Configuration.Current.Repository<TAggregate>();
+                    await repository.ApplyScheduledCommand(cmd);
+                });
+
+            scheduler = configure(scheduler);
+
+            configuration.Container.Register(c => scheduler);
+
             return configuration;
         }
 
