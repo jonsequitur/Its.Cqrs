@@ -87,7 +87,7 @@ namespace Microsoft.Its.Domain.Testing
             if (schedulerClocks.Any())
             {
                 var configuration = Configuration.Current;
-                if (configuration.UsesSqlCommandScheduling())
+                if (configuration.IsUsingSqlCommandScheduling())
                 {
                     foreach (var clockName in schedulerClocks)
                     {

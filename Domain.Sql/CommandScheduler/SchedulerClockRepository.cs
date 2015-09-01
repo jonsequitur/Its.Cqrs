@@ -4,17 +4,27 @@ using System.Linq;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    internal class SchedulerClockRepository
-    {
-        private readonly Func<CommandSchedulerDbContext>  createDbContext;
+    public delegate string GetClockName(IEvent forEvent);
 
-        public SchedulerClockRepository(Func<CommandSchedulerDbContext> createDbContext )
+    internal class SchedulerClockRepository : ISchedulerClockRepository
+    {
+        private readonly Func<CommandSchedulerDbContext> createDbContext;
+        private readonly GetClockName getClockName;
+
+        public SchedulerClockRepository(
+            Func<CommandSchedulerDbContext> createDbContext,
+            GetClockName getClockName)
         {
             if (createDbContext == null)
             {
                 throw new ArgumentNullException("createDbContext");
             }
+            if (getClockName == null)
+            {
+                throw new ArgumentNullException("getClockName");
+            }
             this.createDbContext = createDbContext;
+            this.getClockName = getClockName;
         }
 
         /// <summary>
@@ -28,8 +38,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// lookup
         /// </exception>
         /// <exception cref="System.InvalidOperationException">Thrown if the lookup us alreayd associated with another clock.</exception>
-        public void AssociateWithClock(string clockName,
-                                       string lookup)
+        public void AssociateWithClock(string clockName, string lookup)
         {
             if (clockName == null)
             {
@@ -40,7 +49,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 throw new ArgumentNullException("lookup");
             }
 
-            using (var db =createDbContext())
+            using (var db = createDbContext())
             {
                 var clock = db.Clocks.SingleOrDefault(c => c.Name == clockName);
 
@@ -122,6 +131,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 return db.Clocks.Single(c => c.Name == clockName).UtcNow;
             }
+        }
+
+        public string ClockName(IEvent forEvent)
+        {
+            return getClockName(forEvent);
         }
     }
 }

@@ -2,11 +2,9 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
-    [Ignore("Not ready")]
     [TestFixture]
     public class SqlCommandSchedulerTests_New : SqlCommandSchedulerTests
     {
@@ -18,8 +16,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 return null;
             });
 
-            configuration.UseCommandSchedulerPipeline<Order>(
-                c => c.UseSqlStorage());
+            configuration
+                .UseDependency<GetClockName>(c => e => clockName)
+                .UseSqlStorageForScheduledCommands();
+
         }
 
         protected override async Task SchedulerWorkComplete()

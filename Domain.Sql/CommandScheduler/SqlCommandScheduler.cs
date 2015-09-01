@@ -26,22 +26,25 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <param name="configuration">The configuration.</param>
         public SqlCommandScheduler(
             Configuration configuration,
-            Func<CommandSchedulerDbContext> createCommandSchedulerDbContext = null)
+            Func<CommandSchedulerDbContext> createCommandSchedulerDbContext = null,
+            GetClockName getClockName = null)
         {
+            
             if (configuration == null)
             {
                 throw new ArgumentNullException("configuration");
             }
 
+            GetClockName = getClockName ?? (e => null);
             this.createCommandSchedulerDbContext = createCommandSchedulerDbContext ??
                                                    (() => new CommandSchedulerDbContext());
 
             var container = configuration.Container;
 
-            var dispatchers = InitializeSchedulersPerAggregateType(
-                activity,
+            var dispatchers = ConfigurationExtensions.InitializeSchedulersPerAggregateType(
                 container,
-                ClockName);
+                ClockName,
+                activity);
 
             base.binders = dispatchers;
 
@@ -62,9 +65,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     await db.SaveChangesAsync();
                 });
 
-
-
-            clockRepository = new SchedulerClockRepository(this.createCommandSchedulerDbContext);
+            clockRepository = new SchedulerClockRepository(
+                this.createCommandSchedulerDbContext,
+                GetClockName);
         }
 
         public Func<CommandSchedulerDbContext> CreateCommandSchedulerDbContext
@@ -93,11 +96,15 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                                    query);
         }
 
+        public async Task<SchedulerAdvancedResult> Trigger(Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query)
+        {
+            return await ClockTrigger.Trigger(query);
+        }
+
         public void AssociateWithClock(string clockName, string lookup)
         {
             clockRepository.AssociateWithClock(clockName, lookup);
         }
-
 
         public void CreateClock(string clockName, DateTimeOffset startTime)
         {
@@ -109,9 +116,19 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             return clockRepository.ReadClock(clockName);
         }
 
-        public async Task<SchedulerAdvancedResult> Trigger(Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query)
+        public GetClockName GetClockName = cmd => null;
+
+        /// <summary>
+        /// Provides a method so that delegates can point to the always-up-to-date GetClockName implementation, rather than capture a prior version of the delegate.
+        /// </summary>
+        public string ClockName(IEvent @event)
         {
-            return await ClockTrigger.Trigger(query);
+            if (GetClockName == null)
+            {
+                return null;
+            }
+
+            return GetClockName(@event);
         }
     }
 }

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing
@@ -192,6 +193,7 @@ namespace Microsoft.Its.Domain.Testing
             var clockName = Guid.NewGuid().ToString();
             scheduler.CreateClock(clockName, DateTimeOffset.Parse("1970-01-01 12:00:00 +00:00"));
             builder.Configuration.Properties["CommandSchedulerClockName"] = clockName;
+            builder.Configuration.Container.Register<GetClockName>(c => e => clockName);
             scheduler.GetClockName = @event => clockName;
 
             return builder;

@@ -1,27 +1,25 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Pocket;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    internal class SchedulerInitializer<T>
-        where T : class, IEventSourced
+    internal class SchedulerInitializer<TAggregate>
+        where TAggregate : class, IEventSourced
     {
         public ICommandSchedulerDispatcher InitializeScheduler(
             IObserver<ICommandSchedulerActivity> subject,
             PocketContainer container,
-            Func<IEvent, string> getClockName,
-            Type aggregateType)
+            Func<IEvent, string> getClockName)
         {
-            var binder = container.Resolve<SqlCommandSchedulerBinder<T>>();
+            var binder = container.Resolve<SqlCommandSchedulerBinder<TAggregate>>();
 
             var scheduler = binder.Scheduler;
 
             scheduler.GetClockName = getClockName;
             scheduler.Activity = subject;
 
-            var schedulerType = typeof (ICommandScheduler<T>);
+            var schedulerType = typeof (ICommandScheduler<TAggregate>);
 
             if (container.All(t => t.Key != schedulerType))
             {
@@ -30,12 +28,5 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             return binder;
         }
-    }
-
-    internal interface ICommandSchedulerDispatcher : IEventHandlerBinder
-    {
-        string AggregateType { get; }
-
-        Task Deliver(ScheduledCommand scheduled);
     }
 }

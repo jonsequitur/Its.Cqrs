@@ -92,6 +92,7 @@
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
     <Compile Include="CommandScheduler\CommandPreconditionVerifier.cs" />
     <Compile Include="CommandScheduler\CommandSchedulingEventHandler.cs" />
+    <Compile Include="CommandScheduler\ICommandSchedulerDispatcher.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockRepository.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockTrigger.cs" />
     <Compile Include="CommandScheduler\SchedulerAdvancedResult.cs" />
@@ -108,6 +109,7 @@
     <Compile Include="EventHandlerProgress.cs" />
     <Compile Include="EventHandlerProgressCalculator.cs" />
     <Compile Include="EventStoreDatabaseInitializer{T}.cs" />
+    <Compile Include="ISchedulerPipelineInitializer.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.Designer.cs">
       <DependentUpon>201407120005564_v0_8_2.cs</DependentUpon>
@@ -164,6 +166,7 @@
     <Compile Include="ReadModelUpdate.cs" />
     <Compile Include="ReservedValue.cs" />
     <Compile Include="CommandScheduler\ScheduledCommand.cs" />
+    <Compile Include="SchedulerPipelineInitializer{T}.cs" />
     <Compile Include="Sensors.cs" />
     <Compile Include="SqlReservationService.cs" />
     <Compile Include="StorableEvent.cs" />

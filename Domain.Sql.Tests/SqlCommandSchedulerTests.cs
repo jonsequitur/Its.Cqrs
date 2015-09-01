@@ -79,7 +79,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             clockTrigger = configuration.Container.Resolve<ISchedulerClockTrigger>();
             clockRepository = configuration.Container.Resolve<ISchedulerClockRepository>();
-            
             clockRepository.CreateClock(clockName, Clock.Now());
         }
 
@@ -200,7 +199,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task SqlCommandScheduler_executes_scheduled_commands_immediately_if_a_past_due_time_is_specified_on_the_realtime_clock()
+        public async Task Scheduled_commands_are_delivered_immediately_if_a_past_due_time_is_specified_on_the_realtime_clock()
         {
             // arrange
             var order = CommandSchedulingTests.CreateOrder();
@@ -217,60 +216,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             lastEvent.Should().BeOfType<Order.Shipped>();
         }
 
+      
         [Test]
-        public async Task SqlCommandScheduler_Activity_is_notified_when_a_command_is_scheduled()
-        {
-            // arrange
-            var order = CommandSchedulingTests.CreateOrder();
-
-            var activity = new List<ICommandSchedulerActivity>();
-
-            using (Configuration.Current
-                                .Container
-                                .Resolve<SqlCommandScheduler>()
-                                .Activity
-                                .Subscribe(activity.Add))
-            {
-                // act
-                order.Apply(new ShipOn(Clock.Now().Add(TimeSpan.FromDays(2))));
-                await orderRepository.Save(order);
-
-                //assert 
-                activity.Should()
-                        .ContainSingle(a => a.ScheduledCommand.AggregateId == order.Id &&
-                                            a is CommandScheduled);
-            }
-        }
-
-        [Test]
-        public async Task SqlCommandScheduler_Activity_is_notified_when_a_command_is_delivered_immediately()
-        {
-            // arrange
-            var order = CommandSchedulingTests.CreateOrder();
-
-            var activity = new List<ICommandSchedulerActivity>();
-
-            using (Configuration.Current
-                                .Container
-                                .Resolve<SqlCommandScheduler>()
-                                .Activity
-                                .Subscribe(a => activity.Add(a)))
-            {
-                // act
-                order.Apply(new ShipOn(Clock.Now().Subtract(TimeSpan.FromDays(2))));
-                await orderRepository.Save(order);
-
-                await SchedulerWorkComplete();
-
-                //assert 
-                activity.Should()
-                        .ContainSingle(a => a.ScheduledCommand.AggregateId == order.Id &&
-                                            a is CommandSucceeded);
-            }
-        }
-
-        [Test]
-        public async Task SqlCommandScheduler_executes_scheduled_commands_immediately_if_a_past_due_time_is_specified_on_a_virtual_clock()
+        public async Task Scheduled_commands_are_delivered_immediately_if_a_past_due_time_is_specified_on_a_virtual_clock()
         {
             // arrange
             var order = CommandSchedulingTests.CreateOrder();
@@ -523,34 +471,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task A_command_is_not_marked_as_applied_if_no_handler_is_registered()
-        {
-            // arrange
-            var order = CommandSchedulingTests.CreateOrder();
-            order.Apply(
-                new ChargeCreditCardOn
-                {
-                    Amount = 10,
-                    ChargeDate = Clock.Now().AddDays(10)
-                });
-            await orderRepository.Save(order);
-
-            // act
-            var schedulerWithNoHandlers = new SqlCommandScheduler(
-                new Configuration().UseSqlEventStore());
-            await schedulerWithNoHandlers.AdvanceClock(clockName, @by: TimeSpan.FromDays(20));
-
-            // assert
-            using (var db = new CommandSchedulerDbContext())
-            {
-                db.ScheduledCommands.Single(c => c.AggregateId == order.Id)
-                  .AppliedTime
-                  .Should()
-                  .BeNull();
-            }
-        }
-
-        [Test]
         public async Task When_a_scheduled_command_fails_then_the_error_is_recorded()
         {
             // arrange
@@ -583,22 +503,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 var error = db.Errors.Single(c => c.ScheduledCommand.AggregateId == order.Id).Error;
                 error.Should().Contain("oops!");
             }
-        }
-
-        [Test]
-        public void All_commands_can_be_configured_for_SQL_scheduling_using_ScheduleCommandsUsingSqlScheduler()
-        {
-            var eventBus = new FakeEventBus();
-
-            eventBus.Subscribe(new SqlCommandScheduler(new Configuration().UseSqlEventStore()));
-
-            eventBus.SubscribedEventTypes()
-                    .Should()
-                    .Contain(new[]
-                    {
-                        typeof (IScheduledCommand<Order>),
-                        typeof (IScheduledCommand<CustomerAccount>)
-                    });
         }
 
         [Test]
@@ -936,22 +840,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                       .ToString()
                       .Should()
                       .Contain("The order has been cancelled");
-        }
-
-        [Test]
-        public void Once_SqlCommandScheduler_is_resolved_from_the_Configuration_then_aggregate_specific_command_schedulers_are_registered()
-        {
-            var configuration = new Configuration().UseInMemoryEventStore();
-            configuration.Container.Resolve<SqlCommandScheduler>();
-
-            var commandScheduler = configuration.Container.Resolve<ICommandScheduler<Order>>();
-
-            commandScheduler.Should()
-                            .NotBeNull();
-            configuration.Container
-                         .Resolve<ICommandScheduler<Order>>()
-                         .Should()
-                         .BeSameAs(commandScheduler);
         }
 
         [Test]

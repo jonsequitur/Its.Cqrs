@@ -12,7 +12,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
     internal static class Storage
     {
-        internal static async Task<ScheduledCommand> StoredScheduledCommand<TAggregate>(
+        internal static async Task<ScheduledCommand> StoreScheduledCommand<TAggregate>(
             IScheduledCommand<TAggregate> scheduledCommandEvent,
             Func<CommandSchedulerDbContext> createDbContext,
             Func<IScheduledCommand<TAggregate>, CommandSchedulerDbContext, Task<string>> clockNameForEvent) where TAggregate : class, IEventSourced
@@ -98,6 +98,24 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
 
             return storedScheduledCommand;
+        }
+
+        public static async Task DeserializeAndDeliverScheduledCommand<TAggregate>(
+            ScheduledCommand scheduled,
+            ICommandScheduler<TAggregate> scheduler) 
+            where TAggregate : IEventSourced
+        {
+             var command = scheduled.ToScheduledCommand<TAggregate>();
+
+            //here we are setting the command.SequenceNumber to the scheduled.SequenceNumber because when
+            //multiple commands are scheduled simultaniously against the same aggregate we were decrementing the 
+            //scheduled.SequenceNumber correctly, however we were not updating the command.SequenceNumber.
+            //this is to prevent any side effects that may have been caused by that bug
+            command.SequenceNumber = scheduled.SequenceNumber;
+
+            await scheduler.Deliver(command);
+
+            scheduled.Result = command.Result;
         }
     }
 }

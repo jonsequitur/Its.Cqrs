@@ -12,12 +12,11 @@ using System.Threading.Tasks;
 namespace Microsoft.Its.Domain.Testing
 {
     public class InMemoryCommandScheduler<TAggregate> :
-        ICommandScheduler<TAggregate>, 
+        CommandScheduler<TAggregate>, 
         IEventHandler,
         IEventHandlerBinder
         where TAggregate : class, IEventSourced
     {
-        private readonly IEventSourcedRepository<TAggregate> repository;
         private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
         private readonly ManualResetEventSlim resetEvent = new ManualResetEventSlim();
 
@@ -26,14 +25,8 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="repository">The repository.</param>
         /// <exception cref="System.ArgumentNullException">repository</exception>
-        public InMemoryCommandScheduler(IEventSourcedRepository<TAggregate> repository)
+        public InMemoryCommandScheduler(IEventSourcedRepository<TAggregate> repository) : base(repository)
         {
-            if (repository == null)
-            {
-                throw new ArgumentNullException("repository");
-            }
-            this.repository = repository;
-
             consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e => Schedule(e).Wait());
         }
 
@@ -42,7 +35,7 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="scheduledCommand">The scheduled command.</param>
         /// <returns>A task that is complete when the command has been successfully scheduled.</returns>
-        public async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
+        public override async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
         {
             var dueTime = scheduledCommand.DueTime;
 
@@ -102,13 +95,9 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="scheduledCommand">The scheduled command to be applied to the aggregate.</param>
         /// <returns>A task that is complete when the command has been applied.</returns>
         /// <remarks>The scheduler will apply the command and save it, potentially triggering additional consequences.</remarks>
-        public async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
+        public override async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            using (CommandContext.Establish(scheduledCommand.Command))
-            {
-                await repository.ApplyScheduledCommand(scheduledCommand);
-            }
-
+            await base.Deliver(scheduledCommand);
             resetEvent.Set();
         }
 

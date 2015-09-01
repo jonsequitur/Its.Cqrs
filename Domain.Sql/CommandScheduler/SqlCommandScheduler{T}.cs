@@ -139,7 +139,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             Debug.WriteLine("SqlCommandScheduler.Schedule: " + Description(scheduledCommandEvent));
 
-            var storedScheduledCommand = await Storage.StoredScheduledCommand(
+            var storedScheduledCommand = await Storage.StoreScheduledCommand(
                 scheduledCommandEvent,
                 createCommandSchedulerDbContext,
                 (scheduledCommandEvent1, db) => ClockNameForEvent(this, scheduledCommandEvent1, db));

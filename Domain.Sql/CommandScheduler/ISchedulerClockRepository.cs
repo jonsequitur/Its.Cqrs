@@ -29,5 +29,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             DateTimeOffset startTime);
 
         DateTimeOffset ReadClock(string clockName);
+
+        string ClockName(IEvent forEvent);
     }
 }

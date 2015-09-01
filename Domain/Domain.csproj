@@ -131,9 +131,11 @@
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
     <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />
     <Compile Include="Scheduling\CommandScheduler.cs" />
+    <Compile Include="Scheduling\CommandScheduler{T}.cs" />
     <Compile Include="Scheduling\ICommandSchedulerActivity.cs" />
     <Compile Include="Scheduling\CommandScheduled.cs" />
     <Compile Include="Scheduling\PreconditionNotMetException.cs" />
+    <Compile Include="Scheduling\ScheduledCommandExtensions.cs" />
     <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />
     <Compile Include="Snapshots\InMemorySnapshotRepository{T}.cs" />
     <Compile Include="Snapshots\ISnapshot.cs" />

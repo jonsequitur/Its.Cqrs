@@ -7,6 +7,9 @@ namespace Microsoft.Its.Domain
         IScheduledCommand<TAggregate> command,
         Func<IScheduledCommand<TAggregate>, Task> next) where TAggregate : IEventSourced;
 
+    public delegate Task SchedulerPipeline(
+        IScheduledCommand command,
+        Func<IScheduledCommand, Task> next);
 
     public static class CommandScheduler
     {

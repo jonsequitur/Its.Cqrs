@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -103,27 +104,49 @@ namespace Microsoft.Its.Domain
             Func<ICommandScheduler<TAggregate>, ICommandScheduler<TAggregate>> configure)
             where TAggregate : class, IEventSourced
         {
-            var scheduler = Domain.CommandScheduler.Create<TAggregate>(
-                schedule: async cmd =>
-                {
-                    
-                },
-                deliver: async cmd =>
-                {
-                    var repository = Configuration.Current.Repository<TAggregate>();
-                    await repository.ApplyScheduledCommand(cmd);
-                });
+            configuration.IsUsingCommandSchedulerPipeline(true);
 
-            scheduler = configure(scheduler);
+            var lazyScheduler = new Lazy<ICommandScheduler<TAggregate>>(() =>
+            {
+                ICommandScheduler<TAggregate> scheduler = configuration.Container.Resolve<CommandScheduler<TAggregate>>();
 
-            configuration.Container.Register(c => scheduler);
+                scheduler = configure(scheduler.Wrap(
+                    schedule: async (cmd, next) =>
+                {
+                    // deliver the command immediately if it's due
+                    if (cmd.IsDue())
+                    {
+                        await configuration.CommandScheduler<TAggregate>().Deliver(cmd);
+                    }
+
+                    // CommandScheduler<T> doesn't support Schedule, so don't call next
+                }));
+
+                return scheduler;
+            });
+
+            configuration.Container.Register(c => lazyScheduler.Value);
 
             return configuration;
         }
-
+     
         internal static ISnapshotRepository SnapshotRepository(this Configuration configuration)
         {
             return configuration.Container.Resolve<ISnapshotRepository>();
+        }
+
+        internal static void IsUsingCommandSchedulerPipeline(this Configuration configuration, bool value)
+        {
+            configuration.Properties["IsUsingCommandSchedulerPipeline"] = value;
+        }
+
+        internal static bool IsUsingCommandSchedulerPipeline(this Configuration configuration)
+        {
+            return configuration.Properties
+                                .IfContains("IsUsingCommandSchedulerPipeline")
+                                .And()
+                                .IfTypeIs<bool>()
+                                .ElseDefault();
         }
     }
 }

@@ -43,7 +43,7 @@ namespace Microsoft.Its.Domain.Testing
                          .AddStrategy(type => InMemoryEventSourcedRepositoryStrategy(type, configuration.Container))
                          .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>());
 
-            configuration.UsesSqlEventStore(false);
+            configuration.IsUsingSqlEventStore(false);
 
             return configuration;
         }
