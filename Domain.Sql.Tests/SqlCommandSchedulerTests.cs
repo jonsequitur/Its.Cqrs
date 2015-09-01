@@ -231,7 +231,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var shipOn = clockRepository.ReadClock(clockName).AddDays(-5);
             Console.WriteLine(new { shipOn });
             order.Apply(new ShipOn(shipOn));
-            order.PendingEvents.Last().As<IHaveExtensibleMetada>().Metadata.ClockName = clockName;
             await orderRepository.Save(order);
 
             await SchedulerWorkComplete();

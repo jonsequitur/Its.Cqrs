@@ -7,6 +7,7 @@ using System.Data.Entity.Infrastructure;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
@@ -102,10 +103,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         public static async Task DeserializeAndDeliverScheduledCommand<TAggregate>(
             ScheduledCommand scheduled,
-            ICommandScheduler<TAggregate> scheduler) 
+            ICommandScheduler<TAggregate> scheduler)
             where TAggregate : IEventSourced
         {
-             var command = scheduled.ToScheduledCommand<TAggregate>();
+            var command = scheduled.ToScheduledCommand<TAggregate>();
 
             //here we are setting the command.SequenceNumber to the scheduled.SequenceNumber because when
             //multiple commands are scheduled simultaniously against the same aggregate we were decrementing the 
@@ -116,6 +117,75 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             await scheduler.Deliver(command);
 
             scheduled.Result = command.Result;
+        }
+
+        internal static async Task UpdateScheduledCommand<TAggregate>(
+            IScheduledCommand<TAggregate> scheduledCommand,
+            Func<CommandSchedulerDbContext> createDbContext) where TAggregate : class, IEventSourced
+        {
+            using (var db = createDbContext())
+            {
+                var storedCommand = await db.ScheduledCommands
+                                            .SingleAsync(c => c.AggregateId == scheduledCommand.AggregateId &&
+                                                              c.SequenceNumber == scheduledCommand.SequenceNumber);
+
+                storedCommand.Attempts ++;
+
+                var result = scheduledCommand.Result();
+
+                if (result.WasSuccessful)
+                {
+                    storedCommand.AppliedTime = Domain.Clock.Now();
+                }
+                else
+                {
+                    var failure = (CommandFailed) result;
+
+                    // reschedule as appropriate
+                    var now = Domain.Clock.Now();
+                    if (failure.IsCanceled || failure.RetryAfter == null)
+                    {
+                        Debug.WriteLine("SqlCommandScheduler.Deliver (abandoning): " + Description(scheduledCommand, failure));
+                        // no further retries
+                        storedCommand.FinalAttemptTime = now;
+                    }
+                    else
+                    {
+                        Debug.WriteLine("SqlCommandScheduler.Deliver (scheduling retry): " + Description(scheduledCommand, failure));
+                        storedCommand.DueTime = now + failure.RetryAfter;
+                    }
+
+                    db.Errors.Add(new CommandExecutionError
+                    {
+                        ScheduledCommand = storedCommand,
+                        Error = result.IfTypeIs<CommandFailed>()
+                                      .Then(f => f.Exception.ToJson()).ElseDefault()
+                    });
+                }
+
+                await db.SaveChangesAsync();
+            }
+        }
+
+        private static string Description<TAggregate>(
+            IScheduledCommand<TAggregate> scheduledCommand,
+            CommandFailed failure) where TAggregate : IEventSourced
+        {
+            return new
+            {
+                Name = scheduledCommand.Command.CommandName,
+                failure.IsCanceled,
+                failure.NumberOfPreviousAttempts,
+                failure.RetryAfter,
+                failure.Exception,
+                DueTime = scheduledCommand.DueTime
+                                          .IfNotNull()
+                                          .Then(t => t.ToString("O"))
+                                          .Else(() => "[null]"),
+                Clocks = Domain.Clock.Current.ToString(),
+                scheduledCommand.AggregateId,
+                scheduledCommand.ETag
+            }.ToString();
         }
     }
 }

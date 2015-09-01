@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -42,6 +43,15 @@ namespace Microsoft.Its.Domain.Sql
                             GetClockName);
 
                         await next(cmd);
+
+                        if (!cmd.Command.RequiresDurableScheduling)
+                        {
+                            return;
+                        }
+
+                        await Storage.UpdateScheduledCommand(
+                            cmd,
+                            createDbContext);
                     },
                     deliver: async (cmd, next) => { await next(cmd); }));
 

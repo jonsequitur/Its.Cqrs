@@ -17,5 +17,32 @@ namespace Microsoft.Its.Domain
             return command.DueTime == null ||
                    command.DueTime <= Clock.Now();
         }
+
+        public static ScheduledCommandResult Result<TAggregate>(
+            this IScheduledCommand<TAggregate> scheduledCommand)
+            where TAggregate : IEventSourced
+        {
+            var c = scheduledCommand as CommandScheduled<TAggregate>;
+
+            if (c != null)
+            {
+                return c.Result;
+            }
+
+            return null;
+        }
+
+        public static void Result<TAggregate>(
+            this IScheduledCommand<TAggregate> scheduledCommand,
+            ScheduledCommandResult result)
+            where TAggregate : IEventSourced
+        {
+            var c = scheduledCommand as CommandScheduled<TAggregate>;
+
+            if (c != null)
+            {
+                c.Result = result;
+            }
+        }
     }
 }
