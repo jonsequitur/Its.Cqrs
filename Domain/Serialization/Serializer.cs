@@ -30,7 +30,8 @@ namespace Microsoft.Its.Domain.Serialization
                 NullValueHandling = NullValueHandling.Include,
                 ContractResolver = new OptionalContractResolver(),
                 DefaultValueHandling = DefaultValueHandling.Include,
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                Error = (sender, args) => args.ErrorContext.Handled = true
             };
 
             AddConverter(new OptionalConverter());
