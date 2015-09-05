@@ -84,8 +84,6 @@ namespace Microsoft.Its.Domain.Testing
         {
             Scheduler.Done().Wait();
 
-            // FIX: (WaitForScheduler) make sure this works with pipeline model
-
             if (schedulerClocks.Any())
             {
                 var configuration = Configuration.Current;

@@ -135,14 +135,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 if (storedCommand == null)
                 {
-                    if (scheduledCommand.Command.RequiresDurableScheduling)
-                    {
-                        // FIX: (UpdateScheduledCommand) throw new ScheduledCommandException(new comm);
-                    }
-                    else
+                    if (!scheduledCommand.Command.RequiresDurableScheduling)
                     {
                         return;
                     }
+                    
+                    throw new InvalidOperationException("Scheduled command not found");
                 }
 
                 storedCommand.Attempts ++;

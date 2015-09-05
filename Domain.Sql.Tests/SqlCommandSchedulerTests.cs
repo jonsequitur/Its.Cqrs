@@ -1294,7 +1294,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var deliverCount = 0;
 
             VirtualClock.Start();
-            Configuration.Current.TriggerSqlCommandSchedulerWithVirtualClock();
 
             var orderId = Any.Guid();
 

@@ -133,33 +133,21 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         }
 
         private static async Task<string> ClockNameForEvent(
-            SqlCommandScheduler<TAggregate> sqlCommandScheduler, 
+            SqlCommandScheduler<TAggregate> sqlCommandScheduler,
             IScheduledCommand<TAggregate> scheduledCommandEvent,
             CommandSchedulerDbContext db)
         {
-            // FIX: (ClockNameForEvent) remove this
-            var clockName =
-                scheduledCommandEvent.IfTypeIs<IHaveExtensibleMetada>()
-                                     .Then(e => ((object) e.Metadata)
-                                               .IfTypeIs<IDictionary<string, object>>()
-                                               .Then(m => m.IfContains("ClockName")
-                                                           .Then(v => v.ToString())))
-                                     .ElseDefault();
+            var clockName = sqlCommandScheduler.GetClockName(scheduledCommandEvent);
 
             if (clockName == null)
             {
-                clockName = sqlCommandScheduler.GetClockName(scheduledCommandEvent);
-
-                if (clockName == null)
-                {
-                    var lookupValue = sqlCommandScheduler.GetClockLookupKey(scheduledCommandEvent);
-                    clockName = (await db.ClockMappings
-                                         .Include(m => m.Clock)
-                                         .SingleOrDefaultAsync(c => c.Value == lookupValue))
-                        .IfNotNull()
-                        .Then(c => c.Clock.Name)
-                        .Else(() => SqlCommandScheduler.DefaultClockName);
-                }
+                var lookupValue = sqlCommandScheduler.GetClockLookupKey(scheduledCommandEvent);
+                clockName = (await db.ClockMappings
+                                     .Include(m => m.Clock)
+                                     .SingleOrDefaultAsync(c => c.Value == lookupValue))
+                    .IfNotNull()
+                    .Then(c => c.Clock.Name)
+                    .Else(() => SqlCommandScheduler.DefaultClockName);
             }
 
             return clockName;

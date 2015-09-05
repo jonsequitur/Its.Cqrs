@@ -14,26 +14,27 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="configuration">A domain configuration instance.</param>
         /// <returns>The modified domain configuration instance.</returns>
         public static Configuration TriggerSqlCommandSchedulerWithVirtualClock(this Configuration configuration)
-        {   
-            // FIX: (TriggerSqlCommandSchedulerWithVirtualClock) make sure this works with pipeline model
-            if (configuration.IsUsingSqlCommandScheduling())
+        {
+            if (!configuration.IsUsingSqlCommandScheduling())
             {
-                var scheduler = configuration.SqlCommandScheduler();
-
-                var subscription = scheduler.Activity
-                                            .OfType<CommandScheduled>()
-                                            .Subscribe(scheduled =>
-                                            {
-                                                Clock.Current
-                                                     .IfTypeIs<VirtualClock>()
-                                                     .ThenDo(clock =>
-                                                     {
-                                                         clock.OnAdvanceTriggerSchedulerClock(scheduled.ClockName);
-                                                     });
-                                            });
-
-                configuration.RegisterForDisposal(subscription);
+                throw new InvalidOperationException("Only supported after configuring with UseSqlCommandScheduler.");
             }
+
+            var scheduler = configuration.SqlCommandScheduler();
+
+            var subscription = scheduler.Activity
+                                        .OfType<CommandScheduled>()
+                                        .Subscribe(scheduled =>
+                                        {
+                                            Clock.Current
+                                                 .IfTypeIs<VirtualClock>()
+                                                 .ThenDo(clock =>
+                                                 {
+                                                     clock.OnAdvanceTriggerSchedulerClock(scheduled.ClockName);
+                                                 });
+                                        });
+
+            configuration.RegisterForDisposal(subscription);
 
             return configuration;
         }
