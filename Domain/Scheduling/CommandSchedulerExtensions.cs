@@ -10,7 +10,7 @@ namespace Microsoft.Its.Domain
 {
     public static class CommandSchedulerExtensions
     {
-        public static Task Schedule<TCommand, TAggregate>(
+        public static async Task<IScheduledCommand<TAggregate>> Schedule<TCommand, TAggregate>(
             this ICommandScheduler<TAggregate> scheduler,
             Guid aggregateId,
             TCommand command,
@@ -47,14 +47,18 @@ namespace Microsoft.Its.Domain
                 };
             }
 
-            return scheduler.Schedule(new CommandScheduled<TAggregate>
+            var scheduledCommand = new CommandScheduled<TAggregate>
             {
                 Command = command,
                 DueTime = dueTime,
                 AggregateId = aggregateId,
                 SequenceNumber = -DateTimeOffset.UtcNow.Ticks,
                 DeliveryPrecondition = precondition
-            });
+            };
+
+            await scheduler.Schedule(scheduledCommand);
+
+            return scheduledCommand;
         }
 
         internal static void DeliverIfPreconditionIsSatisfiedWithin<TAggregate>(

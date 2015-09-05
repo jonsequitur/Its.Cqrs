@@ -230,6 +230,8 @@ namespace Microsoft.Its.Domain.ServiceBus
 
             public ScheduledCommandPrecondition DeliveryPrecondition { get; private set; }
 
+            public ScheduledCommandResult Result { get; set; }
+
             public BrokeredMessage BrokeredMessage { get; internal set; }
         }
     }

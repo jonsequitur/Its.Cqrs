@@ -48,12 +48,13 @@
     <Reference Include="FluentAssertions">
       <HintPath>..\packages\FluentAssertions.2.1.0.0\lib\net45\FluentAssertions.dll</HintPath>
     </Reference>
-    <Reference Include="Its.Log">
-      <HintPath>..\packages\Its.Log.2.8.0-beta\lib\net40\Its.Log.dll</HintPath>
+    <Reference Include="Its.Log, Version=2.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Its.Log.2.9.8-beta\lib\net40\Its.Log.dll</HintPath>
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Validation.1.3.0\lib\net45\Its.Validation.dll</HintPath>
+      <HintPath>..\packages\Its.Validation.1.4.1\lib\net45\Its.Validation.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Its.Log, Version=2.7.0.0, Culture=neutral, PublicKeyToken=76490b1978d4e7b6, processorArchitecture=MSIL">

@@ -43,7 +43,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// </returns>
         /// <exception cref="System.ArgumentNullException">query</exception>
         /// <remarks>If the query matches commands that have been successfully applied already or abandoned, they will be re-applied.</remarks>
-        Task<SchedulerAdvancedResult> Trigger(
-            Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query);
+        Task<SchedulerAdvancedResult> Trigger(Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query);
+
+        Task Trigger(
+            ScheduledCommand scheduled,
+            SchedulerAdvancedResult result,
+            CommandSchedulerDbContext db);
     }
 }

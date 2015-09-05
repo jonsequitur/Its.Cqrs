@@ -2,9 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity.Infrastructure;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using FluentAssertions;
 using Its.Log.Instrumentation;
@@ -102,11 +102,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 ShipmentId = shipmentId
             });
-            order.PendingEvents.Last().As<IHaveExtensibleMetada>().Metadata.ClockName = shipmentId;
             await orderRepository.Save(order);
 
             // act
-            await clockTrigger.AdvanceClock(clockName: shipmentId,
+            await clockTrigger.AdvanceClock(clockName: clockName,
                                          @by: TimeSpan.FromDays(32));
 
             //assert 
@@ -119,7 +118,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_a_virtual_clock_is_advanced_then_the_domain_clock_is_coordinated_to_the_scheduler_clock_for_events_written_as_a_result()
+        public async Task When_a_scheduler_clock_is_advanced_then_the_domain_clock_is_coordinated_to_the_scheduler_clock_for_events_written_as_a_result()
         {
             // arrange
             var shipmentId = Any.AlphanumericString(8, 8);
@@ -130,11 +129,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 ShipmentId = shipmentId
             });
-            order.PendingEvents.Last().As<IHaveExtensibleMetada>().Metadata.ClockName = shipmentId;
             await orderRepository.Save(order);
 
             // act
-            await clockTrigger.AdvanceClock(clockName: shipmentId,
+            await clockTrigger.AdvanceClock(clockName: clockName,
                                          @by: TimeSpan.FromDays(33));
 
             //assert 
@@ -147,7 +145,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_a_virtual_clock_is_advanced_then_the_domain_clock_is_unaffected_for_events_written_by_other_aggregates()
+        public async Task When_a_scheduler_clock_is_advanced_then_the_domain_clock_is_unaffected_for_events_written_by_other_aggregates()
         {
             // arrange
             var shipmentId = Any.AlphanumericString(8, 8);
@@ -158,16 +156,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 ShipmentId = shipmentId
             });
-            order.PendingEvents.Last().As<IHaveExtensibleMetada>().Metadata.ClockName = shipmentId;
             await orderRepository.Save(order);
 
             // act
-            await clockTrigger.AdvanceClock(clockName: shipmentId,
-                                         @by: TimeSpan.FromDays(32));
+            await clockTrigger.AdvanceClock(clockName: clockName,
+                                            @by: TimeSpan.FromDays(32));
 
             //assert 
             order = await orderRepository.GetLatest(order.Id);
-            order.Events().OfType<Order.Shipped>()
+            order.Events()
+                 .OfType<Order.Shipped>()
                  .Last()
                  .Timestamp
                  .Should()
@@ -185,12 +183,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 ShipmentId = shipmentId
             });
-            order.PendingEvents.Last().As<IHaveExtensibleMetada>().Metadata.ClockName = shipmentId;
             await orderRepository.Save(order);
 
             // act
-            await clockTrigger.AdvanceClock(clockName: shipmentId,
-                                         @by: TimeSpan.FromDays(30));
+            await clockTrigger.AdvanceClock(clockName: clockName,
+                                            @by: TimeSpan.FromDays(30));
 
             //assert 
             order = await orderRepository.GetLatest(order.Id);
@@ -218,13 +215,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
       
         [Test]
-        public async Task Scheduled_commands_are_delivered_immediately_if_a_past_due_time_is_specified_on_a_virtual_clock()
+        public async Task Scheduled_commands_are_delivered_immediately_if_a_past_due_time_is_specified_on_a_scheduler_clock()
         {
             // arrange
             var order = CommandSchedulingTests.CreateOrder();
 
-            Console.WriteLine(Clock.Now());
-            Console.WriteLine("Advancing clock");
             await clockTrigger.AdvanceClock(clockName, clockRepository.ReadClock(clockName).AddDays(10));
 
             // act
@@ -421,6 +416,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             StopTriggeringConcurrencyExceptions();
 
             await clockTrigger.AdvanceClock(clockName, @by: TimeSpan.FromDays(1));
+
+            await SchedulerWorkComplete();
 
             var customer = await accountRepository.GetLatest(order.CustomerId);
 
@@ -693,15 +690,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var email = Any.Email();
             Console.WriteLine(new { clockName, email });
             var account = new CustomerAccount()
-                .Apply(new ChangeEmailAddress(email));
-            account.Apply(new SendMarketingEmailOn(Clock.Now().AddDays(1)))
-                   .Apply(new RequestSpam());
+                .Apply(new ChangeEmailAddress(email))
+                .Apply(new SendMarketingEmailOn(Clock.Now().AddDays(1)))
+                .Apply(new RequestSpam());
             await accountRepository.Save(account);
 
             // ACT
             var result = await clockTrigger.AdvanceClock(clockName, TimeSpan.FromDays(10));
             Console.WriteLine(result.ToLogString());
-
+           
             await SchedulerWorkComplete();
 
             // ASSERT
@@ -1133,23 +1130,19 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 AggregateId = Any.Guid(),
                 ETag = Any.Guid().ToString()
             };
-
-            var schedulerActivity = new List<ICommandSchedulerActivity>();
-            using (container.Resolve<SqlCommandScheduler>()
-                            .Activity
-                            .Subscribe(schedulerActivity.Add))
-            {
-                await commandScheduler.Schedule(orderId,
+           
+             var scheduledCommand =   await commandScheduler.Schedule(orderId,
                                                 new CreateOrder(customerName)
                                                 {
                                                     AggregateId = orderId
                                                 },
                                                 deliveryDependsOn: prerequisiteEvent);
-            }
 
             var order = await orderRepository.GetLatest(orderId);
 
             order.Should().BeNull();
+
+            scheduledCommand.Result.Should().BeOfType<CommandScheduled>();
 
             using (var db = new CommandSchedulerDbContext())
             {
@@ -1162,12 +1155,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 command.Attempts
                        .Should()
                        .Be(0);
-
-                schedulerActivity
-                    .Should()
-                    .NotContain(a => a.IfTypeIs<CommandFailed>()
-                                      .Then(f => true)
-                                      .ElseDefault());
             }
         }
 
@@ -1189,18 +1176,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 ETag = prerequisiteETag
             };
 
-            var schedulerActivity = new List<ICommandSchedulerActivity>();
-            using (container.Resolve<SqlCommandScheduler>()
-                            .Activity
-                            .Subscribe(schedulerActivity.Add))
-            {
-                await commandScheduler.Schedule(orderId,
-                                                new CreateOrder(customerName)
-                                                {
-                                                    AggregateId = orderId
-                                                },
-                                                deliveryDependsOn: prerequisiteEvent);
-            }
+            await commandScheduler.Schedule(orderId,
+                                            new CreateOrder(customerName)
+                                            {
+                                                AggregateId = orderId
+                                            },
+                                            deliveryDependsOn: prerequisiteEvent);
 
             // sanity check that the order is null
             var order = await orderRepository.GetLatest(orderId);
@@ -1239,19 +1220,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 ETag = Any.Guid().ToString()
             };
 
-            var schedulerActivity = new List<ICommandSchedulerActivity>();
-            using (container.Resolve<SqlCommandScheduler>()
-                            .Activity
-                            .Subscribe(schedulerActivity.Add))
-            {
-                await commandScheduler.Schedule(orderId,
-                                                new AddItem
-                                                {
-                                                    ProductName = Any.Paragraph(3),
-                                                    Price = 10m
-                                                },
-                                                deliveryDependsOn: prerequisiteEvent);
-            }
+            await commandScheduler.Schedule(orderId,
+                                            new AddItem
+                                            {
+                                                ProductName = Any.Paragraph(3),
+                                                Price = 10m
+                                            },
+                                            deliveryDependsOn: prerequisiteEvent);
 
             for (var i = 0; i < 7; i++)
             {
@@ -1355,8 +1330,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
 
             scheduleCount.Should().Be(1);
-            deliverCount.Should().Be(0, "scheduler calls its own Deliver method so the wrapper would only be invoked if the command had not been marked as delivered");
-            // TODO: this is not an ideal behavior 
+            deliverCount.Should().Be(1);
         }
 
         [Test]
@@ -1416,6 +1390,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
-        protected abstract Task SchedulerWorkComplete();
+        protected async Task SchedulerWorkComplete()
+        {
+            await clockTrigger.Done(clockName);
+        }
     }
 }

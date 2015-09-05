@@ -4,25 +4,10 @@ using System.Diagnostics;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    public class CommandScheduled : ICommandSchedulerActivity
+    public class CommandScheduled : ScheduledCommandResult
     {
-        private readonly IScheduledCommand scheduledCommand;
-
-        public CommandScheduled(IScheduledCommand scheduledCommand)
+        public CommandScheduled(IScheduledCommand command) : base(command)
         {
-            if (scheduledCommand == null)
-            {
-                throw new ArgumentNullException("scheduledCommand");
-            }
-            this.scheduledCommand = scheduledCommand;
-        }
-
-        public IScheduledCommand ScheduledCommand
-        {
-            get
-            {
-                return scheduledCommand;
-            }
         }
 
         public string ClockName { get; set; }

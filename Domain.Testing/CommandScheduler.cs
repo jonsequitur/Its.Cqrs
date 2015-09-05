@@ -18,15 +18,15 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="scheduler">The command scheduler.</param>
         /// <param name="clockName">The name of the clock on which the commands are scheduled.</param>
         /// <returns></returns>
-        public static async Task Done(this SqlCommandScheduler scheduler, string clockName = null)
+        public static async Task Done(
+            this ISchedulerClockTrigger scheduler, 
+            string clockName = null)
         {
             clockName = clockName ?? SqlCommandScheduler.DefaultClockName;
 
-            Debug.WriteLine(string.Format("SqlCommandScheduler: Waiting for clock {0}", clockName));
-
             for (var i = 0; i < 10; i++)
             {
-                using (var db = scheduler.CreateCommandSchedulerDbContext())
+                using (var db = new CommandSchedulerDbContext())
                 {
                     var due = db.ScheduledCommands
                                 .Due()
@@ -39,19 +39,22 @@ namespace Microsoft.Its.Domain.Testing
 
                     var commands = await due.ToArrayAsync();
 
-                    Debug.WriteLine(string.Format("SqlCommandScheduler: Triggering {0} commands", commands.Count()));
+                    Debug.WriteLine(string.Format("Triggering {0} commands", commands.Count()));
 
                     foreach (var scheduledCommand in commands)
                     {
-                        Debug.WriteLine(string.Format("SqlCommandScheduler: Triggering {0}:{1}", scheduledCommand.AggregateId, scheduledCommand.SequenceNumber));
-                        await scheduler.ClockTrigger.Trigger(scheduledCommand, new SchedulerAdvancedResult(), db);
+                        Debug.WriteLine(string.Format("Triggering {0}:{1}", scheduledCommand.AggregateId, scheduledCommand.SequenceNumber));
+                        await scheduler.Trigger(
+                            scheduledCommand, 
+                            new SchedulerAdvancedResult(), 
+                            db);
                     }
 
                     await Task.Delay(400);
                 }
             }
 
-            Debug.WriteLine(string.Format("SqlCommandScheduler: Done waiting for clock {0}", clockName));
+            Debug.WriteLine(string.Format("Done waiting for clock {0}", clockName));
         }
 
       

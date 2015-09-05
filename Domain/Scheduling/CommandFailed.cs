@@ -8,9 +8,9 @@ using System.Linq;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    public class CommandFailed : ScheduledCommandResult
+    public class CommandFailed : CommandDelivered
     {
-        internal CommandFailed(IScheduledCommand command, Exception exception = null) : base(command)
+        public CommandFailed(IScheduledCommand command, Exception exception = null) : base(command)
         {
             Exception = exception;
         }
@@ -28,14 +28,6 @@ namespace Microsoft.Its.Domain
         public void Retry(TimeSpan after)
         {
             RetryAfter = after;
-        }
-
-        public override bool WasSuccessful
-        {
-            get
-            {
-                return false;
-            }
         }
 
         internal bool IsCanceled { get; private set; }

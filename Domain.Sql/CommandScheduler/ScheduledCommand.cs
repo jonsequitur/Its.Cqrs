@@ -34,11 +34,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         internal bool NonDurable { get; set; }
 
-        internal bool ShouldBeDeliveredImmediately()
-        {
-            return DueTime == null || DueTime <= Clock.Now();
-        }
-
         ScheduledCommandPrecondition IScheduledCommand.DeliveryPrecondition
         {
             get

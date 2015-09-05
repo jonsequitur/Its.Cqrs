@@ -41,7 +41,7 @@
   <ItemGroup>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Validation.1.3.0\lib\net45\Its.Validation.dll</HintPath>
+      <HintPath>..\packages\Its.Validation.1.4.1\lib\net45\Its.Validation.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -128,14 +128,18 @@
     <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />
     <Compile Include="ICommandPreconditionVerifier.cs" />
     <Compile Include="IEventMigratingAggregate.cs" />
+    <Compile Include="Scheduling\CommandDelivered.cs" />
+    <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
     <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />
     <Compile Include="Scheduling\CommandScheduler.cs" />
     <Compile Include="Scheduling\CommandScheduler{T}.cs" />
     <Compile Include="Scheduling\ICommandSchedulerActivity.cs" />
     <Compile Include="Scheduling\CommandScheduled.cs" />
+    <Compile Include="Scheduling\PipelineExtensions.cs" />
     <Compile Include="Scheduling\PreconditionNotMetException.cs" />
     <Compile Include="Scheduling\ScheduledCommandExtensions.cs" />
+    <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
     <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />
     <Compile Include="Snapshots\InMemorySnapshotRepository{T}.cs" />
     <Compile Include="Snapshots\ISnapshot.cs" />

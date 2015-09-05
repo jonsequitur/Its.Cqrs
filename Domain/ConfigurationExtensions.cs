@@ -99,37 +99,33 @@ namespace Microsoft.Its.Domain
             return configuration;
         }
 
-        public static Configuration UseCommandSchedulerPipeline<TAggregate>(
+        public static Configuration PrependCommandSchedulerPipeline<TAggregate>(
             this Configuration configuration,
-            Func<ICommandScheduler<TAggregate>, ICommandScheduler<TAggregate>> configure)
+            ScheduledCommandPipelineDelegate<TAggregate> schedule = null,
+            ScheduledCommandPipelineDelegate<TAggregate> deliver = null)
             where TAggregate : class, IEventSourced
         {
             configuration.IsUsingCommandSchedulerPipeline(true);
 
-            var lazyScheduler = new Lazy<ICommandScheduler<TAggregate>>(() =>
+            var pipeline = configuration.Container
+                                        .Resolve<CommandSchedulerPipeline<TAggregate>>();
+
+            if (schedule != null)
             {
-                ICommandScheduler<TAggregate> scheduler = configuration.Container.Resolve<CommandScheduler<TAggregate>>();
+                pipeline.OnSchedule(schedule);
+            }
+            if (deliver != null)
+            {
+                pipeline.OnDeliver(deliver);
+            }
 
-                scheduler = configure(scheduler.Wrap(
-                    schedule: async (cmd, next) =>
-                {
-                    // deliver the command immediately if it's due
-                    if (cmd.IsDue())
-                    {
-                        await configuration.CommandScheduler<TAggregate>().Deliver(cmd);
-                    }
-
-                    // CommandScheduler<T> doesn't support Schedule, so don't call next
-                }));
-
-                return scheduler;
-            });
-
-            configuration.Container.Register(c => lazyScheduler.Value);
+            configuration.Container
+                         .Register(c => pipeline)
+                         .RegisterSingle(c => pipeline.Compose(configuration));
 
             return configuration;
         }
-     
+
         internal static ISnapshotRepository SnapshotRepository(this Configuration configuration)
         {
             return configuration.Container.Resolve<ISnapshotRepository>();

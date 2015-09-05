@@ -99,9 +99,13 @@ namespace Microsoft.Its.Domain.Sql
         {
             var container = configuration.Container;
 
-            container.AddFallbackToDefaultClock();
-
-            container.Register<ISchedulerClockRepository>(c => c.Resolve<SchedulerClockRepository>());
+            container.AddFallbackToDefaultClock()
+                     .Register<ISchedulerClockRepository>(
+                         c => c.Resolve<SchedulerClockRepository>())
+                     .Register<ICommandPreconditionVerifier>(
+                         c => c.Resolve<CommandPreconditionVerifier>())
+                     .Register<ISchedulerClockTrigger>(
+                         c => c.Resolve<SchedulerClockTrigger>());
 
             var schedulerFuncs = new Dictionary<string, Func<dynamic>>();
 
@@ -116,10 +120,10 @@ namespace Microsoft.Its.Domain.Sql
                     AggregateType.EventStreamName(aggregateType),
                     () => container.Resolve(schedulerType));
 
-                initializer.Initialize();
+                initializer.Initialize(configuration);
             });
 
-            container.Register<ISchedulerClockTrigger>(
+            container.Register(
                 c => new SchedulerClockTrigger(
                     c.Resolve<CommandSchedulerDbContext>,
                     async (serializedCommand, result, db) =>

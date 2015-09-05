@@ -118,6 +118,8 @@ namespace Microsoft.Its.Domain.Tests
             public DateTimeOffset? DueTime { get; private set; }
             public ScheduledCommandPrecondition DeliveryPrecondition { get; private set; }
 
+            public ScheduledCommandResult Result { get; set; }
+
             public ICommand<Order> Command
             {
                 get

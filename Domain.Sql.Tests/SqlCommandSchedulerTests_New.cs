@@ -1,7 +1,9 @@
 using System;
-using System.Threading.Tasks;
+using System.Linq;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using NUnit.Framework;
+using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -20,10 +22,22 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 .UseDependency<GetClockName>(c => e => clockName)
                 .UseSqlStorageForScheduledCommands();
 
-        }
-
-        protected override async Task SchedulerWorkComplete()
-        {
+            configuration
+                .PrependCommandSchedulerPipeline<Order>(
+                    schedule: async (scheduling, next) =>
+                    {
+                        using (Log.Enter(() => new { scheduling }))
+                        {
+                            await next(scheduling);
+                        }
+                    },
+                    deliver: async (delivering, next) =>
+                    {
+                        using (Log.Enter(() => new { delivering }))
+                        {
+                            await next(delivering);
+                        }
+                    });
         }
     }
 }

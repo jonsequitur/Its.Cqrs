@@ -101,6 +101,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             return await ClockTrigger.Trigger(query);
         }
 
+        public async Task Trigger(ScheduledCommand scheduled, SchedulerAdvancedResult result, CommandSchedulerDbContext db)
+        {
+            await ClockTrigger.Trigger(scheduled, result, db);
+        }
+
         public void AssociateWithClock(string clockName, string lookup)
         {
             clockRepository.AssociateWithClock(clockName, lookup);

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Security.Principal;
@@ -11,6 +12,7 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
+    [DebuggerStepThrough]
     public abstract class Command : ICommand
     {
         private IPrincipal principal;

@@ -10,24 +10,22 @@ namespace Microsoft.Its.Domain
         CommandScheduler<TAggregate>
         where TAggregate : class, IEventSourced
     {
-        public ImmediateCommandScheduler(IEventSourcedRepository<TAggregate> repository) : base(repository)
+        public ImmediateCommandScheduler(
+            IEventSourcedRepository<TAggregate> repository,
+            ICommandPreconditionVerifier preconditionVerifier = null) : base(repository, preconditionVerifier)
         {
         }
 
         public override async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            var dueTime = scheduledCommand.DueTime;
-
-            var domainNow = Clock.Current.Now();
-
             if (scheduledCommand.DeliveryPrecondition != null)
             {
                 throw new InvalidOperationException("The ImmediateCommandScheduler does not support delivery preconditions.");
             }
 
-            if (dueTime == null || dueTime <= domainNow)
+            if (scheduledCommand.IsDue())
             {
-                await Deliver(scheduledCommand);
+                await Configuration.Current.CommandScheduler<TAggregate>().Deliver(scheduledCommand);
                 return;
             }
 

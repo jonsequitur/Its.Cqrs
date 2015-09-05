@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CSharp.RuntimeBinder;
@@ -18,6 +19,8 @@ namespace Microsoft.Its.Domain
     /// A command that can be applied to an aggregate to trigger some action and record an applicable state change.
     /// </summary>
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+    [DebuggerStepThrough]
+    [DebuggerDisplay("{ToString()}")]
     public abstract class Command<TAggregate> : Command, ICommand<TAggregate>
         where TAggregate : class
     {
@@ -380,6 +383,13 @@ namespace Microsoft.Its.Domain
                                                               .OfType<Event>()
                                                               .Every(e => e.ETag != command.ETag))
                            .WithErrorMessage(string.Format("Command with ETag '{0}' has already been applied.", command.ETag));
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0}.{1}",
+                                 typeof (TAggregate).Name,
+                                 CommandName);
         }
     }
 }

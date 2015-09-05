@@ -14,7 +14,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
     internal static class Storage
     {
         internal static async Task<ScheduledCommand> StoreScheduledCommand<TAggregate>(
-            IScheduledCommand<TAggregate> scheduledCommandEvent,
+            IScheduledCommand<TAggregate> scheduledCommand,
             Func<CommandSchedulerDbContext> createDbContext,
             Func<IScheduledCommand<TAggregate>, CommandSchedulerDbContext, Task<string>> clockNameForEvent) where TAggregate : class, IEventSourced
         {
@@ -25,12 +25,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 var domainTime = Domain.Clock.Now();
 
                 // get or create a clock to schedule the command on
-                var clockName = await clockNameForEvent(scheduledCommandEvent, db);
+                var clockName = await clockNameForEvent(scheduledCommand, db);
                 var schedulerClock = await db.Clocks.SingleOrDefaultAsync(c => c.Name == clockName);
 
                 if (schedulerClock == null)
                 {
-                    Debug.WriteLine(String.Format("SqlCommandScheduler: Creating clock '{0}' @ {1}", clockName, domainTime));
+                    Debug.WriteLine(String.Format("Creating clock '{0}' @ {1}", clockName, domainTime));
 
                     schedulerClock = new Clock
                     {
@@ -44,26 +44,26 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 storedScheduledCommand = new ScheduledCommand
                 {
-                    AggregateId = scheduledCommandEvent.AggregateId,
-                    SequenceNumber = scheduledCommandEvent.SequenceNumber,
+                    AggregateId = scheduledCommand.AggregateId,
+                    SequenceNumber = scheduledCommand.SequenceNumber,
                     AggregateType = AggregateType<TAggregate>.EventStreamName,
-                    SerializedCommand = scheduledCommandEvent.ToJson(),
+                    SerializedCommand = scheduledCommand.ToJson(),
                     CreatedTime = domainTime,
-                    DueTime = scheduledCommandEvent.DueTime,
+                    DueTime = scheduledCommand.DueTime,
                     Clock = schedulerClock
                 };
 
-                if (storedScheduledCommand.ShouldBeDeliveredImmediately() &&
-                    !scheduledCommandEvent.Command.RequiresDurableScheduling)
+                if (scheduledCommand.IsDue(storedScheduledCommand.Clock) &&
+                    !scheduledCommand.Command.RequiresDurableScheduling)
                 {
                     storedScheduledCommand.NonDurable = true;
                     return storedScheduledCommand;
                 }
 
-                Debug.WriteLine(String.Format("SqlCommandScheduler: Storing command '{0}' ({1}:{2}) on clock '{3}'",
-                                              scheduledCommandEvent.Command.CommandName,
-                                              scheduledCommandEvent.AggregateId,
-                                              scheduledCommandEvent.SequenceNumber,
+                Debug.WriteLine(String.Format("Storing command '{0}' ({1}:{2}) on clock '{3}'",
+                                              scheduledCommand.Command.CommandName,
+                                              scheduledCommand.AggregateId,
+                                              scheduledCommand.SequenceNumber,
                                               clockName));
 
                 db.ScheduledCommands.Add(storedScheduledCommand);
@@ -73,6 +73,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     try
                     {
                         db.SaveChanges();
+                        scheduledCommand.Result = new CommandScheduled(scheduledCommand)
+                        {
+                            ClockName = schedulerClock.Name
+                        };
                         break;
                     }
                     catch (DbUpdateException exception)
@@ -126,14 +130,26 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             using (var db = createDbContext())
             {
                 var storedCommand = await db.ScheduledCommands
-                                            .SingleAsync(c => c.AggregateId == scheduledCommand.AggregateId &&
+                                            .SingleOrDefaultAsync(c => c.AggregateId == scheduledCommand.AggregateId &&
                                                               c.SequenceNumber == scheduledCommand.SequenceNumber);
+
+                if (storedCommand == null)
+                {
+                    if (scheduledCommand.Command.RequiresDurableScheduling)
+                    {
+                        // FIX: (UpdateScheduledCommand) throw new ScheduledCommandException(new comm);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
 
                 storedCommand.Attempts ++;
 
-                var result = scheduledCommand.Result();
+                var result = scheduledCommand.Result;
 
-                if (result.WasSuccessful)
+                if (result is CommandSucceeded)
                 {
                     storedCommand.AppliedTime = Domain.Clock.Now();
                 }
@@ -145,13 +161,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     var now = Domain.Clock.Now();
                     if (failure.IsCanceled || failure.RetryAfter == null)
                     {
-                        Debug.WriteLine("SqlCommandScheduler.Deliver (abandoning): " + Description(scheduledCommand, failure));
                         // no further retries
                         storedCommand.FinalAttemptTime = now;
                     }
                     else
                     {
-                        Debug.WriteLine("SqlCommandScheduler.Deliver (scheduling retry): " + Description(scheduledCommand, failure));
                         storedCommand.DueTime = now + failure.RetryAfter;
                     }
 
@@ -159,7 +173,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     {
                         ScheduledCommand = storedCommand,
                         Error = result.IfTypeIs<CommandFailed>()
-                                      .Then(f => f.Exception.ToJson()).ElseDefault()
+                                      .Then(f => f.Exception.ToJson())
+                                      .ElseDefault()
                     });
                 }
 

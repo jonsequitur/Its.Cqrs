@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -22,7 +21,7 @@ namespace Microsoft.Its.Domain.Testing
             this.eventStreams = eventStreams;
         }
 
-        public async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
+        public async Task<bool> IsPreconditionSatisfied(IScheduledCommand scheduledCommand)
         {
             if (scheduledCommand == null)
             {

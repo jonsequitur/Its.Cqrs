@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
-using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
@@ -25,7 +24,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
         private readonly IEventBus eventBus;
-        private readonly string eventStreamName = AggregateType<TAggregate>.EventStreamName;
         private readonly Func<IEventSourcedRepository<TAggregate>> getRepository;
 
         public SqlCommandScheduler(
@@ -75,14 +73,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             using (CommandContext.Establish(scheduledCommand.Command, clock))
             {
-                Debug.WriteLine("SqlCommandScheduler.Deliver: " + Description(scheduledCommand));
-
                 var repository = getRepository();
 
                 await repository.ApplyScheduledCommand(scheduledCommand,
-                                                                    () => commandPreconditionVerifier.VerifyPrecondition(scheduledCommand));
+                                                       commandPreconditionVerifier);
 
-                Activity.OnNext(scheduledCommand.Result());
+                Activity.OnNext(scheduledCommand.Result);
 
                 if (!durable)
                 {
@@ -95,16 +91,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
         }
 
-        public async Task Schedule(IScheduledCommand<TAggregate> scheduledCommandEvent)
+        public async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            Debug.WriteLine("SqlCommandScheduler.Schedule: " + Description(scheduledCommandEvent));
-
             var storedScheduledCommand = await Storage.StoreScheduledCommand(
-                scheduledCommandEvent,
+                scheduledCommand,
                 createCommandSchedulerDbContext,
                 (scheduledCommandEvent1, db) => ClockNameForEvent(this, scheduledCommandEvent1, db));
-
-            var scheduledCommand = storedScheduledCommand.ToScheduledCommand<TAggregate>();
 
             Activity.OnNext(new CommandScheduled(scheduledCommand)
             {
@@ -112,10 +104,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             });
 
             // deliver the command immediately if appropriate
-            if (storedScheduledCommand.ShouldBeDeliveredImmediately())
+            if (scheduledCommand.IsDue(storedScheduledCommand.Clock))
             {
                 // sometimes the command depends on a precondition event that hasn't been saved
-                if (!await commandPreconditionVerifier.VerifyPrecondition(scheduledCommand))
+                if (!await commandPreconditionVerifier.IsPreconditionSatisfied(scheduledCommand))
                 {
                     this.DeliverIfPreconditionIsSatisfiedWithin(
                         TimeSpan.FromSeconds(10),
@@ -124,8 +116,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 }
                 else
                 {
-                    await Deliver(scheduledCommand,
-                                  durable: !storedScheduledCommand.NonDurable);
+                    var scheduler = Configuration.Current.CommandScheduler<TAggregate>();
+                    await scheduler.Deliver(scheduledCommand);
                 }
             }
         }
@@ -145,7 +137,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             IScheduledCommand<TAggregate> scheduledCommandEvent,
             CommandSchedulerDbContext db)
         {
-            // TODO: (ClockNameForEvent) clean this up
+            // FIX: (ClockNameForEvent) remove this
             var clockName =
                 scheduledCommandEvent.IfTypeIs<IHaveExtensibleMetada>()
                                      .Then(e => ((object) e.Metadata)

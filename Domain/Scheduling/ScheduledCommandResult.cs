@@ -27,7 +27,5 @@ namespace Microsoft.Its.Domain
                 return command;
             }
         }
-
-        public abstract bool WasSuccessful { get; }
     }
 }

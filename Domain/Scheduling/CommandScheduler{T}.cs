@@ -9,29 +9,44 @@ namespace Microsoft.Its.Domain
     public class CommandScheduler<TAggregate> : ICommandScheduler<TAggregate> where TAggregate : class, IEventSourced
     {
         protected readonly IEventSourcedRepository<TAggregate> repository;
+        private readonly ICommandPreconditionVerifier preconditionVerifier;
 
-        public CommandScheduler(IEventSourcedRepository<TAggregate> repository)
+        public CommandScheduler(
+            IEventSourcedRepository<TAggregate> repository,
+            ICommandPreconditionVerifier preconditionVerifier = null)
         {
             if (repository == null)
             {
                 throw new ArgumentNullException("repository");
             }
             this.repository = repository;
+            this.preconditionVerifier = preconditionVerifier ??
+                                        Configuration.Current.Container.Resolve<ICommandPreconditionVerifier>();
         }
 
-        public virtual Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
+        public virtual async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            throw new NotSupportedException("Schedule is not supported.");
+            if (scheduledCommand.IsDue() &&
+                await VerifyPrecondition(scheduledCommand))
+            {
+                await Configuration.Current.CommandScheduler<TAggregate>().Deliver(scheduledCommand);
+                return;
+            }
+
+            if (scheduledCommand.Result == null)
+            {
+                throw new NotSupportedException("Non-immediate scheduling is not supported.");
+            }
         }
 
         public virtual async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            // FIX: (Deliver) add a precondition check here
+            await repository.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
+        }
 
-            using (CommandContext.Establish(scheduledCommand.Command))
-            {
-                await repository.ApplyScheduledCommand(scheduledCommand);
-            }
+        protected async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
+        {
+            return await preconditionVerifier.IsPreconditionSatisfied(scheduledCommand);
         }
     }
 }

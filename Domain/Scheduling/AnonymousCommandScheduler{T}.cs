@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
+    [DebuggerStepThrough]
     internal class AnonymousCommandScheduler<TAggregate> : ICommandScheduler<TAggregate> where TAggregate : IEventSourced
     {
         private readonly Func<IScheduledCommand<TAggregate>, Task> schedule;

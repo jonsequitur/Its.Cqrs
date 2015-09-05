@@ -48,7 +48,7 @@
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Validation.1.3.0\lib\net45\Its.Validation.dll</HintPath>
+      <HintPath>..\packages\Its.Validation.1.4.1\lib\net45\Its.Validation.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -109,7 +109,7 @@
     <Compile Include="EventHandlerProgress.cs" />
     <Compile Include="EventHandlerProgressCalculator.cs" />
     <Compile Include="EventStoreDatabaseInitializer{T}.cs" />
-    <Compile Include="ISchedulerPipelineInitializer.cs" />
+    <Compile Include="CommandScheduler\ISchedulerPipelineInitializer.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.Designer.cs">
       <DependentUpon>201407120005564_v0_8_2.cs</DependentUpon>
@@ -166,7 +166,7 @@
     <Compile Include="ReadModelUpdate.cs" />
     <Compile Include="ReservedValue.cs" />
     <Compile Include="CommandScheduler\ScheduledCommand.cs" />
-    <Compile Include="SchedulerPipelineInitializer{T}.cs" />
+    <Compile Include="CommandScheduler\SchedulerPipelineInitializer{T}.cs" />
     <Compile Include="Sensors.cs" />
     <Compile Include="SqlReservationService.cs" />
     <Compile Include="StorableEvent.cs" />

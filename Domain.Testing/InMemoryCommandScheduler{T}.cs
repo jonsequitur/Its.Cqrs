@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Its.Domain.Testing
 {
     public class InMemoryCommandScheduler<TAggregate> :
-        CommandScheduler<TAggregate>, 
+        ImmediateCommandScheduler<TAggregate>,
         IEventHandler,
         IEventHandlerBinder
         where TAggregate : class, IEventSourced
@@ -21,11 +21,13 @@ namespace Microsoft.Its.Domain.Testing
         private readonly ManualResetEventSlim resetEvent = new ManualResetEventSlim();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="InMemoryCommandScheduler{TAggregate}"/> class.
+        /// Initializes a new instance of the <see cref="InMemoryCommandScheduler{TAggregate}" /> class.
         /// </summary>
         /// <param name="repository">The repository.</param>
+        /// <param name="preconditionVerifier">The precondition verifier.</param>
         /// <exception cref="System.ArgumentNullException">repository</exception>
-        public InMemoryCommandScheduler(IEventSourcedRepository<TAggregate> repository) : base(repository)
+        public InMemoryCommandScheduler(IEventSourcedRepository<TAggregate> repository, ICommandPreconditionVerifier preconditionVerifier = null) : 
+            base(repository, preconditionVerifier)
         {
             consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e => Schedule(e).Wait());
         }
@@ -81,12 +83,6 @@ namespace Microsoft.Its.Domain.Testing
 
                                       return Disposable.Empty;
                                   });
-        }
-
-        private async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
-        {
-            var verifier = Configuration.Current.Container.Resolve<ICommandPreconditionVerifier>();
-            return await verifier.VerifyPrecondition(scheduledCommand);
         }
 
         /// <summary>

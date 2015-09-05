@@ -14,19 +14,26 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="configuration">A domain configuration instance.</param>
         /// <returns>The modified domain configuration instance.</returns>
         public static Configuration TriggerSqlCommandSchedulerWithVirtualClock(this Configuration configuration)
-        {
-            var scheduler = configuration.SqlCommandScheduler();
+        {   
+            // FIX: (TriggerSqlCommandSchedulerWithVirtualClock) make sure this works with pipeline model
+            if (configuration.IsUsingSqlCommandScheduling())
+            {
+                var scheduler = configuration.SqlCommandScheduler();
 
-            var subscription = scheduler.Activity
-                                        .OfType<CommandScheduled>()
-                                        .Subscribe(scheduled =>
-                                        {
-                                            Clock.Current
-                                                 .IfTypeIs<VirtualClock>()
-                                                 .ThenDo(clock => { clock.OnAdvanceTriggerSchedulerClock(scheduled.ClockName); });
-                                        });
+                var subscription = scheduler.Activity
+                                            .OfType<CommandScheduled>()
+                                            .Subscribe(scheduled =>
+                                            {
+                                                Clock.Current
+                                                     .IfTypeIs<VirtualClock>()
+                                                     .ThenDo(clock =>
+                                                     {
+                                                         clock.OnAdvanceTriggerSchedulerClock(scheduled.ClockName);
+                                                     });
+                                            });
 
-            configuration.RegisterForDisposal(subscription);
+                configuration.RegisterForDisposal(subscription);
+            }
 
             return configuration;
         }

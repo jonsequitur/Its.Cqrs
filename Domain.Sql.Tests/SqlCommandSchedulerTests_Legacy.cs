@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using FluentAssertions;
-using Its.Log.Instrumentation;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
@@ -163,13 +162,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             sqlCommandScheduler.GetClockName = e => clockName;
             clockTrigger = sqlCommandScheduler;
             clockRepository = sqlCommandScheduler;
-
-            disposables.Add(sqlCommandScheduler.Activity.Subscribe(s => Console.WriteLine("SqlCommandScheduler: " + s.ToLogString())));
-        }
-
-        protected override async Task SchedulerWorkComplete()
-        {
-            await sqlCommandScheduler.Done(clockName);
         }
     }
 }

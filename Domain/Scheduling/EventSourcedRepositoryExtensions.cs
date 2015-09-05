@@ -21,19 +21,25 @@ namespace Microsoft.Its.Domain
         public static async Task ApplyScheduledCommand<TAggregate>(
             this IEventSourcedRepository<TAggregate> repository,
             IScheduledCommand<TAggregate> scheduled,
-            Func<Task<bool>> verifyPrecondition = null)
+            ICommandPreconditionVerifier preconditionVerifier = null)
             where TAggregate : class, IEventSourced
         {
             TAggregate aggregate = null;
             Exception exception = null;
 
+            if (scheduled.Result is CommandDelivered)
+            {
+                throw new InvalidOperationException("Command already applied.");
+            }
+
             try
             {
-                if (verifyPrecondition != null && !await verifyPrecondition())
+                if (preconditionVerifier != null &&
+                    !await preconditionVerifier.IsPreconditionSatisfied(scheduled))
                 {
                     await FailScheduledCommand(repository,
                                                scheduled,
-                                               new PreconditionNotMetException());
+                                               new PreconditionNotMetException(scheduled.DeliveryPrecondition));
                     return;
                 }
 
@@ -62,7 +68,7 @@ namespace Microsoft.Its.Domain
 
                 await repository.Save(aggregate);
 
-                scheduled.Result(new CommandSucceeded(scheduled));
+                scheduled.Result = new CommandSucceeded(scheduled);
 
                 return;
             }
@@ -119,7 +125,7 @@ namespace Microsoft.Its.Domain
                 else if (scheduled.Command is ConstructorCommand<TAggregate>)
                 {
                     failure.Cancel();
-                    scheduled.Result(failure);
+                    scheduled.Result = failure;
                     return;
                 }
             }
@@ -131,7 +137,7 @@ namespace Microsoft.Its.Domain
                 failure.Retry(TimeSpan.FromMinutes(Math.Pow(failure.NumberOfPreviousAttempts + 1, 2)));
             }
 
-            scheduled.Result(failure);
+            scheduled.Result = failure;
         }
     }
 }

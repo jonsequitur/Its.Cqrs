@@ -109,7 +109,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public async Task Advancing_the_clock_blocks_until_triggered_commands_on_the_SqllCommandScheduler_are_completed()
+        public async Task Advancing_the_clock_blocks_until_triggered_commands_on_the_SqlCommandScheduler_are_completed()
         {
             var configuration = new Configuration()
                 .UseInMemoryEventStore()

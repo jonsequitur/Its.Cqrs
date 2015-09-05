@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using Microsoft.Its.Domain.Serialization;
+using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
@@ -12,6 +14,7 @@ namespace Microsoft.Its.Domain
     /// </summary>
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
     [EventName("Scheduled")]
+    [DebuggerDisplay("{ToString()}")]
     public class CommandScheduled<TAggregate> :
         Event<TAggregate>,
         IScheduledCommand<TAggregate>
@@ -27,10 +30,22 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public ScheduledCommandPrecondition DeliveryPrecondition { get; set; }
 
-        internal ScheduledCommandResult Result { get; set; }
+        public ScheduledCommandResult Result { get; set; }
 
         public override void Update(TAggregate aggregate)
         {
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0}{1}{2}",
+                                 Command,
+                                 DueTime.IfNotNull()
+                                        .Then(due => " @ " + due)
+                                        .ElseDefault(),
+                                 DeliveryPrecondition.IfNotNull()
+                                                     .Then(p => " depends on " + p)
+                                                     .ElseDefault());
         }
     }
 }
