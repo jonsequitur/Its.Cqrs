@@ -17,7 +17,7 @@ namespace Microsoft.Its.Domain
                     type.GetGenericTypeDefinition() == typeof(ICommandScheduler<>))
                 {
                     var aggregateType = type.GetGenericArguments().First();
-                    var schedulerType = typeof (ImmediateCommandScheduler<>).MakeGenericType(aggregateType);
+                    var schedulerType = typeof (CommandScheduler<>).MakeGenericType(aggregateType);
 
                     return c => c.Resolve(schedulerType);
                 }

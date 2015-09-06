@@ -35,6 +35,12 @@ namespace Microsoft.Its.Domain
         internal TimeSpan? RetryAfter { get; private set; }
 
         public int NumberOfPreviousAttempts { get; set; }
+//        {
+//            get
+//            {
+                // FIX: (NumberOfPreviousAttempts)   return ScheduledCommand.NumberOfPreviousAttempts;
+//            }
+//        }
 
         internal static CommandFailed Create<TCommand>(
             TCommand command,

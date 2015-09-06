@@ -129,7 +129,7 @@
     <Compile Include="ICommandPreconditionVerifier.cs" />
     <Compile Include="IEventMigratingAggregate.cs" />
     <Compile Include="Scheduling\CommandDelivered.cs" />
-    <Compile Include="Scheduling\CommandSchedulerPipeline.cs" />
+    <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
     <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
     <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />

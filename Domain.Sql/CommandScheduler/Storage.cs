@@ -179,26 +179,5 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 await db.SaveChangesAsync();
             }
         }
-
-        private static string Description<TAggregate>(
-            IScheduledCommand<TAggregate> scheduledCommand,
-            CommandFailed failure) where TAggregate : IEventSourced
-        {
-            return new
-            {
-                Name = scheduledCommand.Command.CommandName,
-                failure.IsCanceled,
-                failure.NumberOfPreviousAttempts,
-                failure.RetryAfter,
-                failure.Exception,
-                DueTime = scheduledCommand.DueTime
-                                          .IfNotNull()
-                                          .Then(t => t.ToString("O"))
-                                          .Else(() => "[null]"),
-                Clocks = Domain.Clock.Current.ToString(),
-                scheduledCommand.AggregateId,
-                scheduledCommand.ETag
-            }.ToString();
-        }
     }
 }

@@ -66,34 +66,6 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task Scheduled_commands_are_reserialized_and_invoked_by_a_command_scheduler()
-        {
-            // arrange
-            var bus = new FakeEventBus();
-            var shipmentId = Any.AlphanumericString(10);
-            var repository = new InMemoryEventSourcedRepository<Order>(bus: bus);
-
-            var scheduler = new InMemoryCommandScheduler<Order>(repository);
-            bus.Subscribe(scheduler);
-            var order = CreateOrder();
-
-            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
-            {
-                ShipmentId = shipmentId
-            });
-            await repository.Save(order);
-
-            // act
-            VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
-
-            //assert 
-            order = await repository.GetLatest(order.Id);
-            var lastEvent = order.Events().Last();
-            lastEvent.Should().BeOfType<Order.Shipped>();
-            order.ShipmentId.Should().Be(shipmentId, "Properties should be transferred correctly from the serialized command");
-        }
-
-        [Test]
         public async Task InMemoryCommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
         {
             // arrange

@@ -58,19 +58,5 @@ namespace Microsoft.Its.Domain
             handlers.ForEach(handler => disposable.Add(bus.Subscribe(handler)));
             return disposable;
         }
-
-        public static IDisposable ScheduleCommandsWith<TAggregate>(
-            this IEventBus bus,
-            ICommandScheduler<TAggregate> scheduler)
-            where TAggregate : class, IEventSourced
-        {
-            var consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(
-                e =>
-                {
-                    scheduler.Schedule(e).Wait();
-                });
-
-            return bus.Subscribe(consequenter);
-        }
     }
 }

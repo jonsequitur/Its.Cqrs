@@ -10,7 +10,9 @@ namespace Microsoft.Its.Domain
     /// A basic command scheduler implementation that can be used as the basis for composing command scheduling behaviors.
     /// </summary>
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
-    public class CommandScheduler<TAggregate> : ICommandScheduler<TAggregate> where TAggregate : class, IEventSourced
+    public class CommandScheduler<TAggregate> :
+        ICommandScheduler<TAggregate>
+        where TAggregate : class, IEventSourced
     {
         protected readonly IEventSourcedRepository<TAggregate> repository;
         private readonly ICommandPreconditionVerifier preconditionVerifier;

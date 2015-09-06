@@ -28,14 +28,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 schedule: async (cmd, next) => await Schedule(cmd, next),
                 deliver: async (cmd, next) => await Deliver(cmd, next));
 
-            var consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e =>
-            {
-                Task.Run(() => configuration.CommandScheduler<TAggregate>().Schedule(e)).Wait();
-            });
-
-            var subscription = configuration.EventBus.Subscribe(consequenter);
-
-            configuration.RegisterForDisposal(subscription);
+            configuration.SubscribeCommandSchedulerToEventBusFor<TAggregate>();
         }
 
         private async Task Schedule(IScheduledCommand<TAggregate> cmd, Func<IScheduledCommand<TAggregate>, Task> next)
@@ -50,14 +43,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 var preconditionVerifier = Configuration.Current.Container.Resolve<ICommandPreconditionVerifier>();
 
                 // sometimes the command depends on a precondition event that hasn't been saved
-                if (!await preconditionVerifier.IsPreconditionSatisfied(cmd))
-                {
-                    //                    this.DeliverIfPreconditionIsSatisfiedWithin(
-                    //                        TimeSpan.FromSeconds(10),
-                    //                        cmd,
-                    //                        eventBus);
-                }
-                else
+                if (await preconditionVerifier.IsPreconditionSatisfied(cmd))
                 {
                     await Configuration.Current.CommandScheduler<TAggregate>().Deliver(cmd);
                 }
