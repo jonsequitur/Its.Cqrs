@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 .UseSqlStorageForScheduledCommands();
 
             configuration
-                .PrependCommandSchedulerPipeline<Order>(
+                .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (scheduling, next) =>
                     {
                         using (Log.Enter(() => new { scheduling }))

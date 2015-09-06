@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -7,8 +10,8 @@ namespace Microsoft.Its.Domain
     {
         public static ICommandScheduler<TAggregate> Wrap<TAggregate>(
             this ICommandScheduler<TAggregate> scheduler,
-            ScheduledCommandPipelineDelegate<TAggregate> schedule = null,
-            ScheduledCommandPipelineDelegate<TAggregate> deliver = null)
+            ScheduledCommandInterceptor<TAggregate> schedule = null,
+            ScheduledCommandInterceptor<TAggregate> deliver = null)
             where TAggregate : IEventSourced
         {
             schedule = schedule ?? (async (c, next) => await next(c));
@@ -27,6 +30,25 @@ namespace Microsoft.Its.Domain
             return new AnonymousCommandScheduler<TAggregate>(
                 schedule,
                 deliver);
+        }
+
+        internal static ScheduledCommandInterceptor<TAggregate> Compose<TAggregate>(
+            this IEnumerable<ScheduledCommandInterceptor<TAggregate>> pipeline)
+            where TAggregate : IEventSourced
+        {
+            var delegates = pipeline.OrEmpty().ToArray();
+
+            if (!delegates.Any())
+            {
+                return null;
+            }
+
+            return delegates.Aggregate(
+                (first, second) =>
+                    (async (command, next) =>
+                    await first(command,
+                                async c => await second(c,
+                                                        async cc => await next(cc)))));
         }
     }
 }

@@ -233,7 +233,7 @@ namespace Microsoft.Its.Domain.Tests
             var scheduled = false;
             var configuration = new Configuration()
                 .UseInMemoryEventStore()
-                .PrependCommandSchedulerPipeline<Order>(
+                .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
                         scheduled = true;
@@ -252,7 +252,7 @@ namespace Microsoft.Its.Domain.Tests
             var delivered = false;
             var configuration = new Configuration()
                 .UseInMemoryEventStore()
-                .PrependCommandSchedulerPipeline<Order>(
+                .AddToCommandSchedulerPipeline<Order>(
                     deliver: async (cmd, next) => { delivered = true; });
 
             var scheduler = configuration.CommandScheduler<Order>();
@@ -269,14 +269,14 @@ namespace Microsoft.Its.Domain.Tests
 
             var configuration = new Configuration()
                 .UseInMemoryEventStore()
-                .PrependCommandSchedulerPipeline<Order>(
+                .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
                         checkpoints.Add("two");
                         await next(cmd);
                         checkpoints.Add("three");
                     })
-                .PrependCommandSchedulerPipeline<Order>(
+                .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
                         checkpoints.Add("one");
@@ -298,7 +298,7 @@ namespace Microsoft.Its.Domain.Tests
 
             var configuration = new Configuration()
                 .UseInMemoryEventStore()
-                .PrependCommandSchedulerPipeline<Order>(
+                .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
                         checkpoints.Add("one");
@@ -308,7 +308,7 @@ namespace Microsoft.Its.Domain.Tests
 
             var scheduler = configuration.CommandScheduler<Order>();
 
-            configuration.PrependCommandSchedulerPipeline<Order>(
+            configuration.AddToCommandSchedulerPipeline<Order>(
                 schedule: async (cmd, next) =>
                 {
                     checkpoints.Add("two");

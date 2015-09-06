@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         public void Initialize(Configuration configuration)
         {
-            configuration.PrependCommandSchedulerPipeline<TAggregate>(
+            configuration.AddToCommandSchedulerPipeline<TAggregate>(
                 schedule: async (cmd, next) => await Schedule(cmd, next),
                 deliver: async (cmd, next) => await Deliver(cmd, next));
 

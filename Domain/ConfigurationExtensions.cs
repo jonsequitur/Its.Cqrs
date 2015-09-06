@@ -99,10 +99,10 @@ namespace Microsoft.Its.Domain
             return configuration;
         }
 
-        public static Configuration PrependCommandSchedulerPipeline<TAggregate>(
+        public static Configuration AddToCommandSchedulerPipeline<TAggregate>(
             this Configuration configuration,
-            ScheduledCommandPipelineDelegate<TAggregate> schedule = null,
-            ScheduledCommandPipelineDelegate<TAggregate> deliver = null)
+            ScheduledCommandInterceptor<TAggregate> schedule = null,
+            ScheduledCommandInterceptor<TAggregate> deliver = null)
             where TAggregate : class, IEventSourced
         {
             configuration.IsUsingCommandSchedulerPipeline(true);
