@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Its.Domain.Testing
 {
     public class InMemoryCommandScheduler<TAggregate> :
-        ImmediateCommandScheduler<TAggregate>,
+        CommandScheduler<TAggregate>,
         IEventHandler,
         IEventHandlerBinder
         where TAggregate : class, IEventSourced

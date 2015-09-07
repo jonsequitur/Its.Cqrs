@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reactive.Linq;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Recipes;
@@ -49,6 +50,37 @@ namespace Microsoft.Its.Domain
                     await first(command,
                                 async c => await second(c,
                                                         async cc => await next(cc)))));
+        }
+
+        internal static async Task DeliverImmediatelyOnConfiguredScheduler<TAggregate>(
+            IScheduledCommand<TAggregate> command)
+            where TAggregate : class, IEventSourced
+        {
+            var scheduler = Configuration.Current.CommandScheduler<TAggregate>();
+            await scheduler.Deliver(command);
+        }
+
+        internal static void DeliverIfPreconditionIsSatisfiedSoon<TAggregate>(
+            IScheduledCommand<TAggregate> scheduledCommand,
+            int timeoutInMilliseconds = 10000)
+            where TAggregate : class, IEventSourced
+        {
+            var eventBus = Configuration.Current.EventBus;
+
+            var timeout = TimeSpan.FromMilliseconds(timeoutInMilliseconds);
+
+            eventBus.Events<IEvent>()
+                    .Where(
+                        e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
+                             e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
+                    .Take(1)
+                    .Timeout(timeout)
+                    .Subscribe(
+                        e =>
+                        {
+                            Task.Run(() => DeliverImmediatelyOnConfiguredScheduler(scheduledCommand)).Wait();
+                        },
+                        onError: ex => { eventBus.PublishErrorAsync(new EventHandlingError(ex)); });
         }
     }
 }

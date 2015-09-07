@@ -37,7 +37,10 @@ namespace Microsoft.Its.Domain
                 {
                     deliveryDependsOn.IfTypeIs<Event>()
                                      .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N"))
-                                     .ElseDo(() => { throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends."); });
+                                     .ElseDo(() =>
+                                     {
+                                         throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends.");
+                                     });
                 }
 
                 precondition = new ScheduledCommandPrecondition

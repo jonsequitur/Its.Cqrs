@@ -175,7 +175,6 @@
     <Compile Include="Scheduling\CommandSchedulerExtensions.cs" />
     <Compile Include="Scheduling\EventSourcedRepositoryExtensions.cs" />
     <Compile Include="Scheduling\ICommandScheduler.cs" />
-    <Compile Include="Scheduling\ImmediateCommandScheduler{T}.cs" />
     <Compile Include="Scheduling\IScheduledCommand.cs" />
     <Compile Include="Scheduling\ScheduledCommandException.cs" />
     <Compile Include="Scheduling\CommandFailed.cs" />

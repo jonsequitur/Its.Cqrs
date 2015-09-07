@@ -7,7 +7,6 @@ using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -159,9 +158,9 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void If_Schedule_is_dependent_on_an_event_with_no_aggregate_id_then_it_throws()
         {
-            var scheduler = new ImmediateCommandScheduler<CustomerAccount>(
+            var scheduler = new CommandScheduler<CustomerAccount>(
                 new InMemoryEventSourcedRepository<CustomerAccount>(),
-                new CommandPreconditionVerifier());
+                new InMemoryCommandPreconditionVerifier());
 
             Action schedule = () => scheduler.Schedule(
                 Any.Guid(),
@@ -180,10 +179,12 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void If_Schedule_is_dependent_on_an_event_with_no_ETag_then_it_sets_one()
+        public async Task If_Schedule_is_dependent_on_an_event_with_no_ETag_then_it_sets_one()
         {
-            var scheduler = new ImmediateCommandScheduler<CustomerAccount>(new InMemoryEventSourcedRepository<CustomerAccount>(),
-                                                                           new CommandPreconditionVerifier());
+            var scheduler = new CommandScheduler<CustomerAccount>(
+                new InMemoryEventSourcedRepository<CustomerAccount>(),
+                new InMemoryCommandPreconditionVerifier())
+                .WithInMemoryDeferredScheduling();
 
             var created = new Order.Created
             {
@@ -191,7 +192,7 @@ namespace Microsoft.Its.Domain.Tests
                 ETag = null
             };
 
-            scheduler.Schedule(
+            await scheduler.Schedule(
                 Any.Guid(),
                 new SendOrderConfirmationEmail(Any.Word()),
                 deliveryDependsOn: created);

@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="clockName">The name of the clock on which the commands are scheduled.</param>
         /// <returns></returns>
         public static async Task Done(
-            this ISchedulerClockTrigger scheduler, 
+            this ISchedulerClockTrigger scheduler,
             string clockName = null)
         {
             clockName = clockName ?? SqlCommandScheduler.DefaultClockName;
@@ -45,8 +45,8 @@ namespace Microsoft.Its.Domain.Testing
                     {
                         Debug.WriteLine(string.Format("Triggering {0}:{1}", scheduledCommand.AggregateId, scheduledCommand.SequenceNumber));
                         await scheduler.Trigger(
-                            scheduledCommand, 
-                            new SchedulerAdvancedResult(), 
+                            scheduledCommand,
+                            new SchedulerAdvancedResult(),
                             db);
                     }
 
@@ -57,6 +57,31 @@ namespace Microsoft.Its.Domain.Testing
             Debug.WriteLine(string.Format("Done waiting for clock {0}", clockName));
         }
 
-      
+        public static ICommandScheduler<TAggregate> WithInMemoryDeferredScheduling<TAggregate>(
+            this ICommandScheduler<TAggregate> scheduler)
+            where TAggregate : class, IEventSourced
+        {
+            return scheduler.Wrap(async (command, next) =>
+            {
+                if (command.Result == null)
+                {
+                    command.Result = new CommandScheduled(command);
+
+                    // deliver the command immediately if appropriate
+                    if (command.IsDue())
+                    {
+                        var preconditionVerifier = Configuration.Current.Container.Resolve<ICommandPreconditionVerifier>();
+
+                        // sometimes the command depends on a precondition event that hasn't been saved
+                        if (!await preconditionVerifier.IsPreconditionSatisfied(command))
+                        {
+                            Domain.CommandScheduler.DeliverIfPreconditionIsSatisfiedSoon(command);
+                        }
+                    }
+                }
+
+                await next(command);
+            });
+        }
     }
 }

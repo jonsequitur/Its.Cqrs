@@ -8,17 +8,13 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Testing
 {
-    internal class InMemoryCommandPreconditionVerifier : ICommandPreconditionVerifier
+    public class InMemoryCommandPreconditionVerifier : ICommandPreconditionVerifier
     {
         private readonly ConcurrentDictionary<string, IEventStream> eventStreams;
 
-        public InMemoryCommandPreconditionVerifier(ConcurrentDictionary<string, IEventStream> eventStreams)
+        public InMemoryCommandPreconditionVerifier(ConcurrentDictionary<string, IEventStream> eventStreams = null)
         {
-            if (eventStreams == null)
-            {
-                throw new ArgumentNullException("eventStreams");
-            }
-            this.eventStreams = eventStreams;
+            this.eventStreams = eventStreams ?? new ConcurrentDictionary<string, IEventStream>();
         }
 
         public async Task<bool> IsPreconditionSatisfied(IScheduledCommand scheduledCommand)

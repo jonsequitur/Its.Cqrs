@@ -50,7 +50,7 @@ namespace Microsoft.Its.Domain
 
             if (scheduledCommand.Result == null)
             {
-                throw new NotSupportedException("Non-immediate scheduling is not supported.");
+                throw new NotSupportedException("Deferred scheduling is not supported.");
             }
         }
 
