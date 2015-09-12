@@ -93,13 +93,7 @@ namespace Microsoft.Its.Domain.Sql
             // add an EventHandlingError entry as well
             EventHandlingError sqlError = CreateEventHandlingError((dynamic) error);
 
-            var errorText = new
-            {
-                error.Exception,
-                Event = sqlError.SerializedEvent
-            }.ToJson();
-
-            log.Write(() => errorText);
+            log.Write(() => new {error.Exception, sqlError.SerializedEvent});
 
             using (var transaction = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var db = createDbContext())
@@ -110,6 +104,7 @@ namespace Microsoft.Its.Domain.Sql
 
                 string readModelInfoName = null;
 
+                var exceptionJson = error.Exception.ToDiagnosticJson();
                 if (handler != null)
                 {
                     // update the affected ReadModelInfo
@@ -122,11 +117,11 @@ namespace Microsoft.Its.Domain.Sql
                         dbSet.Add(readModelInfo);
                     }
 
-                    readModelInfo.Error = errorText;
+                    readModelInfo.Error = exceptionJson; 
                     readModelInfo.FailedOnEventId = sqlError.OriginalId;
                 }
 
-                sqlError.Error = error.Exception.ToJson();
+                sqlError.Error = exceptionJson;
                 sqlError.Handler = readModelInfoName;
                 db.Set<EventHandlingError>().Add(sqlError);
 

@@ -1,5 +1,5 @@
 install:
-  - nuget restore
+  - nuget-restore.cmd
 
 configuration:
   - Release
