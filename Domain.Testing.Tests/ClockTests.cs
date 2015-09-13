@@ -82,13 +82,16 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public async Task Advancing_the_clock_blocks_until_triggered_commands_on_the_InMemoryCommandScheduler_are_completed()
+        public async Task Advancing_the_clock_blocks_until_triggered_commands_on_the_command_scheduler_are_completed()
         {
             VirtualClock.Start();
 
-            var repository = new InMemoryEventSourcedRepository<Order>();
+            var configuration = new Configuration()
+                .UseInMemoryCommandScheduling()
+                .UseInMemoryEventStore();
 
-            var scheduler = new InMemoryCommandScheduler<Order>(repository);
+            var scheduler = configuration.CommandScheduler<Order>();
+            var repository = configuration.Repository<Order>();
 
             var aggregateId = Any.Guid();
             await scheduler.Schedule(new CommandScheduled<Order>

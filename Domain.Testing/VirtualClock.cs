@@ -149,7 +149,6 @@ namespace Microsoft.Its.Domain.Testing
             Func<IScheduler, IScheduledCommand<TAggregate>, IDisposable> func)
             where TAggregate : IEventSourced
         {
-            // FIX: (Schedule) make this an instance method
             var scheduler = Clock.Current.IfTypeIs<VirtualClock>()
                                  .Then(c => (IScheduler) c.Scheduler)
                                  .Else(() => TaskPoolScheduler.Default);

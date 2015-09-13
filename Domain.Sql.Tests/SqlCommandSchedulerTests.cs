@@ -4,7 +4,6 @@
 using System;
 using System.Data;
 using System.Data.Entity.Infrastructure;
-using System.Diagnostics;
 using System.Reactive.Linq;
 using FluentAssertions;
 using Its.Log.Instrumentation;

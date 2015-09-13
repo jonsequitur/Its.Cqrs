@@ -100,7 +100,6 @@
     <Compile Include="EventExtensions.cs" />
     <Compile Include="EventSourcedComparer.cs" />
     <Compile Include="FakeEventBus.cs" />
-    <Compile Include="InMemoryCommandScheduler{T}.cs" />
     <Compile Include="InMemoryEventSourcedRepository{T}.cs" />
     <Compile Include="InMemoryEventStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

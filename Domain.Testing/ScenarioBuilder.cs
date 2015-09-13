@@ -190,7 +190,7 @@ namespace Microsoft.Its.Domain.Testing
 
                 if (useInMemoryCommandScheduling)
                 {
-                    var subscriptionType = typeof (InMemoryCommandScheduler<>).MakeGenericType(t);
+                    var subscriptionType = typeof (ICommandScheduler<>).MakeGenericType(t);
                     handler = container.Resolve(subscriptionType);
                 }
                 else
