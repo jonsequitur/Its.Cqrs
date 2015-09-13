@@ -38,14 +38,17 @@ namespace Microsoft.Its.Domain
 
         public override string ToString()
         {
-            return string.Format("{0}{1}{2}",
+            return string.Format("{0}{1}{2}{3}",
                                  Command,
                                  DueTime.IfNotNull()
-                                        .Then(due => " @ " + due)
+                                        .Then(due => " due " + due)
                                         .ElseDefault(),
                                  DeliveryPrecondition.IfNotNull()
-                                                     .Then(p => " depends on " + p)
-                                                     .ElseDefault());
+                                                     .Then(p => ", depends on " + p)
+                                                     .ElseDefault(),
+                                 Result.IfNotNull()
+                                       .Then(r => ", " + r)
+                                       .ElseDefault());
         }
     }
 }

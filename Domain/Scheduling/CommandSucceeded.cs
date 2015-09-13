@@ -12,5 +12,10 @@ namespace Microsoft.Its.Domain
         public CommandSucceeded(IScheduledCommand command) : base(command)
         {
         }
+
+        public override string ToString()
+        {
+            return "Succeeded";
+        }
     }
 }

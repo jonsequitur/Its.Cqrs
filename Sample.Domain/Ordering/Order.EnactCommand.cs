@@ -2,8 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain;
 using Its.Validation;
 using Sample.Domain.Ordering.Commands;
@@ -196,6 +198,8 @@ namespace Sample.Domain.Ordering
         {
             public async Task HandleScheduledCommandException(Order order, CommandFailed<Ship> command)
             {
+                Debug.WriteLine("OrderShipCommandHandler.HandleScheduledCommandException");
+
                 if (command.Exception is CommandValidationException)
                 {
                     if (order.IsCancelled)
@@ -212,6 +216,8 @@ namespace Sample.Domain.Ordering
 
             public async Task EnactCommand(Order order, Ship command)
             {
+                   Debug.WriteLine("OrderShipCommandHandler.EnactCommand");
+
                 order.RecordEvent(new Shipped
                 {
                     ShipmentId = command.ShipmentId

@@ -98,7 +98,7 @@ namespace Microsoft.Its.Domain.Tests
 
             // act
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
-
+            
             //assert 
             order = await scenario.GetLatestAsync<Order>();
             var lastEvent = order.Events().Last();
@@ -181,10 +181,10 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task If_Schedule_is_dependent_on_an_event_with_no_ETag_then_it_sets_one()
         {
-            var scheduler = new CommandScheduler<CustomerAccount>(
-                new InMemoryEventSourcedRepository<CustomerAccount>(),
-                new InMemoryCommandPreconditionVerifier())
-                .WithInMemoryDeferredScheduling();
+            var scheduler = new Configuration()
+                .UseInMemoryEventStore()
+                .UseInMemoryCommandScheduling()
+                .CommandScheduler<CustomerAccount>();
 
             var created = new Order.Created
             {

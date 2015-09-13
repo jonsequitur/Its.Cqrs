@@ -54,7 +54,7 @@
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Validation.1.4.1\lib\net45\Its.Validation.dll</HintPath>
+      <HintPath>..\packages\Its.Validation.1.4.3\lib\net45\Its.Validation.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Its.Log, Version=2.7.0.0, Culture=neutral, PublicKeyToken=76490b1978d4e7b6, processorArchitecture=MSIL">
@@ -109,7 +109,6 @@
     <Compile Include="InMemoryEventSourcedRepositoryTests.cs" />
     <Compile Include="InMemoryReservationServiceTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ScenarioBuilderCommandSchedulingTests.cs" />
     <Compile Include="ScenarioBuilderTests.cs" />
     <Compile Include="ScenarioBuilderWithInMemoryEventStoreTests.cs" />
     <Compile Include="ScenarioBuilderWithSqlEventStoreTests.cs" />

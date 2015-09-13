@@ -45,7 +45,7 @@
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Validation.1.4.1\lib\net45\Its.Validation.dll</HintPath>
+      <HintPath>..\packages\Its.Validation.1.4.3\lib\net45\Its.Validation.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -90,10 +90,12 @@
     <Compile Include="IEventStream.cs" />
     <Compile Include="IgnoreCommandScheduling{T}.cs" />
     <Compile Include="InMemoryCommandPreconditionVerifier.cs" />
+    <Compile Include="InMemoryCommandSchedulerPipelineInitializer{T}.cs" />
     <Compile Include="InMemoryReservationService.cs" />
     <Compile Include="IReservationQuery.cs" />
     <Compile Include="IStoredEvent.cs" />
     <Compile Include="SqlReservationQuery.cs" />
+    <Compile Include="TaskExtensions.cs" />
     <Compile Include="TestConfigurationExtensions.cs" />
     <Compile Include="EventExtensions.cs" />
     <Compile Include="EventSourcedComparer.cs" />

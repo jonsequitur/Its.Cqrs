@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Pocket;
 
 namespace Microsoft.Its.Domain.Testing
@@ -12,7 +13,7 @@ namespace Microsoft.Its.Domain.Testing
     public static class TestConfigurationExtensions
     {
         /// <summary>
-        /// Uses in memory command scheduling.
+        /// Sets up in-memory command scheduling for all known aggregate types.
         /// </summary>
         /// <param name="configuration">The configuration.</param>
         public static Configuration UseInMemoryCommandScheduling(this Configuration configuration)
@@ -22,8 +23,11 @@ namespace Microsoft.Its.Domain.Testing
 
             AggregateType.KnownTypes.ForEach(t =>
             {
-                var scheduler = configuration.Container.Resolve(typeof (ICommandScheduler<>).MakeGenericType(t));
-                configuration.EventBus.Subscribe(scheduler);
+                var initializerType = typeof (InMemoryCommandSchedulerPipelineInitializer<>)
+                    .MakeGenericType(t);
+                var initializer = ((ISchedulerPipelineInitializer) configuration.Container
+                                                                                .Resolve(initializerType));
+                initializer.Initialize(configuration);
             });
 
             return configuration;
@@ -69,7 +73,7 @@ namespace Microsoft.Its.Domain.Testing
                 return c => Activator.CreateInstance(repositoryType, stream, c.Resolve<IEventBus>());
             }
 
-            if (type == typeof(IEventStream))
+            if (type == typeof (IEventStream))
             {
                 return c => c.Resolve<InMemoryEventStream>();
             }

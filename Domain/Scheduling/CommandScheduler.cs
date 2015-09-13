@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Linq;
 using System.Threading.Tasks;
@@ -76,10 +77,11 @@ namespace Microsoft.Its.Domain
                     .Take(1)
                     .Timeout(timeout)
                     .Subscribe(
-                        e =>
+                        e => { Task.Run(() =>
                         {
-                            Task.Run(() => DeliverImmediatelyOnConfiguredScheduler(scheduledCommand)).Wait();
-                        },
+                            Debug.WriteLine("[DeliverIfPreconditionIsSatisfiedSoon] delivering!");
+                            return DeliverImmediatelyOnConfiguredScheduler(scheduledCommand);
+                        }).Wait(); },
                         onError: ex => { eventBus.PublishErrorAsync(new EventHandlingError(ex)); });
         }
     }

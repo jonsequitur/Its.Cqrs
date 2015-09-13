@@ -29,7 +29,7 @@ namespace Microsoft.Its.Domain
 
             if (scheduled.Result is CommandDelivered)
             {
-                throw new InvalidOperationException("Command already applied.");
+               return;
             }
 
             try

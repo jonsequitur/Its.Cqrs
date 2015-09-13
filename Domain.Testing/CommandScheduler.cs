@@ -5,6 +5,7 @@ using System;
 using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 
@@ -57,11 +58,26 @@ namespace Microsoft.Its.Domain.Testing
             Debug.WriteLine(string.Format("Done waiting for clock {0}", clockName));
         }
 
-        public static ICommandScheduler<TAggregate> WithInMemoryDeferredScheduling<TAggregate>(
-            this ICommandScheduler<TAggregate> scheduler)
+        public static Configuration TraceCommandsFor<TAggregate>(this Configuration configuration)
             where TAggregate : class, IEventSourced
         {
-            return scheduler.Wrap(async (command, next) =>
+            return configuration.AddToCommandSchedulerPipeline<TAggregate>(
+                schedule: async (command, next) =>
+                {
+                    await next(command);
+                    Trace.WriteLine(Clock.Now() + " [Schedule] " + command);
+                },
+                deliver: async (command, next) =>
+                {
+                    await next(command);
+                    Trace.WriteLine(Clock.Now() + " [Deliver] " + command);
+                });
+        }
+
+        internal static ScheduledCommandInterceptor<TAggregate> WithInMemoryDeferredScheduling<TAggregate>()
+            where TAggregate : class, IEventSourced
+        {
+            return async (command, next) =>
             {
                 if (command.Result == null)
                 {
@@ -78,10 +94,22 @@ namespace Microsoft.Its.Domain.Testing
                             Domain.CommandScheduler.DeliverIfPreconditionIsSatisfiedSoon(command);
                         }
                     }
+
+                    if (!(command.Result is CommandDelivered))
+                    {
+                        VirtualClock.Schedule(
+                            command,
+                            command.DueTime ?? Clock.Now().AddTicks(1),
+                            (s, c) =>
+                            {
+                                Domain.CommandScheduler.DeliverImmediatelyOnConfiguredScheduler(c).Wait();
+                                return Disposable.Empty;
+                            });
+                    }
                 }
 
                 await next(command);
-            });
+            };
         }
     }
 }

@@ -21,7 +21,8 @@ namespace Microsoft.Its.Domain.Testing
     [DebuggerStepThrough]
     public class VirtualClock :
         IClock,
-        IDisposable
+        IDisposable,
+        IObservable<DateTimeOffset>
     {
         private readonly Subject<DateTimeOffset> movements = new Subject<DateTimeOffset>();
         private readonly RxScheduler Scheduler;
@@ -82,7 +83,9 @@ namespace Microsoft.Its.Domain.Testing
 
         private void WaitForScheduler()
         {
-            Scheduler.Done().Wait();
+            Scheduler.Done()
+                     .TimeoutAfter(TimeSpan.FromMinutes(1))
+                     .Wait();
 
             if (schedulerClocks.Any())
             {
@@ -92,7 +95,10 @@ namespace Microsoft.Its.Domain.Testing
                     foreach (var clockName in schedulerClocks)
                     {
                         var sqlCommandScheduler = configuration.SqlCommandScheduler();
-                        sqlCommandScheduler.AdvanceClock(clockName, Clock.Now()).Wait();
+                        sqlCommandScheduler
+                            .AdvanceClock(clockName, Clock.Now())
+                            .TimeoutAfter(TimeSpan.FromMinutes(1))
+                            .Wait();
                     }
                 }
             }
@@ -143,17 +149,11 @@ namespace Microsoft.Its.Domain.Testing
             Func<IScheduler, IScheduledCommand<TAggregate>, IDisposable> func)
             where TAggregate : IEventSourced
         {
-            var clock =
-                Clock.Current
-                     .IfTypeIs<VirtualClock>()
-                     .Else(() => CommandContext.Current.Root.Clock as VirtualClock);
+            var scheduler = Clock.Current.IfTypeIs<VirtualClock>()
+                                 .Then(c => (IScheduler) c.Scheduler)
+                                 .Else(() => TaskPoolScheduler.Default);
 
-            if (clock == null)
-            {
-                throw new InvalidOperationException("In-memory command scheduling can only be performed when a VirtualClock is active.");
-            }
-
-            return clock.Scheduler.Schedule(scheduledCommand, dueTime, func);
+            return scheduler.Schedule(scheduledCommand, dueTime, func);
         }
 
         public async Task Done()
@@ -176,8 +176,15 @@ namespace Microsoft.Its.Domain.Testing
             {
             }
 
-            public override IDisposable ScheduleAbsolute<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
+            public override IDisposable ScheduleAbsolute<TState>(
+                TState state,
+                DateTimeOffset dueTime,
+                Func<IScheduler, TState, IDisposable> action)
             {
+                resetEvent.Reset();
+
+                pending.Add((IScheduledCommand) state, dueTime);
+
                 var schedule = base.ScheduleAbsolute(state, dueTime, (scheduler, command) =>
                 {
                     var cancel = action(scheduler, command);
@@ -188,10 +195,6 @@ namespace Microsoft.Its.Domain.Testing
 
                     return cancel;
                 });
-
-                resetEvent.Reset();
-
-                pending.Add((IScheduledCommand) state, dueTime);
 
                 return schedule;
             }

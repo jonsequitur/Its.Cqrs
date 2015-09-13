@@ -8,6 +8,7 @@ using System.Linq;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
+    [DebuggerDisplay("{ToString()}")]
     public class CommandFailed : CommandDelivered
     {
         public CommandFailed(IScheduledCommand command, Exception exception = null) : base(command)
@@ -35,12 +36,14 @@ namespace Microsoft.Its.Domain
         internal TimeSpan? RetryAfter { get; private set; }
 
         public int NumberOfPreviousAttempts { get; set; }
-//        {
-//            get
-//            {
-                // FIX: (NumberOfPreviousAttempts)   return ScheduledCommand.NumberOfPreviousAttempts;
-//            }
-//        }
+
+        public override string ToString()
+        {
+            return string.Format("Failed due to: {1} {0}",
+                                 (IsCanceled
+                                     ? " (and canceled)"
+                                     : " (will retry after " + RetryAfter + ")"), Exception.Message);
+        }
 
         internal static CommandFailed Create<TCommand>(
             TCommand command,
