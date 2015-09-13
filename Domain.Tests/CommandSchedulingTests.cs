@@ -65,20 +65,20 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task InMemoryCommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
+        public async Task CommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
         {
             // arrange
-            var bus = new InProcessEventBus();
-            var repository = new InMemoryEventSourcedRepository<Order>(bus: bus);
-            var scheduler = new InMemoryCommandScheduler<Order>(repository);
-            bus.Subscribe(scheduler);
+            var configuration = new Configuration()
+                .UseInMemoryCommandScheduling()
+                .UseInMemoryEventStore();
+
+            var repository = configuration.Repository<Order>();
+
             var order = CreateOrder();
 
             // act
             order.Apply(new ShipOn(Clock.Now().Subtract(TimeSpan.FromDays(2))));
             await repository.Save(order);
-
-            await scheduler.Done();
 
             //assert 
             order = await repository.GetLatest(order.Id);

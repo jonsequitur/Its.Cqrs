@@ -18,9 +18,6 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="configuration">The configuration.</param>
         public static Configuration UseInMemoryCommandScheduling(this Configuration configuration)
         {
-            configuration.Container.RegisterGeneric(variantsOf: typeof (ICommandScheduler<>),
-                                                    to: typeof (InMemoryCommandScheduler<>));
-
             AggregateType.KnownTypes.ForEach(t =>
             {
                 var initializerType = typeof (InMemoryCommandSchedulerPipelineInitializer<>)

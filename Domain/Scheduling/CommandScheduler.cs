@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,7 +9,7 @@ namespace Microsoft.Its.Domain
 {
     public static class CommandScheduler
     {
-        public static ICommandScheduler<TAggregate> Wrap<TAggregate>(
+        internal static ICommandScheduler<TAggregate> Wrap<TAggregate>(
             this ICommandScheduler<TAggregate> scheduler,
             ScheduledCommandInterceptor<TAggregate> schedule = null,
             ScheduledCommandInterceptor<TAggregate> deliver = null)
@@ -54,19 +53,21 @@ namespace Microsoft.Its.Domain
         }
 
         internal static async Task DeliverImmediatelyOnConfiguredScheduler<TAggregate>(
-            IScheduledCommand<TAggregate> command)
+            IScheduledCommand<TAggregate> command,
+            Configuration configuration)
             where TAggregate : class, IEventSourced
         {
-            var scheduler = Configuration.Current.CommandScheduler<TAggregate>();
+            var scheduler = configuration.CommandScheduler<TAggregate>();
             await scheduler.Deliver(command);
         }
 
         internal static void DeliverIfPreconditionIsSatisfiedSoon<TAggregate>(
             IScheduledCommand<TAggregate> scheduledCommand,
+            Configuration configuration,
             int timeoutInMilliseconds = 10000)
             where TAggregate : class, IEventSourced
         {
-            var eventBus = Configuration.Current.EventBus;
+            var eventBus = configuration.EventBus;
 
             var timeout = TimeSpan.FromMilliseconds(timeoutInMilliseconds);
 
@@ -77,12 +78,14 @@ namespace Microsoft.Its.Domain
                     .Take(1)
                     .Timeout(timeout)
                     .Subscribe(
-                        e => { Task.Run(() =>
+                        e =>
                         {
-                            Debug.WriteLine("[DeliverIfPreconditionIsSatisfiedSoon] delivering!");
-                            return DeliverImmediatelyOnConfiguredScheduler(scheduledCommand);
-                        }).Wait(); },
-                        onError: ex => { eventBus.PublishErrorAsync(new EventHandlingError(ex)); });
+                            Task.Run(() => DeliverImmediatelyOnConfiguredScheduler(scheduledCommand, configuration)).Wait();
+                        },
+                        onError: ex =>
+                        {
+                            eventBus.PublishErrorAsync(new EventHandlingError(ex));
+                        });
         }
     }
 }

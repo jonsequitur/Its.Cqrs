@@ -11,7 +11,7 @@ namespace Microsoft.Its.Domain.Testing
 
             configuration.SubscribeCommandSchedulerToEventBusFor<TAggregate>()
                          .AddToCommandSchedulerPipeline(
-                             CommandScheduler.WithInMemoryDeferredScheduling<TAggregate>())
+                             CommandScheduler.WithInMemoryDeferredScheduling<TAggregate>(configuration))
                          .TraceCommandsFor<TAggregate>();
         }
     }

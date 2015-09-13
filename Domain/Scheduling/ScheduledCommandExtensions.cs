@@ -7,10 +7,9 @@ namespace Microsoft.Its.Domain
 {
     public static class ScheduledCommandExtensions
     {
-        public static bool IsDue<TAggregate>(
-            this IScheduledCommand<TAggregate> command,
+        public static bool IsDue(
+            this IScheduledCommand command,
             IClock clock = null)
-            where TAggregate : IEventSourced
         {
             if (command == null)
             {

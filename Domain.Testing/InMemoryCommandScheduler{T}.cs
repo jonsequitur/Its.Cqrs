@@ -17,6 +17,7 @@ namespace Microsoft.Its.Domain.Testing
         IEventHandlerBinder
         where TAggregate : class, IEventSourced
     {
+        // FIX: (InMemoryCommandScheduler) remove this class
         private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
         private readonly ManualResetEventSlim resetEvent = new ManualResetEventSlim();
 
