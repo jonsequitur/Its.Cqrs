@@ -20,7 +20,10 @@ namespace Microsoft.Its.Domain.Tests
     public class CommandSchedulingTests
     {
         private CompositeDisposable disposables;
-        private Scenario scenario;
+        private Configuration configuration;
+        private Guid customerAccountId;
+        private IEventSourcedRepository<CustomerAccount> customerRepository;
+        private IEventSourcedRepository<Order> orderRepository;
 
         [SetUp]
         public void SetUp()
@@ -29,21 +32,24 @@ namespace Microsoft.Its.Domain.Tests
             Command<Order>.AuthorizeDefault = (o, c) => true;
             Command<CustomerAccount>.AuthorizeDefault = (o, c) => true;
 
-            disposables = new CompositeDisposable { VirtualClock.Start() };
+            disposables = new CompositeDisposable
+            {
+                VirtualClock.Start()
+            };
 
-            var customerId = Any.Guid();
-            scenario = new ScenarioBuilder(c => c.UseInMemoryEventStore()
-                                                 .UseInMemoryCommandScheduling())
-                .AddEvents(new EventSequence(customerId)
-                {
-                    new CustomerAccount.UserNameAcquired
-                    {
-                        UserName = Any.Email()
-                    }
-                }.ToArray())
-                .Prepare();
+             customerAccountId = Any.Guid();
 
-            disposables.Add(scenario);
+            configuration = new Configuration()
+                .UseInMemoryCommandScheduling()
+                .UseInMemoryEventStore();
+
+            customerRepository = configuration.Repository<CustomerAccount>();
+            orderRepository = configuration.Repository<Order>();
+
+            customerRepository.Save(new CustomerAccount(customerAccountId).Apply(new ChangeEmailAddress(Any.Email())));
+
+            disposables.Add(ConfigurationContext.Establish(configuration));
+            disposables.Add(configuration);
         }
 
         [TearDown]
@@ -90,17 +96,18 @@ namespace Microsoft.Its.Domain.Tests
         public async Task When_a_scheduled_command_fails_validation_then_a_failure_event_can_be_recorded_in_HandleScheduledCommandException_method()
         {
             // arrange
-            var order = CreateOrder(customerAccountId: (await scenario.GetLatestAsync<CustomerAccount>()).Id);
+            var order = CreateOrder(customerAccountId: (await customerRepository.GetLatest(customerAccountId)).Id);
+
             // by the time Ship is applied, it will fail because of the cancellation
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
             order.Apply(new Cancel());
-            await scenario.SaveAsync(order);
+            await orderRepository.Save(order);
 
             // act
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
-            
+
             //assert 
-            order = await scenario.GetLatestAsync<Order>();
+            order = await orderRepository.GetLatest(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
         }
@@ -109,24 +116,23 @@ namespace Microsoft.Its.Domain.Tests
         public async Task When_applying_a_scheduled_command_throws_unexpectedly_then_further_command_scheduling_is_not_interrupted()
         {
             // arrange
-            var customerAccountId = (await scenario.GetLatestAsync<CustomerAccount>()).Id;
             var order1 = CreateOrder(customerAccountId: customerAccountId)
                 .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date))
                 .Apply(new Cancel());
-            await scenario.SaveAsync(order1);
+            await orderRepository.Save(order1);
             var order2 = CreateOrder(customerAccountId: customerAccountId)
                 .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
-            await scenario.SaveAsync(order2);
+            await orderRepository.Save(order2);
 
             // act
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
 
             // assert 
-            order1 = await scenario.GetLatestAsync<Order>(order1.Id);
+            order1 = await orderRepository.GetLatest(order1.Id);
             var lastEvent = order1.Events().Last();
             lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
 
-            order2 = await scenario.GetLatestAsync<Order>(order2.Id);
+            order2 = await orderRepository.GetLatest(order2.Id);
             lastEvent = order2.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
         }
@@ -137,7 +143,7 @@ namespace Microsoft.Its.Domain.Tests
             var order = new Order(
                 new CreateOrder(Any.FullName())
                 {
-                    CustomerId = (await scenario.GetLatestAsync<CustomerAccount>()).Id
+                    CustomerId = customerAccountId
                 })
                 .Apply(new AddItem
                 {
@@ -145,9 +151,9 @@ namespace Microsoft.Its.Domain.Tests
                     Price = 12.99m
                 })
                 .Apply(new Cancel());
-            await scenario.SaveAsync(order);
+            await orderRepository.Save(order);
 
-            var customerAccount = await scenario.GetLatestAsync<CustomerAccount>();
+            var customerAccount = await customerRepository.GetLatest(customerAccountId);
 
             customerAccount.Events()
                            .Last()
@@ -207,10 +213,7 @@ namespace Microsoft.Its.Domain.Tests
             var configuration = new Configuration()
                 .UseInMemoryEventStore()
                 .AddToCommandSchedulerPipeline<Order>(
-                    schedule: async (cmd, next) =>
-                    {
-                        scheduled = true;
-                    });
+                    schedule: async (cmd, next) => { scheduled = true; });
 
             var scheduler = configuration.CommandScheduler<Order>();
 
@@ -223,8 +226,7 @@ namespace Microsoft.Its.Domain.Tests
         public async Task CommandSchedulerPipeline_can_be_used_to_specify_command_scheduler_behavior_on_deliver()
         {
             var delivered = false;
-            var configuration = new Configuration()
-                .UseInMemoryEventStore()
+             configuration
                 .AddToCommandSchedulerPipeline<Order>(
                     deliver: async (cmd, next) => { delivered = true; });
 
@@ -240,8 +242,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var checkpoints = new List<string>();
 
-            var configuration = new Configuration()
-                .UseInMemoryEventStore()
+             configuration
                 .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
@@ -269,9 +270,8 @@ namespace Microsoft.Its.Domain.Tests
         {
             var checkpoints = new List<string>();
 
-            var configuration = new Configuration()
-                .UseInMemoryEventStore()
-                .AddToCommandSchedulerPipeline<Order>(
+             configuration
+                 .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
                         checkpoints.Add("one");
@@ -279,9 +279,11 @@ namespace Microsoft.Its.Domain.Tests
                         checkpoints.Add("four");
                     });
 
+            // make sure to trigger a resolve
             var scheduler = configuration.CommandScheduler<Order>();
 
-            configuration.AddToCommandSchedulerPipeline<Order>(
+            configuration
+                .AddToCommandSchedulerPipeline<Order>(
                 schedule: async (cmd, next) =>
                 {
                     checkpoints.Add("two");
