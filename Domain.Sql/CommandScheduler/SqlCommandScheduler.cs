@@ -123,6 +123,15 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         public GetClockName GetClockName = cmd => null;
 
+        public void ClockLookupFor<TAggregate>(Func<IScheduledCommand<TAggregate>, string> lookup)
+            where TAggregate : class, IEventSourced
+        {
+            binders.OfType<SqlCommandSchedulerBinder<TAggregate>>()
+                   .Single()
+                   .Scheduler
+                   .GetClockLookupKey = lookup;
+        }
+
         /// <summary>
         /// Provides a method so that delegates can point to the always-up-to-date GetClockName implementation, rather than capture a prior version of the delegate.
         /// </summary>
