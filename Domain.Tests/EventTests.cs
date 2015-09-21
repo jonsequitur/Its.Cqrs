@@ -97,36 +97,5 @@ namespace Microsoft.Its.Domain.Tests
             {
             }
         }
-
-        public class TestScheduledCommand : IScheduledCommand<Order>
-        {
-            private readonly ICommand<Order> command;
-
-            public TestScheduledCommand(ICommand<Order> command)
-            {
-                this.command = command;
-            }
-
-            public void Update(Order aggregate)
-            {
-            }
-
-            public long SequenceNumber { get; private set; }
-            public Guid AggregateId { get; private set; }
-            public DateTimeOffset Timestamp { get; private set; }
-            public string ETag { get; set; }
-            public DateTimeOffset? DueTime { get; private set; }
-            public ScheduledCommandPrecondition DeliveryPrecondition { get; private set; }
-
-            public ScheduledCommandResult Result { get; set; }
-
-            public ICommand<Order> Command
-            {
-                get
-                {
-                    return command;
-                }
-            }
-        }
     }
 }
