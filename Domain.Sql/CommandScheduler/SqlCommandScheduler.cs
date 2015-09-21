@@ -2,358 +2,131 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
-using System.Data.Entity;
-using System.Data.Entity.Core;
-using System.Data.Entity.Infrastructure;
 using System.Linq;
-using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using Microsoft.Its.Domain.Serialization;
-using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
     /// <summary>
-    /// Schedules commands durably via a SQL backing store for immediate or future application.
+    ///     Schedules commands durably via a SQL backing store for immediate or future application.
     /// </summary>
-    public class SqlCommandScheduler : IEventHandler
+    public class SqlCommandScheduler :
+        CommandSchedulingEventHandler,
+        ISchedulerClockTrigger,
+        ISchedulerClockRepository
     {
         internal const string DefaultClockName = "default";
-
-        private readonly Dictionary<string, Func<ScheduledCommand, Task>> commandDispatchers = new Dictionary<string, Func<ScheduledCommand, Task>>();
-
-        private readonly IEventHandlerBinder[] binders;
-
-        private readonly ISubject<ICommandSchedulerActivity> activity = new Subject<ICommandSchedulerActivity>();
+        internal readonly SchedulerClockTrigger ClockTrigger;
+        private readonly SchedulerClockRepository clockRepository;
+        private Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SqlCommandScheduler"/> class.
+        ///     Initializes a new instance of the <see cref="SqlCommandScheduler" /> class.
         /// </summary>
         /// <param name="configuration">The configuration.</param>
-        public SqlCommandScheduler(Configuration configuration = null)
+        public SqlCommandScheduler(
+            Configuration configuration,
+            Func<CommandSchedulerDbContext> createCommandSchedulerDbContext = null,
+            GetClockName getClockName = null)
         {
-            configuration = configuration ?? Configuration.Current;
+            
+            if (configuration == null)
+            {
+                throw new ArgumentNullException("configuration");
+            }
+
+            GetClockName = getClockName ?? (e => null);
+            this.createCommandSchedulerDbContext = createCommandSchedulerDbContext ??
+                                                   (() => new CommandSchedulerDbContext());
 
             var container = configuration.Container;
 
-            binders = AggregateType.KnownTypes
-                                   .Select(aggregateType =>
-                                   {
-                                       var aggregateTypeName = AggregateType.EventStreamName(aggregateType);
+            var dispatchers = ConfigurationExtensions.InitializeSchedulersPerAggregateType(
+                container,
+                ClockName,
+                activity);
 
-                                       dynamic binder = container.Resolve(
-                                           typeof (SqlCommandSchedulerBinder<>).MakeGenericType(aggregateType));
+            base.binders = dispatchers;
 
-                                       binder.Scheduler.GetClockName = new Func<IEvent, string>(ClockName);
-                                       binder.Scheduler.Activity = activity;
+            ClockTrigger = new SchedulerClockTrigger(
+                this.createCommandSchedulerDbContext,
+                async (scheduled, result, db) =>
+                {
+                    var dispatcher = dispatchers.SingleOrDefault(d => d.AggregateType == scheduled.AggregateType);
 
-                                       var schedulerType = typeof (ICommandScheduler<>).MakeGenericType(aggregateType);
+                    if (dispatcher != null)
+                    {
+                        await dispatcher.Deliver(scheduled);
+                        result.Add(scheduled.Result);
+                    }
 
-                                       if (!container.Any(t => t.Key == schedulerType))
-                                       {
-                                           container.Register(schedulerType,
-                                                              c => binder.Scheduler);
-                                       }
+                    scheduled.Attempts++;
 
-                                       commandDispatchers[aggregateTypeName] = async e =>
-                                       {
-                                           await binder.Deliver(e);
-                                       };
+                    await db.SaveChangesAsync();
+                });
 
-                                       return binder;
-                                   })
-                                   .Cast<IEventHandlerBinder>()
-                                   .ToArray();
+            clockRepository = new SchedulerClockRepository(
+                this.createCommandSchedulerDbContext,
+                GetClockName);
         }
 
-        /// <summary>
-        /// An observable of scheduler activity, which is updated each time a command is applied, whether successful or not.
-        /// </summary>
-        public IObservable<ICommandSchedulerActivity> Activity
+        public Func<CommandSchedulerDbContext> CreateCommandSchedulerDbContext
         {
             get
             {
-                return activity;
+                return createCommandSchedulerDbContext;
             }
-        }
-
-        /// <summary>
-        /// Advances the clock by a specified amount and triggers any commands that are due by the end of that time period.
-        /// </summary>
-        /// <param name="clockName">Name of the clock.</param>
-        /// <param name="by">The timespan by which to advance the clock.</param>
-        /// <param name="query">A query that can be used to filter the commands to be applied.</param>
-        /// <returns>
-        /// A result summarizing the triggered commands.
-        /// </returns>
-        public async Task<SchedulerAdvancedResult> AdvanceClock(string clockName,
-                                                          TimeSpan by,
-                                                          Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
-        {
-            return await Advance(clockName, by: @by, query: query);
-        }
-
-        /// <summary>
-        /// Advances the clock to a specified time and triggers any commands that are due by that time.
-        /// </summary>
-        /// <param name="clockName">Name of the clock.</param>
-        /// <param name="to">The time to which to advance the clock.</param>
-        /// <param name="query">A query that can be used to filter the commands to be applied.</param>
-        /// <returns>
-        /// A result summarizing the triggered commands.
-        /// </returns>
-        public async Task<SchedulerAdvancedResult> AdvanceClock(string clockName,
-                                                          DateTimeOffset to,
-                                                          Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
-        {
-            return await Advance(clockName, to, query: query);
-        }
-
-        private async Task<SchedulerAdvancedResult> Advance(string clockName,
-                                                            DateTimeOffset? to = null,
-                                                            TimeSpan? by = null,
-                                                            Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
-        {
-            if (clockName == null)
+            set
             {
-                throw new ArgumentNullException("clockName");
-            }
-            if (to == null && @by == null)
-            {
-                throw new ArgumentException("Either to or by must be specified.");
-            }
-
-            using (var db = CreateCommandSchedulerDbContext())
-            {
-                var clock = await db.Clocks.SingleOrDefaultAsync(c => c.Name == clockName);
-
-                if (clock == null)
-                {
-                    throw new ObjectNotFoundException(string.Format("No clock named {0} was found.", clockName));
-                }
-
-                to = to ?? clock.UtcNow.Add(@by.Value);
-
-                if (to < clock.UtcNow)
-                {
-                    throw new InvalidOperationException(string.Format("A clock cannot be moved backward. ({0})", new
-                    {
-                        Clock = clock.ToJson(),
-                        RequestedTime = to
-                    }));
-                }
-
-                var result = new SchedulerAdvancedResult(to.Value);
-
-                clock.UtcNow = to.Value;
-                await db.SaveChangesAsync();
-
-                var commands = db.ScheduledCommands
-                                 .Due(asOf: to)
-                                 .Where(c => c.Clock.Id == clock.Id);
-
-                if (query != null)
-                {
-                    commands = query(commands);
-                }
-
-                // ToArray closes the connection so that when we perform saves during the loop there are no connection errors
-                foreach (var scheduled in await commands.ToArrayAsync())
-                {
-                    //clock.UtcNow = scheduled.DueTime ?? to.Value;
-                    await Trigger(scheduled, result, db);
-                }
-
-                return result;
+                createCommandSchedulerDbContext = value;
             }
         }
 
-        /// <summary>
-        /// Triggers all commands matched by the specified query.
-        /// </summary>
-        /// <param name="query">The query.</param>
-        /// <returns>
-        /// A result summarizing the triggered commands.
-        /// </returns>
-        /// <exception cref="System.ArgumentNullException">query</exception>
-        /// <remarks>If the query matches commands that have been successfully applied already or abandoned, they will be re-applied.</remarks>
+        public async Task<SchedulerAdvancedResult> AdvanceClock(string clockName, TimeSpan @by, Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
+        {
+            return await ClockTrigger.AdvanceClock(clockName,
+                                                   @by,
+                                                   query);
+        }
+
+        public async Task<SchedulerAdvancedResult> AdvanceClock(string clockName, DateTimeOffset to, Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
+        {
+            return await ClockTrigger.AdvanceClock(clockName,
+                                                   to,
+                                                   query);
+        }
+
         public async Task<SchedulerAdvancedResult> Trigger(Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query)
         {
-            // QUESTION: (Trigger) re: the remarks XML comment, would it be clearer to have two methods, e.g. something like TriggerAnyCommands and TriggerEligibleCommands?
-            if (query == null)
-            {
-                throw new ArgumentNullException("query");
-            }
-
-            var result = new SchedulerAdvancedResult();
-
-            using (var db = CreateCommandSchedulerDbContext())
-            {
-                var commands = query(db.ScheduledCommands).ToArray();
-
-                foreach (var scheduled in commands)
-                {
-                    await Trigger(scheduled, result, db);
-                }
-            }
-
-            return result;
+            return await ClockTrigger.Trigger(query);
         }
 
-        internal async Task Trigger(
-            ScheduledCommand scheduled,
-            SchedulerAdvancedResult result,
-            CommandSchedulerDbContext db)
+        public async Task Trigger(ScheduledCommand scheduled, SchedulerAdvancedResult result, CommandSchedulerDbContext db)
         {
-            var deliver = commandDispatchers.IfContains(scheduled.AggregateType)
-                                            .ElseDefault();
-
-            if (deliver == null)
-            {
-                // QUESTION: (Trigger) is this worth raising a warning for or is there a reasonable chance that not registering a handler was deliberate? 
-                //                var error = ScheduledCommandFailure();
-                //
-                //                activity.OnNext(new CommandSchedulerActivity(scheduled, error));
-                //
-                //                result.Add(error);
-                //                db.Errors.Add(error);
-            }
-            else
-            {
-                await deliver(scheduled);
-                result.Add(scheduled.Result);
-            }
-
-            scheduled.Attempts++;
-
-            await db.SaveChangesAsync();
+            await ClockTrigger.Trigger(scheduled, result, db);
         }
 
-        /// <summary>
-        /// Associates an arbitrary lookup string with a named clock.
-        /// </summary>
-        /// <param name="clockName">The name of the clock.</param>
-        /// <param name="lookup">The lookup.</param>
-        /// <exception cref="System.ArgumentNullException">
-        /// clockName
-        /// or
-        /// lookup
-        /// </exception>
-        /// <exception cref="System.InvalidOperationException">Thrown if the lookup us alreayd associated with another clock.</exception>
-        public void AssociateWithClock(string clockName,
-                                       string lookup)
+        public void AssociateWithClock(string clockName, string lookup)
         {
-            if (clockName == null)
-            {
-                throw new ArgumentNullException("clockName");
-            }
-            if (lookup == null)
-            {
-                throw new ArgumentNullException("lookup");
-            }
-
-            using (var db = CreateCommandSchedulerDbContext())
-            {
-                var clock = db.Clocks.SingleOrDefault(c => c.Name == clockName);
-
-                if (clock == null)
-                {
-                    var now = Domain.Clock.Now();
-                    clock = new Clock
-                    {
-                        Name = clockName,
-                        UtcNow = now,
-                        StartTime = now
-                    };
-                    db.Clocks.Add(clock);
-                }
-
-                db.ClockMappings.Add(new ClockMapping
-                {
-                    Clock = clock,
-                    Value = lookup
-                });
-
-                try
-                {
-                    db.SaveChanges();
-                }
-                catch (DbUpdateException exception)
-                {
-                    if (exception.ToString().Contains(@"Cannot insert duplicate key row in object 'Scheduler.ClockMapping' with unique index 'IX_Value'"))
-                    {
-                        throw new InvalidOperationException(string.Format("Value '{0}' is already associated with another clock", lookup), exception);
-                    }
-                    throw;
-                }
-            }
+            clockRepository.AssociateWithClock(clockName, lookup);
         }
 
-        public void ClockLookupFor<TAggregate>(Func<IScheduledCommand<TAggregate>, string> lookup)
-            where TAggregate : class, IEventSourced
+        public void CreateClock(string clockName, DateTimeOffset startTime)
         {
-            binders.OfType<SqlCommandSchedulerBinder<TAggregate>>()
-                   .Single()
-                   .Scheduler
-                   .GetClockLookupKey = lookup;
+            clockRepository.CreateClock(clockName, startTime);
         }
-
-        /// <summary>
-        /// Creates a clock.
-        /// </summary>
-        /// <param name="clockName">The name of the clock.</param>
-        /// <param name="startTime">The initial time to which the clock is set.</param>
-        /// <exception cref="System.ArgumentNullException">clockName</exception>
-        /// <exception cref="ConcurrencyException">Thrown if a clock with the specified name already exists.</exception>
-        public void CreateClock(
-            string clockName,
-            DateTimeOffset startTime)
-        {
-            if (clockName == null)
-            {
-                throw new ArgumentNullException("clockName");
-            }
-
-            using (var db = CreateCommandSchedulerDbContext())
-            {
-                db.Clocks.Add(new Clock
-                {
-                    Name = clockName,
-                    UtcNow = startTime,
-                    StartTime = startTime
-                });
-                try
-                {
-                    db.SaveChanges();
-                }
-                catch (DbUpdateException ex)
-                {
-                    if (ex.ToString().Contains(@"Cannot insert duplicate key row in object 'Scheduler.Clock' with unique index 'IX_Name'"))
-                    {
-                        throw new ConcurrencyException(string.Format("A clock named '{0}' already exists.", clockName), innerException: ex);
-                    }
-                    throw;
-                }
-            }
-        }
-
-        public Func<CommandSchedulerDbContext> CreateCommandSchedulerDbContext = () => new CommandSchedulerDbContext();
-
-        public Func<IEvent, string> GetClockName = cmd => null;
 
         public DateTimeOffset ReadClock(string clockName)
         {
-            using (var db = CreateCommandSchedulerDbContext())
-            {
-                return db.Clocks.Single(c => c.Name == clockName).UtcNow;
-            }
+            return clockRepository.ReadClock(clockName);
         }
+
+        public GetClockName GetClockName = cmd => null;
 
         /// <summary>
         /// Provides a method so that delegates can point to the always-up-to-date GetClockName implementation, rather than capture a prior version of the delegate.
         /// </summary>
-        internal string ClockName(IEvent @event)
+        public string ClockName(IEvent @event)
         {
             if (GetClockName == null)
             {
@@ -361,11 +134,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
 
             return GetClockName(@event);
-        }
-
-        public IEnumerable<IEventHandlerBinder> GetBinders()
-        {
-            return binders;
         }
     }
 }

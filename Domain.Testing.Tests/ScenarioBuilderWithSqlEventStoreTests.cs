@@ -28,9 +28,11 @@ namespace Microsoft.Its.Domain.Testing.Tests
             CommandSchedulerDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
 
-            return new ScenarioBuilder()
+            var scenarioBuilder = new ScenarioBuilder()
                 .UseSqlEventStore()
                 .UseSqlCommandScheduler();
+
+            return scenarioBuilder;
         }
     }
 }

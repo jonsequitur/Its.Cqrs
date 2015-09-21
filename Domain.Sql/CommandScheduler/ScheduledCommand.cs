@@ -2,10 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using Microsoft.Its.Domain.Serialization;
+using Microsoft.Its.Recipes;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    public class ScheduledCommand
+    public class ScheduledCommand : IScheduledCommand
     {
         public Guid AggregateId { get; set; }
 
@@ -31,9 +34,30 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         internal bool NonDurable { get; set; }
 
-        internal bool ShouldBeDeliveredImmediately()
+        ScheduledCommandPrecondition IScheduledCommand.DeliveryPrecondition
         {
-            return DueTime == null || DueTime <= Clock.Now();
+            get
+            {
+                return SerializedCommand.FromJsonTo<JObject>()
+                                        .IfHas(d => d.DeliveryPrecondition)
+                                        .ElseDefault();
+            }
+        }
+
+        DateTimeOffset IEvent.Timestamp
+        {
+            get
+            {
+                return CreatedTime;
+            }
+        }
+
+        string IEvent.ETag
+        {
+            get
+            {
+                return null;
+            }
         }
     }
 }

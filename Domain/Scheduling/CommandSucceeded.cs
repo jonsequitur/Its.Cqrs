@@ -7,18 +7,15 @@ using System.Diagnostics;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    public class CommandSucceeded : ScheduledCommandResult
+    public class CommandSucceeded : CommandDelivered
     {
         public CommandSucceeded(IScheduledCommand command) : base(command)
         {
         }
 
-        public override bool WasSuccessful
+        public override string ToString()
         {
-            get
-            {
-                return true;
-            }
+            return "Succeeded";
         }
     }
 }

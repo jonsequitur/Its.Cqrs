@@ -76,13 +76,15 @@ namespace Microsoft.Its.Domain.Testing
         public static IEvent ToDomainEvent(this IStoredEvent storedEvent, string streamName)
         {
             return Serializer.DeserializeEvent(
-                streamName,
-                storedEvent.Type,
-                Guid.Parse(storedEvent.AggregateId),
-                storedEvent.SequenceNumber,
-                storedEvent.Timestamp, storedEvent.Body,
-                storedEvent.Timestamp.Ticks,
-                serializerSettings.Value);
+                aggregateName: streamName,
+                eventName: storedEvent.Type,
+                aggregateId: Guid.Parse(storedEvent.AggregateId),
+                sequenceNumber: storedEvent.SequenceNumber,
+                etag: storedEvent.ETag, 
+                timestamp: storedEvent.Timestamp,
+                body: storedEvent.Body,
+                uniqueEventId: storedEvent.Timestamp.Ticks,
+                serializerSettings: serializerSettings.Value);
         }
 
         /// <summary>

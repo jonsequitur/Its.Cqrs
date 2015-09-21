@@ -17,7 +17,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Initializes a new instance of the <see cref="ConstructorCommand{T}"/> class.
         /// </summary>
-        protected ConstructorCommand()
+        protected ConstructorCommand(string etag = null) : base(etag)
         {
             AggregateId = Guid.NewGuid();
         }

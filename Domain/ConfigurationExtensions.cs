@@ -2,6 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -86,20 +89,75 @@ namespace Microsoft.Its.Domain
         {
             configuration.Container
                          .AddStrategy(t =>
-                                      {
-                                          Func<object> resolveFunc = strategy(t);
-                                          if (resolveFunc != null)
-                                          {
-                                              return container => resolveFunc();
-                                          }
-                                          return null;
-                                      });
+                         {
+                             Func<object> resolveFunc = strategy(t);
+                             if (resolveFunc != null)
+                             {
+                                 return container => resolveFunc();
+                             }
+                             return null;
+                         });
+            return configuration;
+        }
+
+        public static Configuration AddToCommandSchedulerPipeline<TAggregate>(
+            this Configuration configuration,
+            ScheduledCommandInterceptor<TAggregate> schedule = null,
+            ScheduledCommandInterceptor<TAggregate> deliver = null)
+            where TAggregate : class, IEventSourced
+        {
+            configuration.IsUsingCommandSchedulerPipeline(true);
+
+            var pipeline = configuration.Container
+                                        .Resolve<CommandSchedulerPipeline<TAggregate>>();
+
+            if (schedule != null)
+            {
+                pipeline.OnSchedule(schedule);
+            }
+            if (deliver != null)
+            {
+                pipeline.OnDeliver(deliver);
+            }
+
+            configuration.Container
+                         .Register(c => pipeline)
+                         .RegisterSingle(c => pipeline.Compose(configuration));
+
+            return configuration;
+        }
+
+        public static Configuration SubscribeCommandSchedulerToEventBusFor<TAggregate>(this Configuration configuration) where TAggregate : class, IEventSourced
+        {
+            var consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e =>
+            {
+                Task.Run(() => configuration.CommandScheduler<TAggregate>().Schedule(e)).Wait();
+            });
+
+            var subscription = configuration.EventBus.Subscribe(consequenter);
+
+            configuration.RegisterForDisposal(subscription);
+
             return configuration;
         }
 
         internal static ISnapshotRepository SnapshotRepository(this Configuration configuration)
         {
             return configuration.Container.Resolve<ISnapshotRepository>();
+        }
+
+        internal static void IsUsingCommandSchedulerPipeline(this Configuration configuration, bool value)
+        {
+            configuration.Properties["IsUsingCommandSchedulerPipeline"] = value;
+        }
+
+        internal static bool IsUsingCommandSchedulerPipeline(this Configuration configuration)
+        {
+            return configuration.Properties
+                                .IfContains("IsUsingCommandSchedulerPipeline")
+                                .And()
+                                .IfTypeIs<bool>()
+                                .ElseDefault();
         }
     }
 }

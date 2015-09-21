@@ -105,7 +105,7 @@ namespace Microsoft.Its.Domain.Testing
             scenario.RegisterForDispose(configurationContext);
             scenario.RegisterForDispose(configuration);
 
-            if (configuration.UsesSqlEventStore())
+            if (configuration.IsUsingSqlEventStore())
             {
                 // capture the highest event id from the event store before the scenario adds new ones
                 startCatchupAtEventId = CreateEventStoreDbContext().DisposeAfter(db => db.Events.Max<StorableEvent, long?>(e => e.Id) ?? 0) + 1;
@@ -190,7 +190,7 @@ namespace Microsoft.Its.Domain.Testing
 
                 if (useInMemoryCommandScheduling)
                 {
-                    var subscriptionType = typeof (InMemoryCommandScheduler<>).MakeGenericType(t);
+                    var subscriptionType = typeof (ICommandScheduler<>).MakeGenericType(t);
                     handler = container.Resolve(subscriptionType);
                 }
                 else
@@ -229,7 +229,7 @@ namespace Microsoft.Its.Domain.Testing
 
                              var repositoryType = typeof (IEventSourcedRepository<>).MakeGenericType(aggregateType);
 
-                             if (!configuration.UsesSqlEventStore())
+                             if (!configuration.IsUsingSqlEventStore())
                              {
                                  var streamName = AggregateType.EventStreamName(aggregateType);
 
@@ -288,7 +288,7 @@ namespace Microsoft.Its.Domain.Testing
                 return;
             }
 
-            if (configuration.UsesSqlEventStore())
+            if (configuration.IsUsingSqlEventStore())
             {
                 var catchup = new ReadModelCatchup(projectors)
                 {

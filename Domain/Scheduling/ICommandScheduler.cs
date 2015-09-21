@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Its.Domain
 {
     /// <summary>
-    /// Schedules commands for future execution.
+    /// Schedules commands for deferred execution.
     /// </summary>
     public interface ICommandScheduler<out TAggregate>
         where TAggregate : IEventSourced

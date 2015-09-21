@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain;
@@ -68,10 +69,10 @@ namespace Sample.Domain
                 });
 
                 // schedule the next email if one is not already scheduled
-                if (!AggregateExtensions.Events(customerAccount)
-                    .OfType<CommandScheduled<CustomerAccount>>()
-                    .Where(e => e.Command is SendMarketingEmail)
-                    .Any(e => e.DueTime > now))
+                if (!customerAccount.Events()
+                                    .OfType<CommandScheduled<CustomerAccount>>()
+                                    .Where(e => e.Command is SendMarketingEmail)
+                                    .Any(e => e.DueTime > now))
                 {
                     try
                     {
@@ -120,14 +121,15 @@ namespace Sample.Domain
                 // then...
                 aggregate.RecordEvent(new OrderCancelationConfirmationEmailSent());
             }
-
+            
             public async Task HandleScheduledCommandException(
                 CustomerAccount order,
                 CommandFailed<NotifyOrderCanceled> command)
             {
+                Debug.WriteLine("Failed: " + command);
             }
 
-            public Func<dynamic, Task> SendOrderConfirmationEmail = _ => Task.Run(() => { });
+            public Func<EmailAddress, Task> SendOrderConfirmationEmail = _ => Task.Run(() => { });
         }
     }
 }

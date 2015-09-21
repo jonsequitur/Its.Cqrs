@@ -1,30 +1,24 @@
 using System;
 using System.Diagnostics;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    public class CommandScheduled : ICommandSchedulerActivity
+    [DebuggerDisplay("{ToString()}")]
+    public class CommandScheduled : ScheduledCommandResult
     {
-        private readonly IScheduledCommand scheduledCommand;
-
-        public CommandScheduled(IScheduledCommand scheduledCommand)
+        public CommandScheduled(IScheduledCommand command) : base(command)
         {
-            if (scheduledCommand == null)
-            {
-                throw new ArgumentNullException("scheduledCommand");
-            }
-            this.scheduledCommand = scheduledCommand;
-        }
-
-        public IScheduledCommand ScheduledCommand
-        {
-            get
-            {
-                return scheduledCommand;
-            }
         }
 
         public string ClockName { get; set; }
+
+        public override string ToString()
+        {
+            return "Scheduled" + ClockName.IfNotNullOrEmptyOrWhitespace()
+                                          .Then(c => " on clock " + c)
+                                          .ElseDefault();
+        }
     }
 }

@@ -8,20 +8,17 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    internal class CommandPreconditionVerifier : ICommandPreconditionVerifier
+    public class CommandPreconditionVerifier : ICommandPreconditionVerifier
     {
         private readonly Func<EventStoreDbContext> createEventStoreDbContext;
 
-        public CommandPreconditionVerifier(Func<EventStoreDbContext> createEventStoreDbContext)
+        public CommandPreconditionVerifier(Func<EventStoreDbContext> createEventStoreDbContext = null)
         {
-            if (createEventStoreDbContext == null)
-            {
-                throw new ArgumentNullException("createEventStoreDbContext");
-            }
-            this.createEventStoreDbContext = createEventStoreDbContext;
+            this.createEventStoreDbContext = createEventStoreDbContext ??
+                                             (() => new EventStoreDbContext());
         }
 
-        public async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
+        public async Task<bool> IsPreconditionSatisfied(IScheduledCommand scheduledCommand)
         {
             if (scheduledCommand == null)
             {

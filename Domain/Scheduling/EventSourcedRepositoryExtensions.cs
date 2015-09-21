@@ -18,22 +18,29 @@ namespace Microsoft.Its.Domain
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(m => m.Name == "Create");
 
-        public static async Task<ScheduledCommandResult> ApplyScheduledCommand<TAggregate>(
+        public static async Task ApplyScheduledCommand<TAggregate>(
             this IEventSourcedRepository<TAggregate> repository,
             IScheduledCommand<TAggregate> scheduled,
-            Func<Task<bool>> verifyPrecondition = null)
+            ICommandPreconditionVerifier preconditionVerifier = null)
             where TAggregate : class, IEventSourced
         {
             TAggregate aggregate = null;
             Exception exception = null;
 
+            if (scheduled.Result is CommandDelivered)
+            {
+               return;
+            }
+
             try
             {
-                if (verifyPrecondition != null && !await verifyPrecondition())
+                if (preconditionVerifier != null &&
+                    !await preconditionVerifier.IsPreconditionSatisfied(scheduled))
                 {
-                    return await FailScheduledCommand(repository, 
-                        scheduled,
-                        new PreconditionNotMetException());
+                    await FailScheduledCommand(repository,
+                                               scheduled,
+                                               new PreconditionNotMetException(scheduled.DeliveryPrecondition));
+                    return;
                 }
 
                 aggregate = await repository.GetLatest(scheduled.AggregateId);
@@ -61,17 +68,19 @@ namespace Microsoft.Its.Domain
 
                 await repository.Save(aggregate);
 
-                return new CommandSucceeded(scheduled);
+                scheduled.Result = new CommandSucceeded(scheduled);
+
+                return;
             }
             catch (Exception ex)
             {
                 exception = ex;
             }
 
-            return await FailScheduledCommand(repository, scheduled, exception, aggregate);
+            await FailScheduledCommand(repository, scheduled, exception, aggregate);
         }
 
-        private static async Task<ScheduledCommandResult> FailScheduledCommand<TAggregate>(
+        private static async Task FailScheduledCommand<TAggregate>(
             IEventSourcedRepository<TAggregate> repository,
             IScheduledCommand<TAggregate> scheduled,
             Exception exception = null,
@@ -79,8 +88,8 @@ namespace Microsoft.Its.Domain
             where TAggregate : class, IEventSourced
         {
             var failure = (CommandFailed) createMethod
-                                                        .MakeGenericMethod(scheduled.Command.GetType())
-                                                        .Invoke(null, new object[] { scheduled.Command, scheduled, exception });
+                .MakeGenericMethod(scheduled.Command.GetType())
+                .Invoke(null, new object[] { scheduled.Command, scheduled, exception });
 
             var previousAttempts = scheduled.IfHas<int>(s => s.Metadata.NumberOfPreviousAttempts)
                                             .ElseDefault();
@@ -116,7 +125,8 @@ namespace Microsoft.Its.Domain
                 else if (scheduled.Command is ConstructorCommand<TAggregate>)
                 {
                     failure.Cancel();
-                    return failure;
+                    scheduled.Result = failure;
+                    return;
                 }
             }
 
@@ -127,7 +137,7 @@ namespace Microsoft.Its.Domain
                 failure.Retry(TimeSpan.FromMinutes(Math.Pow(failure.NumberOfPreviousAttempts + 1, 2)));
             }
 
-            return failure;
+            scheduled.Result = failure;
         }
     }
 }

@@ -46,7 +46,9 @@ namespace Microsoft.Its.Domain.ServiceBus
         /// or
         /// scheduler
         /// </exception>
-        public ServiceBusCommandQueueReceiver(ServiceBusSettings settings, SqlCommandScheduler scheduler)
+        public ServiceBusCommandQueueReceiver(
+            ServiceBusSettings settings, 
+            SqlCommandScheduler scheduler)
         {
             if (settings == null)
             {
@@ -227,6 +229,8 @@ namespace Microsoft.Its.Domain.ServiceBus
             public DateTimeOffset? DueTime { get; private set; }
 
             public ScheduledCommandPrecondition DeliveryPrecondition { get; private set; }
+
+            public ScheduledCommandResult Result { get; set; }
 
             public BrokeredMessage BrokeredMessage { get; internal set; }
         }

@@ -128,10 +128,18 @@
     <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />
     <Compile Include="ICommandPreconditionVerifier.cs" />
     <Compile Include="IEventMigratingAggregate.cs" />
+    <Compile Include="Scheduling\CommandDelivered.cs" />
+    <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
+    <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
+    <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />
+    <Compile Include="Scheduling\CommandScheduler.cs" />
+    <Compile Include="Scheduling\CommandScheduler{T}.cs" />
     <Compile Include="Scheduling\ICommandSchedulerActivity.cs" />
     <Compile Include="Scheduling\CommandScheduled.cs" />
     <Compile Include="Scheduling\PreconditionNotMetException.cs" />
+    <Compile Include="Scheduling\ScheduledCommandExtensions.cs" />
+    <Compile Include="Scheduling\ScheduledCommandInterceptor{T}.cs" />
     <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />
     <Compile Include="Snapshots\InMemorySnapshotRepository{T}.cs" />
     <Compile Include="Snapshots\ISnapshot.cs" />
@@ -167,7 +175,6 @@
     <Compile Include="Scheduling\CommandSchedulerExtensions.cs" />
     <Compile Include="Scheduling\EventSourcedRepositoryExtensions.cs" />
     <Compile Include="Scheduling\ICommandScheduler.cs" />
-    <Compile Include="Scheduling\ImmediateCommandScheduler{T}.cs" />
     <Compile Include="Scheduling\IScheduledCommand.cs" />
     <Compile Include="Scheduling\ScheduledCommandException.cs" />
     <Compile Include="Scheduling\CommandFailed.cs" />

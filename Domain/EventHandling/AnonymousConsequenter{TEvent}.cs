@@ -2,9 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 
 namespace Microsoft.Its.Domain
 {
+    [DebuggerStepThrough]
     internal class AnonymousConsequenter<TEvent> : IHaveConsequencesWhen<TEvent>, INamedEventHandler
         where TEvent : IEvent
     {

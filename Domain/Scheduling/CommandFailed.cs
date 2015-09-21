@@ -8,9 +8,10 @@ using System.Linq;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    public class CommandFailed : ScheduledCommandResult
+    [DebuggerDisplay("{ToString()}")]
+    public class CommandFailed : CommandDelivered
     {
-        internal CommandFailed(IScheduledCommand command, Exception exception = null) : base(command)
+        public CommandFailed(IScheduledCommand command, Exception exception = null) : base(command)
         {
             Exception = exception;
         }
@@ -30,19 +31,19 @@ namespace Microsoft.Its.Domain
             RetryAfter = after;
         }
 
-        public override bool WasSuccessful
-        {
-            get
-            {
-                return false;
-            }
-        }
-
         internal bool IsCanceled { get; private set; }
 
         internal TimeSpan? RetryAfter { get; private set; }
 
         public int NumberOfPreviousAttempts { get; set; }
+
+        public override string ToString()
+        {
+            return string.Format("Failed due to: {1} {0}",
+                                 (IsCanceled
+                                     ? " (and canceled)"
+                                     : " (will retry after " + RetryAfter + ")"), Exception.Message);
+        }
 
         internal static CommandFailed Create<TCommand>(
             TCommand command,

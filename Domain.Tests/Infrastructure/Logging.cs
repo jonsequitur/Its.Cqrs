@@ -6,6 +6,7 @@ using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Validation;
 using System.Diagnostics;
 using Its.Log.Instrumentation;
+using System.Linq;
 using Microsoft.Its.Domain.Sql;
 using TraceListener = Its.Log.Instrumentation.TraceListener;
 
@@ -21,23 +22,40 @@ namespace Microsoft.Its.Domain.Tests.Infrastructure
             {
                 Trace.Listeners.Clear();
                 Trace.Listeners.Add(itsLogListener);
-                global::Its.Log.Instrumentation.Log.EntryPosted += (o, e) => Console.WriteLine(e.LogEntry.ToLogString());
+
+                Log.EntryPosted += (o, e) => Console.WriteLine(e.LogEntry.ToLogString());
 
                 Formatter.RecursionLimit = 12;
+
                 Formatter<LogEntry>.Register((entry, writer) =>
                 {
-                    writer.Write(entry.Message);
                     if (entry.CallingType != null && entry.CallingMethod != null)
                     {
-                        writer.Write(" ({0}.{1})", entry.CallingType, entry.CallingMethod);
+                        writer.Write("[{0}.{1}] {2}",
+                                     entry.CallingType,
+                                     entry.CallingMethod,
+                                     entry.Subject.ToLogString());
+                    }
+                    else
+                    {
+                        writer.WriteLine(entry.Subject.ToLogString());
                     }
                     writer.WriteLine();
                 });
-                Formatter<DbEntityValidationResult>.RegisterForAllMembers();
-                Formatter<DbEntityEntry>.RegisterForAllMembers();
-                Formatter<DbValidationError>.RegisterForAllMembers();
-                Formatter<DbPropertyValues>.RegisterForAllMembers();
+
+                Formatter.AutoGenerateForType = type =>
+                {
+                    return new[]
+                    {
+                        typeof (ICommand),
+                        typeof (IEvent),
+                        typeof (IScheduledCommand),
+                        typeof (ICommandSchedulerActivity)
+                    }.Any(t => t.IsAssignableFrom(type));
+                };
+
                 Formatter<ReadModelInfo>.RegisterForAllMembers();
+                Formatter<CommandFailed>.RegisterForAllMembers();
             }
         }
     }

@@ -8,6 +8,9 @@ using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using Microsoft.Its.Recipes;
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
 
 namespace Microsoft.Its.Domain
 {
@@ -83,6 +86,57 @@ namespace Microsoft.Its.Domain
         /// Gets or sets the clock used within the command context.
         /// </summary>
         public IClock Clock { get; set; }
+
+        private int etagCount = 0;
+
+        public string NextETag(string forTargetToken)
+        {
+            if (forTargetToken == null)
+            {
+                throw new ArgumentNullException("forTargetToken");
+            }
+
+            if (string.IsNullOrWhiteSpace(Command.ETag))
+            {
+                Command.IfTypeIs<Command>()
+                       .ThenDo(c =>
+                       {
+                           c.AssignRandomETag();
+                       })
+                       .ElseDo(() =>
+                       {
+                           throw new InvalidOperationException("No source etag specified on command: " + Command);
+                       });
+            }
+
+            var count = Interlocked.Increment(ref etagCount);
+
+            var unhashedEtag = string.Format("{0}:{1} ({2})", Command.ETag, forTargetToken, count);
+
+            return Md5Hash(unhashedEtag, true);
+        }
+
+        private static string Md5Hash(string input, bool base64)
+        {
+            // step 1, calculate MD5 hash from input
+            var md5 = MD5.Create();
+            var inputBytes = Encoding.ASCII.GetBytes(input);
+            byte[] hash = md5.ComputeHash(inputBytes);
+
+            if (base64)
+            {
+                return Convert.ToBase64String(hash);
+            }
+
+            // step 2, convert byte array to hex string
+            var sb = new StringBuilder();
+            for (var i = 0; i < hash.Length; i++)
+            {
+                sb.Append(hash[i].ToString("X2"));
+            }
+
+            return sb.ToString();
+        }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

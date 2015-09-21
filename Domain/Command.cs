@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Security.Principal;
@@ -11,6 +12,7 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
+    [DebuggerStepThrough]
     public abstract class Command : ICommand
     {
         private IPrincipal principal;
@@ -20,7 +22,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         protected Command(string etag = null)
         {
-            ETag = etag ?? Guid.NewGuid().ToString("N");
+            ETag = etag;
         }
 
         /// <summary>
@@ -61,7 +63,17 @@ namespace Microsoft.Its.Domain
                 return true;
             }
         }
-        
+
+        internal void AssignRandomETag()
+        {
+            if (!string.IsNullOrWhiteSpace(ETag))
+            {
+                throw new InvalidOperationException("ETag is already assigned.");
+            }
+
+            ETag = Guid.NewGuid().ToString("N");
+        }
+
         private static readonly Lazy<Dictionary<Tuple<Type, string>, Type>> index = new Lazy<Dictionary<Tuple<Type, string>, Type>>
             (() => AggregateType.KnownTypes
                                 .Select(aggregateType =>

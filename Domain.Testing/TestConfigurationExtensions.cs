@@ -3,8 +3,12 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
+using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
+using Newtonsoft.Json;
 using Pocket;
 
 namespace Microsoft.Its.Domain.Testing
@@ -12,18 +16,18 @@ namespace Microsoft.Its.Domain.Testing
     public static class TestConfigurationExtensions
     {
         /// <summary>
-        /// Uses in memory command scheduling.
+        /// Sets up in-memory command scheduling for all known aggregate types.
         /// </summary>
         /// <param name="configuration">The configuration.</param>
         public static Configuration UseInMemoryCommandScheduling(this Configuration configuration)
         {
-            configuration.Container.RegisterGeneric(variantsOf: typeof (ICommandScheduler<>),
-                                                    to: typeof (InMemoryCommandScheduler<>));
-
             AggregateType.KnownTypes.ForEach(t =>
             {
-                var scheduler = configuration.Container.Resolve(typeof (ICommandScheduler<>).MakeGenericType(t));
-                configuration.EventBus.Subscribe(scheduler);
+                var initializerType = typeof (InMemoryCommandSchedulerPipelineInitializer<>)
+                    .MakeGenericType(t);
+                var initializer = ((ISchedulerPipelineInitializer) configuration.Container
+                                                                                .Resolve(initializerType));
+                initializer.Initialize(configuration);
             });
 
             return configuration;
@@ -36,16 +40,38 @@ namespace Microsoft.Its.Domain.Testing
             return configuration;
         }
 
-        public static Configuration UseInMemoryEventStore(this Configuration configuration)
+        public static Configuration UseInMemoryEventStore(
+            this Configuration configuration, 
+            bool traceEvents = false)
         {
             configuration.Container
                          .RegisterSingle(c => new ConcurrentDictionary<string, IEventStream>(StringComparer.OrdinalIgnoreCase))
                          .AddStrategy(type => InMemoryEventSourcedRepositoryStrategy(type, configuration.Container))
                          .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>());
 
-            configuration.UsesSqlEventStore(false);
+            if (traceEvents)
+            {
+                var tracingSubscription = configuration.EventBus
+                                                       .Events<IEvent>()
+                                                       .Subscribe(TraceEvent);
+                configuration.RegisterForDisposal(tracingSubscription);
+            }
+
+            configuration.IsUsingSqlEventStore(false);
 
             return configuration;
+        }
+
+        private static void TraceEvent(IEvent e)
+        {
+            Trace.WriteLine(string.Format("{0}.{1}",
+                                          e.EventStreamName(),
+                                          e.EventName()));
+            Trace.WriteLine(
+                e.ToJson(Formatting.Indented)
+                 .Split('\n')
+                 .Select(line => "   " + line)
+                 .ToDelimitedString("\n"));
         }
 
         internal static Func<PocketContainer, object> InMemoryEventSourcedRepositoryStrategy(Type type, PocketContainer container)
@@ -69,7 +95,7 @@ namespace Microsoft.Its.Domain.Testing
                 return c => Activator.CreateInstance(repositoryType, stream, c.Resolve<IEventBus>());
             }
 
-            if (type == typeof(IEventStream))
+            if (type == typeof (IEventStream))
             {
                 return c => c.Resolve<InMemoryEventStream>();
             }

@@ -11,9 +11,6 @@ namespace Microsoft.Its.Domain.Sql
     {
         private readonly string seedFromConnectionString;
 
-        // TODO: (CopyEventStoreIfNotExists) test
-        // TODO: (CopyEventStoreIfNotExists) support for event transform (e.g. cleansing / filtering / etc) during copy... should this just be a projector + catchup? 
-
         public CopyEventStoreIfNotExists(string seedFromConnectionString)
         {
             if (seedFromConnectionString == null)

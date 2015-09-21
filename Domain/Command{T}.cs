@@ -3,13 +3,13 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Its.Domain.Authorization;
 using Its.Validation;
 using Its.Validation.Configuration;
-using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
@@ -18,6 +18,8 @@ namespace Microsoft.Its.Domain
     /// A command that can be applied to an aggregate to trigger some action and record an applicable state change.
     /// </summary>
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+    [DebuggerStepThrough]
+    [DebuggerDisplay("{ToString()}")]
     public abstract class Command<TAggregate> : Command, ICommand<TAggregate>
         where TAggregate : class
     {
@@ -34,20 +36,7 @@ namespace Microsoft.Its.Domain
         private readonly string commandName;
         private dynamic handler;
 
-        protected Command(string etag = null) : base(etag ??
-                                                     CommandContext.Current
-                                                                   .IfNotNull()
-                                                                   .Then(ctx =>
-                                                                   {
-                                                                       if (ctx.Command is ICommand<TAggregate>)
-                                                                       {
-                                                                           return null;
-                                                                       }
-
-                                                                       // if a command is being scheduled against a different aggregate, transfer the etag so that side effects are idempotent. 
-                                                                       return ctx.Command.ETag;
-                                                                   })
-                                                                   .ElseDefault())
+        protected Command(string etag = null) : base(etag)
         {
             commandName = GetType().Name;
         }
@@ -380,6 +369,13 @@ namespace Microsoft.Its.Domain
                                                               .OfType<Event>()
                                                               .Every(e => e.ETag != command.ETag))
                            .WithErrorMessage(string.Format("Command with ETag '{0}' has already been applied.", command.ETag));
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0}.{1}",
+                                 typeof (TAggregate).Name,
+                                 CommandName);
         }
     }
 }

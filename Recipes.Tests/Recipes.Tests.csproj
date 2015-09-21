@@ -51,12 +51,13 @@
     <Reference Include="Its.Configuration">
       <HintPath>..\packages\Its.Configuration.0.10.1\lib\net40\Its.Configuration.dll</HintPath>
     </Reference>
-    <Reference Include="Its.Log">
-      <HintPath>..\packages\Its.Log.2.8.0-beta\lib\net40\Its.Log.dll</HintPath>
-    </Reference>
-    <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Its.Log, Version=2.7.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Its.Log.2.9.8-beta\lib\net40\Its.Log.dll</HintPath>
+    </Reference>
+    <Reference Include="Its.Validation">
       <HintPath>..\packages\Its.Validation.1.4.3\lib\net45\Its.Validation.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.ServiceBus, Version=2.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">

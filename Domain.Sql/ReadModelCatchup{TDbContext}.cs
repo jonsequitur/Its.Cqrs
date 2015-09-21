@@ -416,7 +416,6 @@ namespace Microsoft.Its.Domain.Sql
                                     .Distinct()
                                     .Select(m =>
                                     {
-                                        // TODO: (EnsureInitialized) optimize this by figuring out how to query SteamName LIKE 'Scheduled:%'
                                         if (m.Type == "Scheduled")
                                         {
                                             return new MatchEvent(m.StreamName, "*");

@@ -115,13 +115,13 @@ namespace Microsoft.Its.Domain.Testing
                 var virtualClock = Clock.Current as VirtualClock;
                 if (virtualClock != null)
                 {
-                    await virtualClock.Done();
+                    await virtualClock.Done().TimeoutAfter(TimeSpan.FromMinutes(1));
                 }
             }
             else
             {
                 var scheduler = builder.Configuration.Container.Resolve<SqlCommandScheduler>();
-                await scheduler.AdvanceClock(clockName, Clock.Now());
+                await scheduler.AdvanceClock(clockName, Clock.Now()).TimeoutAfter(TimeSpan.FromMinutes(1));
             }
         }
 

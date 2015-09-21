@@ -55,8 +55,9 @@
     <Reference Include="Its.Configuration">
       <HintPath>..\packages\Its.Configuration.0.10.1\lib\net40\Its.Configuration.dll</HintPath>
     </Reference>
-    <Reference Include="Its.Log">
-      <HintPath>..\packages\Its.Log.2.8.0-beta\lib\net40\Its.Log.dll</HintPath>
+    <Reference Include="Its.Log, Version=2.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Its.Log.2.9.8-beta\lib\net40\Its.Log.dll</HintPath>
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -125,6 +126,7 @@
     <Compile Include="AnnotationEventTests.cs" />
     <Compile Include="AuthorizationTests.cs" />
     <Compile Include="CommandContextTests.cs" />
+    <Compile Include="CommandSchedulerMessageExchangeTests.cs" />
     <Compile Include="CommandSchedulingTests.cs" />
     <Compile Include="CommandTests.cs" />
     <Compile Include="ConfigurationContextTests.cs" />
@@ -140,6 +142,7 @@
     <Compile Include="Infrastructure\Logging.cs" />
     <Compile Include="Infrastructure\NoOpEventBus.cs" />
     <Compile Include="InProcessEventBusTests.cs" />
+    <Compile Include="MarcoPolo.cs" />
     <Compile Include="ObjectIdTests.cs" />
     <Compile Include="OptionalTests.cs" />
     <Compile Include="PrimitiveConverterTests.cs" />

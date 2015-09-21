@@ -50,6 +50,7 @@ namespace Microsoft.Its.Domain
                      .RegisterSingle<IReservationService>(c => new NoReservations())
                      .RegisterSingle<IEventBus>(c => new InProcessEventBus())
                      .Register<ISnapshotRepository>(c => new NoSnapshots())
+                     .Register<ICommandPreconditionVerifier>(c => new NoCommandPreconditionVerifications())
                      .RegisterSingle(c => this);
         }
 

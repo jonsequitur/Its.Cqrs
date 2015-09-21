@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Subjects;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 using Pocket;
@@ -25,7 +27,7 @@ namespace Microsoft.Its.Domain.Sql
             Func<EventStoreDbContext> createEventStoreDbContext = null)
         {
             configuration.Container.AddStrategy(SqlEventSourcedRepositoryStrategy);
-            configuration.UsesSqlEventStore(true);
+            configuration.IsUsingSqlEventStore(true);
 
             createEventStoreDbContext = createEventStoreDbContext ??
                                         (() => new EventStoreDbContext());
@@ -47,7 +49,21 @@ namespace Microsoft.Its.Domain.Sql
             Action<ReadModelCatchup<CommandSchedulerDbContext>> configureCatchup = null)
         {
             var container = configuration.Container;
-            var scheduler = container.Resolve<SqlCommandScheduler>();
+
+            container.AddFallbackToDefaultClock();
+
+            var scheduler = new SqlCommandScheduler(
+                configuration,
+                container.Resolve<Func<CommandSchedulerDbContext>>(),
+                container.Resolve<GetClockName>());
+
+            if (container.All(r => r.Key != typeof (SqlCommandScheduler)))
+            {
+                container.Register(c => scheduler)
+                         .Register<ISchedulerClockTrigger>(c => scheduler)
+                         .Register<ISchedulerClockRepository>(c => scheduler);
+            }
+
             var subscription = container.Resolve<IEventBus>().Subscribe(scheduler);
             configuration.RegisterForDisposal(subscription);
             container.RegisterSingle(c => scheduler);
@@ -64,43 +80,93 @@ namespace Microsoft.Its.Domain.Sql
                 configuration.RegisterForDisposal(catchup);
             }
 
-            configuration.UsesSqlCommandScheduling(true);
+            configuration.IsUsingSqlCommandScheduling(true);
 
             return configuration;
         }
 
         public static SqlCommandScheduler SqlCommandScheduler(this Configuration configuration)
         {
-            if (!configuration.UsesSqlCommandScheduling())
+            if (!configuration.IsUsingSqlCommandScheduling())
             {
                 throw new InvalidOperationException("You must first call UseSqlCommandScheduling to enable the use of the SqlCommandScheduler.");
             }
             return configuration.Container.Resolve<SqlCommandScheduler>();
         }
 
-        internal static void UsesSqlCommandScheduling(this Configuration configuration, bool value)
+        public static Configuration UseSqlStorageForScheduledCommands(
+            this Configuration configuration)
         {
-            configuration.Properties["UsesSqlCommandScheduling"] = value;
+            var container = configuration.Container;
+
+            container.AddFallbackToDefaultClock()
+                     .Register<ISchedulerClockRepository>(
+                         c => c.Resolve<SchedulerClockRepository>())
+                     .Register<ICommandPreconditionVerifier>(
+                         c => c.Resolve<CommandPreconditionVerifier>())
+                     .Register<ISchedulerClockTrigger>(
+                         c => c.Resolve<SchedulerClockTrigger>());
+
+            var schedulerFuncs = new Dictionary<string, Func<dynamic>>();
+
+            AggregateType.KnownTypes.ForEach(aggregateType =>
+            {
+                var initializerType = typeof (SchedulerPipelineInitializer<>).MakeGenericType(aggregateType);
+                var schedulerType = typeof (ICommandScheduler<>).MakeGenericType(aggregateType);
+
+                var initializer = container.Resolve(initializerType) as ISchedulerPipelineInitializer;
+
+                schedulerFuncs.Add(
+                    AggregateType.EventStreamName(aggregateType),
+                    () => container.Resolve(schedulerType));
+
+                initializer.Initialize(configuration);
+            });
+
+            container.Register(
+                c => new SchedulerClockTrigger(
+                    c.Resolve<CommandSchedulerDbContext>,
+                    async (serializedCommand, result, db) =>
+                    {
+                        dynamic scheduler = schedulerFuncs[serializedCommand.AggregateType];
+
+                        await Storage.DeserializeAndDeliverScheduledCommand(
+                            serializedCommand,
+                            scheduler());
+
+                        result.Add(serializedCommand.Result);
+
+                        serializedCommand.Attempts++;
+
+                        await db.SaveChangesAsync();
+                    }));
+
+            return configuration;
         }
 
-        internal static bool UsesSqlCommandScheduling(this Configuration configuration)
+        internal static void IsUsingSqlCommandScheduling(this Configuration configuration, bool value)
+        {
+            configuration.Properties["IsUsingSqlCommandScheduling"] = value;
+        }
+
+        internal static bool IsUsingSqlCommandScheduling(this Configuration configuration)
         {
             return configuration.Properties
-                                .IfContains("UsesSqlCommandScheduling")
+                                .IfContains("IsUsingSqlCommandScheduling")
                                 .And()
                                 .IfTypeIs<bool>()
                                 .ElseDefault();
         }
 
-         internal static void UsesSqlEventStore(this Configuration configuration, bool value)
+        internal static void IsUsingSqlEventStore(this Configuration configuration, bool value)
         {
-            configuration.Properties["UsesSqlEventStore"] = value;
+            configuration.Properties["IsUsingSqlEventStore"] = value;
         }
 
-        internal static bool UsesSqlEventStore(this Configuration configuration)
+        internal static bool IsUsingSqlEventStore(this Configuration configuration)
         {
             return configuration.Properties
-                                .IfContains("UsesSqlEventStore")
+                                .IfContains("IsUsingSqlEventStore")
                                 .And()
                                 .IfTypeIs<bool>()
                                 .ElseDefault();
@@ -115,6 +181,41 @@ namespace Microsoft.Its.Domain.Sql
                 return c => c.Resolve(genericType);
             }
             return null;
+        }
+
+        internal static ICommandSchedulerDispatcher[] InitializeSchedulersPerAggregateType(
+            PocketContainer container,
+            Func<IEvent, string> getClockName,
+            ISubject<ICommandSchedulerActivity> subject)
+        {
+            var binders = AggregateType.KnownTypes
+                                       .Select(aggregateType =>
+                                       {
+                                           var initializerType =
+                                               typeof (SchedulerInitializer<>).MakeGenericType(aggregateType);
+
+                                           dynamic initializer = container.Resolve(initializerType);
+
+                                           return (ICommandSchedulerDispatcher) initializer.InitializeScheduler(
+                                               subject,
+                                               container,
+                                               getClockName);
+                                       })
+                                       .ToArray();
+            return binders;
+        }
+
+        internal static PocketContainer AddFallbackToDefaultClock(this PocketContainer container)
+        {
+            return container.AddStrategy(t =>
+            {
+                if (t == typeof (GetClockName))
+                {
+                    return c => new GetClockName(e => CommandScheduler.SqlCommandScheduler.DefaultClockName);
+                }
+
+                return null;
+            });
         }
     }
 }

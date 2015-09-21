@@ -4,10 +4,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+    [DebuggerStepThrough]
     public class SchedulerAdvancedResult
     {
         private readonly ConcurrentBag<ScheduledCommandResult> results = new ConcurrentBag<ScheduledCommandResult>();

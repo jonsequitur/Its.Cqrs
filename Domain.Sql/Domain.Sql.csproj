@@ -91,16 +91,25 @@
     <Compile Include="AppLock.cs" />
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
     <Compile Include="CommandScheduler\CommandPreconditionVerifier.cs" />
+    <Compile Include="CommandScheduler\CommandSchedulingEventHandler.cs" />
+    <Compile Include="CommandScheduler\ICommandSchedulerDispatcher.cs" />
+    <Compile Include="CommandScheduler\ISchedulerClockRepository.cs" />
+    <Compile Include="CommandScheduler\ISchedulerClockTrigger.cs" />
     <Compile Include="CommandScheduler\SchedulerAdvancedResult.cs" />
     <Compile Include="CommandScheduler\ClockMapping.cs" />
     <Compile Include="CommandScheduler\CommandSchedulerDatabaseInitializer.cs" />
     <Compile Include="CommandScheduler\Clock.cs" />
     <Compile Include="CommandScheduler\CommandSchedulerDbContext.cs" />
+    <Compile Include="CommandScheduler\SchedulerClockRepository.cs" />
+    <Compile Include="CommandScheduler\SchedulerClockTrigger.cs" />
+    <Compile Include="CommandScheduler\SchedulerInitializer.cs" />
     <Compile Include="CommandScheduler\SqlCommandSchedulerExtensions.cs" />
+    <Compile Include="CommandScheduler\Storage.cs" />
     <Compile Include="DbReadonlyUser.cs" />
     <Compile Include="EventHandlerProgress.cs" />
     <Compile Include="EventHandlerProgressCalculator.cs" />
     <Compile Include="EventStoreDatabaseInitializer{T}.cs" />
+    <Compile Include="CommandScheduler\ISchedulerPipelineInitializer.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.Designer.cs">
       <DependentUpon>201407120005564_v0_8_2.cs</DependentUpon>
@@ -157,6 +166,7 @@
     <Compile Include="ReadModelUpdate.cs" />
     <Compile Include="ReservedValue.cs" />
     <Compile Include="CommandScheduler\ScheduledCommand.cs" />
+    <Compile Include="CommandScheduler\SchedulerPipelineInitializer{T}.cs" />
     <Compile Include="Sensors.cs" />
     <Compile Include="SqlReservationService.cs" />
     <Compile Include="StorableEvent.cs" />

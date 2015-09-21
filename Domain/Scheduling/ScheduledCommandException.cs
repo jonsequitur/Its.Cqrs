@@ -7,6 +7,9 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Thrown when a scheduled command fails on delivery due to a concurrency, validation, or authorization exception.
+    /// </summary>
     [DebuggerStepThrough]
     public class ScheduledCommandException : Exception
     {
