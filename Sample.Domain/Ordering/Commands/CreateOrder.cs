@@ -12,7 +12,7 @@ namespace Sample.Domain.Ordering.Commands
     [DebuggerStepThrough]
     public class CreateOrder : ConstructorCommand<Order>
     {
-        public CreateOrder(string customerName)
+        public CreateOrder(string customerName, string etag = null) : base(etag)
         {
             CustomerName = customerName;
             CustomerId = Guid.NewGuid();

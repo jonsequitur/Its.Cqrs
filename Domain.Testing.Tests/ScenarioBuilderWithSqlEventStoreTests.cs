@@ -6,8 +6,6 @@ using System.Reactive.Disposables;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Sql.Tests;
 using NUnit.Framework;
-using Sample.Domain;
-using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {

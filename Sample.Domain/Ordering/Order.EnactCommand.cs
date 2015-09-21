@@ -90,7 +90,8 @@ namespace Sample.Domain.Ordering
 
             public async Task HandleScheduledCommandException(Order order, CommandFailed<Cancel> command)
             {
-                // Tests depend on this being an empty handler - don't put any code here.
+                // Tests depend on this being an empty handler - don't modify.
+                Debug.WriteLine("[HandleScheduledCommandException] " + command.ToLogString());
             }
         }
 

@@ -29,7 +29,7 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         public string Name { get; private set; }
 
-        public HashSet<IStoredEvent> Events
+        public IEnumerable<IStoredEvent> Events
         {
             get
             {
@@ -53,17 +53,35 @@ namespace Microsoft.Its.Domain.Testing
                     {
                         if (this.events.Contains(storedEvent))
                         {
-                            throw new ConcurrencyException(string.Format("There was a concurrency violation.\n  Existing:\n{0}\nAttempted:\n{1}",
-                                this.events.Single(e => e.AggregateId == storedEvent.AggregateId &&
-                                                        e.SequenceNumber == storedEvent.SequenceNumber)
-                                    .ToDomainEvent(Name)
-                                    .ToDiagnosticJson(),
-                                storedEvent.ToDiagnosticJson()));
+                            ThrowConcurrencyException(storedEvent);
                         }
                         this.events.Add(storedEvent);
                     }
                 }
             });
+        }
+
+        private void ThrowConcurrencyException(IStoredEvent storedEvent)
+        {
+            var existing = events.Single(
+                e => e.AggregateId == storedEvent.AggregateId &&
+                     e.SequenceNumber == storedEvent.SequenceNumber)
+                                 .ToDomainEvent(Name)
+                                 .ToDiagnosticJson();
+
+            var attempted = storedEvent
+                .ToDomainEvent(Name)
+                .ToDiagnosticJson();
+
+            throw new ConcurrencyException(
+                string.Format(
+                    @"There was a concurrency violation.
+Existing:
+{0}
+Attempted:
+{1}",
+                    existing,
+                    attempted));
         }
 
         public async Task<IStoredEvent> Latest(string id)

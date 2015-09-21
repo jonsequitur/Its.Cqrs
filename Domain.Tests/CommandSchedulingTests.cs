@@ -37,7 +37,7 @@ namespace Microsoft.Its.Domain.Tests
                 VirtualClock.Start()
             };
 
-             customerAccountId = Any.Guid();
+            customerAccountId = Any.Guid();
 
             configuration = new Configuration()
                 .UseInMemoryCommandScheduling()
@@ -226,7 +226,7 @@ namespace Microsoft.Its.Domain.Tests
         public async Task CommandSchedulerPipeline_can_be_used_to_specify_command_scheduler_behavior_on_deliver()
         {
             var delivered = false;
-             configuration
+            configuration
                 .AddToCommandSchedulerPipeline<Order>(
                     deliver: async (cmd, next) => { delivered = true; });
 
@@ -242,7 +242,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var checkpoints = new List<string>();
 
-             configuration
+            configuration
                 .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
@@ -270,8 +270,8 @@ namespace Microsoft.Its.Domain.Tests
         {
             var checkpoints = new List<string>();
 
-             configuration
-                 .AddToCommandSchedulerPipeline<Order>(
+            configuration
+                .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
                         checkpoints.Add("one");
@@ -284,12 +284,12 @@ namespace Microsoft.Its.Domain.Tests
 
             configuration
                 .AddToCommandSchedulerPipeline<Order>(
-                schedule: async (cmd, next) =>
-                {
-                    checkpoints.Add("two");
-                    await next(cmd);
-                    checkpoints.Add("three");
-                });
+                    schedule: async (cmd, next) =>
+                    {
+                        checkpoints.Add("two");
+                        await next(cmd);
+                        checkpoints.Add("three");
+                    });
 
             scheduler = configuration.CommandScheduler<Order>();
 

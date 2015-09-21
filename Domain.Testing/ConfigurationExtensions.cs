@@ -1,8 +1,13 @@
 using System;
+using System.Collections.Concurrent;
 using System.Reactive.Linq;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
+using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain.Testing
 {
@@ -28,15 +33,42 @@ namespace Microsoft.Its.Domain.Testing
                                         {
                                             Clock.Current
                                                  .IfTypeIs<VirtualClock>()
-                                                 .ThenDo(clock =>
-                                                 {
-                                                     clock.OnAdvanceTriggerSchedulerClock(scheduled.ClockName);
-                                                 });
+                                                 .ThenDo(clock => { clock.OnAdvanceTriggerSchedulerClock(scheduled.ClockName); });
                                         });
 
             configuration.RegisterForDisposal(subscription);
 
             return configuration;
+        }
+
+        public static async Task AndSave<TAggregate>(this Task<TAggregate> aggregate)
+            where TAggregate : class, IEventSourced
+        {
+            var repository = Configuration.Current.Repository<TAggregate>();
+            await repository.Save(await aggregate);
+        }
+
+        public static void WriteInMemoryEventsToConsole(this Configuration configuration)
+        {
+            var streams = configuration
+                .Container
+                .Resolve<ConcurrentDictionary<string, IEventStream>>();
+
+            var json = streams
+                .Select(s => new
+                {
+                    StreamName = s.Key,
+                    Stream = s.Value as InMemoryEventStream
+                })
+                .SelectMany(s => s.Stream.Events.Select(e => new
+                {
+                    s.StreamName,
+                    Event = e
+                }))
+                .OrderBy(e => e.Event.Timestamp)
+                .ToJson(Formatting.Indented);
+
+            Console.WriteLine(json);
         }
     }
 }

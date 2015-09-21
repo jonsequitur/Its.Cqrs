@@ -86,11 +86,10 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("command");
             }
 
-            var scheduled = new CommandScheduled<T>
-            {
-                Command = command,
-                DueTime = due
-            };
+            var scheduled = CommandScheduler.CreateScheduledCommand<TCommand, T>(
+                Id,
+                command,
+                due) as CommandScheduled<T>;
 
             RecordEvent(scheduled);
         }

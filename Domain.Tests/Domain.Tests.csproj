@@ -126,6 +126,7 @@
     <Compile Include="AnnotationEventTests.cs" />
     <Compile Include="AuthorizationTests.cs" />
     <Compile Include="CommandContextTests.cs" />
+    <Compile Include="CommandSchedulerMessageExchangeTests.cs" />
     <Compile Include="CommandSchedulingTests.cs" />
     <Compile Include="CommandTests.cs" />
     <Compile Include="ConfigurationContextTests.cs" />
@@ -141,6 +142,7 @@
     <Compile Include="Infrastructure\Logging.cs" />
     <Compile Include="Infrastructure\NoOpEventBus.cs" />
     <Compile Include="InProcessEventBusTests.cs" />
+    <Compile Include="MarcoPolo.cs" />
     <Compile Include="ObjectIdTests.cs" />
     <Compile Include="OptionalTests.cs" />
     <Compile Include="PrimitiveConverterTests.cs" />

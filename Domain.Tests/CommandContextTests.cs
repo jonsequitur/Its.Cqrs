@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -213,6 +214,50 @@ namespace Microsoft.Its.Domain.Tests
             {
                 CommandContext.Current.Clock.Now().Should().Be(beforeNow);
             }
+        }
+
+        [Test]
+        public async Task NextETag_returns_a_different_value_each_time()
+        {
+            var target = Any.Guid().ToString();
+            var command = new AddItem
+            {
+                ETag = Any.Word()
+            };
+
+            var etags = new HashSet<string>();
+
+            using (var ctx = CommandContext.Establish(command))
+            {
+                Enumerable.Range(1, 100).ForEach(_ => etags.Add(ctx.NextETag(target)));
+            }
+
+            etags.Count().Should().Be(100);
+        }
+
+        [Test]
+        public async Task A_series_of_calls_to_NextETag_produces_the_same_sequence_given_the_same_initial_etag()
+        {
+            var target = Any.Guid().ToString();
+            var command = new AddItem
+            {
+                ETag = Any.Word()
+            };
+
+            var sequence1 = new List<string>();
+            var sequence2 = new List<string>();
+
+            using (var ctx = CommandContext.Establish(command))
+            {
+                Enumerable.Range(1, 10).ForEach(_ => sequence1.Add(ctx.NextETag(target)));
+            }
+
+            using (var ctx = CommandContext.Establish(command))
+            {
+                Enumerable.Range(1, 10).ForEach(_ => sequence2.Add(ctx.NextETag(target)));
+            }
+
+            sequence1.Should().Equal(sequence2);
         }
     }
 }

@@ -10,7 +10,6 @@ using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Its.Domain.Authorization;
 using Its.Validation;
 using Its.Validation.Configuration;
-using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
@@ -37,20 +36,7 @@ namespace Microsoft.Its.Domain
         private readonly string commandName;
         private dynamic handler;
 
-        protected Command(string etag = null) : base(etag ??
-                                                     CommandContext.Current
-                                                                   .IfNotNull()
-                                                                   .Then(ctx =>
-                                                                   {
-                                                                       if (ctx.Command is ICommand<TAggregate>)
-                                                                       {
-                                                                           return null;
-                                                                       }
-
-                                                                       // if a command is being scheduled against a different aggregate, transfer the etag so that side effects are idempotent. 
-                                                                       return ctx.Command.ETag;
-                                                                   })
-                                                                   .ElseDefault())
+        protected Command(string etag = null) : base(etag)
         {
             commandName = GetType().Name;
         }

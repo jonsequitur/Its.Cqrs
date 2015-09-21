@@ -1365,7 +1365,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 // quick, add a new event in order to trigger a concurrency exception at the moment the scheduler tries to apply the command
                 var repository = new SqlEventSourcedRepository<Order>();
                 var o = repository.GetLatest(orderId).Result;
-                o.Apply(new Annotate<Order>("triggering a concurrency exception"));
+                o.Apply(new Annotate<Order>("triggering a concurrency exception", Any.Guid().ToString()));
                 repository.Save(o).Wait();
 
                 return new EventStoreDbContext();
