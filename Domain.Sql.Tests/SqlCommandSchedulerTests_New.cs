@@ -21,23 +21,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             configuration
                 .UseDependency<GetClockName>(c => e => clockName)
                 .UseSqlStorageForScheduledCommands();
-
-            configuration
-                .AddToCommandSchedulerPipeline<Order>(
-                    schedule: async (scheduling, next) =>
-                    {
-                        using (Log.Enter(() => new { scheduling }))
-                        {
-                            await next(scheduling);
-                        }
-                    },
-                    deliver: async (delivering, next) =>
-                    {
-                        using (Log.Enter(() => new { delivering }))
-                        {
-                            await next(delivering);
-                        }
-                    });
         }
     }
 }

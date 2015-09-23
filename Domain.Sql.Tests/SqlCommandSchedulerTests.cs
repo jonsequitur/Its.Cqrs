@@ -38,9 +38,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public void TestFixtureSetUp()
         {
             Logging.Configure();
-            Formatter<SchedulerAdvancedResult>.RegisterForAllMembers();
-            Formatter<CommandSucceeded>.RegisterForAllMembers();
-            Formatter<CommandFailed>.RegisterForAllMembers();
 
             // disable authorization checks
             Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
