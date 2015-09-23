@@ -97,10 +97,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 createCommandSchedulerDbContext,
                 (scheduledCommandEvent1, db) => ClockNameForEvent(this, scheduledCommandEvent1, db));
 
-            Activity.OnNext(new CommandScheduled(scheduledCommand)
-            {
-                ClockName = storedScheduledCommand.Clock.Name
-            });
+            Activity.OnNext(new CommandScheduled(scheduledCommand, storedScheduledCommand.Clock));
 
             // deliver the command immediately if appropriate
             if (scheduledCommand.IsDue(storedScheduledCommand.Clock))

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Its.Validation;
 
 namespace Microsoft.Its.Domain
@@ -81,17 +82,41 @@ namespace Microsoft.Its.Domain
                                                  DateTimeOffset? due = null)
             where TCommand : class, ICommand<T>
         {
+            Task.Run(() => ScheduleCommandAsync(command, due)).Wait();
+        }
+
+        /// <summary>
+        /// Schedules a command for asynchronous and, optionally, deferred delivery.
+        /// </summary>
+        /// <typeparam name="TCommand">The type of the command.</typeparam>
+        /// <param name="command">The command.</param>
+        /// <param name="due">The time when the command should be delivered. If this is null, the scheduler will deliver it as soon as possible.</param>
+        /// <exception cref="System.ArgumentNullException">command</exception>
+        protected async Task ScheduleCommandAsync<TCommand>(TCommand command,
+                                                            DateTimeOffset? due = null)
+            where TCommand : class, ICommand<T>
+        {
             if (command == null)
             {
                 throw new ArgumentNullException("command");
             }
 
-            var scheduled = CommandScheduler.CreateScheduledCommand<TCommand, T>(
+            var scheduled = (CommandScheduled<T>) CommandScheduler.CreateScheduledCommand<TCommand, T>(
                 Id,
                 command,
-                due) as CommandScheduled<T>;
+                due);
 
             RecordEvent(scheduled);
+
+            if (Configuration.Current.IsUsingCommandSchedulerPipeline())
+            {
+                scheduled.DeliveryPrecondition = new ScheduledCommandPrecondition
+                {
+                    AggregateId = Id,
+                    ETag = scheduled.ETag
+                };
+                await Configuration.Current.CommandScheduler<T>().Schedule(scheduled);
+            }
         }
 
         internal virtual void HandleCommandValidationFailure(ICommand command, ValidationReport validationReport)

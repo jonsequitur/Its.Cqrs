@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Subjects;
@@ -18,7 +17,6 @@ namespace Microsoft.Its.Domain.Testing
     /// <summary>
     /// A virtual domain clock that can be used for testing time-dependent operations.
     /// </summary>
-    [DebuggerStepThrough]
     public class VirtualClock :
         IClock,
         IDisposable,
@@ -26,7 +24,7 @@ namespace Microsoft.Its.Domain.Testing
     {
         private readonly Subject<DateTimeOffset> movements = new Subject<DateTimeOffset>();
         private readonly RxScheduler Scheduler;
-        private readonly HashSet<string> schedulerClocks = new HashSet<string>();
+        private readonly HashSet<IClock> schedulerClocks = new HashSet<IClock>();
 
         private VirtualClock(DateTimeOffset now)
         {
@@ -92,11 +90,11 @@ namespace Microsoft.Its.Domain.Testing
                 var configuration = Configuration.Current;
                 if (configuration.IsUsingSqlCommandScheduling())
                 {
-                    foreach (var clockName in schedulerClocks)
+                    foreach (var clock in schedulerClocks.OfType<Sql.CommandScheduler.Clock>())
                     {
                         var sqlCommandScheduler = configuration.SqlCommandScheduler();
                         sqlCommandScheduler
-                            .AdvanceClock(clockName, Clock.Now())
+                            .AdvanceClock(clock.Name, Clock.Now())
                             .TimeoutAfter(TimeSpan.FromMinutes(1))
                             .Wait();
                     }
@@ -218,9 +216,13 @@ namespace Microsoft.Its.Domain.Testing
             }
         }
 
-        internal void OnAdvanceTriggerSchedulerClock(string clockName)
+        internal void OnAdvanceTriggerSchedulerClock(IClock clock)
         {
-            schedulerClocks.Add(clockName);
+            if (clock == null)
+            {
+                throw new ArgumentNullException("clock");
+            }
+            schedulerClocks.Add(clock);
         }
     }
 }

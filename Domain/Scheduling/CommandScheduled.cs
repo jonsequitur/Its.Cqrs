@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Diagnostics;
 using Microsoft.Its.Recipes;
@@ -8,17 +11,18 @@ namespace Microsoft.Its.Domain
     [DebuggerDisplay("{ToString()}")]
     public class CommandScheduled : ScheduledCommandResult
     {
-        public CommandScheduled(IScheduledCommand command) : base(command)
+        public CommandScheduled(IScheduledCommand command, IClock clock) : base(command)
         {
+            Clock = clock;
         }
 
-        public string ClockName { get; set; }
+        public IClock Clock { get; private set; }
 
         public override string ToString()
         {
-            return "Scheduled" + ClockName.IfNotNullOrEmptyOrWhitespace()
-                                          .Then(c => " on clock " + c)
-                                          .ElseDefault();
+            return "Scheduled" + Clock.IfNotNull()
+                                      .Then(c => " on clock " + c)
+                                      .ElseDefault();
         }
     }
 }

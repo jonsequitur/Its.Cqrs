@@ -3,7 +3,6 @@
 
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
@@ -123,20 +122,6 @@ namespace Microsoft.Its.Domain
             configuration.Container
                          .Register(c => pipeline)
                          .RegisterSingle(c => pipeline.Compose(configuration));
-
-            return configuration;
-        }
-
-        public static Configuration SubscribeCommandSchedulerToEventBusFor<TAggregate>(this Configuration configuration) where TAggregate : class, IEventSourced
-        {
-            var consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e =>
-            {
-                Task.Run(() => configuration.CommandScheduler<TAggregate>().Schedule(e)).Wait();
-            });
-
-            var subscription = configuration.EventBus.Subscribe(consequenter);
-
-            configuration.RegisterForDisposal(subscription);
 
             return configuration;
         }

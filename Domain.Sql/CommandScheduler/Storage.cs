@@ -73,10 +73,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     try
                     {
                         db.SaveChanges();
-                        scheduledCommand.Result = new CommandScheduled(scheduledCommand)
-                        {
-                            ClockName = schedulerClock.Name
-                        };
+                        scheduledCommand.Result = new CommandScheduled(scheduledCommand, schedulerClock);
                         break;
                     }
                     catch (DbUpdateException exception)

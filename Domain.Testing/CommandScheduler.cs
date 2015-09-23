@@ -2,9 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Concurrent;
-using System.Data.Entity;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
@@ -20,64 +17,26 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="scheduler">The command scheduler.</param>
         /// <param name="clockName">The name of the clock on which the commands are scheduled.</param>
-        /// <returns></returns>
+        [Obsolete("This method will be removed in a future version. Use CommandScheduler.CommandSchedulerDone instead.")]
         public static async Task Done(
             this ISchedulerClockTrigger scheduler,
             string clockName = null)
         {
             clockName = clockName ?? SqlCommandScheduler.DefaultClockName;
 
-            for (var i = 0; i < 10; i++)
+            using (var db = new CommandSchedulerDbContext())
             {
-                using (var db = new CommandSchedulerDbContext())
-                {
-                    var due = db.ScheduledCommands
-                                .Due()
-                                .Where(c => c.Clock.Name == clockName);
-
-                    if (!await due.AnyAsync())
-                    {
-                        return;
-                    }
-
-                    var commands = await due.ToArrayAsync();
-
-                    foreach (var scheduledCommand in commands)
-                    {
-                        await scheduler.Trigger(
-                            scheduledCommand,
-                            new SchedulerAdvancedResult(),
-                            db);
-                    }
-
-                    await Task.Delay(400);
-                }
+                var now = Clock.Latest(Clock.Current, db.Clocks.Single(c => c.Name == clockName)).Now();
+                await scheduler.AdvanceClock(clockName, now);
             }
         }
 
-        public static Configuration TraceCommandsFor<TAggregate>(
-            this Configuration configuration)
-            where TAggregate : class, IEventSourced
-        {
-            // resolve and register so there's only a single instance registered at any given time
-            var inPipeline = configuration.Container.Resolve<CommandsInPipeline>();
-            configuration.Container.Register(c => inPipeline);
-
-            return configuration.AddToCommandSchedulerPipeline<TAggregate>(
-                schedule: async (command, next) =>
-                {
-                    inPipeline.Add(command);
-                    await next(command);
-                    Trace.WriteLine(Clock.Now() + " [Schedule] " + command);
-                },
-                deliver: async (command, next) =>
-                {
-                    await next(command);
-                    Trace.WriteLine(Clock.Now() + " [Deliver] " + command);
-                    inPipeline.Remove(command);
-                });
-        }
-
+        /// <summary>
+        /// Returns a <see cref="Task" /> that allows awaiting the completion of commands currently scheduled and due on the configured command scheduler.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="timeoutInMilliseconds">The timeout in milliseconds to wait for the scheduler to complete. If it hasn't completed by the specified time, a <see cref="TimeoutException" /> is thrown.</param>
+        /// <returns></returns>
         public static Task CommandSchedulerDone(
             this Configuration configuration,
             int timeoutInMilliseconds = 5000)
@@ -87,43 +46,11 @@ namespace Microsoft.Its.Domain.Testing
                                         .Else(() => Task.FromResult(Unit.Default));
 
             var noCommandsInPipeline = configuration.Container
-                                                    .Resolve<CommandsInPipeline>()
+                                                    .Resolve<Domain.CommandScheduler.CommandsInPipeline>()
                                                     .Done();
 
             return Task.WhenAll(virtualClockDone, noCommandsInPipeline)
                        .TimeoutAfter(TimeSpan.FromMilliseconds(timeoutInMilliseconds));
-        }
-
-        internal class CommandsInPipeline
-        {
-            private readonly ConcurrentDictionary<IScheduledCommand, DateTimeOffset> commands = new ConcurrentDictionary<IScheduledCommand, DateTimeOffset>();
-
-            public void Add(IScheduledCommand command)
-            {
-                var now = Clock.Now();
-                commands.AddOrUpdate(
-                    command,
-                    now,
-                    (c, t) => now);
-            }
-
-            public void Remove(IScheduledCommand command)
-            {
-                DateTimeOffset _;
-                commands.TryRemove(command, out _);
-            }
-
-            public async Task Done()
-            {
-                while (true)
-                {
-                    var now = Clock.Current;
-                    if (!commands.Keys.Any(c => c.IsDue(now)))
-                    {
-                        return;
-                    }
-                }
-            }
         }
 
         internal static ScheduledCommandInterceptor<TAggregate> WithInMemoryDeferredScheduling<TAggregate>(Configuration configuration)
@@ -133,7 +60,9 @@ namespace Microsoft.Its.Domain.Testing
             {
                 if (command.Result == null)
                 {
-                    command.Result = new CommandScheduled(command);
+                    var clock = Clock.Current;
+
+                    command.Result = new CommandScheduled(command, clock);
 
                     // deliver the command immediately if appropriate
                     if (command.IsDue())

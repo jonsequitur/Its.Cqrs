@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Linq;
 using System.Threading.Tasks;
@@ -108,7 +110,10 @@ namespace Microsoft.Its.Domain
                 {
                     deliveryDependsOn.IfTypeIs<Event>()
                                      .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N"))
-                                     .ElseDo(() => { throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends."); });
+                                     .ElseDo(() =>
+                                     {
+                                         throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends.");
+                                     });
                 }
 
                 precondition = new ScheduledCommandPrecondition
@@ -136,6 +141,61 @@ namespace Microsoft.Its.Domain
                 DeliveryPrecondition = precondition
             };
             return scheduledCommand;
+        }
+
+        internal class CommandsInPipeline
+        {
+            private readonly ConcurrentDictionary<IScheduledCommand, DateTimeOffset> commands = new ConcurrentDictionary<IScheduledCommand, DateTimeOffset>();
+
+            public void Add(IScheduledCommand command)
+            {
+                var now = Clock.Now();
+                commands.AddOrUpdate(
+                    command,
+                    now,
+                    (c, t) => now);
+            }
+
+            public void Remove(IScheduledCommand command)
+            {
+                DateTimeOffset _;
+                commands.TryRemove(command, out _);
+            }
+
+            public async Task Done()
+            {
+                while (true)
+                {
+                    var now = Clock.Current;
+                    if (!commands.Keys.Any(c => c.IsDue(now)))
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+
+        public static Configuration TraceCommandsFor<TAggregate>(
+            this Configuration configuration)
+            where TAggregate : class, IEventSourced
+        {
+            // resolve and register so there's only a single instance registered at any given time
+            var inPipeline = configuration.Container.Resolve<Domain.CommandScheduler.CommandsInPipeline>();
+            configuration.Container.Register(c => inPipeline);
+
+            return configuration.AddToCommandSchedulerPipeline<TAggregate>(
+                schedule: async (command, next) =>
+                {
+                    inPipeline.Add(command);
+                    await next(command);
+                    Trace.WriteLine(Clock.Now() + " [Schedule] " + command);
+                },
+                deliver: async (command, next) =>
+                {
+                    await next(command);
+                    Trace.WriteLine(Clock.Now() + " [Deliver] " + command);
+                    inPipeline.Remove(command);
+                });
         }
     }
 }

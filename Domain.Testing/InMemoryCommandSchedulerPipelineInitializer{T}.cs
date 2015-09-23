@@ -9,8 +9,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             configuration.IsUsingCommandSchedulerPipeline(true);
 
-            configuration.SubscribeCommandSchedulerToEventBusFor<TAggregate>()
-                         .AddToCommandSchedulerPipeline(
+            configuration.AddToCommandSchedulerPipeline(
                              CommandScheduler.WithInMemoryDeferredScheduling<TAggregate>(configuration))
                          .TraceCommandsFor<TAggregate>();
         }

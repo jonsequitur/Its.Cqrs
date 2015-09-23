@@ -46,7 +46,8 @@ namespace Microsoft.Its.Domain.Tests
             customerRepository = configuration.Repository<CustomerAccount>();
             orderRepository = configuration.Repository<Order>();
 
-            customerRepository.Save(new CustomerAccount(customerAccountId).Apply(new ChangeEmailAddress(Any.Email())));
+            customerRepository.Save(new CustomerAccount(customerAccountId)
+                                        .Apply(new ChangeEmailAddress(Any.Email())));
 
             disposables.Add(ConfigurationContext.Establish(configuration));
             disposables.Add(configuration);
@@ -74,10 +75,6 @@ namespace Microsoft.Its.Domain.Tests
         public async Task CommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
         {
             // arrange
-            var configuration = new Configuration()
-                .UseInMemoryCommandScheduling()
-                .UseInMemoryEventStore();
-
             var repository = configuration.Repository<Order>();
 
             var order = CreateOrder();

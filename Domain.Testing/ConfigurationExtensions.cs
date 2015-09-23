@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Concurrent;
 using System.Reactive.Linq;
@@ -33,7 +36,10 @@ namespace Microsoft.Its.Domain.Testing
                                         {
                                             Clock.Current
                                                  .IfTypeIs<VirtualClock>()
-                                                 .ThenDo(clock => { clock.OnAdvanceTriggerSchedulerClock(scheduled.ClockName); });
+                                                 .ThenDo(clock =>
+                                                 {
+                                                     clock.OnAdvanceTriggerSchedulerClock(scheduled.Clock);
+                                                 });
                                         });
 
             configuration.RegisterForDisposal(subscription);
