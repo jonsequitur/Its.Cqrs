@@ -24,11 +24,14 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         public void Initialize(Configuration configuration)
         {
-            configuration.AddToCommandSchedulerPipeline<TAggregate>(
-                schedule: async (cmd, next) => await Schedule(cmd, next),
-                deliver: async (cmd, next) => await Deliver(cmd, next));
+            configuration
+                .AddToCommandSchedulerPipeline<TAggregate>(
+                    schedule: async (cmd, next) => await Schedule(cmd, next),
+                    deliver: async (cmd, next) => await Deliver(cmd, next));
 
-            configuration.SubscribeCommandSchedulerToEventBusFor<TAggregate>();
+#if DEBUG
+            configuration.TraceCommandsFor<TAggregate>();
+#endif
         }
 
         private async Task Schedule(IScheduledCommand<TAggregate> cmd, Func<IScheduledCommand<TAggregate>, Task> next)
