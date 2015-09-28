@@ -29,7 +29,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             Func<CommandSchedulerDbContext> createCommandSchedulerDbContext = null,
             GetClockName getClockName = null)
         {
-            
             if (configuration == null)
             {
                 throw new ArgumentNullException("configuration");

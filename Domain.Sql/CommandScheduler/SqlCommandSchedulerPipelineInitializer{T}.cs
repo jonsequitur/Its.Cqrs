@@ -3,14 +3,14 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    internal class SchedulerPipelineInitializer<TAggregate> :
+    internal class SqlCommandSchedulerPipelineInitializer<TAggregate> :
         ISchedulerPipelineInitializer
         where TAggregate : class, IEventSourced
     {
         private readonly Func<CommandSchedulerDbContext> createDbContext;
         private readonly Func<GetClockName> getClockName;
 
-        public SchedulerPipelineInitializer(
+        public SqlCommandSchedulerPipelineInitializer(
             Func<CommandSchedulerDbContext> createDbContext,
             Func<GetClockName> getClockName)
         {

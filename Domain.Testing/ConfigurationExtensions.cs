@@ -21,11 +21,12 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="configuration">A domain configuration instance.</param>
         /// <returns>The modified domain configuration instance.</returns>
+        [Obsolete("When using the command scheduler pipepline, VirtualClock integration is automatically enabled.")]
         public static Configuration TriggerSqlCommandSchedulerWithVirtualClock(this Configuration configuration)
         {
-            if (!configuration.IsUsingSqlCommandScheduling())
+            if (!configuration.IsUsingLegacySqlCommandScheduling())
             {
-                throw new InvalidOperationException("Only supported after configuring with UseSqlCommandScheduler.");
+                throw new InvalidOperationException("Only supported after configuring legacy SQL command scheduler by calling UseSqlCommandScheduler.");
             }
 
             var scheduler = configuration.SqlCommandScheduler();

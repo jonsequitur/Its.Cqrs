@@ -105,6 +105,11 @@ namespace Microsoft.Its.Domain
             ScheduledCommandInterceptor<TAggregate> deliver = null)
             where TAggregate : class, IEventSourced
         {
+            if (configuration.IsUsingLegacySqlCommandScheduling())
+            {
+                throw new InvalidOperationException("Legacy SQL command scheduler cannot be used with the command scheduler pipeline.");
+            }
+
             configuration.IsUsingCommandSchedulerPipeline(true);
 
             var pipeline = configuration.Container
@@ -140,6 +145,20 @@ namespace Microsoft.Its.Domain
         {
             return configuration.Properties
                                 .IfContains("IsUsingCommandSchedulerPipeline")
+                                .And()
+                                .IfTypeIs<bool>()
+                                .ElseDefault();
+        }
+        
+        internal static void IsUsingLegacySqlCommandScheduling(this Configuration configuration, bool value)
+        {
+            configuration.Properties["IsUsingLegacySqlCommandScheduling"] = value;
+        }
+
+        internal static bool IsUsingLegacySqlCommandScheduling(this Configuration configuration)
+        {
+            return configuration.Properties
+                                .IfContains("IsUsingLegacySqlCommandScheduling")
                                 .And()
                                 .IfTypeIs<bool>()
                                 .ElseDefault();

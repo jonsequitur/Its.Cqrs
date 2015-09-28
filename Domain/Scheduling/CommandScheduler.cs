@@ -180,7 +180,7 @@ namespace Microsoft.Its.Domain
             where TAggregate : class, IEventSourced
         {
             // resolve and register so there's only a single instance registered at any given time
-            var inPipeline = configuration.Container.Resolve<Domain.CommandScheduler.CommandsInPipeline>();
+            var inPipeline = configuration.Container.Resolve<CommandsInPipeline>();
             configuration.Container.Register(c => inPipeline);
 
             return configuration.AddToCommandSchedulerPipeline<TAggregate>(

@@ -166,7 +166,7 @@
     <Compile Include="ReadModelUpdate.cs" />
     <Compile Include="ReservedValue.cs" />
     <Compile Include="CommandScheduler\ScheduledCommand.cs" />
-    <Compile Include="CommandScheduler\SchedulerPipelineInitializer{T}.cs" />
+    <Compile Include="CommandScheduler\SqlCommandSchedulerPipelineInitializer{T}.cs" />
     <Compile Include="Sensors.cs" />
     <Compile Include="SqlReservationService.cs" />
     <Compile Include="StorableEvent.cs" />
