@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public DateTimeOffset Now()
         {
-            return DateTimeOffset.Now;
+            return DateTimeOffset.UtcNow;
         }
 
         public override string ToString()
