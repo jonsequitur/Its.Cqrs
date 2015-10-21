@@ -123,23 +123,25 @@ namespace Microsoft.Its.Domain.Sql
                 initializer.Initialize(configuration);
             });
 
-            container.Register(
-                c => new SchedulerClockTrigger(
-                    c.Resolve<CommandSchedulerDbContext>,
-                    async (serializedCommand, result, db) =>
-                    {
-                        dynamic scheduler = schedulerFuncs[serializedCommand.AggregateType];
+            container
+                .Register(
+                    c => new SchedulerClockTrigger(
+                        c.Resolve<CommandSchedulerDbContext>,
+                        async (serializedCommand, result, db) =>
+                        {
+                            dynamic scheduler = schedulerFuncs[serializedCommand.AggregateType];
 
-                        await Storage.DeserializeAndDeliverScheduledCommand(
-                            serializedCommand,
-                            scheduler());
+                            await Storage.DeserializeAndDeliverScheduledCommand(
+                                serializedCommand,
+                                scheduler());
 
-                        result.Add(serializedCommand.Result);
+                            result.Add(serializedCommand.Result);
 
-                        serializedCommand.Attempts++;
+                            serializedCommand.Attempts++;
 
-                        await db.SaveChangesAsync();
-                    }));
+                            await db.SaveChangesAsync();
+                        }))
+                .Register<ISchedulerClockTrigger>(c => c.Resolve<SchedulerClockTrigger>());
 
             return configuration;
         }

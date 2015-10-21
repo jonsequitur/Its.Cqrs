@@ -1,9 +1,7 @@
 using System;
 using System.Linq;
-using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

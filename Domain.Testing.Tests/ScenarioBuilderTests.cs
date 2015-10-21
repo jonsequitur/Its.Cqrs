@@ -606,8 +606,6 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
                 scenario.AdvanceClockBy(TimeSpan.FromDays(30));
 
-                Console.WriteLine("Waiting for scheduler to drain");
-
                 await scenario.CommandSchedulerDone();
 
                 account = await scenario.GetLatestAsync<CustomerAccount>();

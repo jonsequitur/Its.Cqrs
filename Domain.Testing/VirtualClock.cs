@@ -10,6 +10,7 @@ using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing
@@ -24,7 +25,7 @@ namespace Microsoft.Its.Domain.Testing
     {
         private readonly Subject<DateTimeOffset> movements = new Subject<DateTimeOffset>();
         private readonly RxScheduler Scheduler;
-        private readonly HashSet<IClock> schedulerClocks = new HashSet<IClock>();
+        private readonly ConcurrentHashSet<IClock> schedulerClocks = new ConcurrentHashSet<IClock>();
 
         private VirtualClock(DateTimeOffset now)
         {
@@ -85,20 +86,45 @@ namespace Microsoft.Its.Domain.Testing
                      .TimeoutAfter(TimeSpan.FromMinutes(1))
                      .Wait();
 
-            if (schedulerClocks.Any())
-            {
-                var configuration = Configuration.Current;
+            var configuration = Configuration.Current;
 
-                if (configuration.IsUsingLegacySqlCommandScheduling())
+            if (configuration.IsUsingLegacySqlCommandScheduling())
+            {
+                if (schedulerClocks.Any())
                 {
                     foreach (var clock in schedulerClocks.OfType<Sql.CommandScheduler.Clock>())
                     {
-                        var sqlCommandScheduler = configuration.SqlCommandScheduler();
-                        sqlCommandScheduler
-                            .AdvanceClock(clock.Name, Clock.Now())
+                        configuration.SqlCommandScheduler()
+                                     .AdvanceClock(clock.Name, Clock.Now())
+                                     .TimeoutAfter(TimeSpan.FromMinutes(1))
+                                     .Wait();
+                    }
+                }
+            }
+            else if (configuration.IsUsingCommandSchedulerPipeline())
+            {
+                var commandsInPipeline = Domain.CommandScheduler.TrackCommandsInPipeline(configuration);
+
+                var sqlSchedulerClocks = commandsInPipeline
+                    .Select(c => c.Result)
+                    .OfType<CommandScheduled>()
+                    .Select(s => s.Clock)
+                    .OfType<Sql.CommandScheduler.Clock>()
+                    .Distinct()
+                    .ToArray();
+
+                if (sqlSchedulerClocks.Any())
+                {
+                    var clockTrigger = configuration.Container
+                                                    .Resolve<ISchedulerClockTrigger>();
+
+                    sqlSchedulerClocks.ForEach(c =>
+                    {
+                        clockTrigger
+                            .AdvanceClock(c.Name, Clock.Now())
                             .TimeoutAfter(TimeSpan.FromMinutes(1))
                             .Wait();
-                    }
+                    });
                 }
             }
         }
@@ -139,6 +165,7 @@ namespace Microsoft.Its.Domain.Testing
 
             var virtualClock = new VirtualClock(now ?? DateTimeOffset.Now);
             Clock.Current = virtualClock;
+
             return virtualClock;
         }
 

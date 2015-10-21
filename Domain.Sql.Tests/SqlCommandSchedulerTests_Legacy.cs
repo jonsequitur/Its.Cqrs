@@ -162,6 +162,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             sqlCommandScheduler.GetClockName = e => clockName;
             clockTrigger = sqlCommandScheduler;
             clockRepository = sqlCommandScheduler;
+            configuration.TriggerSqlCommandSchedulerWithVirtualClock();
         }
     }
 }

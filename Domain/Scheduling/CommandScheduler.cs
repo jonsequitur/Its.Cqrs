@@ -1,4 +1,8 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,6 +15,8 @@ namespace Microsoft.Its.Domain
 {
     public static class CommandScheduler
     {
+        private static readonly object lockObj = new object();
+
         internal static ICommandScheduler<TAggregate> Wrap<TAggregate>(
             this ICommandScheduler<TAggregate> scheduler,
             ScheduledCommandInterceptor<TAggregate> schedule = null,
@@ -143,10 +149,10 @@ namespace Microsoft.Its.Domain
             return scheduledCommand;
         }
 
-        internal class CommandsInPipeline
+        internal class CommandsInPipeline : IEnumerable<IScheduledCommand>
         {
             private readonly ConcurrentDictionary<IScheduledCommand, DateTimeOffset> commands = new ConcurrentDictionary<IScheduledCommand, DateTimeOffset>();
-
+         
             public void Add(IScheduledCommand command)
             {
                 var now = Clock.Now();
@@ -173,20 +179,28 @@ namespace Microsoft.Its.Domain
                     }
                 }
             }
+
+            public IEnumerator<IScheduledCommand> GetEnumerator()
+            {
+                return commands.Keys.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
         }
 
         public static Configuration TraceCommandsFor<TAggregate>(
             this Configuration configuration)
             where TAggregate : class, IEventSourced
         {
-            // resolve and register so there's only a single instance registered at any given time
-            var inPipeline = configuration.Container.Resolve<CommandsInPipeline>();
-            configuration.Container.Register(c => inPipeline);
+            var commandsInPipeline = TrackCommandsInPipeline(configuration);
 
             return configuration.AddToCommandSchedulerPipeline<TAggregate>(
                 schedule: async (command, next) =>
                 {
-                    inPipeline.Add(command);
+                    commandsInPipeline.Add(command);
                     await next(command);
                     Trace.WriteLine(Clock.Now() + " [Schedule] " + command);
                 },
@@ -194,8 +208,23 @@ namespace Microsoft.Its.Domain
                 {
                     await next(command);
                     Trace.WriteLine(Clock.Now() + " [Deliver] " + command);
-                    inPipeline.Remove(command);
+                    commandsInPipeline.Remove(command);
                 });
+        }
+
+        internal static CommandsInPipeline TrackCommandsInPipeline(
+            Configuration configuration)
+        {
+            // resolve and register so there's only a single instance registered at any given time
+            CommandsInPipeline inPipeline;
+
+            lock (lockObj)
+            {
+                inPipeline = configuration.Container.Resolve<CommandsInPipeline>();
+                configuration.Container.Register(c => inPipeline);
+            }
+
+            return inPipeline;
         }
     }
 }
