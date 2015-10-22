@@ -267,6 +267,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var db = new CommandSchedulerDbContext())
             {
+                foreach (var command in db.ScheduledCommands.Where(c => c.AggregateId == aggregate.Id))
+                {
+                    command.AppliedTime.Value.Should().BeInRange(dueTime.AddMilliseconds(-10), dueTime.AddMilliseconds(10));
+                }
                 db.ScheduledCommands
                   .Where(c => c.AggregateId == aggregate.Id)
                   .Should()
