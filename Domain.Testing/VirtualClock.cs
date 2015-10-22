@@ -83,7 +83,7 @@ namespace Microsoft.Its.Domain.Testing
         private void WaitForScheduler()
         {
             Scheduler.Done()
-                     .TimeoutAfter(TimeSpan.FromMinutes(1))
+                     .TimeoutAfter(Scenario.DefaultTimeout())
                      .Wait();
 
             var configuration = Configuration.Current;
@@ -96,7 +96,7 @@ namespace Microsoft.Its.Domain.Testing
                     {
                         configuration.SqlCommandScheduler()
                                      .AdvanceClock(clock.Name, Clock.Now())
-                                     .TimeoutAfter(TimeSpan.FromMinutes(1))
+                                     .TimeoutAfter(Scenario.DefaultTimeout())
                                      .Wait();
                     }
                 }
@@ -122,7 +122,7 @@ namespace Microsoft.Its.Domain.Testing
                     {
                         clockTrigger
                             .AdvanceClock(c.Name, Clock.Now())
-                            .TimeoutAfter(TimeSpan.FromMinutes(1))
+                            .TimeoutAfter(Scenario.DefaultTimeout())
                             .Wait();
                     });
                 }

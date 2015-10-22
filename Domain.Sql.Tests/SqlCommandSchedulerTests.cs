@@ -249,6 +249,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var dueTime = Clock.Now().AddMinutes(5);
 
+            Console.WriteLine(new { dueTime });
+
             await scheduler.Schedule(
                 aggregate.Id,
                 dueTime: dueTime,
