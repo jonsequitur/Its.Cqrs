@@ -271,10 +271,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 {
                     command.AppliedTime.Value.Should().BeInRange(dueTime.AddMilliseconds(-10), dueTime.AddMilliseconds(10));
                 }
-                db.ScheduledCommands
-                  .Where(c => c.AggregateId == aggregate.Id)
-                  .Should()
-                  .OnlyContain(c => c.AppliedTime == dueTime);
             }
         }
 
