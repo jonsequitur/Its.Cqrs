@@ -11,7 +11,7 @@ namespace Microsoft.Its.Domain
     [DebuggerDisplay("{ToString()}")]
     public class CommandScheduled : ScheduledCommandResult
     {
-        public CommandScheduled(IScheduledCommand command, IClock clock) : base(command)
+        public CommandScheduled(IScheduledCommand command, IClock clock = null) : base(command)
         {
             Clock = clock;
         }

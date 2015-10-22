@@ -105,6 +105,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 // sometimes the command depends on a precondition event that hasn't been saved
                 if (!await commandPreconditionVerifier.IsPreconditionSatisfied(scheduledCommand))
                 {
+                    // FIX: (Schedule) remove?
                     this.DeliverIfPreconditionIsSatisfiedWithin(
                         TimeSpan.FromSeconds(10),
                         scheduledCommand,
