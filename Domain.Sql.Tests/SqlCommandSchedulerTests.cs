@@ -269,7 +269,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 foreach (var command in db.ScheduledCommands.Where(c => c.AggregateId == aggregate.Id))
                 {
-                    command.AppliedTime.Value.Should().BeInRange(dueTime.AddMilliseconds(-10), dueTime.AddMilliseconds(10));
+                    command.AppliedTime.IfNotNull()
+                           .ThenDo(v => v.Should().BeInRange(dueTime.AddMilliseconds(-10), dueTime.AddMilliseconds(10)));
                 }
             }
         }
