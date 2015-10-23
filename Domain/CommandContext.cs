@@ -116,9 +116,9 @@ namespace Microsoft.Its.Domain
             return GenerateETag(unhashedEtag);
         }
 
-        internal static string GenerateETag(string input)
+        internal static string GenerateETag(string unhashed = null)
         {
-            var inputBytes = Encoding.ASCII.GetBytes(input);
+            var inputBytes = Encoding.ASCII.GetBytes(unhashed ?? Guid.NewGuid().ToString("N"));
             var hash = MD5.Create().ComputeHash(inputBytes);
 
             var sb = new StringBuilder();

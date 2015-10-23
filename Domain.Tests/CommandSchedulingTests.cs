@@ -296,6 +296,56 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
+        public async Task Scheduled_commands_triggered_by_a_scheduled_command_are_idempotent()
+        {
+            var aggregate = new CommandSchedulerTestAggregate();
+            var repository = Configuration.Current
+                                          .Repository<CommandSchedulerTestAggregate>();
+
+            await repository.Save(aggregate);
+
+            var scheduler = Configuration.Current.CommandScheduler<CommandSchedulerTestAggregate>();
+
+            var dueTime = Clock.Now().AddMinutes(5);
+
+            Console.WriteLine(new { dueTime });
+
+            var command = new CommandSchedulerTestAggregate.CommandThatSchedulesTwoOtherCommandsImmediately
+            {
+                NextCommand1AggregateId = aggregate.Id,
+                NextCommand1 = new CommandSchedulerTestAggregate.Command
+                {
+                    CommandId = Any.CamelCaseName()
+                },
+                NextCommand2AggregateId = aggregate.Id,
+                NextCommand2 = new CommandSchedulerTestAggregate.Command
+                {
+                    CommandId = Any.CamelCaseName()
+                }
+            };
+
+            await scheduler.Schedule(
+                aggregate.Id,
+                dueTime: dueTime,
+                command: command);
+            await scheduler.Schedule(
+                aggregate.Id,
+                dueTime: dueTime,
+                command: command);
+
+            VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
+
+            aggregate = await repository.GetLatest(aggregate.Id);
+
+            var events = aggregate.Events().ToArray();
+            events.Count().Should().Be(3);
+            var succeededEvents = events.OfType<CommandSchedulerTestAggregate.CommandSucceeded>().ToArray();
+            succeededEvents.Count().Should().Be(2);
+            succeededEvents.First().Command.CommandId
+                           .Should().NotBe(succeededEvents.Last().Command.CommandId);
+        }
+
+        [Test]
         public async Task A_scheduled_command_is_due_if_no_due_time_is_specified()
         {
             var command = new CommandScheduled<Order>

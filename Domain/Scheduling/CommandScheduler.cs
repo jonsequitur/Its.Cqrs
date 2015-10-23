@@ -129,7 +129,7 @@ namespace Microsoft.Its.Domain
                 };
             }
 
-            if (String.IsNullOrEmpty(command.ETag))
+            if (string.IsNullOrEmpty(command.ETag))
             {
                 command.IfTypeIs<Command>()
                        .ThenDo(c => c.ETag = CommandContext.Current

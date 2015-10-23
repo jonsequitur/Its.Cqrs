@@ -236,8 +236,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task Immediately_scheduled_commands_triggered_by_a_scheduled_command_have_their_due_time_set_to_the_causative_command_clock()
         {
-            var now = DateTimeOffset.Now;
-            VirtualClock.Start(now);
+            VirtualClock.Start();
 
             var aggregate = new CommandSchedulerTestAggregate();
             var repository = Configuration.Current

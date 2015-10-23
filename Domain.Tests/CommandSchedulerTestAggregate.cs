@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.Its.Domain.Sql.Tests
+namespace Microsoft.Its.Domain.Tests
 {
     public class CommandSchedulerTestAggregate : EventSourcedAggregate<CommandSchedulerTestAggregate>
     {
@@ -46,6 +46,22 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 return true;
             }
         }
+        
+        public class CommandThatSchedulesTwoOtherCommandsImmediately : Command<CommandSchedulerTestAggregate>
+        {
+            public Command NextCommand1 { get; set; }
+            
+            public Command NextCommand2 { get; set; }
+
+            public Guid NextCommand1AggregateId { get; set; }
+            
+            public Guid NextCommand2AggregateId { get; set; }
+
+            public override bool Authorize(CommandSchedulerTestAggregate aggregate)
+            {
+                return true;
+            }
+        }
 
         public class CommandSucceeded : Event<CommandSchedulerTestAggregate>
         {
@@ -67,7 +83,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public class CommandHandler :
             ICommandHandler<CommandSchedulerTestAggregate, Command>,
-            ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesAnotherCommandImmediately>
+            ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesAnotherCommandImmediately>, ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesTwoOtherCommandsImmediately>
         {
             private readonly ICommandScheduler<CommandSchedulerTestAggregate> scheduler;
 
@@ -105,7 +121,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 CommandThatSchedulesAnotherCommandImmediately command)
             {
                 await scheduler.Schedule(
-                    command.NextCommandAggregateId, 
+                    command.NextCommandAggregateId,
                     command.NextCommand,
                     Clock.Now());
             }
@@ -118,6 +134,26 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 {
                     Command = command.Command
                 });
+            }
+
+            public async Task EnactCommand(
+                CommandSchedulerTestAggregate aggregate,
+                CommandThatSchedulesTwoOtherCommandsImmediately command)
+            {
+                await scheduler.Schedule(
+                    command.NextCommand1AggregateId,
+                    command.NextCommand1,
+                    Clock.Now());
+                await scheduler.Schedule(
+                    command.NextCommand2AggregateId,
+                    command.NextCommand2,
+                    Clock.Now());
+            }
+
+            public async Task HandleScheduledCommandException(
+                CommandSchedulerTestAggregate aggregate,
+                CommandFailed<CommandThatSchedulesTwoOtherCommandsImmediately> command)
+            {
             }
         }
     }

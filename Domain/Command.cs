@@ -8,7 +8,6 @@ using System.Dynamic;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading;
-using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
