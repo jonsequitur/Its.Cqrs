@@ -1,9 +1,7 @@
 using System;
 using System.Linq;
-using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -21,23 +19,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             configuration
                 .UseDependency<GetClockName>(c => e => clockName)
                 .UseSqlStorageForScheduledCommands();
-
-            configuration
-                .AddToCommandSchedulerPipeline<Order>(
-                    schedule: async (scheduling, next) =>
-                    {
-                        using (Log.Enter(() => new { scheduling }))
-                        {
-                            await next(scheduling);
-                        }
-                    },
-                    deliver: async (delivering, next) =>
-                    {
-                        using (Log.Enter(() => new { delivering }))
-                        {
-                            await next(delivering);
-                        }
-                    });
         }
     }
 }

@@ -2,8 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Data.Entity.Infrastructure;
-using System.Data.Entity.Validation;
 using System.Diagnostics;
 using Its.Log.Instrumentation;
 using System.Linq;
@@ -43,19 +41,7 @@ namespace Microsoft.Its.Domain.Tests.Infrastructure
                     writer.WriteLine();
                 });
 
-                Formatter.AutoGenerateForType = type =>
-                {
-                    return new[]
-                    {
-                        typeof (ICommand),
-                        typeof (IEvent),
-                        typeof (IScheduledCommand),
-                        typeof (ICommandSchedulerActivity)
-                    }.Any(t => t.IsAssignableFrom(type));
-                };
-
                 Formatter<ReadModelInfo>.RegisterForAllMembers();
-                Formatter<CommandFailed>.RegisterForAllMembers();
             }
         }
     }

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -16,7 +17,12 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("command");
             }
 
-            clock = clock ?? Clock.Current;
+            clock = clock ??
+                    command.Result
+                           .IfTypeIs<CommandScheduled>()
+                           .Then(scheduled => scheduled.Clock)
+                           .ElseDefault() ??
+                    Clock.Current;
 
             return (command.DueTime == null ||
                     command.DueTime <= clock.Now())

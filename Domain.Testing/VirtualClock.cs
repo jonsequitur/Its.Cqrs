@@ -4,13 +4,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing
@@ -18,7 +18,6 @@ namespace Microsoft.Its.Domain.Testing
     /// <summary>
     /// A virtual domain clock that can be used for testing time-dependent operations.
     /// </summary>
-    [DebuggerStepThrough]
     public class VirtualClock :
         IClock,
         IDisposable,
@@ -26,7 +25,7 @@ namespace Microsoft.Its.Domain.Testing
     {
         private readonly Subject<DateTimeOffset> movements = new Subject<DateTimeOffset>();
         private readonly RxScheduler Scheduler;
-        private readonly HashSet<string> schedulerClocks = new HashSet<string>();
+        private readonly ConcurrentHashSet<IClock> schedulerClocks = new ConcurrentHashSet<IClock>();
 
         private VirtualClock(DateTimeOffset now)
         {
@@ -84,22 +83,48 @@ namespace Microsoft.Its.Domain.Testing
         private void WaitForScheduler()
         {
             Scheduler.Done()
-                     .TimeoutAfter(TimeSpan.FromMinutes(1))
+                     .TimeoutAfter(Scenario.DefaultTimeout())
                      .Wait();
 
-            if (schedulerClocks.Any())
+            var configuration = Configuration.Current;
+
+            if (configuration.IsUsingLegacySqlCommandScheduling())
             {
-                var configuration = Configuration.Current;
-                if (configuration.IsUsingSqlCommandScheduling())
+                if (schedulerClocks.Any())
                 {
-                    foreach (var clockName in schedulerClocks)
+                    foreach (var clock in schedulerClocks.OfType<Sql.CommandScheduler.Clock>())
                     {
-                        var sqlCommandScheduler = configuration.SqlCommandScheduler();
-                        sqlCommandScheduler
-                            .AdvanceClock(clockName, Clock.Now())
-                            .TimeoutAfter(TimeSpan.FromMinutes(1))
-                            .Wait();
+                        configuration.SqlCommandScheduler()
+                                     .AdvanceClock(clock.Name, Clock.Now())
+                                     .TimeoutAfter(Scenario.DefaultTimeout())
+                                     .Wait();
                     }
+                }
+            }
+            else if (configuration.IsUsingCommandSchedulerPipeline())
+            {
+                var commandsInPipeline = Domain.CommandScheduler.TrackCommandsInPipeline(configuration);
+
+                var sqlSchedulerClocks = commandsInPipeline
+                    .Select(c => c.Result)
+                    .OfType<CommandScheduled>()
+                    .Select(s => s.Clock)
+                    .OfType<Sql.CommandScheduler.Clock>()
+                    .Distinct()
+                    .ToArray();
+
+                if (sqlSchedulerClocks.Any())
+                {
+                    var clockTrigger = configuration.Container
+                                                    .Resolve<ISchedulerClockTrigger>();
+
+                    sqlSchedulerClocks.ForEach(c =>
+                    {
+                        clockTrigger
+                            .AdvanceClock(c.Name, Clock.Now())
+                            .TimeoutAfter(Scenario.DefaultTimeout())
+                            .Wait();
+                    });
                 }
             }
         }
@@ -140,6 +165,7 @@ namespace Microsoft.Its.Domain.Testing
 
             var virtualClock = new VirtualClock(now ?? DateTimeOffset.Now);
             Clock.Current = virtualClock;
+
             return virtualClock;
         }
 
@@ -218,9 +244,13 @@ namespace Microsoft.Its.Domain.Testing
             }
         }
 
-        internal void OnAdvanceTriggerSchedulerClock(string clockName)
+        internal void OnAdvanceTriggerSchedulerClock(IClock clock)
         {
-            schedulerClocks.Add(clockName);
+            if (clock == null)
+            {
+                throw new ArgumentNullException("clock");
+            }
+            schedulerClocks.Add(clock);
         }
     }
 }

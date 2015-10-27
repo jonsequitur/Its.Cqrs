@@ -71,7 +71,7 @@ namespace Microsoft.Its.Domain
                 throw new InvalidOperationException("ETag is already assigned.");
             }
 
-            ETag = Guid.NewGuid().ToString("N");
+            ETag = CommandContext.GenerateETag();
         }
 
         private static readonly Lazy<Dictionary<Tuple<Type, string>, Type>> index = new Lazy<Dictionary<Tuple<Type, string>, Type>>
@@ -82,7 +82,7 @@ namespace Microsoft.Its.Domain
                                             aggregateType,
                                             commandTypes = (IEnumerable<Type>) typeof (Command<>).MakeGenericType(aggregateType)
                                                                                                  .Member()
-                                                                                                 .KnownTypes,
+                                                                                                 .KnownTypes
                                         })
                                 .SelectMany(ts => ts.commandTypes
                                                     .Select(ct =>

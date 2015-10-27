@@ -8,6 +8,12 @@ namespace Microsoft.Its.Domain.Testing
 {
     public static class TaskExtensions
     {
+        /// <summary>
+        /// Throws a TimeoutException if the specified task does not complete within the given timespan.
+        /// </summary>
+        /// <param name="task">The task.</param>
+        /// <param name="timespan">The timespan.</param>
+        /// <exception cref="System.TimeoutException"></exception>
         public static async Task TimeoutAfter(
             this Task task,
             TimeSpan timespan)

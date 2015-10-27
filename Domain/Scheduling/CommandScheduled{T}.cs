@@ -20,6 +20,11 @@ namespace Microsoft.Its.Domain
         IScheduledCommand<TAggregate>
         where TAggregate : IEventSourced
     {
+        public CommandScheduled()
+        {
+            ETag = Guid.NewGuid().ToString("N");
+        }
+
         [JsonConverter(typeof (CommandConverter))]
         public ICommand<TAggregate> Command { get; set; }
 
@@ -30,6 +35,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public ScheduledCommandPrecondition DeliveryPrecondition { get; set; }
 
+        [JsonIgnore]
         public ScheduledCommandResult Result { get; set; }
 
         public override void Update(TAggregate aggregate)

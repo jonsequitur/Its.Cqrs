@@ -4,6 +4,7 @@
 using System;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
@@ -30,6 +31,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         public Clock Clock { get; set; }
 
+        [JsonIgnore]
         public ScheduledCommandResult Result { get; set; }
 
         internal bool NonDurable { get; set; }

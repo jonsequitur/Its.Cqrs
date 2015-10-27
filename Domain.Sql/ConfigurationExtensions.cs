@@ -80,16 +80,16 @@ namespace Microsoft.Its.Domain.Sql
                 configuration.RegisterForDisposal(catchup);
             }
 
-            configuration.IsUsingSqlCommandScheduling(true);
+            configuration.IsUsingLegacySqlCommandScheduling(true);
 
             return configuration;
         }
 
         public static SqlCommandScheduler SqlCommandScheduler(this Configuration configuration)
         {
-            if (!configuration.IsUsingSqlCommandScheduling())
+            if (!configuration.IsUsingLegacySqlCommandScheduling())
             {
-                throw new InvalidOperationException("You must first call UseSqlCommandScheduling to enable the use of the SqlCommandScheduler.");
+                throw new InvalidOperationException("You must first call UseSqlCommandScheduling to enable the use of the legacy SqlCommandScheduler.");
             }
             return configuration.Container.Resolve<SqlCommandScheduler>();
         }
@@ -111,7 +111,7 @@ namespace Microsoft.Its.Domain.Sql
 
             AggregateType.KnownTypes.ForEach(aggregateType =>
             {
-                var initializerType = typeof (SchedulerPipelineInitializer<>).MakeGenericType(aggregateType);
+                var initializerType = typeof (SqlCommandSchedulerPipelineInitializer<>).MakeGenericType(aggregateType);
                 var schedulerType = typeof (ICommandScheduler<>).MakeGenericType(aggregateType);
 
                 var initializer = container.Resolve(initializerType) as ISchedulerPipelineInitializer;
@@ -123,39 +123,27 @@ namespace Microsoft.Its.Domain.Sql
                 initializer.Initialize(configuration);
             });
 
-            container.Register(
-                c => new SchedulerClockTrigger(
-                    c.Resolve<CommandSchedulerDbContext>,
-                    async (serializedCommand, result, db) =>
-                    {
-                        dynamic scheduler = schedulerFuncs[serializedCommand.AggregateType];
+            container
+                .Register(
+                    c => new SchedulerClockTrigger(
+                        c.Resolve<CommandSchedulerDbContext>,
+                        async (serializedCommand, result, db) =>
+                        {
+                            dynamic scheduler = schedulerFuncs[serializedCommand.AggregateType];
 
-                        await Storage.DeserializeAndDeliverScheduledCommand(
-                            serializedCommand,
-                            scheduler());
+                            await Storage.DeserializeAndDeliverScheduledCommand(
+                                serializedCommand,
+                                scheduler());
 
-                        result.Add(serializedCommand.Result);
+                            result.Add(serializedCommand.Result);
 
-                        serializedCommand.Attempts++;
+                            serializedCommand.Attempts++;
 
-                        await db.SaveChangesAsync();
-                    }));
+                            await db.SaveChangesAsync();
+                        }))
+                .Register<ISchedulerClockTrigger>(c => c.Resolve<SchedulerClockTrigger>());
 
             return configuration;
-        }
-
-        internal static void IsUsingSqlCommandScheduling(this Configuration configuration, bool value)
-        {
-            configuration.Properties["IsUsingSqlCommandScheduling"] = value;
-        }
-
-        internal static bool IsUsingSqlCommandScheduling(this Configuration configuration)
-        {
-            return configuration.Properties
-                                .IfContains("IsUsingSqlCommandScheduling")
-                                .And()
-                                .IfTypeIs<bool>()
-                                .ElseDefault();
         }
 
         internal static void IsUsingSqlEventStore(this Configuration configuration, bool value)

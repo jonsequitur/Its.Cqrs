@@ -38,9 +38,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public void TestFixtureSetUp()
         {
             Logging.Configure();
-            Formatter<SchedulerAdvancedResult>.RegisterForAllMembers();
-            Formatter<CommandSucceeded>.RegisterForAllMembers();
-            Formatter<CommandFailed>.RegisterForAllMembers();
 
             // disable authorization checks
             Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
@@ -67,6 +64,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var configuration = new Configuration();
             configuration.UseEventBus(bus)
+                         .UseSqlEventStore()
                          .UseDependency<IEventSourcedRepository<Order>>(t => orderRepository)
                          .UseDependency<IEventSourcedRepository<CustomerAccount>>(t => accountRepository);
 
@@ -132,7 +130,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             // act
             await clockTrigger.AdvanceClock(clockName: clockName,
-                                         @by: TimeSpan.FromDays(33));
+                                            @by: TimeSpan.FromDays(33));
 
             //assert 
             order = await orderRepository.GetLatest(order.Id);
@@ -233,6 +231,47 @@ namespace Microsoft.Its.Domain.Sql.Tests
             order = await orderRepository.GetLatest(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
+        }
+
+        [Test]
+        public async Task Immediately_scheduled_commands_triggered_by_a_scheduled_command_have_their_due_time_set_to_the_causative_command_clock()
+        {
+            VirtualClock.Start();
+
+            var aggregate = new CommandSchedulerTestAggregate();
+            var repository = Configuration.Current
+                                          .Repository<CommandSchedulerTestAggregate>();
+
+            await repository.Save(aggregate);
+
+            var scheduler = Configuration.Current.CommandScheduler<CommandSchedulerTestAggregate>();
+
+            var dueTime = Clock.Now().AddMinutes(5);
+
+            Console.WriteLine(new { dueTime });
+
+            await scheduler.Schedule(
+                aggregate.Id,
+                dueTime: dueTime,
+                command: new CommandSchedulerTestAggregate.CommandThatSchedulesAnotherCommandImmediately
+                {
+                    NextCommandAggregateId = aggregate.Id,
+                    NextCommand = new CommandSchedulerTestAggregate.Command
+                    {
+                        CommandId = Any.CamelCaseName()
+                    }
+                });
+
+            VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
+
+            using (var db = new CommandSchedulerDbContext())
+            {
+                foreach (var command in db.ScheduledCommands.Where(c => c.AggregateId == aggregate.Id))
+                {
+                    command.AppliedTime.IfNotNull()
+                           .ThenDo(v => v.Should().BeInRange(dueTime.AddMilliseconds(-10), dueTime.AddMilliseconds(10)));
+                }
+            }
         }
 
         [Test]

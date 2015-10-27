@@ -112,17 +112,35 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public async Task Advancing_the_clock_blocks_until_triggered_commands_on_the_SqlCommandScheduler_are_completed()
+        public async Task When_using_legacy_SQL_command_scheduling_then_advancing_the_clock_blocks_until_triggered_commands_are_completed()
         {
             var configuration = new Configuration()
                 .UseInMemoryEventStore()
                 .UseSqlCommandScheduling()
                 .TriggerSqlCommandSchedulerWithVirtualClock();
 
-            VirtualClock.Start();
-
             configuration.SqlCommandScheduler()
                          .GetClockName = e => Any.CamelCaseName();
+
+            await ScheduleCommandAndAdvanceClock(configuration);
+        }
+
+        [Test]
+        public async Task When_using_pipelined_SQL_command_scheduling_then_advancing_the_clock_blocks_until_triggered_commands_are_completed()
+        {
+            var configuration = new Configuration()
+                .UseInMemoryEventStore()
+                .UseDependency<GetClockName>(c => e => Any.CamelCaseName())
+                .UseSqlStorageForScheduledCommands();
+
+            configuration.TraceCommandsFor<Order>();
+
+            await ScheduleCommandAndAdvanceClock(configuration);
+        }
+
+        private static async Task ScheduleCommandAndAdvanceClock(Configuration configuration)
+        {
+            VirtualClock.Start();
 
             using (ConfigurationContext.Establish(configuration))
             {

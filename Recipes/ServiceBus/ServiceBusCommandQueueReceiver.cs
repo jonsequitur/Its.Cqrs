@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.ServiceBus.Messaging;
+using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain.ServiceBus
 {
@@ -230,6 +231,7 @@ namespace Microsoft.Its.Domain.ServiceBus
 
             public ScheduledCommandPrecondition DeliveryPrecondition { get; private set; }
 
+            [JsonIgnore]
             public ScheduledCommandResult Result { get; set; }
 
             public BrokeredMessage BrokeredMessage { get; internal set; }

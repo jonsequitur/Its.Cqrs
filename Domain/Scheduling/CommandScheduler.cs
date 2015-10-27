@@ -1,5 +1,11 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,6 +15,8 @@ namespace Microsoft.Its.Domain
 {
     public static class CommandScheduler
     {
+        private static readonly object lockObj = new object();
+
         internal static ICommandScheduler<TAggregate> Wrap<TAggregate>(
             this ICommandScheduler<TAggregate> scheduler,
             ScheduledCommandInterceptor<TAggregate> schedule = null,
@@ -108,7 +116,10 @@ namespace Microsoft.Its.Domain
                 {
                     deliveryDependsOn.IfTypeIs<Event>()
                                      .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N"))
-                                     .ElseDo(() => { throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends."); });
+                                     .ElseDo(() =>
+                                     {
+                                         throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends.");
+                                     });
                 }
 
                 precondition = new ScheduledCommandPrecondition
@@ -118,7 +129,7 @@ namespace Microsoft.Its.Domain
                 };
             }
 
-            if (String.IsNullOrEmpty(command.ETag))
+            if (string.IsNullOrEmpty(command.ETag))
             {
                 command.IfTypeIs<Command>()
                        .ThenDo(c => c.ETag = CommandContext.Current
@@ -136,6 +147,84 @@ namespace Microsoft.Its.Domain
                 DeliveryPrecondition = precondition
             };
             return scheduledCommand;
+        }
+
+        internal class CommandsInPipeline : IEnumerable<IScheduledCommand>
+        {
+            private readonly ConcurrentDictionary<IScheduledCommand, DateTimeOffset> commands = new ConcurrentDictionary<IScheduledCommand, DateTimeOffset>();
+         
+            public void Add(IScheduledCommand command)
+            {
+                var now = Clock.Now();
+                commands.AddOrUpdate(
+                    command,
+                    now,
+                    (c, t) => now);
+            }
+
+            public void Remove(IScheduledCommand command)
+            {
+                DateTimeOffset _;
+                commands.TryRemove(command, out _);
+            }
+
+            public async Task Done()
+            {
+                while (true)
+                {
+                    var now = Clock.Current;
+                    if (!commands.Keys.Any(c => c.IsDue(now)))
+                    {
+                        return;
+                    }
+                }
+            }
+
+            public IEnumerator<IScheduledCommand> GetEnumerator()
+            {
+                return commands.Keys.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+        }
+
+        public static Configuration TraceCommandsFor<TAggregate>(
+            this Configuration configuration)
+            where TAggregate : class, IEventSourced
+        {
+            var commandsInPipeline = TrackCommandsInPipeline(configuration);
+
+            return configuration.AddToCommandSchedulerPipeline<TAggregate>(
+                schedule: async (command, next) =>
+                {
+                    commandsInPipeline.Add(command);
+                    await next(command);
+                    Trace.WriteLine(Clock.Now() + " [Schedule] " + command);
+                },
+                deliver: async (command, next) =>
+                {
+                    await next(command);
+                    Trace.WriteLine(Clock.Now() + " [Deliver] " + command);
+                    commandsInPipeline.Remove(command);
+                });
+        }
+
+        internal static CommandsInPipeline TrackCommandsInPipeline(
+            Configuration configuration)
+        {
+            // resolve and register so there's only a single instance registered at any given time
+            CommandsInPipeline inPipeline;
+
+            lock (lockObj)
+            {
+                inPipeline = configuration.Container.Resolve<CommandsInPipeline>();
+                configuration.Container.Register(c => inPipeline);
+            }
+
+            return inPipeline;
         }
     }
 }

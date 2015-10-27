@@ -113,22 +113,14 @@ namespace Microsoft.Its.Domain
 
             var unhashedEtag = string.Format("{0}:{1} ({2})", Command.ETag, forTargetToken, count);
 
-            return Md5Hash(unhashedEtag, true);
+            return GenerateETag(unhashedEtag);
         }
 
-        private static string Md5Hash(string input, bool base64)
+        internal static string GenerateETag(string unhashed = null)
         {
-            // step 1, calculate MD5 hash from input
-            var md5 = MD5.Create();
-            var inputBytes = Encoding.ASCII.GetBytes(input);
-            byte[] hash = md5.ComputeHash(inputBytes);
+            var inputBytes = Encoding.ASCII.GetBytes(unhashed ?? Guid.NewGuid().ToString("N"));
+            var hash = MD5.Create().ComputeHash(inputBytes);
 
-            if (base64)
-            {
-                return Convert.ToBase64String(hash);
-            }
-
-            // step 2, convert byte array to hex string
             var sb = new StringBuilder();
             for (var i = 0; i < hash.Length; i++)
             {

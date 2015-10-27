@@ -305,7 +305,6 @@ namespace Microsoft.Its.Domain.Tests
                 ETag = etag
             });
 
-
             order.CustomerName.Should().Be(newName);
         }
 

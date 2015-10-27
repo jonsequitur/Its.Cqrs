@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
@@ -115,14 +116,24 @@ namespace Microsoft.Its.Domain.Testing
                 var virtualClock = Clock.Current as VirtualClock;
                 if (virtualClock != null)
                 {
-                    await virtualClock.Done().TimeoutAfter(TimeSpan.FromMinutes(1));
+                    await virtualClock.Done().TimeoutAfter(DefaultTimeout());
                 }
             }
             else
             {
                 var scheduler = builder.Configuration.Container.Resolve<SqlCommandScheduler>();
-                await scheduler.AdvanceClock(clockName, Clock.Now()).TimeoutAfter(TimeSpan.FromMinutes(1));
+                await scheduler.AdvanceClock(clockName, Clock.Now()).TimeoutAfter(DefaultTimeout());
             }
+        }
+
+        internal static TimeSpan DefaultTimeout()
+        {
+            if (!Debugger.IsAttached)
+            {
+                return TimeSpan.FromMinutes(1);
+            }
+
+            return TimeSpan.FromMinutes(15);
         }
 
         /// <summary>

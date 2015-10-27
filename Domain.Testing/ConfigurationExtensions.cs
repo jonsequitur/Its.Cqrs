@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Concurrent;
 using System.Reactive.Linq;
@@ -18,11 +21,12 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="configuration">A domain configuration instance.</param>
         /// <returns>The modified domain configuration instance.</returns>
+        [Obsolete("When using the command scheduler pipepline, VirtualClock integration is automatically enabled.")]
         public static Configuration TriggerSqlCommandSchedulerWithVirtualClock(this Configuration configuration)
         {
-            if (!configuration.IsUsingSqlCommandScheduling())
+            if (!configuration.IsUsingLegacySqlCommandScheduling())
             {
-                throw new InvalidOperationException("Only supported after configuring with UseSqlCommandScheduler.");
+                throw new InvalidOperationException("Only supported after configuring legacy SQL command scheduler by calling UseSqlCommandScheduler.");
             }
 
             var scheduler = configuration.SqlCommandScheduler();
@@ -33,7 +37,10 @@ namespace Microsoft.Its.Domain.Testing
                                         {
                                             Clock.Current
                                                  .IfTypeIs<VirtualClock>()
-                                                 .ThenDo(clock => { clock.OnAdvanceTriggerSchedulerClock(scheduled.ClockName); });
+                                                 .ThenDo(clock =>
+                                                 {
+                                                     clock.OnAdvanceTriggerSchedulerClock(scheduled.Clock);
+                                                 });
                                         });
 
             configuration.RegisterForDisposal(subscription);
