@@ -23,11 +23,6 @@ namespace Microsoft.Its.Domain
         protected Command(string etag = null)
         {
             ETag = etag;
-
-            if (ETag == null)
-            {
-                
-            }
         }
 
         /// <summary>
@@ -87,7 +82,7 @@ namespace Microsoft.Its.Domain
                                             aggregateType,
                                             commandTypes = (IEnumerable<Type>) typeof (Command<>).MakeGenericType(aggregateType)
                                                                                                  .Member()
-                                                                                                 .KnownTypes,
+                                                                                                 .KnownTypes
                                         })
                                 .SelectMany(ts => ts.commandTypes
                                                     .Select(ct =>
