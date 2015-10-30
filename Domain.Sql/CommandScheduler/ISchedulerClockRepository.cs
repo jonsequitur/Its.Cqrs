@@ -30,6 +30,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         DateTimeOffset ReadClock(string clockName);
 
-        string ClockName(IEvent forEvent);
+        string ClockName(IScheduledCommand forCommand);
     }
 }

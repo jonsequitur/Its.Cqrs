@@ -18,7 +18,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
     {
         public IObserver<ICommandSchedulerActivity> Activity = Observer.Create<ICommandSchedulerActivity>(a => { });
         public Func<IScheduledCommand<TAggregate>, string> GetClockLookupKey = cmd => null;
-        public Func<IEvent, string> GetClockName = cmd => null;
+        public GetClockName GetClockName = cmd => null;
         private readonly CommandPreconditionVerifier commandPreconditionVerifier;
         private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
@@ -95,7 +95,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             var storedScheduledCommand = await Storage.StoreScheduledCommand(
                 scheduledCommand,
                 createCommandSchedulerDbContext,
-                (scheduledCommandEvent1, db) => ClockNameForEvent(this, scheduledCommandEvent1, db));
+                (scheduled, db) => ClockNameForEvent(this, scheduled, db));
 
             Activity.OnNext(new CommandScheduled(scheduledCommand, storedScheduledCommand.Clock));
 

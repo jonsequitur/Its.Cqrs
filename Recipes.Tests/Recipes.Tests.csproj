@@ -53,7 +53,7 @@
     </Reference>
     <Reference Include="Its.Log, Version=2.7.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Log.2.9.8-beta\lib\net40\Its.Log.dll</HintPath>
+      <HintPath>..\packages\Its.Log.2.9.10-beta\lib\net40\Its.Log.dll</HintPath>
     </Reference>
     <Reference Include="Its.Validation">
       <HintPath>..\packages\Its.Validation.1.4.3\lib\net45\Its.Validation.dll</HintPath>

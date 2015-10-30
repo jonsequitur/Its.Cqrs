@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    public delegate string GetClockName(IEvent forEvent);
+    public delegate string GetClockName(IScheduledCommand forCommand);
 
     internal class SchedulerClockRepository : ISchedulerClockRepository
     {
@@ -133,9 +133,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
         }
 
-        public string ClockName(IEvent forEvent)
+        public string ClockName(IScheduledCommand forCommand)
         {
-            return getClockName(forEvent);
+            return getClockName(forCommand);
         }
     }
 }

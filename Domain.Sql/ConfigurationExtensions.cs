@@ -50,7 +50,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             var container = configuration.Container;
 
-            container.AddFallbackToDefaultClock();
+            container.RegisterDefaultClockName();
 
             var scheduler = new SqlCommandScheduler(
                 configuration,
@@ -99,7 +99,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             var container = configuration.Container;
 
-            container.AddFallbackToDefaultClock()
+            container.RegisterDefaultClockName()
                      .Register<ISchedulerClockRepository>(
                          c => c.Resolve<SchedulerClockRepository>())
                      .Register<ICommandPreconditionVerifier>(
@@ -173,7 +173,7 @@ namespace Microsoft.Its.Domain.Sql
 
         internal static ICommandSchedulerDispatcher[] InitializeSchedulersPerAggregateType(
             PocketContainer container,
-            Func<IEvent, string> getClockName,
+            GetClockName getClockName,
             ISubject<ICommandSchedulerActivity> subject)
         {
             var binders = AggregateType.KnownTypes
@@ -193,7 +193,7 @@ namespace Microsoft.Its.Domain.Sql
             return binders;
         }
 
-        internal static PocketContainer AddFallbackToDefaultClock(this PocketContainer container)
+        internal static PocketContainer RegisterDefaultClockName(this PocketContainer container)
         {
             return container.AddStrategy(t =>
             {

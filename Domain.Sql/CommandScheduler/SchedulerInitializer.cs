@@ -10,7 +10,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public ICommandSchedulerDispatcher InitializeScheduler(
             IObserver<ICommandSchedulerActivity> subject,
             PocketContainer container,
-            Func<IEvent, string> getClockName)
+            GetClockName getClockName)
         {
             var binder = container.Resolve<SqlCommandSchedulerBinder<TAggregate>>();
 

@@ -134,14 +134,14 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <summary>
         /// Provides a method so that delegates can point to the always-up-to-date GetClockName implementation, rather than capture a prior version of the delegate.
         /// </summary>
-        public string ClockName(IEvent @event)
+        public string ClockName(IScheduledCommand forCommand)
         {
             if (GetClockName == null)
             {
                 return null;
             }
 
-            return GetClockName(@event);
+            return GetClockName(forCommand);
         }
     }
 }
