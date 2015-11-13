@@ -9,25 +9,11 @@ using Microsoft.Its.Domain.Serialization;
 
 namespace Microsoft.Its.Domain.Testing
 {
-    public class InMemoryEventStream : IEventStream
+    public class InMemoryEventStream
     {
         private readonly HashSet<IStoredEvent> events = new HashSet<IStoredEvent>(new EventComparer());
 
         public EventHandler<IStoredEvent> BeforeSave;
-
-        public InMemoryEventStream(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new ArgumentException("name");
-            }
-            Name = name;
-        }
-
-        /// <summary>
-        /// Gets the name of the event stream.
-        /// </summary>
-        public string Name { get; private set; }
 
         public IEnumerable<IStoredEvent> Events
         {
@@ -66,11 +52,11 @@ namespace Microsoft.Its.Domain.Testing
             var existing = events.Single(
                 e => e.AggregateId == storedEvent.AggregateId &&
                      e.SequenceNumber == storedEvent.SequenceNumber)
-                                 .ToDomainEvent(Name)
+                                 .ToDomainEvent()
                                  .ToDiagnosticJson();
 
             var attempted = storedEvent
-                .ToDomainEvent(Name)
+                .ToDomainEvent()
                 .ToDiagnosticJson();
 
             throw new ConcurrencyException(

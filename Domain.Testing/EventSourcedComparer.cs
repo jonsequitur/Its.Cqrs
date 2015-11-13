@@ -16,6 +16,16 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="x">The first object of type <paramref name="T"/> to compare.</param><param name="y">The second object of type <paramref name="T"/> to compare.</param>
         public bool Equals(IEventSourced x, IEventSourced y)
         {
+            if (x == null)
+            {
+                return y == null;
+            }
+
+            if (y == null)
+            {
+                return false;
+            }
+
             return x.Id == y.Id;
         }
 

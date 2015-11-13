@@ -150,6 +150,20 @@ namespace Microsoft.Its.Domain
                                 .ElseDefault();
         }
         
+        internal static void IsUsingInMemoryCommandScheduling(this Configuration configuration, bool value)
+        {
+            configuration.Properties["IsUsingInMemoryCommandScheduling"] = value;
+        }
+
+        internal static bool IsUsingInMemoryCommandScheduling(this Configuration configuration)
+        {
+            return configuration.Properties
+                                .IfContains("IsUsingInMemoryCommandScheduling")
+                                .And()
+                                .IfTypeIs<bool>()
+                                .ElseDefault();
+        }
+        
         internal static void IsUsingLegacySqlCommandScheduling(this Configuration configuration, bool value)
         {
             configuration.Properties["IsUsingLegacySqlCommandScheduling"] = value;

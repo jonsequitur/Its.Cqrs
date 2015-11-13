@@ -21,6 +21,8 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="configuration">The configuration.</param>
         public static Configuration UseInMemoryCommandScheduling(this Configuration configuration)
         {
+            configuration.IsUsingInMemoryCommandScheduling(true);
+
             AggregateType.KnownTypes.ForEach(t =>
             {
                 var initializerType = typeof (InMemoryCommandSchedulerPipelineInitializer<>)
@@ -41,13 +43,15 @@ namespace Microsoft.Its.Domain.Testing
         }
 
         public static Configuration UseInMemoryEventStore(
-            this Configuration configuration, 
+            this Configuration configuration,
             bool traceEvents = false)
         {
+            var inMemoryEventStream = configuration.Container.Resolve<InMemoryEventStream>();
+
             configuration.Container
-                         .RegisterSingle(c => new ConcurrentDictionary<string, IEventStream>(StringComparer.OrdinalIgnoreCase))
                          .AddStrategy(type => InMemoryEventSourcedRepositoryStrategy(type, configuration.Container))
-                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>());
+                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>())
+                         .RegisterSingle(c => inMemoryEventStream);
 
             if (traceEvents)
             {
@@ -82,22 +86,9 @@ namespace Microsoft.Its.Domain.Testing
             {
                 var aggregateType = type.GenericTypeArguments.Single();
                 var repositoryType = typeof (InMemoryEventSourcedRepository<>).MakeGenericType(aggregateType);
-
-                var streamName = AggregateType.EventStreamName(aggregateType);
-
-                // get the single registered event stream instance
-                var stream = container.Resolve<ConcurrentDictionary<string, IEventStream>>()
-                                      .GetOrAdd(streamName,
-                                                name => container.Clone()
-                                                                 .Register(_ => name)
-                                                                 .Resolve<IEventStream>());
-
-                return c => Activator.CreateInstance(repositoryType, stream, c.Resolve<IEventBus>());
-            }
-
-            if (type == typeof (IEventStream))
-            {
-                return c => c.Resolve<InMemoryEventStream>();
+                return c => Activator.CreateInstance(repositoryType,
+                                                     c.Resolve<InMemoryEventStream>(),
+                                                     c.Resolve<IEventBus>());
             }
 
             return null;

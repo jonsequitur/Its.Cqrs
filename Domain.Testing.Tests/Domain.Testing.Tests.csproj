@@ -111,7 +111,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScenarioBuilderTests.cs" />
     <Compile Include="ScenarioBuilderWithInMemoryEventStoreTests.cs" />
-    <Compile Include="ScenarioBuilderWithSqlEventStoreTests.cs" />
+    <Compile Include="ScenarioBuilderWithLegacySqlStorageTests.cs" />
+    <Compile Include="ScenarioBuilderWithPipelinedSqlStorageTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

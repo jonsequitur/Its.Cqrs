@@ -23,7 +23,6 @@ namespace Microsoft.Its.Domain.Testing
         private readonly CompositeDisposable disposables = new CompositeDisposable();
         private readonly ConcurrentBag<EventHandlingError> eventHandlingErrors = new ConcurrentBag<EventHandlingError>();
         private bool subscribedToVirtualClock;
-        private readonly string clockName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:System.Object"/> class.
@@ -37,13 +36,6 @@ namespace Microsoft.Its.Domain.Testing
             this.builder = builder;
 
             disposables.Add(builder.EventBus.Errors.Subscribe(e => eventHandlingErrors.Add(e)));
-
-            clockName = builder.Configuration
-                               .Properties
-                               .IfContains("CommandSchedulerClockName")
-                               .And()
-                               .IfTypeIs<string>()
-                               .ElseDefault();
 
             // subscribe to VirtualClock movements and advance the scheduler clock accordingly
             Clock.Current
@@ -99,10 +91,10 @@ namespace Microsoft.Its.Domain.Testing
                 VirtualClock.Current.AdvanceTo(to);
             }
 
-            if (!builder.useInMemoryCommandScheduling)
+            if (!builder.Configuration.IsUsingInMemoryCommandScheduling())
             {
-                var scheduler = builder.Configuration.Container.Resolve<SqlCommandScheduler>();
-                await scheduler.AdvanceClock(clockName, to);
+                var clockTrigger = builder.Configuration.Container.Resolve<ISchedulerClockTrigger>();
+                await clockTrigger.AdvanceClock(GetClockName(), to);
             }
         }
 
@@ -111,7 +103,7 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         public async Task CommandSchedulerDone()
         {
-            if (builder.useInMemoryCommandScheduling)
+            if (builder.Configuration.IsUsingInMemoryCommandScheduling())
             {
                 var virtualClock = Clock.Current as VirtualClock;
                 if (virtualClock != null)
@@ -121,8 +113,13 @@ namespace Microsoft.Its.Domain.Testing
             }
             else
             {
-                var scheduler = builder.Configuration.Container.Resolve<SqlCommandScheduler>();
-                await scheduler.AdvanceClock(clockName, Clock.Now()).TimeoutAfter(DefaultTimeout());
+                var clockTrigger = builder.Configuration.Container.Resolve<ISchedulerClockTrigger>();
+                
+                SchedulerAdvancedResult result;
+                do
+                {
+                    result = await clockTrigger.AdvanceClock(GetClockName(), Clock.Now()).TimeoutAfter(DefaultTimeout());
+                } while (result.SuccessfulCommands.Any());
             }
         }
 
@@ -185,7 +182,6 @@ namespace Microsoft.Its.Domain.Testing
                                 .GetLatest(aggregateId.Value);
         }
 
-        /// <summary>
         ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
         /// </summary>
         /// <param name="version">The version at which to retrieve the aggregate.</param>
@@ -245,6 +241,16 @@ namespace Microsoft.Its.Domain.Testing
         public void RegisterForDispose(IDisposable disposable)
         {
             disposables.Add(disposable);
+        }
+
+        private string GetClockName()
+        {
+            return builder.Configuration
+                          .Properties
+                          .IfContains("CommandSchedulerClockName")
+                          .And()
+                          .IfTypeIs<string>()
+                          .ElseDefault();
         }
 
         /// <summary>

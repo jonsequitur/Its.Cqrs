@@ -32,6 +32,23 @@ namespace Microsoft.Its.Domain.Testing
                 throw new TimeoutException();
             }
         }
+        
+        public static async Task<T> TimeoutAfter<T>(
+            this Task<T> task,
+            TimeSpan timespan)
+        {
+            if (task.IsCompleted)
+            {
+                return task.Result;
+            }
+
+            if (task == await Task.WhenAny(task, Task.Delay(timespan)))
+            {
+                return await task;
+            }
+            
+            throw new TimeoutException();
+        }
 
         /// <summary>
         /// Provides a way to specify the intention to fire and forget a task and suppress the compiler warning that results from unawaited tasks.

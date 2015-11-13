@@ -59,19 +59,15 @@ namespace Microsoft.Its.Domain.Testing
         {
             var streams = configuration
                 .Container
-                .Resolve<ConcurrentDictionary<string, IEventStream>>();
+                .Resolve<InMemoryEventStream>();
 
             var json = streams
-                .Select(s => new
+                .Events
+                .Select(e => new
                 {
-                    StreamName = s.Key,
-                    Stream = s.Value as InMemoryEventStream
-                })
-                .SelectMany(s => s.Stream.Events.Select(e => new
-                {
-                    s.StreamName,
+                    e.StreamName,
                     Event = e
-                }))
+                })
                 .OrderBy(e => e.Event.Timestamp)
                 .ToJson(Formatting.Indented);
 

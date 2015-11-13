@@ -640,7 +640,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                        .Should()
                        .BeOfType<CommandScheduled<CustomerAccount>>();
 
-                if (this is ScenarioBuilderWithSqlEventStoreTests)
+                if (UsesSqlStorage)
                 {
                     using (var db = new CommandSchedulerDbContext())
                     {
@@ -658,6 +658,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 }
             }
         }
+
+        public abstract bool UsesSqlStorage { get; }
 
         [Test]
         public async Task Recursive_scheduling_is_supported_when_the_virtual_clock_is_advanced()
@@ -714,7 +716,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                        .Should()
                        .BeOfType<CommandScheduled<CustomerAccount>>();
 
-                if (this is ScenarioBuilderWithSqlEventStoreTests)
+                if (UsesSqlStorage)
                 {
                     using (var db = new CommandSchedulerDbContext())
                     {
