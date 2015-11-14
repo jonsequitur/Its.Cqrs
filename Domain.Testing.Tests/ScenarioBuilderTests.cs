@@ -30,8 +30,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
         [SetUp]
         public virtual void SetUp()
         {
-            disposables = new CompositeDisposable(Disposable.Create(
-                () => ConfigurationContext.Current
+            disposables = new CompositeDisposable(
+                Disposable.Create(() => ConfigurationContext.Current
                                           .IfNotNull()
                                           .ThenDo(c => c.Dispose())));
         }
@@ -554,7 +554,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         [Test]
         public async Task Scheduled_commands_in_initial_events_are_executed_if_they_become_due_after_Prepare_is_called()
         {
-            using (VirtualClock.Start())
+            using (VirtualClock.Start(Any.DateTimeOffset()))
             {
                 var customerAccountId = Any.Guid();
                 var scenario = CreateScenarioBuilder()
