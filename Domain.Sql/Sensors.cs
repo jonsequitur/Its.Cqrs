@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Sql
         [Export("DiagnosticSensor")]
         public static async Task<dynamic> CatchupStatus()
         {
-            if (GetEventStoreDbContext() == null)
+            if (GetEventStoreDbContext == null)
             {
                 return "GetEventStoreDbContext on class Microsoft.Its.Domain.Sql.Sensors is not configured";
             }
