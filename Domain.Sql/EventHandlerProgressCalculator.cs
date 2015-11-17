@@ -39,12 +39,13 @@ namespace Microsoft.Its.Domain.Sql
             var now = Clock.Now();
             var progress = new List<EventHandlerProgress>();
 
+            ReadModelInfo[] readModelInfos;
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var db = createDbContext())
             {
-                var readModelInfos = db.Set<ReadModelInfo>().ToArray();
-                
-                readModelInfos
+                readModelInfos = db.Set<ReadModelInfo>().ToArray();
+            }
+            readModelInfos
                     .ForEach(i =>
                     {
                         var eventsProcessed = i.InitialCatchupEndTime.HasValue
@@ -85,8 +86,6 @@ namespace Microsoft.Its.Domain.Sql
 
                         progress.Add(eventHandlerProgress);
                     });
-            }
-
             return progress;
         }
     }
