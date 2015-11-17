@@ -108,6 +108,8 @@ namespace Microsoft.Its.Domain.Testing
                 clockRepository.CreateClock(clockName, DateTimeOffset.Parse("1970-01-01 12:00:00 +00:00"));
             }
 
+            configuration.EnsureCommandSchedulerPipelineTrackerIsInitialized();
+
             scenario = new Scenario(this);
 
             var configurationContext = ConfigurationContext.Establish(configuration);

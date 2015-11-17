@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -103,7 +104,7 @@ namespace Microsoft.Its.Domain.Testing
             }
             else if (configuration.IsUsingCommandSchedulerPipeline())
             {
-                var commandsInPipeline = Domain.CommandScheduler.TrackCommandsInPipeline(configuration);
+                var commandsInPipeline = configuration.Container.Resolve<CommandsInPipeline>();
 
                 var sqlSchedulerClocks = commandsInPipeline
                     .Select(c => c.Result)
@@ -162,6 +163,8 @@ namespace Microsoft.Its.Domain.Testing
             {
                 throw new InvalidOperationException("You must dispose the current VirtualClock before starting another.");
             }
+
+            Configuration.Current.EnsureCommandSchedulerPipelineTrackerIsInitialized();
 
             var virtualClock = new VirtualClock(now ?? DateTimeOffset.Now);
             Clock.Current = virtualClock;

@@ -46,7 +46,7 @@ namespace Microsoft.Its.Domain.Testing
                                         .Else(() => Task.FromResult(Unit.Default));
 
             var noCommandsInPipeline = configuration.Container
-                                                    .Resolve<Domain.CommandScheduler.CommandsInPipeline>()
+                                                    .Resolve<CommandsInPipeline>()
                                                     .Done();
 
             return Task.WhenAll(virtualClockDone, noCommandsInPipeline)
