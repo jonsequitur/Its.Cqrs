@@ -172,7 +172,6 @@
     <Compile Include="IHaveExtensibleMetada.cs" />
     <Compile Include="ICommand.cs" />
     <Compile Include="Reservations\IReservationService.cs" />
-    <Compile Include="Scheduling\CommandSchedulerExtensions.cs" />
     <Compile Include="Scheduling\EventSourcedRepositoryExtensions.cs" />
     <Compile Include="Scheduling\ICommandScheduler.cs" />
     <Compile Include="Scheduling\IScheduledCommand.cs" />

@@ -2,10 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,8 +12,6 @@ namespace Microsoft.Its.Domain
 {
     public static class CommandScheduler
     {
-        private static readonly object lockObj = new object();
-
         internal static ICommandScheduler<TAggregate> Wrap<TAggregate>(
             this ICommandScheduler<TAggregate> scheduler,
             ScheduledCommandInterceptor<TAggregate> schedule = null,
@@ -129,7 +124,7 @@ namespace Microsoft.Its.Domain
                 };
             }
 
-            if (string.IsNullOrEmpty(command.ETag))
+            if (String.IsNullOrEmpty(command.ETag))
             {
                 command.IfTypeIs<Command>()
                        .ThenDo(c => c.ETag = CommandContext.Current
@@ -147,6 +142,48 @@ namespace Microsoft.Its.Domain
                 DeliveryPrecondition = precondition
             };
             return scheduledCommand;
+        }
+
+        public static async Task<IScheduledCommand<TAggregate>> Schedule<TCommand, TAggregate>(
+            this ICommandScheduler<TAggregate> scheduler,
+            Guid aggregateId,
+            TCommand command,
+            DateTimeOffset? dueTime = null,
+            IEvent deliveryDependsOn = null)
+            where TCommand : ICommand<TAggregate>
+            where TAggregate : IEventSourced
+        {
+            if (aggregateId == Guid.Empty)
+            {
+                throw new ArgumentException("Parameter aggregateId cannot be an empty Guid.");
+            }
+
+            var scheduledCommand = CreateScheduledCommand<TCommand, TAggregate>(
+                aggregateId,
+                command,
+                dueTime,
+                deliveryDependsOn);
+
+            await scheduler.Schedule(scheduledCommand);
+
+            return scheduledCommand;
+        }
+
+        internal static void DeliverIfPreconditionIsSatisfiedWithin<TAggregate>(
+            this ICommandScheduler<TAggregate> scheduler,
+            TimeSpan timespan,
+            IScheduledCommand<TAggregate> scheduledCommand,
+            IEventBus eventBus) where TAggregate : IEventSourced
+        {
+            eventBus.Events<IEvent>()
+                    .Where(
+                        e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
+                             e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
+                    .Take(1)
+                    .Timeout(timespan)
+                    .Subscribe(
+                        e => { Task.Run(() => scheduler.Deliver(scheduledCommand)).Wait(); },
+                        onError: ex => { eventBus.PublishErrorAsync(new EventHandlingError(ex, scheduler)); });
         }
     }
 }
