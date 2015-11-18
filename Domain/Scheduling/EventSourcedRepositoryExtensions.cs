@@ -96,19 +96,29 @@ namespace Microsoft.Its.Domain
 
             if (aggregate != null)
             {
-                // TODO: (FailScheduledCommand) refactor so that getting hold of the handler is simpler
                 var scheduledCommandOfT = scheduled.Command as Command<TAggregate>;
-                if (scheduledCommandOfT != null)
+                if (scheduledCommandOfT != null &&
+                    scheduledCommandOfT.Handler != null)
                 {
-                    if (scheduledCommandOfT.Handler != null)
-                    {
-                        await scheduledCommandOfT.Handler
-                                                 .HandleScheduledCommandException((dynamic) aggregate,
-                                                                                  (dynamic) failure);
-                    }
+                    await scheduledCommandOfT.Handler
+                                             .HandleScheduledCommandException((dynamic) aggregate,
+                                                                              (dynamic) failure);
                 }
 
-                if (!(exception is ConcurrencyException))
+                if (exception is ConcurrencyException)
+                {
+                    if (scheduled.Command is ConstructorCommand<TAggregate>)
+                    {
+                        // the aggregate has already been created, so this command will never succeed and is redundant.
+                        // this may result from redelivery of a constructor command.
+                        failure.Cancel();
+                        scheduled.Result = failure;
+                        return;
+                    }
+
+                    // on ConcurrencyException, we don't attempt to save, since it would only result in another ConcurrencyException.
+                }
+                else
                 {
                     try
                     {
@@ -119,12 +129,6 @@ namespace Microsoft.Its.Domain
                         // TODO: (FailScheduledCommand) surface this more clearly
                         Trace.Write(ex);
                     }
-                }
-                else if (scheduled.Command is ConstructorCommand<TAggregate>)
-                {
-                    failure.Cancel();
-                    scheduled.Result = failure;
-                    return;
                 }
             }
 

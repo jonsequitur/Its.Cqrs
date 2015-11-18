@@ -21,11 +21,17 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public Exception Exception { get; private set; }
 
+        /// <summary>
+        /// Cancels the scheduled command. Further delivery attempts will not be made.
+        /// </summary>
         public void Cancel()
         {
             IsCanceled = true;
         }
 
+        /// <summary>
+        /// Retries the scheduled command after the specified amount of time.
+        /// </summary>
         public void Retry(TimeSpan after)
         {
             RetryAfter = after;
@@ -35,8 +41,17 @@ namespace Microsoft.Its.Domain
 
         internal TimeSpan? RetryAfter { get; private set; }
 
+        /// <summary>
+        /// Gets or sets the number of previous attempts that have been made to deliver the scheduled command.
+        /// </summary>
         public int NumberOfPreviousAttempts { get; set; }
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
         public override string ToString()
         {
             return string.Format("Failed due to: {1} {0}",
