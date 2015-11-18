@@ -7,16 +7,22 @@ using System.Diagnostics;
 namespace Microsoft.Its.Domain
 {
     [DebuggerDisplay("{ToString()}")]
-    public class ScheduledCommandPrecondition
+    public class CommandPrecondition
     {
         public Guid AggregateId { get; set; }
+
         public string ETag { get; set; }
 
         public override string ToString()
         {
-            return string.Format("{0}...{1}",
-                                 AggregateId.ToString().Substring(0, 4),
-                                 ETag);
+            if (ETag != null)
+            {
+                return string.Format("{0}...{1}",
+                                     AggregateId.ToString().Substring(0, 4),
+                                     ETag);
+            }
+
+            return AggregateId.ToString();
         }
     }
 }

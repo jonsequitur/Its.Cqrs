@@ -33,7 +33,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Indicates a precondition ETag for a specific aggregate. If no event on the target aggregate exists with this ETag, the command will fail, and the aggregate can decide whether to reschedule or ignore the command.
         /// </summary>
-        public ScheduledCommandPrecondition DeliveryPrecondition { get; set; }
+        public CommandPrecondition DeliveryPrecondition { get; set; }
 
         [JsonIgnore]
         public ScheduledCommandResult Result { get; set; }

@@ -8,7 +8,7 @@ namespace Microsoft.Its.Domain
     [Serializable]
     public class PreconditionNotMetException : InvalidOperationException
     {
-        public PreconditionNotMetException(ScheduledCommandPrecondition precondition)
+        public PreconditionNotMetException(CommandPrecondition precondition)
             : base("Precondition was not met: " + precondition)
         {
             if (precondition == null)
@@ -18,6 +18,18 @@ namespace Microsoft.Its.Domain
             Precondition = precondition;
         }
 
-        public ScheduledCommandPrecondition Precondition { get; private set; }
+        public PreconditionNotMetException(
+            string message,
+            Guid aggregateId,
+            string etag = null) : base(message)
+        {
+            Precondition = new CommandPrecondition
+            {
+                AggregateId = aggregateId,
+                ETag = etag
+            };
+        }
+
+        public CommandPrecondition Precondition { get; private set; }
     }
 }

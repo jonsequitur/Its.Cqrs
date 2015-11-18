@@ -194,7 +194,7 @@
     <Compile Include="Discover.cs" />
     <Compile Include="Scheduling\IScheduledCommand{T}.cs" />
     <Compile Include="Scheduling\CommandFailed{T}.cs" />
-    <Compile Include="Scheduling\ScheduledCommandPrecondition.cs" />
+    <Compile Include="Scheduling\CommandPrecondition.cs" />
     <Compile Include="Scheduling\ScheduledCommandResult.cs" />
     <Compile Include="Scheduling\CommandSucceeded.cs" />
     <Compile Include="Serialization\AnonymousEvent.cs" />

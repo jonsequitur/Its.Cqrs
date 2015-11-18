@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Indicates a precondition for the command to be delivered. If the precondition does not exist, then command will fail, and the aggregate can decide whether to reschedule or ignore the command.
         /// </summary>
-        ScheduledCommandPrecondition DeliveryPrecondition { get; }
+        CommandPrecondition DeliveryPrecondition { get; }
 
         ScheduledCommandResult Result { get; set; }
     }

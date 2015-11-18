@@ -110,7 +110,7 @@ namespace Microsoft.Its.Domain
 
             if (Configuration.Current.IsUsingCommandSchedulerPipeline())
             {
-                scheduled.DeliveryPrecondition = new ScheduledCommandPrecondition
+                scheduled.DeliveryPrecondition = new CommandPrecondition
                 {
                     AggregateId = Id,
                     ETag = scheduled.ETag

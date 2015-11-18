@@ -54,11 +54,9 @@ namespace Microsoft.Its.Domain
                     }
                     else
                     {
-                        // TODO: (ApplyScheduledCommand) this should probably be a different exception type.
-                        throw new ConcurrencyException(
+                        throw new PreconditionNotMetException(
                             string.Format("No {0} was found with id {1} so the command could not be applied.",
-                                          typeof (TAggregate).Name, scheduled.AggregateId),
-                            new IEvent[] { scheduled });
+                                          typeof (TAggregate).Name, scheduled.AggregateId), scheduled.AggregateId);
                     }
                 }
                 else

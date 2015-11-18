@@ -98,7 +98,7 @@ namespace Microsoft.Its.Domain
             IEvent deliveryDependsOn = null)
             where TCommand : ICommand<TAggregate> where TAggregate : IEventSourced
         {
-            ScheduledCommandPrecondition precondition = null;
+            CommandPrecondition precondition = null;
 
             if (deliveryDependsOn != null)
             {
@@ -117,7 +117,7 @@ namespace Microsoft.Its.Domain
                                      });
                 }
 
-                precondition = new ScheduledCommandPrecondition
+                precondition = new CommandPrecondition
                 {
                     AggregateId = deliveryDependsOn.AggregateId,
                     ETag = deliveryDependsOn.ETag
