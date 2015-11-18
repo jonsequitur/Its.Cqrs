@@ -11,12 +11,13 @@ namespace Microsoft.Its.Domain.Testing.Tests
     public class InMemoryReservationServiceTests : ReservationServiceTests
     {
         private InMemoryEventStream eventStream;
+
         protected override void Configure(Configuration configuration, Action onSave = null)
         {
             configuration.UseInMemoryReservationService()
                 .UseInMemoryEventStore()
                 .UseEventBus(new FakeEventBus())
-                .UseDependency<IEventStream>(_ => eventStream);
+                .UseDependency(_ => eventStream);
         }
 
         protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(

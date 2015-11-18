@@ -163,7 +163,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var scheduler = new CommandScheduler<CustomerAccount>(
                 new InMemoryEventSourcedRepository<CustomerAccount>(),
-                new InMemoryCommandPreconditionVerifier());
+                new InMemoryCommandPreconditionVerifier(new InMemoryEventStream()));
 
             Action schedule = () => scheduler.Schedule(
                 Any.Guid(),

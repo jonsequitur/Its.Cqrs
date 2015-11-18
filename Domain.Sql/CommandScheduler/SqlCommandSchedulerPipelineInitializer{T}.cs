@@ -28,10 +28,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 .AddToCommandSchedulerPipeline<TAggregate>(
                     schedule: async (cmd, next) => await Schedule(cmd, next),
                     deliver: async (cmd, next) => await Deliver(cmd, next));
-
-#if DEBUG
-            configuration.TraceCommandsFor<TAggregate>();
-#endif
         }
 
         private async Task Schedule(IScheduledCommand<TAggregate> cmd, Func<IScheduledCommand<TAggregate>, Task> next)

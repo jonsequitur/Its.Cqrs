@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         public InMemoryEventSourcedRepository(InMemoryEventStream eventStream = null, IEventBus bus = null)
         {
-            this.eventStream = eventStream ?? new InMemoryEventStream(AggregateType<TAggregate>.EventStreamName);
+            this.eventStream = eventStream ?? new InMemoryEventStream();
             this.bus = bus ?? new FakeEventBus();
         }
 
@@ -57,7 +57,7 @@ namespace Microsoft.Its.Domain.Testing
 
             return AggregateType<TAggregate>.FromSnapshot(
                 snapshot,
-                additionalEvents.Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName)));
+                additionalEvents.Select(e => e.ToDomainEvent()));
         }
 
         private async Task<TAggregate> GetLatestWithoutSnapshot(Guid aggregateId)
@@ -68,7 +68,7 @@ namespace Microsoft.Its.Domain.Testing
             {
                 return AggregateType<TAggregate>.FromEventHistory.Invoke(
                     aggregateId,
-                    events.Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName)));
+                    events.Select(e => e.ToDomainEvent()));
             }
 
             return null;
@@ -160,7 +160,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             var newEvents = (await eventStream.All(id: aggregate.Id.ToString()))
                 .Where(e => e.SequenceNumber > aggregate.Version)
-                .Select(e => e.ToDomainEvent(AggregateType<TAggregate>.EventStreamName));
+                .Select(e => e.ToDomainEvent());
 
             aggregate.Update(newEvents);
         }

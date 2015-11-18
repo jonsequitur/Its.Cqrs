@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
@@ -98,6 +97,19 @@ namespace Microsoft.Its.Domain.Testing
 
             prepared = true;
 
+            // command scheduling
+            if (configuration.IsUsingCommandSchedulerPipeline() &&
+                !configuration.IsUsingInMemoryCommandScheduling())
+            {
+                var clockName = "TEST-" + Guid.NewGuid().ToString("N");
+                Configuration.Properties["CommandSchedulerClockName"] = clockName;
+                Configuration.Container.Register<GetClockName>(c => e => clockName);
+                var clockRepository = Configuration.Container.Resolve<ISchedulerClockRepository>();
+                clockRepository.CreateClock(clockName, DateTimeOffset.Parse("1970-01-01 12:00:00 +00:00"));
+            }
+
+            configuration.EnsureCommandSchedulerPipelineTrackerIsInitialized();
+
             scenario = new Scenario(this);
 
             var configurationContext = ConfigurationContext.Establish(configuration);
@@ -115,10 +127,9 @@ namespace Microsoft.Its.Domain.Testing
             SubscribeProjectors();
             RunCatchup();
             SubscribeConsequenters();
-
-            // command scheduling
+         
             InitialEvents.ForEach(ScheduleIfNeeded);
-            
+
             return scenario;
         }
 
@@ -166,8 +177,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             var aggregateType = e.AggregateType();
 
-            if (e.GetType().IsConstructedGenericType &&
-                e.GetType().GetGenericTypeDefinition() == typeof (CommandScheduled<>))
+            if (e is IScheduledCommand)
             {
                 DateTimeOffset dueTime = ((dynamic) e).DueTime;
                 var now = Clock.Now();
@@ -184,27 +194,12 @@ namespace Microsoft.Its.Domain.Testing
         {
             return commandSchedulers.GetOrAdd(aggregateType, t =>
             {
-                object handler;
+                object handler = null;
 
                 var container = configuration.Container;
 
-                if (useInMemoryCommandScheduling)
-                {
-                    var subscriptionType = typeof (ICommandScheduler<>).MakeGenericType(t);
-                    handler = container.Resolve(subscriptionType);
-                }
-                else
-                {
-                    // TODO: (GetOrAddCommandScheduler) can we resolve the scheduler directly once the SqlCommandScheduler directly registers them?
-                    handler = container
-                        .Resolve<SqlCommandScheduler>()
-                        .GetBinders()
-                        .Where(b =>
-                               ((dynamic) b).EventType == typeof (IScheduledCommand<>).MakeGenericType(t))
-                        .Cast<dynamic>()
-                        .Single()
-                        .Scheduler;
-                }
+                var subscriptionType = typeof (ICommandScheduler<>).MakeGenericType(t);
+                handler = container.Resolve(subscriptionType);
 
                 // add it to handlers so that it will be subscribed with the others
                 handlers.Add(handler);
@@ -231,14 +226,10 @@ namespace Microsoft.Its.Domain.Testing
 
                              if (!configuration.IsUsingSqlEventStore())
                              {
-                                 var streamName = AggregateType.EventStreamName(aggregateType);
+                                 var eventStream = configuration.Container.Resolve<InMemoryEventStream>();
 
-                                 var eventStream = Configuration.Container
-                                                                .Resolve<ConcurrentDictionary<string, IEventStream>>()
-                                                                .GetOrAdd(streamName, s => new InMemoryEventStream(s));
-
-                                 var storableEvents = events.AssignSequenceNumbers()
-                                                            .Select(e => e.ToStoredEvent());
+                                 var storableEvents = es.AssignSequenceNumbers()
+                                                        .Select(e => e.ToStoredEvent());
 
                                  eventStream.Append(storableEvents.ToArray())
                                             .Wait();

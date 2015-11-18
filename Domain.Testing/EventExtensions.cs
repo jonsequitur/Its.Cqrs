@@ -12,19 +12,6 @@ namespace Microsoft.Its.Domain.Testing
 {
     public static class EventExtensions
     {
-        internal static IEventStream ToEventStream(this IEnumerable<IEvent> events, string name)
-        {
-            var stream = new InMemoryEventStream(name);
-
-            var storableEvents = events.AssignSequenceNumbers()
-                                       .Select(e => e.ToStoredEvent());
-
-            stream.Append(storableEvents.ToArray())
-                  .Wait();
-
-            return stream;
-        }
-
         internal static IEnumerable<IEvent> AssignSequenceNumbers(this IEnumerable<IEvent> events)
         {
             // use EventSequences to set SequenceNumbers as needed
@@ -73,10 +60,10 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="storedEvent">The storable event.</param>
         /// <returns>A deserialized domain event.</returns>
-        public static IEvent ToDomainEvent(this IStoredEvent storedEvent, string streamName)
+        public static IEvent ToDomainEvent(this IStoredEvent storedEvent)
         {
             return Serializer.DeserializeEvent(
-                aggregateName: streamName,
+                aggregateName: storedEvent.StreamName,
                 eventName: storedEvent.Type,
                 aggregateId: Guid.Parse(storedEvent.AggregateId),
                 sequenceNumber: storedEvent.SequenceNumber,
@@ -103,7 +90,7 @@ namespace Microsoft.Its.Domain.Testing
             return AggregateType<TAggregate>.FromEventHistory.Invoke(
                 Guid.Parse(id),
                 storedEvents.OrderBy(e => e.SequenceNumber)
-                            .Select(e => e.ToDomainEvent(streamName))
+                            .Select(e => e.ToDomainEvent())
                             .Where(e => e != null));
         }
 

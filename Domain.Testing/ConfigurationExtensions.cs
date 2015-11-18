@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Linq;
 using System.Threading.Tasks;
@@ -37,10 +39,7 @@ namespace Microsoft.Its.Domain.Testing
                                         {
                                             Clock.Current
                                                  .IfTypeIs<VirtualClock>()
-                                                 .ThenDo(clock =>
-                                                 {
-                                                     clock.OnAdvanceTriggerSchedulerClock(scheduled.Clock);
-                                                 });
+                                                 .ThenDo(clock => { clock.OnAdvanceTriggerSchedulerClock(scheduled.Clock); });
                                         });
 
             configuration.RegisterForDisposal(subscription);
@@ -59,23 +58,117 @@ namespace Microsoft.Its.Domain.Testing
         {
             var streams = configuration
                 .Container
-                .Resolve<ConcurrentDictionary<string, IEventStream>>();
+                .Resolve<InMemoryEventStream>();
 
             var json = streams
-                .Select(s => new
+                .Events
+                .Select(e => new
                 {
-                    StreamName = s.Key,
-                    Stream = s.Value as InMemoryEventStream
-                })
-                .SelectMany(s => s.Stream.Events.Select(e => new
-                {
-                    s.StreamName,
+                    e.StreamName,
                     Event = e
-                }))
+                })
                 .OrderBy(e => e.Event.Timestamp)
                 .ToJson(Formatting.Indented);
 
             Console.WriteLine(json);
+        }
+
+        internal static void EnsureCommandSchedulerPipelineTrackerIsInitialized(this Configuration configuration)
+        {
+            if (!configuration.IsUsingCommandSchedulerPipeline())
+            {
+                return;
+            }
+
+            AggregateType.KnownTypes.ForEach(aggregateType =>
+            {
+                var initializerType = typeof (PipelineTrackerFor<>).MakeGenericType(aggregateType);
+
+                var initializer = configuration.Container.Resolve(initializerType) as ISchedulerPipelineInitializer;
+
+                initializer.Initialize(configuration);
+            });
+        }
+
+        internal class PipelineTrackerFor<TAggregate> :
+            ISchedulerPipelineInitializer where TAggregate : class, IEventSourced
+        {
+            private static readonly object lockObj = new object();
+
+            public void Initialize(Configuration configuration)
+            {
+                var commandsInPipeline = TrackCommandsInPipeline(configuration);
+                configuration.AddToCommandSchedulerPipeline<TAggregate>(
+                    schedule: async (command, next) =>
+                    {
+                        commandsInPipeline.Add(command);
+                        await next(command);
+                    },
+                    deliver: async (command, next) =>
+                    {
+                        await next(command);
+                        commandsInPipeline.Remove(command);
+                    });
+            }
+
+            internal static CommandsInPipeline TrackCommandsInPipeline(
+                Configuration configuration)
+            {
+                // resolve and register so there's only a single instance registered at any given time
+                CommandsInPipeline inPipeline;
+
+                lock (lockObj)
+                {
+                    inPipeline = configuration.Container.Resolve<CommandsInPipeline>();
+                    configuration.Container.Register(c => inPipeline);
+                }
+
+                return inPipeline;
+            }
+        }
+    }
+
+    internal class CommandsInPipeline : IEnumerable<IScheduledCommand>
+    {
+        private readonly ConcurrentDictionary<IScheduledCommand, DateTimeOffset> commands = new ConcurrentDictionary<IScheduledCommand, DateTimeOffset>();
+
+        public void Add(IScheduledCommand command)
+        {
+            var now = Clock.Now();
+            commands.AddOrUpdate(
+                command,
+                now,
+                (c, t) => now);
+        }
+
+        public void Remove(IScheduledCommand command)
+        {
+            DateTimeOffset _;
+            commands.TryRemove(command, out _);
+        }
+
+        public async Task Done()
+        {
+            while (true)
+            {
+                var now = Clock.Current;
+                if (!commands.Keys.Any(c => c.IsDue(now)))
+                {
+                    return;
+                }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(5));
+            }
+        }
+
+        public IEnumerator<IScheduledCommand> GetEnumerator()
+        {
+            return commands.Keys.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

@@ -4,7 +4,7 @@
     <id>Its.Domain</id>
     <title>Its.Domain</title>
     <version>$version$</version>
-    <authors>jonsequitur</authors>
+    <authors>jonsequitur,Microsoft</authors>
     <owners>jonsequitur,Microsoft</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Basic building blocks for building domain models using CQRS and Event Sourcing.</description>

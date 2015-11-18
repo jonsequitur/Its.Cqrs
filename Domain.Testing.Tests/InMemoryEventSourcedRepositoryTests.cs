@@ -21,14 +21,14 @@ namespace Microsoft.Its.Domain.Testing.Tests
         [SetUp]
         public override void SetUp()
         {
-            eventStream = new InMemoryEventStream(AggregateType<Order>.EventStreamName);
+            eventStream = new InMemoryEventStream();
             base.SetUp();
         }
         
         protected override void Configure(Configuration configuration, Action onSave = null)
         {
             configuration.UseEventBus(new FakeEventBus())
-                         .UseDependency<IEventStream>(_ => eventStream)
+                         .UseDependency(_ => eventStream)
                          .UseInMemoryEventStore()
                          .IgnoreScheduledCommands();
         }
@@ -138,6 +138,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 Type = goodEvent.Type,
                 AggregateId = orderId.ToString(),
                 SequenceNumber = 2,
+                StreamName = "Order",
                 Body = new
                 {
                     CustomerName = "Willie Nelson",

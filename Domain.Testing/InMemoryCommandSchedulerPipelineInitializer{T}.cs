@@ -10,8 +10,7 @@ namespace Microsoft.Its.Domain.Testing
             configuration.IsUsingCommandSchedulerPipeline(true);
 
             configuration.AddToCommandSchedulerPipeline(
-                             CommandScheduler.WithInMemoryDeferredScheduling<TAggregate>(configuration))
-                         .TraceCommandsFor<TAggregate>();
+                             CommandScheduler.WithInMemoryDeferredScheduling<TAggregate>(configuration));
         }
     }
 }

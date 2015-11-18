@@ -87,8 +87,6 @@
     <Compile Include="ConcurrentHashSet{T}.cs" />
     <Compile Include="ConfigurationExtensions.cs" />
     <Compile Include="EventComparer.cs" />
-    <Compile Include="EventStreamExtensions.cs" />
-    <Compile Include="IEventStream.cs" />
     <Compile Include="IgnoreCommandScheduling{T}.cs" />
     <Compile Include="InMemoryCommandPreconditionVerifier.cs" />
     <Compile Include="InMemoryCommandSchedulerPipelineInitializer{T}.cs" />

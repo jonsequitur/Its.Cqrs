@@ -133,16 +133,13 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 .UseDependency<GetClockName>(c => e => Any.CamelCaseName())
                 .UseSqlStorageForScheduledCommands();
 
-            configuration.TraceCommandsFor<Order>();
-
             await ScheduleCommandAndAdvanceClock(configuration);
         }
 
         private static async Task ScheduleCommandAndAdvanceClock(Configuration configuration)
         {
-            VirtualClock.Start();
-
-            using (ConfigurationContext.Establish(configuration))
+            using (ConfigurationContext.Establish(configuration)) 
+            using (VirtualClock.Start())
             {
                 var scheduler = configuration.CommandScheduler<Order>();
                 var repository = configuration.Repository<Order>();

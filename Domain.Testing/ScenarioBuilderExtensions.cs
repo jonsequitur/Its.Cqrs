@@ -182,7 +182,6 @@ namespace Microsoft.Its.Domain.Testing
             where TScenarioBuilder : ScenarioBuilder
         {
             builder.EnsureScenarioHasNotBeenPrepared();
-            builder.useInMemoryCommandScheduling = false;
 
             builder.Configuration
                    .UseSqlCommandScheduling()
