@@ -2,9 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,7 +23,7 @@ namespace Microsoft.Its.Domain.Testing
         [Obsolete("When using the command scheduler pipepline, VirtualClock integration is automatically enabled.")]
         public static Configuration TriggerSqlCommandSchedulerWithVirtualClock(this Configuration configuration)
         {
-            if (!configuration.IsUsingLegacySqlCommandScheduling())
+            if (configuration.IsUsingCommandSchedulerPipeline())
             {
                 throw new InvalidOperationException("Only supported after configuring legacy SQL command scheduler by calling UseSqlCommandScheduler.");
             }
@@ -126,49 +123,19 @@ namespace Microsoft.Its.Domain.Testing
                 return inPipeline;
             }
         }
-    }
 
-    internal class CommandsInPipeline : IEnumerable<IScheduledCommand>
-    {
-        private readonly ConcurrentDictionary<IScheduledCommand, DateTimeOffset> commands = new ConcurrentDictionary<IScheduledCommand, DateTimeOffset>();
-
-        public void Add(IScheduledCommand command)
+        internal static void IsUsingInMemoryCommandScheduling(this Configuration configuration, bool value)
         {
-            var now = Clock.Now();
-            commands.AddOrUpdate(
-                command,
-                now,
-                (c, t) => now);
+            configuration.Properties["IsUsingInMemoryCommandScheduling"] = value;
         }
 
-        public void Remove(IScheduledCommand command)
+        internal static bool IsUsingInMemoryCommandScheduling(this Configuration configuration)
         {
-            DateTimeOffset _;
-            commands.TryRemove(command, out _);
-        }
-
-        public async Task Done()
-        {
-            while (true)
-            {
-                var now = Clock.Current;
-                if (!commands.Keys.Any(c => c.IsDue(now)))
-                {
-                    return;
-                }
-
-                await Task.Delay(TimeSpan.FromMilliseconds(5));
-            }
-        }
-
-        public IEnumerator<IScheduledCommand> GetEnumerator()
-        {
-            return commands.Keys.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
+            return configuration.Properties
+                                .IfContains("IsUsingInMemoryCommandScheduling")
+                                .And()
+                                .IfTypeIs<bool>()
+                                .ElseDefault();
         }
     }
 }

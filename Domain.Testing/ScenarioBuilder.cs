@@ -27,7 +27,6 @@ namespace Microsoft.Its.Domain.Testing
 
         private readonly FakeEventBus eventBus = new FakeEventBus();
         private long startCatchupAtEventId;
-        internal bool useInMemoryCommandScheduling = true;
         private readonly Dictionary<Guid, object> aggregateBuilders = new Dictionary<Guid, object>();
 
         // a dictionary of repositories by aggregate type

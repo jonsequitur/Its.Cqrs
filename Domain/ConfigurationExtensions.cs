@@ -105,7 +105,7 @@ namespace Microsoft.Its.Domain
             ScheduledCommandInterceptor<TAggregate> deliver = null)
             where TAggregate : class, IEventSourced
         {
-            if (configuration.IsUsingLegacySqlCommandScheduling())
+            if (!configuration.IsUsingCommandSchedulerPipeline())
             {
                 throw new InvalidOperationException("Legacy SQL command scheduler cannot be used with the command scheduler pipeline.");
             }
@@ -135,47 +135,22 @@ namespace Microsoft.Its.Domain
         {
             return configuration.Container.Resolve<ISnapshotRepository>();
         }
-
-        internal static void IsUsingCommandSchedulerPipeline(this Configuration configuration, bool value)
+        
+        internal static Configuration IsUsingCommandSchedulerPipeline(this Configuration configuration, bool value)
         {
             configuration.Properties["IsUsingCommandSchedulerPipeline"] = value;
+            return configuration;
         }
 
         internal static bool IsUsingCommandSchedulerPipeline(this Configuration configuration)
         {
-            return configuration.Properties
-                                .IfContains("IsUsingCommandSchedulerPipeline")
-                                .And()
-                                .IfTypeIs<bool>()
-                                .ElseDefault();
-        }
-        
-        internal static void IsUsingInMemoryCommandScheduling(this Configuration configuration, bool value)
-        {
-            configuration.Properties["IsUsingInMemoryCommandScheduling"] = value;
-        }
+            object value;
+            if (!configuration.Properties.TryGetValue("IsUsingCommandSchedulerPipeline", out value))
+            {
+                return true;
+            }
 
-        internal static bool IsUsingInMemoryCommandScheduling(this Configuration configuration)
-        {
-            return configuration.Properties
-                                .IfContains("IsUsingInMemoryCommandScheduling")
-                                .And()
-                                .IfTypeIs<bool>()
-                                .ElseDefault();
-        }
-        
-        internal static void IsUsingLegacySqlCommandScheduling(this Configuration configuration, bool value)
-        {
-            configuration.Properties["IsUsingLegacySqlCommandScheduling"] = value;
-        }
-
-        internal static bool IsUsingLegacySqlCommandScheduling(this Configuration configuration)
-        {
-            return configuration.Properties
-                                .IfContains("IsUsingLegacySqlCommandScheduling")
-                                .And()
-                                .IfTypeIs<bool>()
-                                .ElseDefault();
+            return (bool) value;
         }
     }
 }

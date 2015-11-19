@@ -44,6 +44,7 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="configuration">The configuration.</param>
         /// <returns>The updated configuration.</returns>
+        [Obsolete("Please move to UseSqlStorageForScheduledCommands.")]
         public static Configuration UseSqlCommandScheduling(
             this Configuration configuration,
             Action<ReadModelCatchup<CommandSchedulerDbContext>> configureCatchup = null)
@@ -80,14 +81,14 @@ namespace Microsoft.Its.Domain.Sql
                 configuration.RegisterForDisposal(catchup);
             }
 
-            configuration.IsUsingLegacySqlCommandScheduling(true);
+            configuration.IsUsingCommandSchedulerPipeline(false);
 
             return configuration;
         }
 
         public static SqlCommandScheduler SqlCommandScheduler(this Configuration configuration)
         {
-            if (!configuration.IsUsingLegacySqlCommandScheduling())
+            if (configuration.IsUsingCommandSchedulerPipeline())
             {
                 throw new InvalidOperationException("You must first call UseSqlCommandScheduling to enable the use of the legacy SqlCommandScheduler.");
             }

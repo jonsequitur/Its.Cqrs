@@ -7,10 +7,11 @@ namespace Microsoft.Its.Domain.Testing
     {
         public void Initialize(Configuration configuration)
         {
-            configuration.IsUsingCommandSchedulerPipeline(true);
+            configuration.IsUsingCommandSchedulerPipeline(true)
+                         .IsUsingInMemoryCommandScheduling(true);
 
             configuration.AddToCommandSchedulerPipeline(
-                             CommandScheduler.WithInMemoryDeferredScheduling<TAggregate>(configuration));
+                CommandScheduler.WithInMemoryDeferredScheduling<TAggregate>(configuration));
         }
     }
 }

@@ -21,7 +21,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="configuration">The configuration.</param>
         public static Configuration UseInMemoryCommandScheduling(this Configuration configuration)
         {
-            configuration.IsUsingInMemoryCommandScheduling(true);
+            configuration.IsUsingCommandSchedulerPipeline(true);
 
             AggregateType.KnownTypes.ForEach(t =>
             {

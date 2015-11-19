@@ -84,6 +84,7 @@
     <Compile Include="AssertionException.cs" />
     <Compile Include="AssertionExtensions.cs" />
     <Compile Include="CommandScheduler.cs" />
+    <Compile Include="CommandsInPipeline.cs" />
     <Compile Include="ConcurrentHashSet{T}.cs" />
     <Compile Include="ConfigurationExtensions.cs" />
     <Compile Include="EventComparer.cs" />

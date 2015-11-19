@@ -9,16 +9,31 @@ using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+    /// <summary>
+    /// A command that has been scheduled via the command scheduler.
+    /// </summary>
     public class ScheduledCommand : IScheduledCommand
     {
+        /// <summary>
+        /// Gets the id of the aggregate to which the command will be applied.
+        /// </summary>
         public Guid AggregateId { get; set; }
 
+        /// <summary>
+        /// Gets the position of the event within the source object's event sequence.
+        /// </summary>
         public long SequenceNumber { get; set; }
 
         public string AggregateType { get; set; }
 
         public DateTimeOffset CreatedTime { get; set; }
 
+        /// <summary>
+        /// Gets the time at which the command is scheduled to be applied.
+        /// </summary>
+        /// <remarks>
+        /// If this value is null, the command should be delivered as soon as possible.
+        /// </remarks>
         public DateTimeOffset? DueTime { get; set; }
 
         public DateTimeOffset? AppliedTime { get; set; }

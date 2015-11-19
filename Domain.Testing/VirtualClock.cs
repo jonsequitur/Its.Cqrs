@@ -89,7 +89,7 @@ namespace Microsoft.Its.Domain.Testing
 
             var configuration = Configuration.Current;
 
-            if (configuration.IsUsingLegacySqlCommandScheduling())
+            if (!configuration.IsUsingCommandSchedulerPipeline())
             {
                 if (schedulerClocks.Any())
                 {
@@ -102,7 +102,7 @@ namespace Microsoft.Its.Domain.Testing
                     }
                 }
             }
-            else if (configuration.IsUsingCommandSchedulerPipeline())
+            else 
             {
                 var commandsInPipeline = configuration.Container.Resolve<CommandsInPipeline>();
 
