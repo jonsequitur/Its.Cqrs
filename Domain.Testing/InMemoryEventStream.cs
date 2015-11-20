@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ using Microsoft.Its.Domain.Serialization;
 
 namespace Microsoft.Its.Domain.Testing
 {
-    public class InMemoryEventStream
+    public class InMemoryEventStream : IEnumerable<IStoredEvent>
     {
         private readonly HashSet<IStoredEvent> events = new HashSet<IStoredEvent>(new EventComparer());
 
@@ -70,11 +71,6 @@ Attempted:
                     attempted));
         }
 
-        public async Task<IStoredEvent> Latest(string id)
-        {
-            return await Task.Run(() => events.Last(e => e.AggregateId == id));
-        }
-
         public async Task<IEnumerable<IStoredEvent>> All(string id)
         {
             return await Task.Run(() => events.Where(e => e.AggregateId == id));
@@ -90,6 +86,16 @@ Attempted:
         {
             return await Task.Run(() => events.Where(e => e.AggregateId == id)
                 .Where(e => e.SequenceNumber <= version));
+        }
+
+        public IEnumerator<IStoredEvent> GetEnumerator()
+        {
+            return events.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

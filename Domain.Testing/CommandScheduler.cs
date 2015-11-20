@@ -72,6 +72,7 @@ namespace Microsoft.Its.Domain.Testing
                         // sometimes the command depends on a precondition event that hasn't been saved
                         if (!await preconditionVerifier.IsPreconditionSatisfied(command))
                         {
+                            // FIX: (WithInMemoryDeferredScheduling) remove?
                             Domain.CommandScheduler.DeliverIfPreconditionIsSatisfiedSoon(command, configuration);
                         }
                         else

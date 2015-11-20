@@ -15,7 +15,6 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         long SequenceNumber { get; }
 
-        // QUESTION: (IEvent) what's a better name for this, given that this event definition is not solely for event sourcing?
         string AggregateId { get; }
 
         /// <summary>
