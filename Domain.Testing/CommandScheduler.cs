@@ -67,7 +67,7 @@ namespace Microsoft.Its.Domain.Testing
                     // deliver the command immediately if appropriate
                     if (command.IsDue())
                     {
-                        var preconditionVerifier = configuration.Container.Resolve<ICommandPreconditionVerifier>();
+                        var preconditionVerifier = configuration.CommandPreconditionVerifier();
 
                         // sometimes the command depends on a precondition event that hasn't been saved
                         if (!await preconditionVerifier.IsPreconditionSatisfied(command))

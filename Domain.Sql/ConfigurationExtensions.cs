@@ -16,6 +16,25 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     public static class ConfigurationExtensions
     {
+        public static SqlCommandScheduler SqlCommandScheduler(this Configuration configuration)
+        {
+            if (configuration.IsUsingCommandSchedulerPipeline())
+            {
+                throw new InvalidOperationException("You must first call UseSqlCommandScheduling to enable the use of the legacy SqlCommandScheduler.");
+            }
+            return configuration.Container.Resolve<SqlCommandScheduler>();
+        }
+
+        public static ISchedulerClockRepository SchedulerClockRepository(this Configuration configuration)
+        {
+            return configuration.Container.Resolve<ISchedulerClockRepository>();
+        }
+
+        public static ISchedulerClockTrigger SchedulerClockTrigger(this Configuration configuration)
+        {
+            return configuration.Container.Resolve<ISchedulerClockTrigger>();
+        }
+
         /// <summary>
         /// Configures the system to use a SQL-based event store.
         /// </summary>
@@ -84,15 +103,6 @@ namespace Microsoft.Its.Domain.Sql
             configuration.IsUsingCommandSchedulerPipeline(false);
 
             return configuration;
-        }
-
-        public static SqlCommandScheduler SqlCommandScheduler(this Configuration configuration)
-        {
-            if (configuration.IsUsingCommandSchedulerPipeline())
-            {
-                throw new InvalidOperationException("You must first call UseSqlCommandScheduling to enable the use of the legacy SqlCommandScheduler.");
-            }
-            return configuration.Container.Resolve<SqlCommandScheduler>();
         }
 
         public static Configuration UseSqlStorageForScheduledCommands(

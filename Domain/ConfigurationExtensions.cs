@@ -3,7 +3,6 @@
 
 using System;
 using System.Linq;
-using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -16,6 +15,11 @@ namespace Microsoft.Its.Domain
             where TAggregate : class, IEventSourced
         {
             return configuration.Container.Resolve<IEventSourcedRepository<TAggregate>>();
+        }
+
+        public static ICommandPreconditionVerifier CommandPreconditionVerifier(this Configuration configuration)
+        {
+            return configuration.Container.Resolve<ICommandPreconditionVerifier>();
         }
 
         /// <summary>

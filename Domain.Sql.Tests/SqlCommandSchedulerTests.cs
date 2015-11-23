@@ -74,8 +74,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             Console.WriteLine(new { clockName });
 
-            clockTrigger = configuration.Container.Resolve<ISchedulerClockTrigger>();
-            clockRepository = configuration.Container.Resolve<ISchedulerClockRepository>();
+            clockTrigger = configuration.SchedulerClockTrigger();
+            clockRepository = configuration.SchedulerClockRepository();
             clockRepository.CreateClock(clockName, Clock.Now());
         }
 
@@ -893,7 +893,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 ETag = Any.Guid().ToString()
             };
 
-            var commandScheduler = Configuration.Current.Container.Resolve<ICommandScheduler<Order>>();
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
             // act
             await commandScheduler.Schedule(order.Id, command, Clock.Now().AddDays(1));
@@ -1034,8 +1034,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_scheduler_assigned_negative_SequenceNumber_collides_then_it_retries_scheduling_with_a_new_SequenceNumber()
         {
             // arrange
-            var container = Configuration.Current.Container;
-            var commandScheduler = container.Resolve<ICommandScheduler<Order>>();
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
             var initialSequenceNumber = -Any.PositiveInt();
 
@@ -1072,8 +1071,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_non_scheduler_assigned_negative_SequenceNumber_collides_then_it_is_ignores()
         {
             // arrange
-            var container = Configuration.Current.Container;
-            var commandScheduler = container.Resolve<ICommandScheduler<Order>>();
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
             var db = new CommandSchedulerDbContext();
 
@@ -1107,7 +1105,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task Constructor_commands_can_be_scheduled_to_create_new_aggregate_instances()
         {
-            var commandScheduler = Configuration.Current.Container.Resolve<ICommandScheduler<Order>>();
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
             var orderId = Any.Guid();
             var customerName = Any.FullName();
@@ -1126,7 +1124,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_a_constructor_commands_fails_with_a_ConcurrencyException_it_is_not_retried()
         {
-            var commandScheduler = Configuration.Current.Container.Resolve<ICommandScheduler<Order>>();
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
             var orderId = Any.Guid();
             var customerName = Any.FullName();
@@ -1157,8 +1155,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_an_immediately_scheduled_command_depends_on_an_event_that_has_not_been_saved_yet_then_there_is_not_initially_a_concurrency_exception()
         {
-            var container = Configuration.Current.Container;
-            var commandScheduler = container.Resolve<ICommandScheduler<Order>>();
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
             var orderId = Any.Guid();
             var customerName = Any.FullName();
@@ -1199,8 +1196,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_an_immediately_scheduled_command_depends_on_an_event_then_delivery_in_memory_waits_on_the_event_being_saved()
         {
-            var container = Configuration.Current.Container;
-            var commandScheduler = container.Resolve<ICommandScheduler<Order>>();
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
             var orderId = Any.Guid();
             var customerName = Any.FullName();
@@ -1243,8 +1239,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_scheduled_command_depends_on_an_event_that_never_arrives_it_is_eventually_abandoned()
         {
             VirtualClock.Start();
-            var container = Configuration.Current.Container;
-            var commandScheduler = container.Resolve<ICommandScheduler<Order>>();
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
             var orderId = Any.Guid();
             await orderRepository.Save(new Order(new CreateOrder(Any.FullName())
@@ -1373,7 +1368,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_a_command_is_non_durable_then_immediate_scheduling_does_not_result_in_a_command_scheduler_db_entry()
         {
-            var commandScheduler = Configuration.Current.Container.Resolve<ICommandScheduler<CustomerAccount>>();
+            var commandScheduler = Configuration.Current.CommandScheduler<CustomerAccount>();
             var reserverationService = new Mock<IReservationService>();
             reserverationService.Setup(m => m.Reserve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
                                 .Returns(() => Task.FromResult(true));

@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 
@@ -93,7 +94,7 @@ namespace Microsoft.Its.Domain.Testing
 
             if (!builder.Configuration.IsUsingInMemoryCommandScheduling())
             {
-                var clockTrigger = builder.Configuration.Container.Resolve<ISchedulerClockTrigger>();
+                var clockTrigger = builder.Configuration.SchedulerClockTrigger();
                 await clockTrigger.AdvanceClock(GetClockName(), to);
             }
         }
@@ -113,7 +114,7 @@ namespace Microsoft.Its.Domain.Testing
             }
             else
             {
-                var clockTrigger = builder.Configuration.Container.Resolve<ISchedulerClockTrigger>();
+                var clockTrigger = builder.Configuration.SchedulerClockTrigger();
                 
                 SchedulerAdvancedResult result;
                 do

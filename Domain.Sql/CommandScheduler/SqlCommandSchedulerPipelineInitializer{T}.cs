@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Threading.Tasks;
 
@@ -39,7 +42,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             if (cmd.IsDue(storedCommand.Clock))
             {
-                var preconditionVerifier = Configuration.Current.Container.Resolve<ICommandPreconditionVerifier>();
+                var preconditionVerifier = Configuration.Current.CommandPreconditionVerifier();
 
                 // sometimes the command depends on a precondition event that hasn't been saved
                 if (await preconditionVerifier.IsPreconditionSatisfied(cmd))

@@ -103,7 +103,7 @@ namespace Microsoft.Its.Domain.Testing
                 var clockName = "TEST-" + Guid.NewGuid().ToString("N");
                 Configuration.Properties["CommandSchedulerClockName"] = clockName;
                 Configuration.Container.Register<GetClockName>(c => e => clockName);
-                var clockRepository = Configuration.Container.Resolve<ISchedulerClockRepository>();
+                var clockRepository = Configuration.SchedulerClockRepository();
                 clockRepository.CreateClock(clockName, DateTimeOffset.Parse("1970-01-01 12:00:00 +00:00"));
             }
 

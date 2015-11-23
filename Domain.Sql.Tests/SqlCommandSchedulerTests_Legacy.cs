@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using FluentAssertions;
@@ -42,12 +45,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 .UseInMemoryEventStore();
             configuration.Container.Resolve<SqlCommandScheduler>();
 
-            var commandScheduler = configuration.Container.Resolve<ICommandScheduler<Order>>();
+            var commandScheduler = configuration.CommandScheduler<Order>();
 
             commandScheduler.Should()
                             .NotBeNull();
-            configuration.Container
-                         .Resolve<ICommandScheduler<Order>>()
+            configuration.CommandScheduler<Order>()
                          .Should()
                          .BeSameAs(commandScheduler);
         }

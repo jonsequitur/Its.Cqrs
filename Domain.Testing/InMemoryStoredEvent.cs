@@ -2,18 +2,21 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Dynamic;
 
 namespace Microsoft.Its.Domain.Testing
 {
-    public class InMemoryStoredEvent : IStoredEvent
+    public class InMemoryStoredEvent : IStoredEvent, IHaveExtensibleMetada
     {
+        private dynamic metadata;
+
         public InMemoryStoredEvent()
         {
             Timestamp = Clock.Now();
         }
 
         public string Body { get; set; }
-        
+
         public string ETag { get; set; }
 
         public string AggregateId { get; set; }
@@ -25,5 +28,13 @@ namespace Microsoft.Its.Domain.Testing
         public string Type { get; set; }
 
         public long SequenceNumber { get; set; }
+
+        public dynamic Metadata
+        {
+            get
+            {
+                return metadata ?? (metadata = new ExpandoObject());
+            }
+        }
     }
 }

@@ -27,7 +27,7 @@ namespace Microsoft.Its.Domain
             }
             this.repository = repository;
             this.preconditionVerifier = preconditionVerifier ??
-                                        Configuration.Current.Container.Resolve<ICommandPreconditionVerifier>();
+                                        Configuration.Current.CommandPreconditionVerifier();
         }
 
         /// <summary>
