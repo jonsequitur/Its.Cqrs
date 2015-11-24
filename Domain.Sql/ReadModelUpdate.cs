@@ -33,25 +33,11 @@ namespace Microsoft.Its.Domain.Sql
             UnitOfWork<ReadModelUpdate> unitOfWork,
             Action<ReadModelUpdate> setSubject)
         {
-            var update = new ReadModelUpdate
-            {
-                Transaction = new TransactionScope(TransactionScopeOption.RequiresNew,
-                                                   new TransactionOptions
-                                                   {
-                                                       IsolationLevel = IsolationLevel.ReadCommitted
-                                                   }, TransactionScopeAsyncFlowOption.Enabled)
-            };
-            setSubject(update);
+            setSubject(new ReadModelUpdate());
         }
 
         private static void RejectUnitOfWork(UnitOfWork<ReadModelUpdate> unitOfWork)
         {
-            var t = unitOfWork.Subject.Transaction;
-            if (t != null)
-            {
-                t.Dispose();
-            }
-
             var exception = unitOfWork.Exception;
             if (exception != null)
             {
@@ -68,13 +54,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             try
             {
-                var transaction = unitOfWork.Subject.Transaction;
-
-                using (transaction)
-                {
                     unitOfWork.Resource<DbContext>().SaveChanges();
-                    transaction.Complete();
-                }
             }
             catch (Exception exception)
             {
@@ -83,8 +63,6 @@ namespace Microsoft.Its.Domain.Sql
         }
 
         internal readonly HashSet<object> Projectors = new HashSet<object>();
-
-        private TransactionScope Transaction { get; set; }
 
         internal static void ReportFailure(
             Domain.EventHandlingError error,
@@ -95,7 +73,6 @@ namespace Microsoft.Its.Domain.Sql
 
             log.Write(() => new {error.Exception, sqlError.SerializedEvent});
 
-            using (var transaction = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var db = createDbContext())
             {
                 var dbSet = db.Set<ReadModelInfo>();
@@ -126,7 +103,6 @@ namespace Microsoft.Its.Domain.Sql
                 db.Set<EventHandlingError>().Add(sqlError);
 
                 db.SaveChanges();
-                transaction.Complete();
             }
         }
 
