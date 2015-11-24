@@ -207,11 +207,6 @@ namespace Microsoft.Its.Domain.Testing
             });
         }
 
-        internal void UseSqlEventStore()
-        {
-            Sql.ConfigurationExtensions.UseSqlEventStore(configuration);
-        }
-
         private void SourceAggregatesFromInitialEvents()
         {
             InitialEvents.GroupBy(e => e.AggregateType(),

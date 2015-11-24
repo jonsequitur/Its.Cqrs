@@ -3,11 +3,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reactive.Linq;
+using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Its.Configuration;
 using Its.Log.Instrumentation;
 using Microsoft.Its.Domain;
@@ -30,12 +30,10 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
     [TestFixture, Category("Integration tests")]
     public class ServiceBusCommandTriggerTests : EventStoreDbTest
     {
-        private SqlCommandScheduler scheduler;
-        private FakeEventBus bus;
         private CompositeDisposable disposables;
-        private SqlEventSourcedRepository<Order> orderRepository;
         private ServiceBusSettings serviceBusSettings;
         private ServiceBusCommandQueueSender queueSender;
+        private List<IScheduledCommand> schedulerActivity;
 
         static ServiceBusCommandTriggerTests()
         {
@@ -50,6 +48,8 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
         {
             base.SetUp();
 
+            schedulerActivity = new List<IScheduledCommand>();
+
             using (VirtualClock.Start(DateTimeOffset.Now.AddMonths(1)))
             {
                 disposables = new CompositeDisposable();
@@ -57,31 +57,32 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                 serviceBusSettings = Settings.Get<ServiceBusSettings>();
                 serviceBusSettings.NamePrefix = "itscqrstests";
-                serviceBusSettings.ConfigureQueue = q =>
-                {
-                    q.AutoDeleteOnIdle = TimeSpan.FromMinutes(15);
-                };
-
-                bus = new FakeEventBus();
-                orderRepository = new SqlEventSourcedRepository<Order>(bus);
-
-                var configuration = new Configuration()
-                    .UseSqlEventStore(() => new EventStoreDbContext())
-                    .UseEventBus(bus)
-                    .UseSqlCommandScheduling()
-                    .UseDependency<IEventSourcedRepository<Order>>(t => orderRepository);
+                serviceBusSettings.ConfigureQueue = q => { q.AutoDeleteOnIdle = TimeSpan.FromMinutes(15); };
 
                 var clockName = Any.Paragraph(4);
-                scheduler = new SqlCommandScheduler(configuration) { GetClockName = @event => clockName };
+
+                var configuration = new Configuration()
+                    .UseSqlEventStore()
+                    .UseDependency<GetClockName>(_ => @event => clockName)
+                    .UseSqlStorageForScheduledCommands()
+                    .AddToCommandSchedulerPipeline<Order>(
+                        schedule: async (cmd, next) =>
+                        {
+                            await next(cmd);
+                            schedulerActivity.Add(cmd);
+                        },
+                        deliver: async (cmd, next) =>
+                        {
+                            await next(cmd);
+                            schedulerActivity.Add(cmd);
+                        });
 
                 queueSender = new ServiceBusCommandQueueSender(serviceBusSettings)
                 {
                     MessageDeliveryOffsetFromCommandDueTime = TimeSpan.FromSeconds(30)
                 };
 
-                disposables.Add(scheduler.Activity.Subscribe(s => Console.WriteLine("SqlCommandScheduler: " + s.ToJson())));
-                disposables.Add(queueSender.Messages.Subscribe(s => Console.WriteLine("ServiceBusCommandQueueSender: " + s.ToJson())));
-                disposables.Add(bus.Subscribe(scheduler));
+                disposables.Add(queueSender.Messages.Subscribe(s => Console.WriteLine("[ServiceBusCommandQueueSender] " + s.ToJson())));
                 disposables.Add(configuration);
                 disposables.Add(ConfigurationContext.Establish(configuration));
             }
@@ -117,24 +118,17 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                     Console.WriteLine(new { ShipOrderId = order.Id, due });
 
-                    await orderRepository.Save(order);
+                    await Configuration.Current.Repository<Order>().Save(order);
                 });
-
-                await RunCatchup();
 
                 // reset the clock so that when the messages are delivered, the target commands are now due
                 Clock.Reset();
 
                 await queueReceiver.StartReceivingMessages();
 
-                var activity = await scheduler.Activity
-                                              .Where(a => aggregateIds.Contains(a.ScheduledCommand.AggregateId))
-                                              .Take(5)
-                                              .ToList()
-                                              .Timeout(TimeSpan.FromMinutes(5));
-
-                activity.Select(a => a.ScheduledCommand.AggregateId)
-                        .ShouldBeEquivalentTo(aggregateIds);
+                schedulerActivity
+                    .Select(a => a.AggregateId)
+                    .ShouldBeEquivalentTo(aggregateIds);
             }
         }
 
@@ -149,27 +143,20 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 var aggregateIds = Enumerable.Range(1, 5)
                                              .Select(_ => Guid.NewGuid())
                                              .ToArray();
-                
+
                 aggregateIds.ForEach(id =>
                 {
                     // TODO: (When_ServiceBusCommandQueueSender_is_subscribed_to_the_service_bus_then_messages_are_scheduled_to_trigger_directly_scheduled_commands) 
                 });
-
-                await RunCatchup();
 
                 // reset the clock so that when the messages are delivered, the target commands are now due
                 Clock.Reset();
 
                 await queueReceiver.StartReceivingMessages();
 
-                var activity = await scheduler.Activity
-                                              .Where(a => aggregateIds.Contains(a.ScheduledCommand.AggregateId))
-                                              .Take(5)
-                                              .ToList()
-                                              .Timeout(TimeSpan.FromMinutes(5));
-
-                activity.Select(a => a.ScheduledCommand.AggregateId)
-                        .ShouldBeEquivalentTo(aggregateIds);
+                schedulerActivity
+                    .Select(a => a.AggregateId)
+                    .ShouldBeEquivalentTo(aggregateIds);
             }
         }
 
@@ -181,10 +168,6 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
             var aggregateId = Any.Guid();
             var appliedCommands = new List<ICommandSchedulerActivity>();
 
-            scheduler.Activity
-                     .Where(c => c.ScheduledCommand.AggregateId == aggregateId)
-                     .Subscribe(appliedCommands.Add);
-
             using (var receiver = CreateQueueReceiver())
             {
                 await receiver.StartReceivingMessages();
@@ -193,9 +176,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 var order = await CommandSchedulingTests.CreateOrder(orderId: aggregateId)
                                                         .ApplyAsync(new ShipOn(Clock.Now().AddMinutes(2)));
 
-                await orderRepository.Save(order);
-
-                await RunCatchup();
+                await Configuration.Current.Repository<Order>().Save(order);
 
                 await receiver.Messages
                               .FirstAsync(c => c.AggregateId == aggregateId)
@@ -228,9 +209,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                                               .Apply(new ShipOn(Clock.Now().AddSeconds(-5)));
             queueSender.MessageDeliveryOffsetFromCommandDueTime = TimeSpan.FromSeconds(0);
 
-            await orderRepository.Save(order);
-
-            await RunCatchup();
+            await Configuration.Current.Repository<Order>().Save(order);
 
             using (var receiver = CreateQueueReceiver())
             {
@@ -240,7 +219,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                         .Subscribe(receivedMessages.Add);
 
                 await receiver.StartReceivingMessages();
-                
+
                 await Task.Delay(TimeSpan.FromSeconds(5));
 
                 receivedMessages.Should().ContainSingle(e => e.AggregateId == aggregateId);
@@ -264,20 +243,14 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
         private ServiceBusCommandQueueReceiver CreateQueueReceiver()
         {
-            var receiver = new ServiceBusCommandQueueReceiver(serviceBusSettings, scheduler);
+            var receiver = new ServiceBusCommandQueueReceiver(
+                serviceBusSettings,
+                Configuration.Current.SchedulerClockTrigger(),
+                () => new CommandSchedulerDbContext());
 
-            receiver.Messages.Subscribe(s => Console.WriteLine("ServiceBusCommandQueueReceiver: " + s.ToJson()));
+            receiver.Messages.Subscribe(s => Console.WriteLine("[ServiceBusCommandQueueReceiver] " + s.ToJson()));
 
             return receiver;
-        }
-
-        private async Task RunCatchup()
-        {
-            using (var catchup = CreateReadModelCatchup(queueSender))
-            {
-                catchup.CreateReadModelDbContext = () => new CommandSchedulerDbContext();
-                await catchup.Run();
-            }
         }
     }
 }

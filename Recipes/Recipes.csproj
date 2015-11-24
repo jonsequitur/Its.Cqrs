@@ -101,8 +101,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Its.Domain.ServiceBusCommandScheduling.nuspec" />
-    <None Include="Its.Recipes-Its.Domain.Mapping.nuspec" />
-    <None Include="Its.Recipes-ServiceBusConfiguration.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

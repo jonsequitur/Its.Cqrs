@@ -32,35 +32,42 @@ namespace Microsoft.Its.Domain.ServiceBus
                                                   IDisposable
     {
         private readonly ServiceBusSettings settings;
-        private readonly SqlCommandScheduler scheduler;
+        private readonly ISchedulerClockTrigger clockTrigger;
         private readonly Subject<Exception> exceptionSubject = new Subject<Exception>();
         private QueueClient queueClient;
         private readonly Subject<IScheduledCommand> messageSubject = new Subject<IScheduledCommand>();
+        private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusCommandQueueReceiver"/> class.
         /// </summary>
         /// <param name="settings">The service bus settings.</param>
-        /// <param name="scheduler">The command scheduler.</param>
+        /// <param name="clockTrigger">The command clockTrigger.</param>
         /// <exception cref="System.ArgumentNullException">
         /// settings
         /// or
-        /// scheduler
+        /// clockTrigger
         /// </exception>
         public ServiceBusCommandQueueReceiver(
             ServiceBusSettings settings, 
-            SqlCommandScheduler scheduler)
+            ISchedulerClockTrigger clockTrigger, 
+            Func<CommandSchedulerDbContext> createCommandSchedulerDbContext)
         {
             if (settings == null)
             {
                 throw new ArgumentNullException("settings");
             }
-            if (scheduler == null)
+            if (clockTrigger == null)
             {
-                throw new ArgumentNullException("scheduler");
+                throw new ArgumentNullException("clockTrigger");
+            }
+            if (createCommandSchedulerDbContext == null)
+            {
+                throw new ArgumentNullException("createCommandSchedulerDbContext");
             }
             this.settings = settings;
-            this.scheduler = scheduler;
+            this.clockTrigger = clockTrigger;
+            this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
 
 #if DEBUG
             exceptionSubject
@@ -82,7 +89,8 @@ namespace Microsoft.Its.Domain.ServiceBus
             return new SessionHandler(
                 msg => messageSubject.OnNext(msg),
                 ex => exceptionSubject.OnNext(ex),
-                scheduler);
+                clockTrigger,
+                createCommandSchedulerDbContext);
         }
 
         /// <summary>
@@ -139,18 +147,21 @@ namespace Microsoft.Its.Domain.ServiceBus
 
         private class SessionHandler : IMessageSessionAsyncHandler
         {
-            private readonly SqlCommandScheduler scheduler;
+            private readonly ISchedulerClockTrigger clockTrigger;
             private readonly Action<IScheduledCommand> onMessage;
             private readonly Action<Exception> onError;
+            private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
 
             public SessionHandler(
                 Action<IScheduledCommand> onMessage,
                 Action<Exception> onError,
-                SqlCommandScheduler scheduler)
+                ISchedulerClockTrigger clockTrigger, 
+                Func<CommandSchedulerDbContext> createCommandSchedulerDbContext)
             {
                 this.onMessage = onMessage;
                 this.onError = onError;
-                this.scheduler = scheduler;
+                this.clockTrigger = clockTrigger;
+                this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
             }
 
             /// <summary>
@@ -170,7 +181,7 @@ namespace Microsoft.Its.Domain.ServiceBus
 
                 onMessage(@event);
 
-                var result = await scheduler.Trigger(commands => commands.Due(@event.DueTime)
+                var result = await clockTrigger.Trigger(commands => commands.Due(@event.DueTime)
                                                                          .Where(c => c.AggregateId == @event.AggregateId));
 
                 if (!result.FailedCommands.Any())
@@ -182,7 +193,7 @@ namespace Microsoft.Its.Domain.ServiceBus
                         return;
                     }
 
-                    using (var db = scheduler.CreateCommandSchedulerDbContext())
+                    using (var db = createCommandSchedulerDbContext())
                     {
                         // if the command was already applied, we can complete the message. its job is done.
                         if (db.ScheduledCommands
@@ -223,7 +234,7 @@ namespace Microsoft.Its.Domain.ServiceBus
         }
 
         /// <summary>
-        /// Serves as a deserialization target for commands queued to the service bus. These commands contain the full command JSON, but ServiceBusScheduledCommand is actually only used to look up the command from the command scheduler database.
+        /// Serves as a deserialization target for commands queued to the service bus. These commands contain the full command JSON, but ServiceBusScheduledCommand is actually only used to look up the command from the command clockTrigger database.
         /// </summary>
         private class ServiceBusScheduledCommand : Event, IScheduledCommand
         {
