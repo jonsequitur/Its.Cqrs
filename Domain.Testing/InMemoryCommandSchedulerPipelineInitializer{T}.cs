@@ -1,11 +1,8 @@
-using Microsoft.Its.Domain.Sql.CommandScheduler;
-
 namespace Microsoft.Its.Domain.Testing
 {
-    internal class InMemoryCommandSchedulerPipelineInitializer<TAggregate> : ISchedulerPipelineInitializer
-        where TAggregate : class, IEventSourced
+    internal class InMemoryCommandSchedulerPipelineInitializer : SchedulerPipelineInitializer
     {
-        public void Initialize(Configuration configuration)
+        protected override void InitializeFor<TAggregate>(Configuration configuration)
         {
             configuration.IsUsingCommandSchedulerPipeline(true)
                          .IsUsingInMemoryCommandScheduling(true);
