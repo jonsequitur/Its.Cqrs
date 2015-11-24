@@ -52,7 +52,6 @@ namespace Microsoft.Its.Domain.Sql
                                               .GetSnapshot(id, version, asOfDate);
             }
 
-            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var context = GetEventStoreContext())
             {
                 var streamName = AggregateType<TAggregate>.EventStreamName;
@@ -137,7 +136,6 @@ namespace Microsoft.Its.Domain.Sql
         {
             IEvent[] events;
 
-            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var context = GetEventStoreContext())
             {
                 var streamName = AggregateType<TAggregate>.EventStreamName;
