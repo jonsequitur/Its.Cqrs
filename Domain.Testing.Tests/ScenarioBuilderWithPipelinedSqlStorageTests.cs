@@ -37,10 +37,12 @@ namespace Microsoft.Its.Domain.Testing.Tests
             CommandSchedulerDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
 
-            var scenarioBuilder = new ScenarioBuilder().UseSqlEventStore();
+            var scenarioBuilder = new ScenarioBuilder();
 
-            scenarioBuilder.Configuration.UseSqlStorageForScheduledCommands();
-            
+            scenarioBuilder.Configuration
+                           .UseSqlEventStore()
+                           .UseSqlStorageForScheduledCommands();
+
             return scenarioBuilder;
         }
     }

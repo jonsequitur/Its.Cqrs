@@ -155,21 +155,6 @@ namespace Microsoft.Its.Domain.Testing
         }
 
         /// <summary>
-        /// Indicates that the scenario should persist events to a SQL-based event store via <see cref="EventStoreDbContext" />.
-        /// </summary>
-        /// <typeparam name="TScenarioBuilder">The type of the scenario builder.</typeparam>
-        /// <param name="builder">The scenario builder.</param>
-        /// <returns>The same scenario builder.</returns>
-        public static TScenarioBuilder UseSqlEventStore<TScenarioBuilder>(
-            this TScenarioBuilder builder)
-            where TScenarioBuilder : ScenarioBuilder
-        {
-            builder.EnsureScenarioHasNotBeenPrepared();
-            builder.UseSqlEventStore();
-            return builder;
-        }
-
-        /// <summary>
         /// Indicates that the scenario should schedule commands using a SQL-based command scheduler.
         /// </summary>
         /// <typeparam name="TScenarioBuilder">The type of the scenario builder.</typeparam>

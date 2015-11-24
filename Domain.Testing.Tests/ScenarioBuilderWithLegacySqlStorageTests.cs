@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Reactive.Disposables;
+using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Sql.Tests;
 using NUnit.Framework;
@@ -36,8 +37,9 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
 
             var scenarioBuilder = new ScenarioBuilder()
-                .UseSqlEventStore()
                 .UseSqlCommandScheduler();
+
+            scenarioBuilder.Configuration.UseSqlEventStore();
 
             return scenarioBuilder;
         }
