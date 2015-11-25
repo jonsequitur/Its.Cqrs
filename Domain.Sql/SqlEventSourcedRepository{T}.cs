@@ -52,7 +52,6 @@ namespace Microsoft.Its.Domain.Sql
                                               .GetSnapshot(id, version, asOfDate);
             }
 
-            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var context = GetEventStoreContext())
             {
                 var streamName = AggregateType<TAggregate>.EventStreamName;
@@ -137,7 +136,6 @@ namespace Microsoft.Its.Domain.Sql
         {
             IEvent[] events;
 
-            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var context = GetEventStoreContext())
             {
                 var streamName = AggregateType<TAggregate>.EventStreamName;
@@ -188,12 +186,6 @@ namespace Microsoft.Its.Domain.Sql
                 return storableEvent;
             }).ToArray();
 
-            using (var tran = new TransactionScope(TransactionScopeOption.RequiresNew,
-                                                   new TransactionOptions
-                                                   {
-                                                       IsolationLevel = IsolationLevel.ReadCommitted
-                                                   }, 
-                                                   TransactionScopeAsyncFlowOption.Enabled))
             using (var context = GetEventStoreContext())
             {
                 foreach (var storableEvent in storableEvents)
@@ -219,7 +211,6 @@ namespace Microsoft.Its.Domain.Sql
                 try
                 {
                     await context.SaveChangesAsync();
-                    tran.Complete();
                 }
                 catch (Exception exception)
                 {
