@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Microsoft.Its.Domain
 {
-    internal abstract class SchedulerPipelineInitializer : ISchedulerPipelineInitializer
+    public abstract class SchedulerPipelineInitializer : ISchedulerPipelineInitializer
     {
         private readonly MethodInfo initializeFor;
 

@@ -103,6 +103,26 @@ namespace Microsoft.Its.Domain
             return configuration;
         }
 
+        public static Configuration TraceScheduledCommands(
+            this Configuration configuration,
+            Action<IScheduledCommand> onScheduling = null,
+            Action<IScheduledCommand> onScheduled = null,
+            Action<IScheduledCommand> onDelivering = null,
+            Action<IScheduledCommand> onDelivered = null)
+        {
+            var traceInitializer = configuration.Container
+                                                .Resolve<CommandSchedulerPipelineTraceInitializer>();
+
+            traceInitializer.OnScheduling(onScheduling);
+            traceInitializer.OnScheduled(onScheduled);
+            traceInitializer.OnDelivering(onDelivering);
+            traceInitializer.OnDelivered(onDelivered);
+
+            traceInitializer.Initialize(configuration);
+
+            return configuration;
+        }
+
         public static Configuration AddToCommandSchedulerPipeline<TAggregate>(
             this Configuration configuration,
             ScheduledCommandInterceptor<TAggregate> schedule = null,

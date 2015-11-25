@@ -100,6 +100,7 @@
     <Compile Include="CommandContext.cs" />
     <Compile Include="CommandHandler.cs" />
     <Compile Include="CommandReference.cs" />
+    <Compile Include="CommandSchedulerPipelineTraceInitializer.cs" />
     <Compile Include="ConfigurationContext.cs" />
     <Compile Include="ConfigurationExtensions.cs" />
     <Compile Include="DomainConfigurationException.cs" />
