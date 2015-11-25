@@ -103,6 +103,44 @@ namespace Microsoft.Its.Domain
             return configuration;
         }
 
+        /// <summary>
+        /// Writes trace information during command scheduling and delivery for all aggregate types. By default, output is send to <see cref="System.Diagnostics.Trace" />.
+        /// </summary>
+        /// <param name="configuration">The domain configuration.</param>
+        /// <param name="onScheduling">An optional delegate to trace information about a command before calling Schedule on the inner scheduler.</param>
+        /// <param name="onScheduled">An optional delegate to trace information about a command after calling Schedule on the inner scheduler.</param>
+        /// <param name="onDelivering">An optional delegate to trace information about a command before calling Deliver on the inner scheduler.</param>
+        /// <param name="onDelivered">An optional delegate to trace information about a command after calling Deliver on the inner scheduler.</param>
+        /// <returns>The same configuration object.</returns>
+        public static Configuration TraceScheduledCommands(
+            this Configuration configuration,
+            Action<IScheduledCommand> onScheduling = null,
+            Action<IScheduledCommand> onScheduled = null,
+            Action<IScheduledCommand> onDelivering = null,
+            Action<IScheduledCommand> onDelivered = null)
+        {
+            var traceInitializer = configuration.Container
+                                                .Resolve<CommandSchedulerPipelineTraceInitializer>();
+
+            traceInitializer.OnScheduling(onScheduling);
+            traceInitializer.OnScheduled(onScheduled);
+            traceInitializer.OnDelivering(onDelivering);
+            traceInitializer.OnDelivered(onDelivered);
+
+            traceInitializer.Initialize(configuration);
+
+            return configuration;
+        }
+
+        /// <summary>
+        /// Adds a pipeline interceptor to command scheduler pipeline for a specific aggregate type.
+        /// </summary>
+        /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="schedule">An optional delegate to intercept calls to Schedule.</param>
+        /// <param name="deliver">An optional delegate to intercept calls to Deliver.</param>
+        /// <returns></returns>
+        /// <exception cref="System.InvalidOperationException">Legacy SQL command scheduler cannot be used with the command scheduler pipeline.</exception>
         public static Configuration AddToCommandSchedulerPipeline<TAggregate>(
             this Configuration configuration,
             ScheduledCommandInterceptor<TAggregate> schedule = null,

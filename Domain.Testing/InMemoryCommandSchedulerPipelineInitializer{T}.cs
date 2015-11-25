@@ -1,11 +1,11 @@
-using Microsoft.Its.Domain.Sql.CommandScheduler;
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace Microsoft.Its.Domain.Testing
 {
-    internal class InMemoryCommandSchedulerPipelineInitializer<TAggregate> : ISchedulerPipelineInitializer
-        where TAggregate : class, IEventSourced
+    internal class InMemoryCommandSchedulerPipelineInitializer : SchedulerPipelineInitializer
     {
-        public void Initialize(Configuration configuration)
+        protected override void InitializeFor<TAggregate>(Configuration configuration)
         {
             configuration.IsUsingCommandSchedulerPipeline(true)
                          .IsUsingInMemoryCommandScheduling(true);

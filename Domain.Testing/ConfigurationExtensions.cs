@@ -77,51 +77,12 @@ namespace Microsoft.Its.Domain.Testing
                 return;
             }
 
-            AggregateType.KnownTypes.ForEach(aggregateType =>
-            {
-                var initializerType = typeof (PipelineTrackerFor<>).MakeGenericType(aggregateType);
-
-                var initializer = configuration.Container.Resolve(initializerType) as ISchedulerPipelineInitializer;
-
-                initializer.Initialize(configuration);
-            });
+            TrackCommandsInPipeline(configuration);
         }
 
-        internal class PipelineTrackerFor<TAggregate> :
-            ISchedulerPipelineInitializer where TAggregate : class, IEventSourced
+        private static void TrackCommandsInPipeline(Configuration configuration)
         {
-            private static readonly object lockObj = new object();
-
-            public void Initialize(Configuration configuration)
-            {
-                var commandsInPipeline = TrackCommandsInPipeline(configuration);
-                configuration.AddToCommandSchedulerPipeline<TAggregate>(
-                    schedule: async (command, next) =>
-                    {
-                        commandsInPipeline.Add(command);
-                        await next(command);
-                    },
-                    deliver: async (command, next) =>
-                    {
-                        await next(command);
-                        commandsInPipeline.Remove(command);
-                    });
-            }
-
-            internal static CommandsInPipeline TrackCommandsInPipeline(
-                Configuration configuration)
-            {
-                // resolve and register so there's only a single instance registered at any given time
-                CommandsInPipeline inPipeline;
-
-                lock (lockObj)
-                {
-                    inPipeline = configuration.Container.Resolve<CommandsInPipeline>();
-                    configuration.Container.Register(c => inPipeline);
-                }
-
-                return inPipeline;
-            }
+            new CommandSchedulerPipelineTracker().Initialize(configuration);
         }
 
         internal static void IsUsingInMemoryCommandScheduling(this Configuration configuration, bool value)

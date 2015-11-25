@@ -3,16 +3,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
 using Sample.Domain.Ordering.Commands;
+using TraceListener = Its.Log.Instrumentation.TraceListener;
 
 namespace Microsoft.Its.Domain.Tests
 {
@@ -293,6 +296,53 @@ namespace Microsoft.Its.Domain.Tests
             await scheduler.Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
 
             checkpoints.Should().BeEquivalentTo(new[] { "one", "two", "three", "four" });
+        }
+
+        [Test]
+        public async Task When_CommandSchedulerPipeline_tracing_is_enabled_then_by_default_trace_output_goes_to_SystemDiagnosticsTrace()
+        {
+            var listener = new TraceListener();
+            Trace.Listeners.Add(listener);
+
+            var log = new List<string>();
+
+            configuration.TraceScheduledCommands();
+
+            using (Log.Events().Subscribe(e => log.Add(e.ToLogString())))
+            using (Disposable.Create(() => Trace.Listeners.Remove(listener)))
+            {
+                await configuration.CommandScheduler<Order>()
+                                   .Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            }
+
+            log.Count.Should().Be(4);
+            log.Should().Contain(e => e.Contains("[Scheduling] Order.CreateOrder"));
+            log.Should().Contain(e => e.Contains("[Scheduled] Order.CreateOrder"));
+            log.Should().Contain(e => e.Contains("[Delivering] Order.CreateOrder"));
+            log.Should().Contain(e => e.Contains("[Delivered] Order.CreateOrder"));
+        }
+
+        [Test]
+        public async Task CommandSchedulerPipeline_tracing_can_specify_tracing_behaviors()
+        {
+            var onSchedulingWasCalled = false;
+            var onScheduledWasCalled = false;
+            var onDeliveringWasCalled = false;
+            var onDeliveredWasCalled = false;
+
+            configuration.TraceScheduledCommands(
+                onScheduling: _ => onSchedulingWasCalled = true,
+                onScheduled: _ => onScheduledWasCalled = true,
+                onDelivering: _ => onDeliveringWasCalled = true,
+                onDelivered: _ => onDeliveredWasCalled = true);
+
+            await configuration.CommandScheduler<Order>()
+                               .Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+
+            onSchedulingWasCalled.Should().BeTrue();
+            onScheduledWasCalled.Should().BeTrue();
+            onDeliveringWasCalled.Should().BeTrue();
+            onDeliveredWasCalled.Should().BeTrue();
         }
 
         [Test]

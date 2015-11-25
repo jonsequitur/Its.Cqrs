@@ -23,14 +23,9 @@ namespace Microsoft.Its.Domain.Testing
         {
             configuration.IsUsingCommandSchedulerPipeline(true);
 
-            AggregateType.KnownTypes.ForEach(t =>
-            {
-                var initializerType = typeof (InMemoryCommandSchedulerPipelineInitializer<>)
-                    .MakeGenericType(t);
-                var initializer = ((ISchedulerPipelineInitializer) configuration.Container
-                                                                                .Resolve(initializerType));
-                initializer.Initialize(configuration);
-            });
+            configuration.Container
+                         .Resolve<InMemoryCommandSchedulerPipelineInitializer>()
+                         .Initialize(configuration);
 
             return configuration;
         }
