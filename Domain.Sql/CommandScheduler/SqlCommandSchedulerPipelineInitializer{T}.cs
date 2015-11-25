@@ -25,7 +25,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         }
 
         protected override void InitializeFor<TAggregate>(Configuration configuration)
-
         {
             configuration
                 .AddToCommandSchedulerPipeline<TAggregate>(
