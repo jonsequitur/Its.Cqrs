@@ -9,23 +9,24 @@
 
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Web;
 using System.Web.Http.Routing;
 using System.Web.Routing;
 using HttpMethodConstraint = System.Web.Routing.HttpMethodConstraint;
 
-namespace System.Web.Http
+namespace Microsoft.Its.Domain.Api
 {
     /// <summary>
     /// Provides a fix for the problem that different constraint interfaces are used depending on the hosting environment.
     /// </summary>
 #if !RecipesProject
-    [System.Diagnostics.DebuggerStepThrough]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerStepThrough]
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
     internal class HostIndependentHttpMethodConstraint : IRouteConstraint, IHttpRouteConstraint
     {
         private readonly HttpMethodConstraint aspNetConstraint;
-        private readonly Routing.HttpMethodConstraint selfHostConstraint;
+        private readonly global::System.Web.Http.Routing.HttpMethodConstraint selfHostConstraint;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HostIndependentHttpMethodConstraint"/> class.
@@ -34,7 +35,7 @@ namespace System.Web.Http
         public HostIndependentHttpMethodConstraint(string method)
         {
             aspNetConstraint = new HttpMethodConstraint(method);
-            selfHostConstraint = new Routing.HttpMethodConstraint(new HttpMethod(method));
+            selfHostConstraint = new global::System.Web.Http.Routing.HttpMethodConstraint(new HttpMethod(method));
         }
 
         /// <summary>
