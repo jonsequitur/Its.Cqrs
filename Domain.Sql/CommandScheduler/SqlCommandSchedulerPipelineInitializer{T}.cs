@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    internal class SqlCommandSchedulerPipelineInitializer<TAggregate> :
-        ISchedulerPipelineInitializer
-        where TAggregate : class, IEventSourced
+    internal class SqlCommandSchedulerPipelineInitializer :
+        SchedulerPipelineInitializer
     {
         private readonly Func<CommandSchedulerDbContext> createDbContext;
         private readonly Func<GetClockName> getClockName;
@@ -25,7 +24,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             this.getClockName = getClockName;
         }
 
-        public void Initialize(Configuration configuration)
+        protected override void InitializeFor<TAggregate>(Configuration configuration)
+
         {
             configuration
                 .AddToCommandSchedulerPipeline<TAggregate>(
@@ -33,7 +33,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     deliver: async (cmd, next) => await Deliver(cmd, next));
         }
 
-        private async Task Schedule(IScheduledCommand<TAggregate> cmd, Func<IScheduledCommand<TAggregate>, Task> next)
+        private async Task Schedule<TAggregate>(IScheduledCommand<TAggregate> cmd, Func<IScheduledCommand<TAggregate>, Task> next)
+            where TAggregate : class, IEventSourced
         {
             var storedCommand = await Storage.StoreScheduledCommand(
                 cmd,
@@ -54,7 +55,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             await next(cmd);
         }
 
-        private async Task Deliver(IScheduledCommand<TAggregate> cmd, Func<IScheduledCommand<TAggregate>, Task> next)
+        private async Task Deliver<TAggregate>(IScheduledCommand<TAggregate> cmd, Func<IScheduledCommand<TAggregate>, Task> next)
+            where TAggregate : class, IEventSourced
         {
             IClock clock = null;
             if (cmd.DueTime != null)
@@ -78,7 +80,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         }
 
         private async Task<string> GetClockName(
-            IScheduledCommand<TAggregate> scheduledCommand,
+            IScheduledCommand scheduledCommand,
             CommandSchedulerDbContext dbContext)
         {
             return getClockName()(scheduledCommand);

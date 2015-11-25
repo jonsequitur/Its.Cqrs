@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Its.Domain.Sql.CommandScheduler
+namespace Microsoft.Its.Domain
 {
     internal interface ISchedulerPipelineInitializer
     {

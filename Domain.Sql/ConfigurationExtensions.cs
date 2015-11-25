@@ -118,20 +118,18 @@ namespace Microsoft.Its.Domain.Sql
                      .Register<ISchedulerClockTrigger>(
                          c => c.Resolve<SchedulerClockTrigger>());
 
-            var schedulerFuncs = new Dictionary<string, Func<dynamic>>();
+            configuration.Container
+                         .Resolve<SqlCommandSchedulerPipelineInitializer>()
+                         .Initialize(configuration);
 
+            var schedulerFuncs = new Dictionary<string, Func<dynamic>>();
             AggregateType.KnownTypes.ForEach(aggregateType =>
             {
-                var initializerType = typeof (SqlCommandSchedulerPipelineInitializer<>).MakeGenericType(aggregateType);
                 var schedulerType = typeof (ICommandScheduler<>).MakeGenericType(aggregateType);
-
-                var initializer = container.Resolve(initializerType) as ISchedulerPipelineInitializer;
 
                 schedulerFuncs.Add(
                     AggregateType.EventStreamName(aggregateType),
                     () => container.Resolve(schedulerType));
-
-                initializer.Initialize(configuration);
             });
 
             container

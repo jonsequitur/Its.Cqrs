@@ -2,32 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
-using System.Reflection;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 
 namespace Microsoft.Its.Domain.Testing
 {
-    internal abstract class SchedulerPipelineInitializer : ISchedulerPipelineInitializer
-    {
-        private readonly MethodInfo initializeFor;
-
-        protected SchedulerPipelineInitializer()
-        {
-            initializeFor = GetType().GetMethod("InitializeFor", BindingFlags.Instance | BindingFlags.NonPublic);
-        }
-
-        public void Initialize(Configuration configuration)
-        {
-            AggregateType.KnownTypes.ForEach(aggregateType =>
-            {
-                initializeFor.MakeGenericMethod(aggregateType).Invoke(this, new[] { configuration });
-            });
-        }
-
-        protected abstract void InitializeFor<TAggregate>(Configuration configuration)
-            where TAggregate : class, IEventSourced;
-    }
-
     internal class CommandSchedulerPipelineTracker : SchedulerPipelineInitializer
     {
         private static readonly object lockObj = new object();

@@ -130,6 +130,7 @@
     <Compile Include="IEventMigratingAggregate.cs" />
     <Compile Include="Scheduling\CommandDelivered.cs" />
     <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
+    <Compile Include="Scheduling\ISchedulerPipelineInitializer.cs" />
     <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
     <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />
@@ -140,6 +141,7 @@
     <Compile Include="Scheduling\PreconditionNotMetException.cs" />
     <Compile Include="Scheduling\ScheduledCommandExtensions.cs" />
     <Compile Include="Scheduling\ScheduledCommandInterceptor{T}.cs" />
+    <Compile Include="Scheduling\SchedulerPipelineInitializer.cs" />
     <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />
     <Compile Include="Snapshots\InMemorySnapshotRepository{T}.cs" />
     <Compile Include="Snapshots\ISnapshot.cs" />
