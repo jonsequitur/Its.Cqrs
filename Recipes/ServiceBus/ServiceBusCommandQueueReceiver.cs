@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.ServiceBus
 {
 #if !RecipesProject
     /// <summary>
-    /// Receives messages from a service bus queue and attempts to trigger corresponding commands via the SqlCommandScheduler.
+    /// Receives messages from a service bus queue and attempts to trigger corresponding commands via the command scheduler.
     /// </summary>
     [DebuggerStepThrough]
     [ExcludeFromCodeCoverage]
