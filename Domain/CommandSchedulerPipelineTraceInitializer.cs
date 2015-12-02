@@ -6,6 +6,7 @@ using System.Diagnostics;
 
 namespace Microsoft.Its.Domain
 {
+    [DebuggerStepThrough]
     internal class CommandSchedulerPipelineTraceInitializer : SchedulerPipelineInitializer
     {
         private Action<IScheduledCommand> onScheduling = cmd =>
