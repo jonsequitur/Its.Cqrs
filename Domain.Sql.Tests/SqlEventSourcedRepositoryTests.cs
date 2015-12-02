@@ -73,6 +73,19 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 db.SaveChanges();
             }
         }
+        
+        protected override IStoredEvent CreateStoredEvent(string streamName, string type, Guid aggregateId, int sequenceNumber, string body, DateTime utcTime)
+        {
+            return new StorableEvent
+                       {
+                           StreamName = streamName,
+                           Type = type,
+                           AggregateId = aggregateId,
+                           SequenceNumber = sequenceNumber,
+                           Body = body,
+                           UtcTime = utcTime
+                       }.ToStoredEvent();
+        }
 
         [Test]
         public override async Task Events_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_sourcing_to_fail()

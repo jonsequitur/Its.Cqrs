@@ -593,6 +593,47 @@ namespace Microsoft.Its.Domain.Tests
             account.Version.Should().Be(124);
             account.NoSpam.Should().Be(false);
         }
+        
+        [Test]
+        public async Task Scheduled_Events_that_cannot_be_deserialized_due_to_unknown_command_do_not_cause_sourcing_to_fail()
+        {
+            var orderId = Guid.NewGuid();
+            var goodEvent = new Order.CustomerInfoChanged
+            {
+                CustomerName = "Waylon Jennings",
+                AggregateId = orderId,
+                SequenceNumber = 1
+            }.ToStoredEvent();
+            var badEvent = CreateStoredEvent(
+                streamName : goodEvent.StreamName,
+                type : "Scheduled:UNKNOWNCOMMAND",
+                aggregateId : Guid.Parse(goodEvent.AggregateId),
+                sequenceNumber : 2,
+                body : new
+                {
+                    Command = new
+                    {
+                        CommandName = "UNKNOWNCOMMAND"
+                    }
+                }.ToJson(),
+                utcTime : DateTime.UtcNow);
+
+            await SaveEventsDirectly(goodEvent, badEvent);
+
+            var repository = CreateRepository<Order>();
+
+            var order = await repository.GetLatest(orderId);
+
+            order.CustomerName.Should().Be("Waylon Jennings");
+        }
+
+        protected abstract IStoredEvent CreateStoredEvent(
+            string streamName,
+            string type,
+            Guid aggregateId,
+            int sequenceNumber,
+            string body,
+            DateTime utcTime);
 
         [Ignore("Scenario under consideration")]
         [Test]

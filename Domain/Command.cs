@@ -106,7 +106,9 @@ namespace Microsoft.Its.Domain
 
         internal static Type FindType(Type aggregateType, string commandName)
         {
-            return index.Value[Tuple.Create(aggregateType, commandName)];
+            Type type;
+            index.Value.TryGetValue(Tuple.Create(aggregateType, commandName), out type);
+            return type;
         }
     }
 }

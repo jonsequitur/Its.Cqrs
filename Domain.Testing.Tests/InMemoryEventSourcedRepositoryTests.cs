@@ -160,5 +160,18 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             await eventStream.Append(events);
         }
+        
+        protected override IStoredEvent CreateStoredEvent(string streamName, string type, Guid aggregateId, int sequenceNumber, string body, DateTime utcTime)
+        {
+            return new InMemoryStoredEvent
+            {
+                Type = type,
+                AggregateId = aggregateId.ToString(),
+                SequenceNumber = sequenceNumber,
+                StreamName = streamName,
+                Body = body,
+                Timestamp = utcTime
+            };
+        }
     }
 }
