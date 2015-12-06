@@ -316,10 +316,14 @@ namespace Microsoft.Its.Domain.Tests
             }
 
             log.Count.Should().Be(4);
-            log.Should().Contain(e => e.Contains("[Scheduling] Order.CreateOrder"));
-            log.Should().Contain(e => e.Contains("[Scheduled] Order.CreateOrder"));
-            log.Should().Contain(e => e.Contains("[Delivering] Order.CreateOrder"));
-            log.Should().Contain(e => e.Contains("[Delivered] Order.CreateOrder"));
+            log.Should().Contain(e => e.Contains("[Scheduling]") && 
+                                      e.Contains("Order.CreateOrder"));
+            log.Should().Contain(e => e.Contains("[Scheduled]") && 
+                                      e.Contains("Order.CreateOrder"));
+            log.Should().Contain(e => e.Contains("[Delivering]") && 
+                                      e.Contains("Order.CreateOrder"));
+            log.Should().Contain(e => e.Contains("[Delivered]") && 
+                                      e.Contains("Order.CreateOrder"));
         }
 
         [Test]

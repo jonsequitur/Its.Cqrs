@@ -735,50 +735,6 @@ namespace Microsoft.Its.Domain.Testing.Tests
             }
         }
 
-        [Ignore("Scenario likely being removed")]
-        [Test]
-        public async Task Recursive_scheduling_is_supported_when_scheduled_command_preconditions_are_satisfied_in_process()
-        {
-            var scenarioBuilder = CreateScenarioBuilder();
-            var scenario = scenarioBuilder.Prepare();
-
-            var customer = new CustomerAccount();
-            customer.Apply(new ChangeEmailAddress(Any.Email()));
-
-            var scheduler = scenarioBuilder.Configuration.CommandScheduler<Order>();
-
-            var orderId = Any.Guid();
-
-            await scheduler.Schedule(
-                orderId,
-                new CreateOrder(Any.FullName())
-                {
-                    AggregateId = orderId
-                },
-                deliveryDependsOn: customer.Events().First());
-
-            await Task.Delay(100);
-
-            var order = scenario.GetLatest<Order>(orderId);
-
-            order.Should().BeNull();
-
-            Console.WriteLine("saving");
-
-            // act
-            scenario.Save(customer);
-
-            Console.WriteLine("sleeping");
-
-            await Task.Delay(5000);
-
-            Console.WriteLine("slept");
-
-            order = scenario.GetLatest<Order>(orderId);
-
-            order.Should().NotBeNull();
-        }
-
         [Test]
         public async Task Scheduled_commands_in_initial_events_are_not_executed_if_they_become_due_before_Prepare_is_called()
         {

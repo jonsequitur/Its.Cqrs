@@ -100,30 +100,50 @@ namespace Microsoft.Its.Domain.Testing
                     }
                 }
             }
-            else 
+            else
             {
                 var commandsInPipeline = configuration.Container.Resolve<CommandsInPipeline>();
 
-                var sqlSchedulerClocks = commandsInPipeline
-                    .Select(c => c.Result)
-                    .OfType<CommandScheduled>()
-                    .Select(s => s.Clock)
-                    .OfType<Sql.CommandScheduler.Clock>()
-                    .Distinct()
-                    .ToArray();
-
-                if (sqlSchedulerClocks.Any())
+                do
                 {
-                    var clockTrigger = configuration.SchedulerClockTrigger();
+                    var pendingCommands = commandsInPipeline
+                        .Select(c => c.Result)
+                        .OfType<CommandScheduled>()
+                        .ToArray();
 
-                    sqlSchedulerClocks.ForEach(c =>
+                    if (pendingCommands.Any())
                     {
-                        clockTrigger
-                            .AdvanceClock(c.Name, Clock.Now())
-                            .TimeoutAfter(Scenario.DefaultTimeout())
-                            .Wait();
-                    });
-                }
+                        var sqlSchedulerClocks = pendingCommands
+                            .Select(s => s.Clock)
+                            .OfType<Sql.CommandScheduler.Clock>()
+                            .Distinct()
+                            .ToArray();
+
+                        if (sqlSchedulerClocks.Any())
+                        {
+                            var clockTrigger = configuration.SchedulerClockTrigger();
+
+                            var appliedCommands = sqlSchedulerClocks
+                                .Select(c => clockTrigger.AdvanceClock(c.Name, Clock.Now()) // FIX: (WaitForScheduler) just Now()?
+                                                         .TimeoutAfter(Scenario.DefaultTimeout())
+                                                         .Result)
+                                .SelectMany(result => result.SuccessfulCommands);
+
+                            if (!appliedCommands.Any())
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                } while (true);
             }
         }
 

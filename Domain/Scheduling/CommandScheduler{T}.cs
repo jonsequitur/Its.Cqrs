@@ -40,12 +40,20 @@ namespace Microsoft.Its.Domain
         /// <exception cref="System.NotSupportedException">Non-immediate scheduling is not supported.</exception>
         public virtual async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            if (scheduledCommand.IsDue() &&
-                await VerifyPrecondition(scheduledCommand))
+            if (scheduledCommand.IsDue())
             {
-                // resolve the command scheduler so that delivery goes through the whole pipeline
-                await Configuration.Current.CommandScheduler<TAggregate>().Deliver(scheduledCommand);
-                return;
+                if (!await VerifyPrecondition(scheduledCommand))
+                {
+                    CommandScheduler.DeliverIfPreconditionIsSatisfiedSoon(
+                        scheduledCommand,
+                        Configuration.Current);
+                }
+                else
+                {
+                    // resolve the command scheduler so that delivery goes through the whole pipeline
+                    await Configuration.Current.CommandScheduler<TAggregate>().Deliver(scheduledCommand);
+                    return;
+                }
             }
 
             if (scheduledCommand.Result == null)

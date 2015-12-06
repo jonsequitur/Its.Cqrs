@@ -10,16 +10,16 @@ namespace Microsoft.Its.Domain
     internal class CommandSchedulerPipelineTraceInitializer : SchedulerPipelineInitializer
     {
         private Action<IScheduledCommand> onScheduling = cmd =>
-            Trace.WriteLine("[Scheduling] " + cmd);
+            Trace.WriteLine("[Scheduling] @" + Clock.Now() + ": " + cmd);
 
         private Action<IScheduledCommand> onScheduled = cmd =>
-            Trace.WriteLine("[Scheduled] " + cmd);
+            Trace.WriteLine("[Scheduled] @" + Clock.Now() + ": " + cmd);
 
         private Action<IScheduledCommand> onDelivering = cmd =>
-            Trace.WriteLine("[Delivering] " + cmd);
+            Trace.WriteLine("[Delivering] @" + Clock.Now() + ": " + cmd);
 
         private Action<IScheduledCommand> onDelivered = cmd =>
-            Trace.WriteLine("[Delivered] " + cmd);
+            Trace.WriteLine("[Delivered] @" + Clock.Now() + ": " + cmd);
 
         protected override void InitializeFor<TAggregate>(Configuration configuration)
         {
