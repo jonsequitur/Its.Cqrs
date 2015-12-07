@@ -124,7 +124,7 @@ namespace Microsoft.Its.Domain.Testing
                             var clockTrigger = configuration.SchedulerClockTrigger();
 
                             var appliedCommands = sqlSchedulerClocks
-                                .Select(c => clockTrigger.AdvanceClock(c.Name, Clock.Now()) // FIX: (WaitForScheduler) just Now()?
+                                .Select(c => clockTrigger.AdvanceClock(c.Name, Now()) 
                                                          .TimeoutAfter(Scenario.DefaultTimeout())
                                                          .Result)
                                 .SelectMany(result => result.SuccessfulCommands);
