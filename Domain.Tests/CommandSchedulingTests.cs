@@ -478,6 +478,51 @@ namespace Microsoft.Its.Domain.Tests
             command.IsDue().Should().BeFalse();
         }
 
+        [Test]
+        public async Task CommandSchedulerPipelineInitializer_Initialize_is_idempotent()
+        {
+            var commandsScheduled = new List<IScheduledCommand>();
+
+            // initialize twice
+            new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
+                .Initialize(configuration);
+            new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
+                .Initialize(configuration);
+
+            // send a command
+            await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+
+            commandsScheduled.Count.Should().Be(1);
+        }
+
+        public class AnonymousCommandSchedulerPipelineInitializer : CommandSchedulerPipelineInitializer
+        {
+            private readonly Action<IScheduledCommand> onSchedule;
+
+            public AnonymousCommandSchedulerPipelineInitializer(Action<IScheduledCommand> onSchedule)
+            {
+                if (onSchedule == null)
+                {
+                    throw new ArgumentNullException("onSchedule");
+                }
+                this.onSchedule = onSchedule;
+            }
+
+            protected override void InitializeFor<TAggregate>(Configuration configuration)
+            {
+                configuration.AddToCommandSchedulerPipeline<TAggregate>(
+                    schedule: async (cmd, next) =>
+                    {
+                        onSchedule(cmd);
+                        await next(cmd);
+                    });
+            }
+
+            public IEnumerable<IScheduledCommand> ScheduledCommands { get; private set; }
+
+            public IEnumerable<IScheduledCommand> DeliveredCommands { get; private set; }
+        }
+
         public static Order CreateOrder(
             DateTimeOffset? deliveryBy = null,
             string customerName = null,

@@ -18,9 +18,15 @@ namespace Microsoft.Its.Domain
 
         public void Initialize(Configuration configuration)
         {
-            AggregateType.KnownTypes.ForEach(aggregateType =>
+            var key = GetType().ToString();
+
+            configuration.Properties.GetOrAdd(key, _ =>
             {
-                initializeFor.MakeGenericMethod(aggregateType).Invoke(this, new[] { configuration });
+                AggregateType.KnownTypes.ForEach(aggregateType =>
+                {
+                    initializeFor.MakeGenericMethod(aggregateType).Invoke(this, new[] { configuration });
+                });
+                return true;
             });
         }
 
