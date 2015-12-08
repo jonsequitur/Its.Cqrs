@@ -3,7 +3,7 @@
 
 namespace Microsoft.Its.Domain.Testing
 {
-    internal class InMemoryCommandSchedulerPipelineInitializer : SchedulerPipelineInitializer
+    internal class InMemoryCommandSchedulerPipelineInitializer : CommandSchedulerPipelineInitializer
     {
         protected override void InitializeFor<TAggregate>(Configuration configuration)
         {

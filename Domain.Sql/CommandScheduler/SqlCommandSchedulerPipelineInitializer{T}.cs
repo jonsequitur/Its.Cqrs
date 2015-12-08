@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
     internal class SqlCommandSchedulerPipelineInitializer :
-        SchedulerPipelineInitializer
+        CommandSchedulerPipelineInitializer
     {
         private readonly Func<CommandSchedulerDbContext> createDbContext;
         private readonly Func<GetClockName> getClockName;

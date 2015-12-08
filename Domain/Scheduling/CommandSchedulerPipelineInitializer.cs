@@ -7,11 +7,11 @@ using System.Reflection;
 
 namespace Microsoft.Its.Domain
 {
-    public abstract class SchedulerPipelineInitializer : ISchedulerPipelineInitializer
+    public abstract class CommandSchedulerPipelineInitializer : ICommandSchedulerPipelineInitializer
     {
         private readonly MethodInfo initializeFor;
 
-        protected SchedulerPipelineInitializer()
+        protected CommandSchedulerPipelineInitializer()
         {
             initializeFor = GetType().GetMethod("InitializeFor", BindingFlags.Instance | BindingFlags.NonPublic);
         }

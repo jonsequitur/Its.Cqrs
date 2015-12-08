@@ -7,7 +7,7 @@ using System.Diagnostics;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    internal class CommandSchedulerPipelineTraceInitializer : SchedulerPipelineInitializer
+    internal class CommandSchedulerPipelineTraceInitializer : CommandSchedulerPipelineInitializer
     {
         private Action<IScheduledCommand> onScheduling = cmd =>
             Trace.WriteLine("[Scheduling] @" + Clock.Now() + ": " + cmd);

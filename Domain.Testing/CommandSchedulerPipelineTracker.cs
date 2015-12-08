@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Microsoft.Its.Domain.Testing
 {
-    internal class CommandSchedulerPipelineTracker : SchedulerPipelineInitializer
+    internal class CommandSchedulerPipelineTracker : CommandSchedulerPipelineInitializer
     {
         private static readonly object lockObj = new object();
 

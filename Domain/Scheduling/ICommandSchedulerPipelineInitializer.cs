@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.Its.Domain
 {
-    internal interface ISchedulerPipelineInitializer
+    internal interface ICommandSchedulerPipelineInitializer
     {
         void Initialize(Configuration configuration);
     }
