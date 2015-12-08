@@ -301,28 +301,23 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task When_CommandSchedulerPipeline_tracing_is_enabled_then_by_default_trace_output_goes_to_SystemDiagnosticsTrace()
         {
-            var listener = new TraceListener();
-            Trace.Listeners.Add(listener);
-
-            var log = new List<string>();
-
             configuration.TraceScheduledCommands();
 
-            using (Log.Events().Subscribe(e => log.Add(e.ToLogString())))
-            using (Disposable.Create(() => Trace.Listeners.Remove(listener)))
+            var log = new List<string>();
+            using (LogTraceOutputTo(log))
             {
                 await configuration.CommandScheduler<Order>()
                                    .Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
             }
 
             log.Count.Should().Be(4);
-            log.Should().Contain(e => e.Contains("[Scheduling]") && 
+            log.Should().Contain(e => e.Contains("[Scheduling]") &&
                                       e.Contains("Order.CreateOrder"));
-            log.Should().Contain(e => e.Contains("[Scheduled]") && 
+            log.Should().Contain(e => e.Contains("[Scheduled]") &&
                                       e.Contains("Order.CreateOrder"));
-            log.Should().Contain(e => e.Contains("[Delivering]") && 
+            log.Should().Contain(e => e.Contains("[Delivering]") &&
                                       e.Contains("Order.CreateOrder"));
-            log.Should().Contain(e => e.Contains("[Delivered]") && 
+            log.Should().Contain(e => e.Contains("[Delivered]") &&
                                       e.Contains("Order.CreateOrder"));
         }
 
@@ -495,6 +490,50 @@ namespace Microsoft.Its.Domain.Tests
             commandsScheduled.Count.Should().Be(1);
         }
 
+        [Test]
+        public async Task When_pipeline_tracing_is_enabled_twice_with_different_behavior_then_it_both_behaviors_are_applied()
+        {
+            var commandsScheduled = new List<IScheduledCommand>();
+            var commandsDelivered = new List<IScheduledCommand>();
+            configuration.TraceScheduledCommands()
+                         .TraceScheduledCommands(onScheduled: async cmd => { commandsScheduled.Add(cmd); },
+                                                 onDelivered: async cmd => { },
+                                                 onScheduling: async cmd => { },
+                                                 onDelivering: async cmd => { })
+                         .TraceScheduledCommands(onDelivered: async cmd => { commandsDelivered.Add(cmd); },
+                                                 onScheduled: async cmd => { },
+                                                 onScheduling: async cmd => { },
+                                                 onDelivering: async cmd => { });
+
+            var log = new List<string>();
+            using (LogTraceOutputTo(log))
+            {
+                // send a command
+                await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            }
+
+            log.Count.Should().Be(4);
+            commandsScheduled.Count.Should().Be(1);
+            commandsDelivered.Count.Should().Be(1);
+        }
+
+        [Test]
+        public async Task When_pipeline_tracing_is_enabled_multiple_times_with_default_behavior_then_it_does_not_produce_redundant_trace_output()
+        {
+            configuration.TraceScheduledCommands()
+                         .TraceScheduledCommands()
+                         .TraceScheduledCommands();
+
+            var log = new List<string>();
+            using (LogTraceOutputTo(log))
+            {
+                // send a command
+                await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            }
+
+            log.Count.Should().Be(4);
+        }
+
         public class AnonymousCommandSchedulerPipelineInitializer : CommandSchedulerPipelineInitializer
         {
             private readonly Action<IScheduledCommand> onSchedule;
@@ -548,6 +587,16 @@ namespace Microsoft.Its.Domain.Tests
                     Country = "USA",
                     DeliverBy = deliveryBy
                 });
+        }
+
+        public IDisposable LogTraceOutputTo(List<string> log)
+        {
+            configuration.TraceScheduledCommands();
+
+            var listener = new TraceListener();
+            Trace.Listeners.Add(listener);
+
+            return new CompositeDisposable(Log.Events().Subscribe(e => log.Add(e.ToLogString())), Disposable.Create(() => Trace.Listeners.Remove(listener)));
         }
     }
 }

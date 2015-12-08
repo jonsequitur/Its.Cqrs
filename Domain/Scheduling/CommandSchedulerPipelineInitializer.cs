@@ -18,9 +18,7 @@ namespace Microsoft.Its.Domain
 
         public void Initialize(Configuration configuration)
         {
-            var key = GetType().ToString();
-
-            configuration.Properties.GetOrAdd(key, _ =>
+            configuration.Properties.GetOrAdd(GetKeyIndicatingInitialized(), _ =>
             {
                 AggregateType.KnownTypes.ForEach(aggregateType =>
                 {
@@ -28,6 +26,11 @@ namespace Microsoft.Its.Domain
                 });
                 return true;
             });
+        }
+
+        protected internal virtual string GetKeyIndicatingInitialized()
+        {
+            return GetType().ToString();
         }
 
         protected abstract void InitializeFor<TAggregate>(Configuration configuration)

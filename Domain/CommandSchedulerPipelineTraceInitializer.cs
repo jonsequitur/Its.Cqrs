@@ -69,5 +69,17 @@ namespace Microsoft.Its.Domain
                 this.onDelivered = action;
             }
         }
+
+        protected internal override string GetKeyIndicatingInitialized()
+        {
+            var key = string.Format(
+                "{0} ({1}/{2}/{3}/{4})",
+                base.GetKeyIndicatingInitialized(),
+                onScheduling.Method.GetHashCode(),
+                onScheduled.Method.GetHashCode(),
+                onDelivering.Method.GetHashCode(),
+                onDelivered.Method.GetHashCode());
+            return key;
+        }
     }
 }
