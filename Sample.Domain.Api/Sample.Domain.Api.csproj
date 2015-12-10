@@ -57,7 +57,7 @@
     </Reference>
     <Reference Include="Its.Log, Version=2.7.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Log.2.9.10-beta\lib\net40\Its.Log.dll</HintPath>
+      <HintPath>..\packages\Its.Log.2.9.11\lib\net40\Its.Log.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
