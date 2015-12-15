@@ -16,6 +16,7 @@ using Sample.Domain.Ordering.Commands;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
+    [Category("Command scheduling")]
     [TestFixture]
     public class SqlCommandSchedulerTests_Legacy : SqlCommandSchedulerTests
     {

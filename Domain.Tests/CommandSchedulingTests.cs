@@ -19,6 +19,7 @@ using TraceListener = Its.Log.Instrumentation.TraceListener;
 
 namespace Microsoft.Its.Domain.Tests
 {
+    [Category("Command scheduling")]
     [TestFixture]
     public class CommandSchedulingTests
     {

@@ -5,6 +5,7 @@ using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
+    [Category("Command scheduling")]
     [TestFixture]
     public class SqlCommandSchedulerTests_New : SqlCommandSchedulerTests
     {

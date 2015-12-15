@@ -2,9 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Subjects;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 using Pocket;
@@ -122,37 +122,46 @@ namespace Microsoft.Its.Domain.Sql
                          .Resolve<SqlCommandSchedulerPipelineInitializer>()
                          .Initialize(configuration);
 
-            var schedulerFuncs = new Dictionary<string, Func<dynamic>>();
-            AggregateType.KnownTypes.ForEach(aggregateType =>
-            {
-                var schedulerType = typeof (ICommandScheduler<>).MakeGenericType(aggregateType);
-
-                schedulerFuncs.Add(
-                    AggregateType.EventStreamName(aggregateType),
-                    () => container.Resolve(schedulerType));
-            });
-
+            var trigger = new CommandSchedulerResolver(container);
+            
             container
                 .Register(
                     c => new SchedulerClockTrigger(
                         c.Resolve<CommandSchedulerDbContext>,
                         async (serializedCommand, result, db) =>
                         {
-                            dynamic scheduler = schedulerFuncs[serializedCommand.AggregateType];
-
-                            await Storage.DeserializeAndDeliverScheduledCommand(
-                                serializedCommand,
-                                scheduler());
+                            await DeserializeAndDeliver(trigger, serializedCommand, db);
 
                             result.Add(serializedCommand.Result);
-
-                            serializedCommand.Attempts++;
-
-                            await db.SaveChangesAsync();
                         }))
                 .Register<ISchedulerClockTrigger>(c => c.Resolve<SchedulerClockTrigger>());
 
             return configuration;
+        }
+
+        private static async Task DeserializeAndDeliver(
+            CommandSchedulerResolver schedulerResolver,
+            ScheduledCommand serializedCommand,
+            CommandSchedulerDbContext db)
+        {
+            dynamic scheduler = schedulerResolver.ResolveSchedulerForAggregateTypeNamed(serializedCommand.AggregateType);
+
+            await Storage.DeserializeAndDeliverScheduledCommand(
+                serializedCommand,
+                scheduler);
+
+            serializedCommand.Attempts++;
+
+            await db.SaveChangesAsync();
+        }
+        
+        public static async Task DeserializeAndDeliver(
+            this Configuration configuration,
+            ScheduledCommand serializedCommand,
+            CommandSchedulerDbContext db)
+        {
+            var resolver = configuration.Container.Resolve<CommandSchedulerResolver>();
+            await DeserializeAndDeliver(resolver, serializedCommand, db);
         }
 
         internal static void IsUsingSqlEventStore(this Configuration configuration, bool value)
