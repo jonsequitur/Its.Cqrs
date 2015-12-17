@@ -57,7 +57,7 @@ namespace Microsoft.Its.Domain
             return string.Format("Failed due to: {1} {0}",
                                  (IsCanceled
                                      ? " (and canceled)"
-                                     : " (will retry after " + RetryAfter + ")"), Exception.Message);
+                                     : " (will retry after " + RetryAfter + ")"), Exception.FindInterestingException().Message);
         }
 
         internal static CommandFailed Create<TCommand>(
