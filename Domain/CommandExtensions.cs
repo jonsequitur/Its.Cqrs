@@ -7,16 +7,25 @@ namespace Microsoft.Its.Domain
 {
     public static class CommandExtensions
     {
+        /// <summary>
+        ///     Determines whether the command can be delivered during a call to <see cref="ICommandScheduler{T}.Schedule" />.
+        /// </summary>
+        /// <param name="command">The command.</param>
         public static bool CanBeDeliveredDuringSchedule(this ICommand command)
         {
-            return command.IfTypeIs<ICommandSchedulingRules>()
+            return command.IfTypeIs<ISpecifySchedulingRules>()
                           .Then(c => c.CanBeDeliveredDuringSchedule)
                           .Else(() => true);
         }
 
+        /// <summary>
+        ///     Determines whether the command must be stored durably during a call to <see cref="ICommandScheduler{T}.Schedule" />
+        ///     .
+        /// </summary>
+        /// <param name="command">The command.</param>
         public static bool RequiresDurableScheduling(this ICommand command)
         {
-            return command.IfTypeIs<ICommandSchedulingRules>()
+            return command.IfTypeIs<ISpecifySchedulingRules>()
                           .Then(c => c.RequiresDurableScheduling)
                           .Else(() => true);
         }

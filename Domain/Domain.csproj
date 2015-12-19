@@ -134,7 +134,7 @@
     <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
     <Compile Include="ExceptionExtensions.cs" />
     <Compile Include="Scheduling\ICommandSchedulerPipelineInitializer.cs" />
-    <Compile Include="Scheduling\ICommandSchedulingRules.cs" />
+    <Compile Include="Scheduling\ISpecifySchedulingRules.cs" />
     <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
     <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />
