@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Text.RegularExpressions;
 using Microsoft.Its.Recipes;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain
 {
@@ -33,8 +33,6 @@ namespace Microsoft.Its.Domain
 
         public static IEventHandler Named(this IEventHandler handler, string name)
         {
-            // TODO: (Named) make this more generalizable
-
             handler.IfTypeIs<EventHandlerWrapper>()
                    .ThenDo(h => h.Name = name)
                    .ElseDo(() => handler.IfTypeIs<CompositeEventHandler>()
@@ -51,7 +49,6 @@ namespace Microsoft.Its.Domain
 
             if (named == null)
             {
-                // TODO: (Named) 
                 throw new NotImplementedException(string.Format("Handlers of type {0} do not support naming yet.", consequenter));
             }
 
@@ -67,7 +64,6 @@ namespace Microsoft.Its.Domain
 
             if (named == null)
             {
-                // TODO: (Named) 
                 throw new NotImplementedException(string.Format("Handlers of type {0} do not support naming yet.", projector));
             }
 

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain
 {

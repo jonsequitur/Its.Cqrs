@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using Microsoft.Its.Recipes;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {

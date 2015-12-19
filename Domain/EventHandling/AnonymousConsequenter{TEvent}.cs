@@ -7,7 +7,9 @@ using System.Diagnostics;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
+#pragma warning disable 618
     internal class AnonymousConsequenter<TEvent> : IHaveConsequencesWhen<TEvent>, INamedEventHandler
+#pragma warning restore 618
         where TEvent : IEvent
     {
         private readonly Action<TEvent> onEvent;
