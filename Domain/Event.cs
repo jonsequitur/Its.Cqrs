@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using Newtonsoft.Json;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain
 {
