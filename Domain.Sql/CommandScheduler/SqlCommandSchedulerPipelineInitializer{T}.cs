@@ -60,7 +60,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 await next(cmd);
 
-                if (!cmd.Command.RequiresDurableScheduling)
+                if (!cmd.Command.RequiresDurableScheduling())
                 {
                     return;
                 }
@@ -71,11 +71,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
         }
 
-        private async Task<string> GetClockName(
+        private Task<string> GetClockName(
             IScheduledCommand scheduledCommand,
             CommandSchedulerDbContext dbContext)
         {
-            return getClockName()(scheduledCommand);
+            var clockName = getClockName()(scheduledCommand);
+            return Task.FromResult(clockName);
         }
     }
 }
