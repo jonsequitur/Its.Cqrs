@@ -32,29 +32,22 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     deliver: async (cmd, next) => await Deliver(cmd, next));
         }
 
-        private async Task Schedule<TAggregate>(IScheduledCommand<TAggregate> cmd, Func<IScheduledCommand<TAggregate>, Task> next)
+        private async Task Schedule<TAggregate>(
+            IScheduledCommand<TAggregate> cmd,
+            Func<IScheduledCommand<TAggregate>, Task> next)
             where TAggregate : class, IEventSourced
         {
-            var storedCommand = await Storage.StoreScheduledCommand(
+            await Storage.StoreScheduledCommand(
                 cmd,
                 createDbContext,
                 GetClockName);
 
-            if (cmd.IsDue(storedCommand.Clock))
-            {
-                var preconditionVerifier = Configuration.Current.CommandPreconditionVerifier();
-
-                // sometimes the command depends on a precondition event that hasn't been saved
-                if (await preconditionVerifier.IsPreconditionSatisfied(cmd))
-                {
-                    await Configuration.Current.CommandScheduler<TAggregate>().Deliver(cmd);
-                }
-            }
-
             await next(cmd);
         }
 
-        private async Task Deliver<TAggregate>(IScheduledCommand<TAggregate> cmd, Func<IScheduledCommand<TAggregate>, Task> next)
+        private async Task Deliver<TAggregate>(
+            IScheduledCommand<TAggregate> cmd, 
+            Func<IScheduledCommand<TAggregate>, Task> next)
             where TAggregate : class, IEventSourced
         {
             IClock clock = null;

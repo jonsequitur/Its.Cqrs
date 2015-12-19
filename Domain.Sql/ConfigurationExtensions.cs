@@ -123,7 +123,7 @@ namespace Microsoft.Its.Domain.Sql
                          .Initialize(configuration);
 
             var trigger = new CommandSchedulerResolver(container);
-            
+
             container
                 .Register(
                     c => new SchedulerClockTrigger(

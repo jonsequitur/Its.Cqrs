@@ -62,36 +62,16 @@ namespace Microsoft.Its.Domain.Testing
                 {
                     var clock = Clock.Current;
 
+                    VirtualClock.Schedule(
+                        command,
+                        command.DueTime ?? Clock.Now().AddTicks(1),
+                        (s, c) =>
+                        {
+                            Domain.CommandScheduler.DeliverImmediatelyOnConfiguredScheduler(c, configuration).Wait();
+                            return Disposable.Empty;
+                        });
+
                     command.Result = new CommandScheduled(command, clock);
-
-                    // deliver the command immediately if appropriate
-                    if (command.IsDue())
-                    {
-                        var preconditionVerifier = configuration.CommandPreconditionVerifier();
-
-                        // sometimes the command depends on a precondition event that hasn't been saved
-                        if (!await preconditionVerifier.IsPreconditionSatisfied(command))
-                        {
-                            Domain.CommandScheduler.DeliverIfPreconditionIsSatisfiedSoon(command, configuration);
-                        }
-                        else
-                        {
-                            await Domain.CommandScheduler.DeliverImmediatelyOnConfiguredScheduler(command, configuration);
-                            return;
-                        }
-                    }
-
-                    if (!(command.Result is CommandDelivered))
-                    {
-                        VirtualClock.Schedule(
-                            command,
-                            command.DueTime ?? Clock.Now().AddTicks(1),
-                            (s, c) =>
-                            {
-                                Domain.CommandScheduler.DeliverImmediatelyOnConfiguredScheduler(c, configuration).Wait();
-                                return Disposable.Empty;
-                            });
-                    }
                 }
 
                 await next(command);

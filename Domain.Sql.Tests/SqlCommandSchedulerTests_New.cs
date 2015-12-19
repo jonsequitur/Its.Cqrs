@@ -19,7 +19,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             configuration
                 .UseDependency<GetClockName>(c => e => clockName)
-                .UseSqlStorageForScheduledCommands();
+                .UseSqlStorageForScheduledCommands()
+                .TraceScheduledCommands();
         }
     }
 }
