@@ -18,7 +18,7 @@ namespace Microsoft.Its.Domain
         private readonly EventSequence eventHistory;
         private readonly EventSequence pendingEvents;
         private readonly IEvent[] sourceEvents;
-        internal readonly ISnapshot sourceSnapshot;
+        internal readonly ISnapshot SourceSnapshot;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventSourcedAggregate"/> class.
@@ -68,7 +68,7 @@ namespace Microsoft.Its.Domain
                          .ElseThrow(() => new ArgumentNullException("snapshot")))
         {
             sourceEvents = eventHistory.OrEmpty().ToArray();
-            sourceSnapshot = snapshot;
+            SourceSnapshot = snapshot;
         }
 
         protected internal void InitializeEventHistory()
@@ -80,9 +80,9 @@ namespace Microsoft.Its.Domain
 
             eventHistory.AddRange(sourceEvents);
 
-            if (sourceSnapshot != null)
+            if (SourceSnapshot != null)
             {
-                pendingEvents.SetVersion(Math.Max(eventHistory.Version, sourceSnapshot.Version));
+                pendingEvents.SetVersion(Math.Max(eventHistory.Version, SourceSnapshot.Version));
             }
             else
             {
@@ -182,17 +182,37 @@ namespace Microsoft.Its.Domain
             pendingEvents.TransferTo(eventHistory);
         }
 
-        internal bool HasETag(string etag)
+        internal ProbabilisticAnswer HasETag(string etag)
         {
-            return ETags().Any(e => e == etag);
+            if (WasSourcedFromSnapshot)
+            {
+                if (SourceSnapshot.ETags.MayContain(etag))
+                {
+                    return ProbabilisticAnswer.Maybe;
+                } 
+
+                return ProbabilisticAnswer.No;
+            }
+            
+            return eventHistory.Select(e => e.ETag)
+                               .Any(e => e == etag)
+                ? ProbabilisticAnswer.Yes
+                : ProbabilisticAnswer.No;
         }
 
-        public IEnumerable<string> ETags()
+        internal bool WasSourcedFromSnapshot
         {
-            return sourceSnapshot.IfNotNull()
-                                 .Then(s => s.ETags)
-                                 .Else(() => new string[0])
-                                 .Concat(eventHistory.Select(e => e.ETag).Distinct());
+            get
+            {
+                return SourceSnapshot != null;
+            }
         }
+    }
+
+    internal enum ProbabilisticAnswer
+    {
+        No,
+        Yes,
+        Maybe
     }
 }

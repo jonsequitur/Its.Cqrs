@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
 using Microsoft.Its.Recipes;
@@ -66,6 +67,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the current configuration. This may vary by context.
         /// </summary>
+        [DebuggerHidden]
         public static Configuration Current
         {
             get

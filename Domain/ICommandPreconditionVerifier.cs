@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Verifies whether a command's precondition has been satisfied.
+    /// </summary>
     public interface ICommandPreconditionVerifier
     {
-        Task<bool> IsPreconditionSatisfied(IScheduledCommand scheduledCommand);
+        Task<bool> HasBeenApplied(Guid aggregateId, string etag);
     }
 }

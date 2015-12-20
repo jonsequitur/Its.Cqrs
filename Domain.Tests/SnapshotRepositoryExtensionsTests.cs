@@ -5,6 +5,7 @@ using System;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain;
@@ -23,7 +24,9 @@ namespace Microsoft.Its.Domain.Tests
         {
             Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
             Command<Order>.AuthorizeDefault = (order, command) => true;
-            disposables = new CompositeDisposable(ConfigurationContext.Establish(new Configuration()));
+            var configuration = new Configuration()
+                .UseInMemoryEventStore();
+            disposables = new CompositeDisposable(ConfigurationContext.Establish(configuration));
         }
 
         [TearDown]
@@ -46,71 +49,23 @@ namespace Microsoft.Its.Domain.Tests
         public async Task ETags_are_saved_in_the_snapshot()
         {
             var etag = Any.Guid().ToString();
+
             var account = new CustomerAccount().Apply(new RequestSpam
-                                                      {
-                                                          ETag = etag
-                                                      });
-            account.ConfirmSave();
+            {
+                ETag = etag
+            });
+            await Configuration.Current.Repository<CustomerAccount>().Save(account);
 
-            var repository = new InMemorySnapshotRepository();
+            var repository = Configuration.Current.SnapshotRepository();
             await repository.SaveSnapshot(account);
 
-            var snapshot = await repository.GetSnapshot(account.Id);
+            var snapshot = await repository.GetSnapshot(account.Id) as CustomerAccountSnapshot;
 
-            snapshot.ETags
-                    .Should()
-                    .Contain(etag);
-        }
+            var aggregate = new CustomerAccount(snapshot);
 
-        [Test]
-        public async Task Null_or_empty_or_whitespace_ETags_are_not_saved_in_the_snapshot()
-        {
-            var account = new CustomerAccount()
-                .Apply(new RequestSpam
-                       {
-                           ETag = ""
-                       })
-                .Apply(new RequestSpam
-                       {
-                           ETag = "      "
-                       })
-                .Apply(new RequestSpam
-                       {
-                           ETag = null
-                       });
-
-            var repository = new InMemorySnapshotRepository();
-            await repository.SaveSnapshot(account);
-
-            var snapshot = await repository.GetSnapshot(account.Id);
-
-            snapshot.ETags
-                    .Should()
-                    .BeEmpty();
-        }
-
-        [Test]
-        public async Task Repeated_ETags_are_not_repeated_in_the_snapshot()
-        {
-            var account = new CustomerAccount()
-                .Apply(new RequestSpam
-                       {
-                           ETag = "a"
-                       })
-                .Apply(new RequestSpam
-                       {
-                           ETag = "a"
-                       });
-            account.ConfirmSave();
-
-            var repository = new InMemorySnapshotRepository();
-            await repository.SaveSnapshot(account);
-
-            var snapshot = await repository.GetSnapshot(account.Id);
-
-            snapshot.ETags
-                    .Should()
-                    .ContainSingle(etag => etag == "a");
+            aggregate.HasETag(etag)
+                     .Should()
+                     .BeTrue();
         }
     }
 }

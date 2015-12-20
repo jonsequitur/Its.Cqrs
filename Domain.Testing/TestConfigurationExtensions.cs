@@ -46,7 +46,8 @@ namespace Microsoft.Its.Domain.Testing
             configuration.Container
                          .AddStrategy(type => InMemoryEventSourcedRepositoryStrategy(type, configuration.Container))
                          .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>())
-                         .RegisterSingle(c => inMemoryEventStream);
+                         .RegisterSingle(c => inMemoryEventStream)
+                         .RegisterSingle<ISnapshotRepository>(c => new InMemorySnapshotRepository());
 
             if (traceEvents)
             {

@@ -20,22 +20,9 @@ namespace Microsoft.Its.Domain.Testing
             this.eventStream = eventStream;
         }
 
-        public async Task<bool> IsPreconditionSatisfied(IScheduledCommand scheduledCommand)
+        public async Task<bool> HasBeenApplied(Guid aggregateId, string etag)
         {
-            if (scheduledCommand == null)
-            {
-                throw new ArgumentNullException("scheduledCommand");
-            }
-
-            if (scheduledCommand.DeliveryPrecondition == null)
-            {
-                return true;
-            }
-
-            var aggregateId = scheduledCommand.DeliveryPrecondition.AggregateId.ToString();
-            var etag = scheduledCommand.DeliveryPrecondition.ETag;
-
-            return eventStream.Events.Any(a => a.AggregateId == aggregateId &&
+            return eventStream.Events.Any(a => new Guid(a.AggregateId) == aggregateId &&
                                                a.ETag == etag);
         }
     }

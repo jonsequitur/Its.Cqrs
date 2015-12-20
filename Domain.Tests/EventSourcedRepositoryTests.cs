@@ -474,6 +474,10 @@ namespace Microsoft.Its.Domain.Tests
             var snapshotRepository = new InMemorySnapshotRepository();
             Configuration.Current.UseDependency<ISnapshotRepository>(_ => snapshotRepository);
 
+            var etags = new[] { Any.Word(), Any.Word() };
+            var bloomFilter = new BloomFilter();
+            etags.ForEach(bloomFilter.Add);
+            
             var snapshot = new CustomerAccountSnapshot
                            {
                                AggregateId = Any.Guid(),
@@ -482,7 +486,7 @@ namespace Microsoft.Its.Domain.Tests
                                EmailAddress = Any.Email(),
                                NoSpam = true,
                                UserName = Any.FullName(),
-                               ETags = new[] { Any.Word(), Any.Word() }
+                               ETags = bloomFilter
                            };
             await snapshotRepository.SaveSnapshot(snapshot);
 
@@ -495,11 +499,6 @@ namespace Microsoft.Its.Domain.Tests
             account.EmailAddress.Should().Be(snapshot.EmailAddress);
             account.UserName.Should().Be(snapshot.UserName);
             account.NoSpam.Should().Be(snapshot.NoSpam);
-            
-            foreach (var etag in snapshot.ETags)
-            {
-                account.HasETag(etag).Should().BeTrue("etags are expected to be loaded from the snapshot");
-            }
         }
 
         [Test]
@@ -517,7 +516,7 @@ namespace Microsoft.Its.Domain.Tests
                                EmailAddress = Any.Email(),
                                NoSpam = true,
                                UserName = Any.FullName(),
-                               ETags = new[] { Any.Word(), Any.Word() }
+                               ETags = new BloomFilter()
                            };
             await snapshotRepository.SaveSnapshot(snapshot);
 
@@ -544,7 +543,7 @@ namespace Microsoft.Its.Domain.Tests
                                EmailAddress = Any.Email(),
                                NoSpam = true,
                                UserName = Any.FullName(),
-                               ETags = new[] { Any.Word(), Any.Word() }
+                               ETags = new BloomFilter()
                            };
 
             await snapshotRepository.SaveSnapshot(snapshot);
@@ -577,7 +576,7 @@ namespace Microsoft.Its.Domain.Tests
                                EmailAddress = Any.Email(),
                                NoSpam = true,
                                UserName = Any.FullName(),
-                               ETags = new[] { Any.Word(), Any.Word() }
+                               ETags = new BloomFilter()
                            };
             await snapshotRepository.SaveSnapshot(snapshot);
             await SaveEventsDirectly(new CustomerAccount.RequestedSpam

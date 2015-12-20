@@ -18,23 +18,13 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                              (() => new EventStoreDbContext());
         }
 
-        public async Task<bool> IsPreconditionSatisfied(IScheduledCommand scheduledCommand)
+        public async Task<bool> HasBeenApplied(Guid aggregateId, string etag)
         {
-            if (scheduledCommand == null)
-            {
-                throw new ArgumentNullException("scheduledCommand");
-            }
-
-            if (scheduledCommand.DeliveryPrecondition == null)
-            {
-                return true;
-            }
-
             using (var eventStore = createEventStoreDbContext())
             {
-                return await eventStore.Events.AnyAsync(
-                    e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
-                         e.ETag == scheduledCommand.DeliveryPrecondition.ETag);
+                return await eventStore.Events
+                                       .Where(e => e.AggregateId == aggregateId &&
+                                                   e.ETag == etag).AnyAsync();
             }
         }
     }
