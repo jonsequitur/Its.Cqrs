@@ -140,6 +140,7 @@
     <Compile Include="EventSourcedRepositoryMigrationTests.cs" />
     <Compile Include="EventSourcedRepositoryTests.cs" />
     <Compile Include="EventTests.cs" />
+    <Compile Include="HashTests.cs" />
     <Compile Include="Infrastructure\Logging.cs" />
     <Compile Include="Infrastructure\NoOpEventBus.cs" />
     <Compile Include="InProcessEventBusTests.cs" />
