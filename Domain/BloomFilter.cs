@@ -6,7 +6,6 @@
 using System;
 using System.Collections;
 
-
 namespace Microsoft.Its.Domain
 {
     /// <summary>
@@ -94,7 +93,7 @@ namespace Microsoft.Its.Domain
             }
 
             var firstHash = value.GetHashCode();
-            var secondHash = value.JenkinsOneAtATimeHash();
+            var secondHash = value.ToJenkinsOneAtATimeHash();
 
             unchecked
             {
@@ -126,7 +125,7 @@ namespace Microsoft.Its.Domain
             }
 
             var firstHash = value.GetHashCode();
-            var secondHash = value.JenkinsOneAtATimeHash();
+            var secondHash = value.ToJenkinsOneAtATimeHash();
 
             unchecked
             {
