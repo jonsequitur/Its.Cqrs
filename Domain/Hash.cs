@@ -34,7 +34,7 @@ namespace Microsoft.Its.Domain
                 hash = md5.ComputeHash(inputBytes);
             }
 
-            return Convert.ToBase64String(hash);
+            return System.Convert.ToBase64String(hash);
         }
         
         /// <summary>
