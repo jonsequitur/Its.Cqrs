@@ -34,13 +34,7 @@ namespace Microsoft.Its.Domain
                 hash = md5.ComputeHash(inputBytes);
             }
 
-            var sb = new StringBuilder();
-            for (var i = 0; i < hash.Length; i++)
-            {
-                sb.Append(hash[i].ToString("X2"));
-            }
-
-            return sb.ToString();
+            return Convert.ToBase64String(hash);
         }
         
         /// <summary>
