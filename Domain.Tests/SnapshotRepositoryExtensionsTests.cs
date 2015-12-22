@@ -61,11 +61,7 @@ namespace Microsoft.Its.Domain.Tests
 
             var snapshot = await repository.GetSnapshot(account.Id) as CustomerAccountSnapshot;
 
-            var aggregate = new CustomerAccount(snapshot);
-
-            aggregate.HasETag(etag)
-                     .Should()
-                     .BeTrue();
+            snapshot.ETags.MayContain(etag).Should().BeTrue();
         }
     }
 }

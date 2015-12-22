@@ -191,6 +191,36 @@ namespace Microsoft.Its.Domain
                 ((EventSequence) aggregate.PendingEvents).Version);
         }
 
+        /// <summary>
+        /// Initializes the interface properties of a snapshot.
+        /// </summary>
+        /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+        /// <param name="aggregate">The aggregate.</param>
+        /// <param name="snapshot">The snapshot.</param>
+        /// <exception cref="System.ArgumentNullException">
+        /// aggregate
+        /// or
+        /// snapshot
+        /// </exception>
+        public static void InitializeSnapshot<TAggregate>(this TAggregate aggregate, ISnapshot snapshot)
+            where TAggregate : class, IEventSourced
+        {
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException("aggregate");
+            }
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException("snapshot");
+            }
+
+            snapshot.AggregateId = aggregate.Id;
+            snapshot.AggregateTypeName = AggregateType<TAggregate>.EventStreamName;
+            snapshot.LastUpdated = Clock.Now();
+            snapshot.Version = aggregate.Version;
+            snapshot.ETags = aggregate.CreateETagBloomFilter();
+        }
+
         internal static BloomFilter CreateETagBloomFilter<TAggregate>(this TAggregate aggregate)
             where TAggregate : class, IEventSourced
         {
@@ -205,6 +235,7 @@ namespace Microsoft.Its.Domain
                                 var bloomFilter = new BloomFilter();
                                 a.EventHistory
                                  .Select(e => e.ETag)
+                                 .Where(etag => !string.IsNullOrWhiteSpace(etag))
                                  .ForEach(bloomFilter.Add);
                                 return bloomFilter;
                             })

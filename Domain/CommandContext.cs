@@ -111,7 +111,7 @@ namespace Microsoft.Its.Domain
 
             var unhashedEtag = string.Format("{0}:{1} ({2})", Command.ETag, forTargetToken, count);
 
-            return Hash.ToETag(unhashedEtag);
+            return unhashedEtag.ToETag();
         }
 
         /// <summary>

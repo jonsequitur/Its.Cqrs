@@ -31,8 +31,8 @@ namespace Microsoft.Its.Domain.Tests
 
             var configurationContext = ConfigurationContext
                 .Establish(new Configuration()
-                    .UseInMemoryEventStore()
-                    .IgnoreScheduledCommands());
+                               .UseInMemoryEventStore()
+                               .IgnoreScheduledCommands());
             disposables.Add(configurationContext);
         }
 
@@ -86,9 +86,9 @@ namespace Microsoft.Its.Domain.Tests
             };
 
             ctorCall.Invoking(c => c())
-                .ShouldThrow<ArgumentException>()
-                .And
-                .Message.Should().Contain("Inconsistent aggregate ids");
+                    .ShouldThrow<ArgumentException>()
+                    .And
+                    .Message.Should().Contain("Inconsistent aggregate ids");
         }
 
         [Test]
@@ -113,7 +113,7 @@ namespace Microsoft.Its.Domain.Tests
             order.IsCancelled.Should().Be(false);
 
             order.Invoking(o => o.Apply(new Cancel()))
-                .ShouldThrow<CommandValidationException>();
+                 .ShouldThrow<CommandValidationException>();
 
             order.IsCancelled.Should().Be(false);
         }
@@ -124,23 +124,26 @@ namespace Microsoft.Its.Domain.Tests
             Action ctorCall = () => { new Order(Guid.NewGuid(), new IEvent[0]); };
 
             ctorCall.Invoking(c => c())
-                .ShouldThrow<ArgumentException>()
-                .And
-                .Message.Should().Contain("Event history is empty");
+                    .ShouldThrow<ArgumentException>()
+                    .And
+                    .Message.Should().Contain("Event history is empty");
         }
 
         [Test]
         public void EventSourcedBase_can_be_rehydrated_from_an_empty_event_sequence_when_using_a_snapshot()
         {
-            Action ctorCall = () => { new CustomerAccount(new CustomerAccountSnapshot
+            Action ctorCall = () =>
             {
-                AggregateId = Any.Guid(),
-                EmailAddress = Any.Email(),
-                Version = 12
-            }, new IEvent[0]); };
+                new CustomerAccount(new CustomerAccountSnapshot
+                {
+                    AggregateId = Any.Guid(),
+                    EmailAddress = Any.Email(),
+                    Version = 12
+                }, new IEvent[0]);
+            };
 
             ctorCall.Invoking(c => c())
-                .ShouldNotThrow<Exception>();
+                    .ShouldNotThrow<Exception>();
         }
 
         [Test]
@@ -148,10 +151,10 @@ namespace Microsoft.Its.Domain.Tests
         {
             var id = Guid.NewGuid();
             var order = new Order(id,
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 1, ProductName = "foo", Price = 1 },
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 1, ProductName = "foo", Price = 1 },
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
                 );
 
             order.Items.Single().Quantity.Should().Be(4);
@@ -163,10 +166,10 @@ namespace Microsoft.Its.Domain.Tests
             // arrange
             var id = Guid.NewGuid();
             var order = new Order(id,
-                new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
+                                  new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
                 );
 
             // act
@@ -183,10 +186,10 @@ namespace Microsoft.Its.Domain.Tests
             // arrange
             var id = Guid.NewGuid();
             var order = new Order(id,
-                new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
-                new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
+                                  new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
+                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
                 );
 
             // act
@@ -233,9 +236,9 @@ namespace Microsoft.Its.Domain.Tests
             Action create = () => new Order(Guid.Empty);
 
             create.Invoking(c => c())
-                .ShouldThrow<ArgumentException>()
-                .And
-                .Message.Should().Contain("id cannot be Guid.Empty");
+                  .ShouldThrow<ArgumentException>()
+                  .And
+                  .Message.Should().Contain("id cannot be Guid.Empty");
         }
 
         [Test]
@@ -292,10 +295,10 @@ namespace Microsoft.Its.Domain.Tests
             Action rollBack = () => customerAccount.AsOfVersion(9);
 
             rollBack.ShouldThrow<InvalidOperationException>()
-                .And
-                .Message
-                .Should()
-                .Contain("Snapshot version is later than specified version.");
+                    .And
+                    .Message
+                    .Should()
+                    .Contain("Snapshot version is later than specified version.");
         }
 
         [Test]
@@ -308,13 +311,67 @@ namespace Microsoft.Its.Domain.Tests
                 EmailAddress = Any.Email()
             });
 
-            Action getEvents = ()=> customerAccount.Events();
+            Action getEvents = () => customerAccount.Events();
 
             getEvents.ShouldThrow<InvalidOperationException>()
-                .And
-                .Message
-                .Should()
-                .Contain("Aggregate was sourced from a snapshot, so event history is unavailable.");
+                     .And
+                     .Message
+                     .Should()
+                     .Contain("Aggregate was sourced from a snapshot, so event history is unavailable.");
+        }
+
+        [Test]
+        public async Task When_sourced_from_a_snapshot_and_applying_a_command_that_is_already_in_the_bloom_filter_then_a_precondition_check_is_used_to_rule_out_false_positives()
+        {
+            var etag = Guid.NewGuid().ToString().ToETag();
+
+            var addPlayer = new MarcoPoloPlayerWhoIsNotIt.JoinGame
+            {
+                IdOfPlayerWhoIsIt = Any.Guid(),
+                ETag = etag
+            };
+
+            var player = await new MarcoPoloPlayerWhoIsNotIt()
+                .ApplyAsync(addPlayer);
+            player.ConfirmSave();
+
+            await Configuration.Current.SnapshotRepository().SaveSnapshot(player);
+
+            var snapshot = await Configuration.Current
+                                              .SnapshotRepository()
+                                              .GetSnapshot(player.Id);
+
+            snapshot.ETags
+                    .MayContain(etag)
+                    .Should()
+                    .BeTrue();
+        }
+
+        [Test]
+        public async Task Snapshots_do_not_include_etags_for_events_that_have_not_been_persisted_to_the_event_store()
+        {
+            var etag = Guid.NewGuid().ToString().ToETag();
+
+            var addPlayer = new MarcoPoloPlayerWhoIsNotIt.JoinGame
+            {
+                IdOfPlayerWhoIsIt = Any.Guid(),
+                ETag = etag
+            };
+
+            var player = await new MarcoPoloPlayerWhoIsNotIt()
+                .ApplyAsync(addPlayer);
+
+            // don't call player.ConfirmSave
+
+            await Configuration.Current.SnapshotRepository()
+                               .SaveSnapshot(player);
+
+            var snapshot = await Configuration.Current.SnapshotRepository().GetSnapshot(player.Id);
+
+            snapshot.ETags
+                    .MayContain(etag)
+                    .Should()
+                    .BeFalse();
         }
     }
 }

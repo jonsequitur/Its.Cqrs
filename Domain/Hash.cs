@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Generates an etag which is repeatable from a given source string.
         /// </summary>
-        public static string ToETag(string value)
+        public static string ToETag(this string value)
         {
             if (value == null)
             {
