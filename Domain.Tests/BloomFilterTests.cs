@@ -5,8 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Log.Instrumentation;
+using Microsoft.Its.Domain.Serialization;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Tests
@@ -87,6 +90,27 @@ namespace Microsoft.Its.Domain.Tests
             {
                 set.Contains(s).Should().Be(false);
             }
+        }
+
+        [Test]
+        public async Task BloomFilter_can_be_round_tripped_through_JSON_serialization()
+        {
+            var filter = new BloomFilter(capacity: 10000);
+
+            filter.Add("one");
+            filter.Add("two");
+            filter.Add("three");
+
+            var json = JsonConvert.SerializeObject(filter, Formatting.Indented);
+
+            Console.WriteLine(json);
+
+            var filter2 = JsonConvert.DeserializeObject<BloomFilter>(json);
+
+            filter2.MayContain("one").Should().BeTrue();
+            filter2.MayContain("two").Should().BeTrue();
+            filter2.MayContain("three").Should().BeTrue();
+            filter2.MayContain("false").Should().BeFalse();
         }
 
         [Test]

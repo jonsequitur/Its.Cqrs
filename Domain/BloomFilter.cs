@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
@@ -26,25 +27,26 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Initializes a new instance of the <see cref="BloomFilter" /> class based on the base 64 string reprentation of a BloomFilter.
         /// </summary>
-        /// <param name="base64BloomFilter">A base64 string obtained by calling <see cref="BloomFilter.ToString" />.</param>
+        /// <param name="base64">A base64 string obtained by calling <see cref="BloomFilter.ToString" />.</param>
         /// <param name="capacity">The capacity of the Bloom filter, in bits.</param>
         /// <param name="probabilityOfFalsePositive">The probability of a false positive when <see cref="MayContain" /> is called.</param>
         /// <exception cref="System.ArgumentException"></exception>
         /// <remarks>
         /// This method can be used to deserialize a stored <see cref="BloomFilter" /> instance.
         /// </remarks>
+        [JsonConstructor]
         public BloomFilter(
-            string base64BloomFilter,
+            string base64,
             int capacity = DefaultCapacity,
             double probabilityOfFalsePositive = DefaultProbabilityOfFalsePositive)
         {
             Initialize(capacity, probabilityOfFalsePositive);
 
-            table = base64BloomFilter.ToBitArray();
+            table = base64.ToBitArray();
 
             if (table.Count != tableSize)
             {
-                throw new ArgumentException(string.Format("base64BloomFilter is of the incorrect size. Expected {0} but was {1}.", tableSize, table.Count));
+                throw new ArgumentException(string.Format("base64 is of the incorrect size. Expected {0} but was {1}.", tableSize, table.Count));
             }
         }
 
@@ -74,6 +76,10 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentOutOfRangeException("probabilityOfFalsePositive", "probabilityOfFalsePositive must be between 0 and 1");
             }
 
+            Capacity = capacity;
+
+            ProbabilityOfFalsePositive = probabilityOfFalsePositive;
+
             tableSize = (int) Math.Ceiling(capacity*Math.Log(probabilityOfFalsePositive, optimalRateBase));
 
             // round up to the nearest byte so that the table can be round-tripped as a base 64 string
@@ -81,6 +87,16 @@ namespace Microsoft.Its.Domain
 
             numberOfTimesToHash = (int) Math.Round(ln2*tableSize/capacity);
         }
+
+        public string Base64 { get
+        {
+            return table.ToBase64String();
+        }}
+
+        public int Capacity { get; private set; }
+        
+        public double ProbabilityOfFalsePositive { get; private set; }
+
 
         /// <summary>
         /// Adds the specified value to the Bloom filter.
@@ -158,7 +174,7 @@ namespace Microsoft.Its.Domain
         /// <remarks>The value returned can be used to instantiate another <see cref="BloomFilter" />, with same content value.</remarks>
         public override string ToString()
         {
-            return table.ToBase64String();
+            return Base64;
         }
     }
 }

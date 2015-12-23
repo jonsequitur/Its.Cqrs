@@ -191,6 +191,10 @@ namespace Microsoft.Its.Domain.Tests
         {
         }
 
+        public MarcoPoloPlayerWhoIsNotIt(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null) : base(snapshot, eventHistory)
+        {
+        }
+
         public string Name { get; private set; }
 
         public class PlayerCommandHandler :

@@ -321,10 +321,11 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task When_sourced_from_a_snapshot_and_applying_a_command_that_is_already_in_the_bloom_filter_then_a_precondition_check_is_used_to_rule_out_false_positives()
+        public async Task Snapshots_include_etags_for_events_that_have_been_persisted_to_the_event_store()
         {
             var etag = Guid.NewGuid().ToString().ToETag();
 
+            var configuration = Configuration.Current;
             var addPlayer = new MarcoPoloPlayerWhoIsNotIt.JoinGame
             {
                 IdOfPlayerWhoIsIt = Any.Guid(),
@@ -333,12 +334,11 @@ namespace Microsoft.Its.Domain.Tests
 
             var player = await new MarcoPoloPlayerWhoIsNotIt()
                 .ApplyAsync(addPlayer);
-            player.ConfirmSave();
+            await configuration.Repository<MarcoPoloPlayerWhoIsNotIt>().Save(player);
 
-            await Configuration.Current.SnapshotRepository().SaveSnapshot(player);
+            await configuration.SnapshotRepository().SaveSnapshot(player);
 
-            var snapshot = await Configuration.Current
-                                              .SnapshotRepository()
+            var snapshot = await configuration.SnapshotRepository()
                                               .GetSnapshot(player.Id);
 
             snapshot.ETags
@@ -361,17 +361,77 @@ namespace Microsoft.Its.Domain.Tests
             var player = await new MarcoPoloPlayerWhoIsNotIt()
                 .ApplyAsync(addPlayer);
 
-            // don't call player.ConfirmSave
+            // don't save
 
-            await Configuration.Current.SnapshotRepository()
+            var configuration = Configuration.Current;
+            await configuration.SnapshotRepository()
                                .SaveSnapshot(player);
 
-            var snapshot = await Configuration.Current.SnapshotRepository().GetSnapshot(player.Id);
+            var snapshot = await configuration.SnapshotRepository().GetSnapshot(player.Id);
 
             snapshot.ETags
                     .MayContain(etag)
                     .Should()
                     .BeFalse();
+        }
+
+        [Test]
+        public async Task When_sourced_from_a_snapshot_and_applying_a_command_that_is_already_in_the_bloom_filter_then_a_precondition_check_is_used_to_rule_out_false_positives()
+        {
+            var verifierWasCalled = false;
+
+            var preconditionVerifier = new TestCommandPreconditionVerifier(() =>
+            {
+                verifierWasCalled = true;
+                return true;
+            });
+
+            var configuration = Configuration.Current;
+
+            configuration.UseDependency<ICommandPreconditionVerifier>(_ => preconditionVerifier);
+
+            var etag = Guid.NewGuid().ToString().ToETag();
+
+            var addPlayer = new MarcoPoloPlayerWhoIsNotIt.JoinGame
+            {
+                IdOfPlayerWhoIsIt = Any.Guid(),
+                ETag = etag
+            };
+
+            var player = await new MarcoPoloPlayerWhoIsNotIt()
+                .ApplyAsync(addPlayer);
+            await configuration.Repository<MarcoPoloPlayerWhoIsNotIt>().Save(player);
+
+            // don't call player.ConfirmSave
+
+            await configuration.SnapshotRepository()
+                               .SaveSnapshot(player);
+
+            var snapshot = await configuration.SnapshotRepository().GetSnapshot(player.Id);
+
+            player = new MarcoPoloPlayerWhoIsNotIt(snapshot);
+
+            player.HasETag(etag).Should().BeTrue();
+            verifierWasCalled.Should().BeTrue();
+        }
+
+        private class TestCommandPreconditionVerifier : ICommandPreconditionVerifier
+        {
+            private readonly Func<bool> hasBeenApplied;
+
+            public TestCommandPreconditionVerifier(Func<bool> hasBeenApplied)
+            {
+                if (hasBeenApplied == null)
+                {
+                    throw new ArgumentNullException("hasBeenApplied");
+                }
+                this.hasBeenApplied = hasBeenApplied;
+            }
+
+            public async Task<bool> HasBeenApplied(Guid aggregateId, string etag)
+            {
+                return hasBeenApplied();
+            }
         }
     }
 }
