@@ -11,10 +11,10 @@ namespace Microsoft.Its.Domain
         ///     Determines whether the command can be delivered during a call to <see cref="ICommandScheduler{T}.Schedule" />.
         /// </summary>
         /// <param name="command">The command.</param>
-        public static bool CanBeDeliveredDuringSchedule(this ICommand command)
+        public static bool CanBeDeliveredDuringScheduling(this ICommand command)
         {
-            return command.IfTypeIs<ISpecifySchedulingRules>()
-                          .Then(c => c.CanBeDeliveredDuringSchedule)
+            return command.IfTypeIs<ISpecifySchedulingBehavior>()
+                          .Then(c => c.CanBeDeliveredDuringScheduling)
                           .Else(() => true);
         }
 
@@ -25,7 +25,7 @@ namespace Microsoft.Its.Domain
         /// <param name="command">The command.</param>
         public static bool RequiresDurableScheduling(this ICommand command)
         {
-            return command.IfTypeIs<ISpecifySchedulingRules>()
+            return command.IfTypeIs<ISpecifySchedulingBehavior>()
                           .Then(c => c.RequiresDurableScheduling)
                           .Else(() => true);
         }

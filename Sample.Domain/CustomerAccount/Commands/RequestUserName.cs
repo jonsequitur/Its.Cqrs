@@ -7,7 +7,7 @@ using Microsoft.Its.Domain;
 
 namespace Sample.Domain
 {
-    public class RequestUserName : Command<CustomerAccount>, ISpecifySchedulingRules
+    public class RequestUserName : Command<CustomerAccount>, ISpecifySchedulingBehavior
     {
         public string UserName { get; set; }
 
@@ -44,7 +44,7 @@ namespace Sample.Domain
             }
         }
 
-        public bool CanBeDeliveredDuringSchedule
+        public bool CanBeDeliveredDuringScheduling
         {
             get
             {

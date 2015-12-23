@@ -40,7 +40,7 @@ namespace Microsoft.Its.Domain
         /// <exception cref="System.NotSupportedException">Non-immediate scheduling is not supported.</exception>
         public virtual async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            if (scheduledCommand.Command.CanBeDeliveredDuringSchedule() && scheduledCommand.IsDue())
+            if (scheduledCommand.Command.CanBeDeliveredDuringScheduling() && scheduledCommand.IsDue())
             {
                 if (!await VerifyPrecondition(scheduledCommand))
                 {
