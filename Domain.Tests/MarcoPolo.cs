@@ -57,13 +57,15 @@ namespace Microsoft.Its.Domain.Tests
 
             public async Task EnactCommand(MarcoPoloPlayerWhoIsIt it, SayMarco command)
             {
+                var saidMarco = it.RecordEvent(new SaidMarco());
+
                 var scheduleTasks =
                     it.playerIds.Select(playerId => playerScheduler.Schedule(
                         playerId,
                         new MarcoPoloPlayerWhoIsNotIt.SayPolo
                         {
                             IdOfPlayerWhoIsIt = it.Id
-                        }, deliveryDependsOn: it.RecordEvent(new SaidMarco())));
+                        }, deliveryDependsOn: saidMarco));
 
                 await Task.WhenAll(scheduleTasks);
             }
