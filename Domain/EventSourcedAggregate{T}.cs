@@ -65,10 +65,11 @@ namespace Microsoft.Its.Domain
         ///     Records an event, updating the aggregate's state and adding the event to PendingEvents.
         /// </summary>
         /// <remarks>It is not necessary to specify the AggregateId or SequenceNumber properties on the recorded event. The <see cref="EventSourcedAggregate" /> class handles this.</remarks>
-        protected void RecordEvent(Event<T> e)
+        protected Event<T> RecordEvent(Event<T> e)
         {
             AddPendingEvent(e);
-            e.Update((T) this);
+            e.Update((T)this);
+            return e;
         }
 
         /// <summary>

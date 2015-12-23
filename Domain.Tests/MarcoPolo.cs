@@ -57,9 +57,7 @@ namespace Microsoft.Its.Domain.Tests
 
             public async Task EnactCommand(MarcoPoloPlayerWhoIsIt it, SayMarco command)
             {
-                var saidMarco = new SaidMarco();
-
-                it.RecordEvent(saidMarco);
+                var saidMarco = it.RecordEvent(new SaidMarco());
 
                 var scheduleTasks =
                     it.playerIds.Select(playerId => playerScheduler.Schedule(

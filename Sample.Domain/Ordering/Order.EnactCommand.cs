@@ -73,10 +73,6 @@ namespace Sample.Domain.Ordering
 
             public async Task EnactCommand(Order order, Cancel cancel)
             {
-                var cancelled = new Cancelled();
-
-                order.RecordEvent(cancelled);
-
                 var command = new NotifyOrderCanceled
                 {
                     OrderNumber = order.OrderNumber
@@ -84,8 +80,8 @@ namespace Sample.Domain.Ordering
 
                 await scheduler.Schedule(
                     order.CustomerId, 
-                    command, 
-                    deliveryDependsOn: cancelled);
+                    command,
+                    deliveryDependsOn: order.RecordEvent(new Cancelled()));
             }
 
             public async Task HandleScheduledCommandException(Order order, CommandFailed<Cancel> command)
