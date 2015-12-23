@@ -14,6 +14,10 @@ namespace Sample.Banking.Domain
             public override void Update(CheckingAccount aggregate)
             {
                 aggregate.Balance -= Amount;
+                if (aggregate.Balance <= 0)
+                {
+                    aggregate.IsOverdrawn = true;
+                }
             }
         }
     }
