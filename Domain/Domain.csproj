@@ -125,6 +125,7 @@
     <Compile Include="EventHandling\ReflectedEventHandlerBinder.cs" />
     <Compile Include="EventNameAttribute.cs" />
     <Compile Include="EventMigrations.cs" />
+    <Compile Include="Hash.cs" />
     <Compile Include="IClock.cs" />
     <Compile Include="EventHandling\Projector.cs" />
     <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />

@@ -59,7 +59,7 @@ namespace Microsoft.Its.Domain
                 throw new InvalidOperationException("ETag is already assigned.");
             }
 
-            ETag = CommandContext.GenerateETag();
+            ETag = Hash.ToETag(Guid.NewGuid().ToString("N"));
         }
 
         private static readonly Lazy<Dictionary<Tuple<Type, string>, Type>> index = new Lazy<Dictionary<Tuple<Type, string>, Type>>
