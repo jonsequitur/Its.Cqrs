@@ -6,6 +6,7 @@ namespace Microsoft.Its.Domain
     /// <summary>
     ///     Defines rules for how scheduling of the command should be handled.
     /// </summary>
+    /// <remarks>This interface should be implemented by commands that have non-default scheduling requirements.</remarks>
     public interface ISpecifySchedulingBehavior
     {
         /// <summary>
