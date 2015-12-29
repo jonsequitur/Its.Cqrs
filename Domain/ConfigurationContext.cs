@@ -3,11 +3,13 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.Remoting.Messaging;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    [DebuggerStepThrough]
     public class ConfigurationContext : IDisposable
     {
         private readonly Configuration configuration;

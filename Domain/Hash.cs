@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Generates an etag which is repeatable from a given source string.
         /// </summary>
-        public static string ToETag(string value)
+        public static string ToETag(this string value)
         {
             if (value == null)
             {
@@ -34,7 +34,7 @@ namespace Microsoft.Its.Domain
                 hash = md5.ComputeHash(inputBytes);
             }
 
-            return Convert.ToBase64String(hash);
+            return System.Convert.ToBase64String(hash);
         }
         
         /// <summary>
@@ -71,6 +71,25 @@ namespace Microsoft.Its.Domain
             hashedBytes[7] = 0x3F;
 
             return new Guid(hashedBytes);
+        }
+        
+        // https://en.wikipedia.org/wiki/Jenkins_hash_function
+        internal static int ToJenkinsOneAtATimeHash(this string value)
+        {
+            var hash = 0;
+
+            for (var i = 0; i < value.Length; i++)
+            {
+                hash += i;
+                hash += hash << 10;
+                hash ^= hash >> 6;
+            }
+
+            hash += hash << 3;
+            hash ^= hash >> 11;
+            hash += hash << 15;
+
+            return hash;
         }
     }
 }

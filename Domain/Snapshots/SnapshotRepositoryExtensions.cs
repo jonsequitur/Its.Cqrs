@@ -20,13 +20,7 @@ namespace Microsoft.Its.Domain
 
             var snapshot = snapshotCreator.CreateSnapshot(aggregate);
 
-            snapshot.AggregateId = aggregate.Id;
-            snapshot.AggregateTypeName = AggregateType<TAggregate>.EventStreamName;
-            snapshot.LastUpdated = Clock.Now();
-            snapshot.Version = aggregate.Version;
-            snapshot.ETags = aggregate.ETags()
-                                      .Where(e => !string.IsNullOrWhiteSpace(e))
-                                      .ToArray();
+            aggregate.InitializeSnapshot(snapshot);
 
             await repository.SaveSnapshot(snapshot);
         }

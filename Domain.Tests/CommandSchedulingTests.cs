@@ -45,7 +45,8 @@ namespace Microsoft.Its.Domain.Tests
 
             configuration = new Configuration()
                 .UseInMemoryCommandScheduling()
-                .UseInMemoryEventStore();
+                .UseInMemoryEventStore()
+                .TraceScheduledCommands();
 
             customerRepository = configuration.Repository<CustomerAccount>();
             orderRepository = configuration.Repository<Order>();

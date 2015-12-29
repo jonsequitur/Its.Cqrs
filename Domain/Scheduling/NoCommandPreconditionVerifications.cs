@@ -8,13 +8,8 @@ namespace Microsoft.Its.Domain
 {
     internal class NoCommandPreconditionVerifications : ICommandPreconditionVerifier
     {
-        public async Task<bool> IsPreconditionSatisfied(IScheduledCommand scheduledCommand)
+        public Task<bool> HasBeenApplied(Guid aggregateId, string etag)
         {
-            if (scheduledCommand.DeliveryPrecondition == null)
-            {
-                return true;
-            }
-
             throw new InvalidOperationException("No ICommandPreconditionVerifier has been configured.");
         }
     }

@@ -125,6 +125,7 @@
     <Compile Include="%28Pocket%29\PocketContainer.cs" />
     <Compile Include="AnnotationEventTests.cs" />
     <Compile Include="AuthorizationTests.cs" />
+    <Compile Include="BloomFilterTests.cs" />
     <Compile Include="CommandContextTests.cs" />
     <Compile Include="CommandSchedulerMessageExchangeTests.cs" />
     <Compile Include="CommandSchedulerTestAggregate.cs" />

@@ -57,16 +57,17 @@ namespace Microsoft.Its.Domain.Tests
             var it = new MarcoPoloPlayerWhoIsIt();
             await repo.Save(it);
 
-            int numberOfPlayers = 6;
+            var numberOfPlayers = 6;
             var players = Enumerable.Range(1, numberOfPlayers)
                                     .Select(_ => new MarcoPoloPlayerWhoIsNotIt());
 
             foreach (var player in players)
             {
-                await player.ApplyAsync(new MarcoPoloPlayerWhoIsNotIt.JoinGame
+                var joinGame = new MarcoPoloPlayerWhoIsNotIt.JoinGame
                 {
                     IdOfPlayerWhoIsIt = it.Id
-                }).AndSave();
+                };
+                await player.ApplyAsync(joinGame).AndSave();
             }
 
             await repo.Refresh(it);

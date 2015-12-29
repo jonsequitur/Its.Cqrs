@@ -15,7 +15,6 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// Provides additional functionality for event-sourced aggregates.
     /// </summary>
-    [DebuggerStepThrough]
     public static class AggregateExtensions
     {
         /// <summary>
@@ -62,7 +61,7 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("aggregate");
             }
 
-            if (aggregate.sourceSnapshot != null)
+            if (aggregate.SourceSnapshot != null)
             {
                 throw new InvalidOperationException("Aggregate was sourced from a snapshot, so event history is unavailable.");
             }
@@ -90,7 +89,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public static TAggregate AsOfVersion<TAggregate>(this TAggregate aggregate, long version) where TAggregate : EventSourcedAggregate
         {
-            var snapshot = aggregate.sourceSnapshot;
+            var snapshot = aggregate.SourceSnapshot;
 
             var eventsAsOfVersion = aggregate.EventHistory
                                              .Concat(aggregate.PendingEvents)
@@ -193,29 +192,94 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
+        /// Initializes the interface properties of a snapshot.
+        /// </summary>
+        /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+        /// <param name="aggregate">The aggregate.</param>
+        /// <param name="snapshot">The snapshot.</param>
+        /// <exception cref="System.ArgumentNullException">
+        /// aggregate
+        /// or
+        /// snapshot
+        /// </exception>
+        public static void InitializeSnapshot<TAggregate>(this TAggregate aggregate, ISnapshot snapshot)
+            where TAggregate : class, IEventSourced
+        {
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException("aggregate");
+            }
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException("snapshot");
+            }
+
+            snapshot.AggregateId = aggregate.Id;
+            snapshot.AggregateTypeName = AggregateType<TAggregate>.EventStreamName;
+            snapshot.LastUpdated = Clock.Now();
+            snapshot.Version = aggregate.Version;
+            snapshot.ETags = aggregate.CreateETagBloomFilter();
+        }
+
+        internal static BloomFilter CreateETagBloomFilter<TAggregate>(this TAggregate aggregate)
+            where TAggregate : class, IEventSourced
+        {
+            return aggregate.IfTypeIs<EventSourcedAggregate>()
+                            .Then(a =>
+                            {
+                                if (a.WasSourcedFromSnapshot)
+                                {
+                                    return a.SourceSnapshot.ETags;
+                                }
+
+                                var bloomFilter = new BloomFilter();
+                                a.EventHistory
+                                 .Select(e => e.ETag)
+                                 .Where(etag => !string.IsNullOrWhiteSpace(etag))
+                                 .ForEach(bloomFilter.Add);
+                                return bloomFilter;
+                            })
+                            .ElseDefault();
+        }
+
+        /// <summary>
         /// Determines whether the specified ETag already exists in the aggregate's event stream.
         /// </summary>
         /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
         /// <param name="aggregate">The aggregate.</param>
         /// <param name="etag">The etag.</param>
         public static bool HasETag<TAggregate>(this TAggregate aggregate, string etag)
-            where TAggregate : IEventSourced
+            where TAggregate : class, IEventSourced
         {
             if (string.IsNullOrWhiteSpace(etag))
             {
                 return false;
             }
 
-            return aggregate.IfTypeIs<EventSourcedAggregate>()
-                            .Then(a => a.HasETag(etag))
-                            .ElseDefault();
-        }
+            var eventSourcedAggregate = aggregate as EventSourcedAggregate;
+            if (eventSourcedAggregate != null)
+            {
+                var answer = eventSourcedAggregate.HasETag(etag);
 
-        internal static IEnumerable<string> ETags(this IEventSourced eventSourced)
-        {
-            return eventSourced.IfTypeIs<EventSourcedAggregate>()
-                               .Then(a => a.ETags())
-                               .Else(() => new string[0]);
+                if (answer == ProbabilisticAnswer.Yes)
+                {
+                    return true;
+                }
+
+                if (answer == ProbabilisticAnswer.No)
+                {
+                    return false;
+                }
+
+                // maybe... which means we need to do a lookup
+                var preconditionVerifier = Configuration.Current.CommandPreconditionVerifier();
+
+                return Task.Run(() => preconditionVerifier.HasBeenApplied(
+                    aggregate.Id,
+                    etag)).Result;
+            }
+
+            return false;
         }
     }
 }

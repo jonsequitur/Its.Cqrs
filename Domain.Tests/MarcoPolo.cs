@@ -189,6 +189,10 @@ namespace Microsoft.Its.Domain.Tests
         {
         }
 
+        public MarcoPoloPlayerWhoIsNotIt(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null) : base(snapshot, eventHistory)
+        {
+        }
+
         public string Name { get; private set; }
 
         public class PlayerCommandHandler :
@@ -235,6 +239,30 @@ namespace Microsoft.Its.Domain.Tests
             public async Task HandleScheduledCommandException(MarcoPoloPlayerWhoIsNotIt player, CommandFailed<SayPolo> command)
             {
             }
+        }
+
+        public class PlayerSnapshotCreator : ICreateSnapshot<MarcoPoloPlayerWhoIsNotIt>
+        {
+            public ISnapshot CreateSnapshot(MarcoPoloPlayerWhoIsNotIt aggregate)
+            {
+                var snapshot = new Snapshot
+                {
+                    Name = aggregate.Name
+                };
+                aggregate.InitializeSnapshot(snapshot);
+                return snapshot;
+            }
+        }
+
+        public class Snapshot : ISnapshot
+        {
+            public string Name { get; set; }
+
+            public Guid AggregateId { get; set; }
+            public long Version { get; set; }
+            public DateTimeOffset LastUpdated { get; set; }
+            public string AggregateTypeName { get; set; }
+            public BloomFilter ETags { get; set; }
         }
 
         #region Events
@@ -291,4 +319,5 @@ namespace Microsoft.Its.Domain.Tests
 
         #endregion
     }
+
 }

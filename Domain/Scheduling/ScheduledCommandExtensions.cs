@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
@@ -27,6 +28,27 @@ namespace Microsoft.Its.Domain
             return (command.DueTime == null ||
                     command.DueTime <= clock.Now())
                    && !(command.Result is CommandDelivered);
+        }
+
+        public static async Task<bool> IsPreconditionSatisfied(
+            this ICommandPreconditionVerifier preconditionVerifier,
+            IScheduledCommand scheduledCommand)
+        {
+            if (preconditionVerifier == null)
+            {
+                throw new ArgumentNullException("preconditionVerifier");
+            }
+
+            var precondition = scheduledCommand.DeliveryPrecondition;
+
+            if (precondition == null)
+            {
+                return true;
+            }
+
+            return await preconditionVerifier.HasBeenApplied(
+                precondition.AggregateId, 
+                precondition.ETag);
         }
     }
 }

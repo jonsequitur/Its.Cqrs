@@ -173,7 +173,7 @@ namespace Microsoft.Its.Domain
             return configuration;
         }
 
-        internal static ISnapshotRepository SnapshotRepository(this Configuration configuration)
+        public static ISnapshotRepository SnapshotRepository(this Configuration configuration)
         {
             return configuration.Container.Resolve<ISnapshotRepository>();
         }

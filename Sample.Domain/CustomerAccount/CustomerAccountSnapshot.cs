@@ -16,6 +16,6 @@ namespace Sample.Domain
         public long Version { get; set; }
         public DateTimeOffset LastUpdated { get; set; }
         public string AggregateTypeName { get; set; }
-        public string[] ETags { get; set; }
+        public BloomFilter ETags { get; set; }
     }
 }
