@@ -54,7 +54,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 };
 
                 if (scheduledCommand.IsDue(storedScheduledCommand.Clock) &&
-                    !scheduledCommand.Command.RequiresDurableScheduling)
+                    !scheduledCommand.Command.RequiresDurableScheduling())
                 {
                     storedScheduledCommand.NonDurable = true;
                     return storedScheduledCommand;
@@ -132,7 +132,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 if (storedCommand == null)
                 {
-                    if (!scheduledCommand.Command.RequiresDurableScheduling)
+                    if (!scheduledCommand.Command.RequiresDurableScheduling())
                     {
                         return;
                     }

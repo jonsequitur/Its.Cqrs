@@ -7,7 +7,7 @@ using Microsoft.Its.Domain;
 
 namespace Sample.Domain
 {
-    public class RequestUserName : Command<CustomerAccount>
+    public class RequestUserName : Command<CustomerAccount>, ISpecifySchedulingBehavior
     {
         public string UserName { get; set; }
 
@@ -36,11 +36,19 @@ namespace Sample.Domain
             }
         }
 
-        public override bool RequiresDurableScheduling
+        public bool RequiresDurableScheduling
         {
             get
             {
                 return false;
+            }
+        }
+
+        public bool CanBeDeliveredDuringScheduling
+        {
+            get
+            {
+                return true;
             }
         }
     }

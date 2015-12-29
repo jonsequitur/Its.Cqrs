@@ -166,9 +166,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void If_Schedule_is_dependent_on_an_event_with_no_aggregate_id_then_it_throws()
         {
-            var scheduler = new CommandScheduler<CustomerAccount>(
-                new InMemoryEventSourcedRepository<CustomerAccount>(),
-                new InMemoryCommandPreconditionVerifier(new InMemoryEventStream()));
+            var scheduler = configuration.CommandScheduler<CustomerAccount>();
 
             Action schedule = () => scheduler.Schedule(
                 Any.Guid(),

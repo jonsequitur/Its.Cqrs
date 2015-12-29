@@ -10,7 +10,7 @@ namespace Microsoft.Its.Domain
     /// A basic command scheduler implementation that can be used as the basis for composing command scheduling behaviors.
     /// </summary>
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
-    public class CommandScheduler<TAggregate> :
+    internal  class CommandScheduler<TAggregate> :
         ICommandScheduler<TAggregate>
         where TAggregate : class, IEventSourced
     {
@@ -40,7 +40,7 @@ namespace Microsoft.Its.Domain
         /// <exception cref="System.NotSupportedException">Non-immediate scheduling is not supported.</exception>
         public virtual async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            if (scheduledCommand.IsDue())
+            if (scheduledCommand.Command.CanBeDeliveredDuringScheduling() && scheduledCommand.IsDue())
             {
                 if (!await VerifyPrecondition(scheduledCommand))
                 {

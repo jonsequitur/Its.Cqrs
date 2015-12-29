@@ -99,6 +99,7 @@
     <Compile Include="Command.cs" />
     <Compile Include="CommandAuthorizationException.cs" />
     <Compile Include="CommandContext.cs" />
+    <Compile Include="CommandExtensions.cs" />
     <Compile Include="CommandHandler.cs" />
     <Compile Include="CommandReference.cs" />
     <Compile Include="CommandSchedulerPipelineTraceInitializer.cs" />
@@ -136,6 +137,7 @@
     <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
     <Compile Include="ExceptionExtensions.cs" />
     <Compile Include="Scheduling\ICommandSchedulerPipelineInitializer.cs" />
+    <Compile Include="Scheduling\ISpecifySchedulingBehavior.cs" />
     <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
     <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />

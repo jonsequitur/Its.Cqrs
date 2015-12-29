@@ -122,15 +122,15 @@ namespace Microsoft.Its.Domain.Sql
                          .Resolve<SqlCommandSchedulerPipelineInitializer>()
                          .Initialize(configuration);
 
-            var trigger = new CommandSchedulerResolver(container);
-            
+            var commandSchedulerResolver = new CommandSchedulerResolver(container);
+
             container
                 .Register(
                     c => new SchedulerClockTrigger(
                         c.Resolve<CommandSchedulerDbContext>,
                         async (serializedCommand, result, db) =>
                         {
-                            await DeserializeAndDeliver(trigger, serializedCommand, db);
+                            await DeserializeAndDeliver(commandSchedulerResolver, serializedCommand, db);
 
                             result.Add(serializedCommand.Result);
                         }))

@@ -52,18 +52,6 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        /// <summary>
-        /// Gets a value indicating whether the command requires durability, even when scheduled for immediate delivery.
-        /// </summary>
-        [JsonIgnore]
-        public virtual bool RequiresDurableScheduling
-        {
-            get
-            {
-                return true;
-            }
-        }
-
         internal void AssignRandomETag()
         {
             if (!string.IsNullOrWhiteSpace(ETag))

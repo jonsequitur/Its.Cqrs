@@ -24,10 +24,5 @@ namespace Microsoft.Its.Domain
         ///     Gets or sets the principal on whose behalf the command will be authorized.
         /// </summary>
         IPrincipal Principal { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the command requires durability, even when scheduled for immediate delivery.
-        /// </summary>
-        bool RequiresDurableScheduling { get; }
     }
 }
