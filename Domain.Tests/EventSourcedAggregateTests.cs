@@ -348,34 +348,6 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task Snapshots_do_not_include_etags_for_events_that_have_not_been_persisted_to_the_event_store()
-        {
-            var etag = Guid.NewGuid().ToString().ToETag();
-
-            var addPlayer = new MarcoPoloPlayerWhoIsNotIt.JoinGame
-            {
-                IdOfPlayerWhoIsIt = Any.Guid(),
-                ETag = etag
-            };
-
-            var player = await new MarcoPoloPlayerWhoIsNotIt()
-                .ApplyAsync(addPlayer);
-
-            // don't save
-
-            var configuration = Configuration.Current;
-            await configuration.SnapshotRepository()
-                               .SaveSnapshot(player);
-
-            var snapshot = await configuration.SnapshotRepository().GetSnapshot(player.Id);
-
-            snapshot.ETags
-                    .MayContain(etag)
-                    .Should()
-                    .BeFalse();
-        }
-
-        [Test]
         public async Task When_sourced_from_a_snapshot_and_applying_a_command_that_is_already_in_the_bloom_filter_then_a_precondition_check_is_used_to_rule_out_false_positives()
         {
             var verifierWasCalled = false;

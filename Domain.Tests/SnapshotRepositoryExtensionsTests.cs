@@ -63,5 +63,19 @@ namespace Microsoft.Its.Domain.Tests
 
             snapshot.ETags.MayContain(etag).Should().BeTrue();
         }
+
+        [Test]
+        public async Task When_an_aggregate_has_pending_events_then_creating_a_snapshot_throws()
+        {
+            var account = new CustomerAccount().Apply(new RequestSpam());
+            await Configuration.Current.Repository<CustomerAccount>().Save(account);
+            await account.ApplyAsync(new NotifyOrderCanceled());
+
+            var repository = Configuration.Current.SnapshotRepository();
+            Action save = () => repository.SaveSnapshot(account).Wait();
+
+            save.ShouldThrow<InvalidOperationException>()
+                .WithMessage("A snapshot can only be created from an aggregate having no pending events. Save the aggregate before creating a snapshot.");
+        }
     }
 }

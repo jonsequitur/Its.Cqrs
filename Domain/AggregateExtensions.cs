@@ -214,6 +214,11 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("snapshot");
             }
 
+            if (aggregate.PendingEvents.Any())
+            {
+                throw new InvalidOperationException("A snapshot can only be created from an aggregate having no pending events. Save the aggregate before creating a snapshot.");
+            }
+
             snapshot.AggregateId = aggregate.Id;
             snapshot.AggregateTypeName = AggregateType<TAggregate>.EventStreamName;
             snapshot.LastUpdated = Clock.Now();
