@@ -9,5 +9,5 @@ using System.Reflection;
 [assembly: CLSCompliant(true)]
 
 // Edit these for each release + update dependencies in .nuspec files
-[assembly: AssemblyFileVersion("0.13.0-beta")]
-[assembly: AssemblyInformationalVersion("0.13.0-beta")]
+[assembly: AssemblyFileVersion("0.13.1-beta")]
+[assembly: AssemblyInformationalVersion("0.13.1-beta")]
