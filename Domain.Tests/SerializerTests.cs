@@ -10,7 +10,6 @@ using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain.Ordering;
-using Microsoft.Its.Domain.Testing;
 
 namespace Microsoft.Its.Domain.Tests
 {
@@ -53,7 +52,7 @@ namespace Microsoft.Its.Domain.Tests
         public void Serializer_Settings_can_be_cloned()
         {
             var cloned = Serializer.CloneSettings();
-            cloned.Converters.Count().Should().Be(Serializer.Settings.Converters.Count);
+            cloned.Converters.Count.Should().Be(Serializer.Settings.Converters.Count);
             cloned.ShouldBeEquivalentTo(Serializer.Settings);
         }
 

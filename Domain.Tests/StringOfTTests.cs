@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using FluentAssertions;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Tests
@@ -184,6 +186,39 @@ namespace Microsoft.Its.Domain.Tests
             Assert.That(!country.Equals(state));
             Assert.That(!Equals(state, country));
             Assert.That(!Equals(country, state));
+        }
+
+        [Test]
+        public void StringT_serializes_to_a_JSON_primitive()
+        {
+            var json = JsonConvert.SerializeObject(new { CountryCode = new CountryCode("CA") });
+
+            json.Should().Be("{\"CountryCode\":\"CA\"}");
+        }
+
+        [Test]
+        public void StringT_derived_classes_deserialize_from_JSON_primitives()
+        {
+            var json = "{\"CountryCode\":\"CA\"}";
+
+            var s = JsonConvert.DeserializeObject<Address>(json);
+
+            s.CountryCode.Value.Should().Be("CA");
+        }
+
+        [Test]
+        public void StringT_derived_classes_deserialize_from_JSON_objects()
+        {
+            var json = "{\"CountryCode\":{\"Value\":\"CA\"}}";
+
+            var s = JsonConvert.DeserializeObject<Address>(json);
+
+            s.CountryCode.Should().Be("CA");
+        }
+
+        public class Address
+        {
+            public CountryCode CountryCode { get; set; }
         }
 
         public class CountryCode : String<CountryCode>

@@ -5,6 +5,8 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using Microsoft.Its.Domain.Serialization;
+using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
@@ -14,6 +16,7 @@ namespace Microsoft.Its.Domain
     /// <typeparam name="T">The type of the implementing class.</typeparam>
     [DebuggerDisplay("{Value}")]
     [Serializable]
+    [JsonConverter(typeof(StringTConverter))]
     public abstract class String<T> where T : String<T>
     {
         private readonly string value;
