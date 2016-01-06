@@ -216,6 +216,14 @@ namespace Microsoft.Its.Domain.Tests
             s.CountryCode.Should().Be("CA");
         }
 
+        [Test]
+        public void StringT_correctly_serializes_to_null()
+        {
+            CountryCode countryCode = null;
+            var s = JsonConvert.SerializeObject(countryCode);
+            s.Should().Be("null");
+        }
+
         public class Address
         {
             public CountryCode CountryCode { get; set; }

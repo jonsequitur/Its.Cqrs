@@ -149,7 +149,7 @@
     <Compile Include="Scheduling\ScheduledCommandExtensions.cs" />
     <Compile Include="Scheduling\ScheduledCommandInterceptor{T}.cs" />
     <Compile Include="Scheduling\CommandSchedulerPipelineInitializer.cs" />
-    <Compile Include="Serialization\StringTConverter.cs" />
+    <Compile Include="Serialization\PrimitiveConverter.cs" />
     <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />
     <Compile Include="Snapshots\InMemorySnapshotRepository{T}.cs" />
     <Compile Include="Snapshots\ISnapshot.cs" />
@@ -212,7 +212,7 @@
     <Compile Include="Serialization\DynamicEvent.cs" />
     <Compile Include="Serialization\OptionalContractResolver.cs" />
     <Compile Include="Serialization\OptionalConverter.cs" />
-    <Compile Include="Serialization\PrimitiveConverter.cs" />
+    <Compile Include="Serialization\PrimitiveConverter{T}.cs" />
     <Compile Include="Serialization\Serializer.cs" />
     <Compile Include="Serialization\UriConverter.cs" />
     <Compile Include="Snapshots\SnapshotRepositoryExtensions.cs" />

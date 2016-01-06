@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Its.Domain.Serialization;
+using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
@@ -14,6 +16,7 @@ namespace Microsoft.Its.Domain
     /// <remarks>This class can help to prevent identifiers for one type from being used for a different type.</remarks>
     [DebuggerDisplay("{Value}")]
     [DebuggerStepThrough]
+    [JsonConverter(typeof(PrimitiveConverter))]
     public abstract class ObjectId<T>
     {
         /// <summary>
