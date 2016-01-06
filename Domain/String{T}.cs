@@ -16,7 +16,7 @@ namespace Microsoft.Its.Domain
     /// <typeparam name="T">The type of the implementing class.</typeparam>
     [DebuggerDisplay("{Value}")]
     [Serializable]
-    [JsonConverter(typeof(StringTConverter))]
+    [JsonConverter(typeof(PrimitiveConverter))]
     public abstract class String<T> where T : String<T>
     {
         private readonly string value;

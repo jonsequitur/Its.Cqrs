@@ -5,6 +5,7 @@ using System;
 using FluentAssertions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
 
@@ -105,6 +106,70 @@ namespace Microsoft.Its.Domain.Tests
             var id = new GenericObjectId<string>("hello");
 
             id.ToString().Should().Be("hello");
+        }
+
+        [Test]
+        public void ObjectId_of_String_serializes_to_a_JSON_primitive()
+        {
+            var json = JsonConvert.SerializeObject(new GenericObjectId<string>("hello"));
+
+            json.Should().Be("\"hello\"");
+        }
+
+        [Test]
+        public void ObjectId_of_String_derived_classes_deserialize_from_JSON_primitives()
+        {
+            var json = "\"hello\"";
+
+            var s = JsonConvert.DeserializeObject<GenericObjectId<string>>(json);
+
+            s.Value.Should().Be("hello");
+        }
+
+        [Test]
+        public void ObjectId_of_String_derived_classes_deserialize_from_JSON_objects()
+        {
+            var json = "{\"Value\":\"hello\"}";
+
+            var s = JsonConvert.DeserializeObject<GenericObjectId<string>>(json);
+
+            s.Value.Should().Be("hello");
+        }
+
+        [Test]
+        public void ObjectId_of_int_serializes_to_a_JSON_primitive()
+        {
+            var json = JsonConvert.SerializeObject(new GenericObjectId<int>(1));
+
+            json.Should().Be("1");
+        }
+
+        [Test]
+        public void ObjectId_of_int_derived_classes_deserialize_from_JSON_primitives()
+        {
+            var json = "1";
+
+            var s = JsonConvert.DeserializeObject<GenericObjectId<int>>(json);
+
+            s.Value.Should().Be(1);
+        }
+
+        [Test]
+        public void ObjectId_of_int_derived_classes_deserialize_from_JSON_objects()
+        {
+            var json = "{\"Value\":1}";
+
+            var s = JsonConvert.DeserializeObject<GenericObjectId<int>>(json);
+
+            s.Value.Should().Be(1);
+        }
+
+        [Test]
+        public void ObjectId_of_int_correctly_serializes_to_null()
+        {
+            GenericObjectId<int> id = null;
+            var s = JsonConvert.SerializeObject(id);
+            s.Should().Be("null");
         }
     }
 
