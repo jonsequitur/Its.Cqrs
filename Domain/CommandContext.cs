@@ -109,7 +109,7 @@ namespace Microsoft.Its.Domain
 
             var count = Interlocked.Increment(ref etagCount);
 
-            var unhashedEtag = string.Format("{0}:{1} ({2})", Command.ETag, forTargetToken, count);
+            var unhashedEtag = string.Format("{0}:{1} ({2})", Command.ETag, "", count);
 
             return unhashedEtag.ToETag();
         }

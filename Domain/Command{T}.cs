@@ -33,12 +33,10 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public static Func<TAggregate, Command<TAggregate>, bool> AuthorizeDefault = (aggregate, command) => command.Principal.IsAuthorizedTo(command, aggregate);
 
-        private readonly string commandName;
         private dynamic handler;
 
         protected Command(string etag = null) : base(etag)
         {
-            commandName = GetType().Name;
         }
 
         /// <summary>
@@ -153,12 +151,12 @@ namespace Microsoft.Its.Domain
 
         private bool CommandHandlerIsRegistered()
         {
-            return handlerTypesByName.GetOrAdd(commandName, name =>
+            return handlerTypesByName.GetOrAdd(CommandName, name =>
             {
                 var handlerType = CommandHandler.Type(typeof (TAggregate), GetType());
                 var handlerTypes = CommandHandler.KnownTypes.DerivedFrom(handlerType).ToArray();
 
-                var numberOfHandlerTypes = handlerTypes.Count();
+                var numberOfHandlerTypes = handlerTypes.Length;
 
                 if (numberOfHandlerTypes == 1)
                 {
@@ -190,7 +188,7 @@ namespace Microsoft.Its.Domain
             {
                 if (handler == null && CommandHandlerIsRegistered())
                 {
-                    handler = Configuration.Current.Container.Resolve(handlerTypesByName[commandName]);
+                    handler = Configuration.Current.Container.Resolve(handlerTypesByName[CommandName]);
                 }
 
                 return handler;
@@ -320,17 +318,6 @@ namespace Microsoft.Its.Domain
             get
             {
                 return Validation.GetDefaultPlanFor(GetType());
-            }
-        }
-
-        /// <summary>
-        ///     Gets the name of the command.
-        /// </summary>
-        public override string CommandName
-        {
-            get
-            {
-                return commandName;
             }
         }
 

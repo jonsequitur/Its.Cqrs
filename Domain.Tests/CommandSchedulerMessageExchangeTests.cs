@@ -22,7 +22,6 @@ namespace Microsoft.Its.Domain.Tests
     {
         private CompositeDisposable disposables;
         private Configuration configuration;
-        private IEventSourcedRepository<MarcoPoloPlayerWhoIsNotIt> playerRepo;
         private IEventSourcedRepository<MarcoPoloPlayerWhoIsIt> itRepo;
 
         [SetUp]
@@ -37,7 +36,6 @@ namespace Microsoft.Its.Domain.Tests
                 .UseInMemoryCommandScheduling()
                 .UseInMemoryEventStore(traceEvents: true);
 
-            playerRepo = configuration.Repository<MarcoPoloPlayerWhoIsNotIt>();
             itRepo = configuration.Repository<MarcoPoloPlayerWhoIsIt>();
 
             disposables.Add(ConfigurationContext.Establish(configuration));

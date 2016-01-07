@@ -28,7 +28,13 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the name of the command.
         /// </summary>
-        public abstract string CommandName { get; }
+        public virtual string CommandName
+        {
+            get
+            {
+                return GetType().Name;
+            }
+        }
 
         /// <summary>
         /// Gets the ETag for the command.
@@ -59,7 +65,7 @@ namespace Microsoft.Its.Domain
                 throw new InvalidOperationException("ETag is already assigned.");
             }
 
-            ETag = Hash.ToETag(Guid.NewGuid().ToString("N"));
+            ETag = Guid.NewGuid().ToString("N").ToETag();
         }
 
         private static readonly Lazy<Dictionary<Tuple<Type, string>, Type>> index = new Lazy<Dictionary<Tuple<Type, string>, Type>>
