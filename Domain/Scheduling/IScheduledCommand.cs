@@ -8,7 +8,7 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// Represents that a command has been scheduled for future execution.
     /// </summary>
-    public interface IScheduledCommand : IEvent
+    public interface IScheduledCommand
     {
         /// <summary>
         /// Gets the time at which the command is scheduled to be applied.

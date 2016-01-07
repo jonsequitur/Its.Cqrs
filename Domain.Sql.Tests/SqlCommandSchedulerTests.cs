@@ -817,7 +817,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             //assert 
             result.SuccessfulCommands
                   .Should()
-                  .ContainSingle(c => c.ScheduledCommand.AggregateId == order.Id);
+                  .ContainSingle(a => a.ScheduledCommand
+                                       .IfTypeIs<IScheduledCommand<Order>>()
+                                       .Then(c => c.AggregateId == order.Id)
+                                       .ElseDefault());
         }
 
         [Test]
@@ -842,7 +845,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             //assert 
             result.SuccessfulCommands
                   .Should()
-                  .ContainSingle(c => c.ScheduledCommand.AggregateId == order.Id);
+                  .ContainSingle(a => a.ScheduledCommand
+                                       .IfTypeIs<IScheduledCommand<Order>>()
+                                       .Then(c => c.AggregateId == order.Id)
+                                       .ElseDefault());
         }
 
         [Test]

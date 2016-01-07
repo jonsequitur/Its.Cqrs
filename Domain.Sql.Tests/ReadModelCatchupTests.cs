@@ -303,7 +303,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 };
             });
 
-            var projector = Projector.Create<IScheduledCommand>(e => { }).Named(MethodBase.GetCurrentMethod().Name);
+            var projector = Projector.Create<CommandScheduled<Order>>(e => { }).Named(MethodBase.GetCurrentMethod().Name);
             var eventsQueried = 0;
 
             using (var catchup = CreateReadModelCatchup(projector))
@@ -349,7 +349,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 };
             });
 
-            var projector = Projector.Create<IScheduledCommand<Order>>(e => { }).Named(MethodBase.GetCurrentMethod().Name);
+            var projector = Projector.Create<CommandScheduled<Order>>(e => { }).Named(MethodBase.GetCurrentMethod().Name);
             var eventsQueried = 0;
 
             using (var catchup = CreateReadModelCatchup(projector))

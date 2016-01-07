@@ -24,8 +24,7 @@ namespace Microsoft.Its.Domain.ServiceBus
     [System.Diagnostics.DebuggerStepThrough]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
-    public class ServiceBusCommandQueueSender : IEventHandler,
-                                                IEventHandlerBinder
+    public class ServiceBusCommandQueueSender
     {
         private readonly ISubject<IScheduledCommand> messageSubject = new Subject<IScheduledCommand>();
         private readonly ISubject<Exception> exceptionSubject = new Subject<Exception>();
@@ -62,28 +61,6 @@ namespace Microsoft.Its.Domain.ServiceBus
                 return messageSubject;
             }
         }
-
-        IEnumerable<IEventHandlerBinder> IEventHandler.GetBinders()
-        {
-            return new[] { this };
-        }
-
-        /// <summary>
-        /// Subscribes the specified handler to the event bus.
-        /// </summary>
-        /// <param name="handler">The handler.</param>
-        /// <param name="bus">The bus.</param>
-        public IDisposable SubscribeToBus(object handler, IEventBus bus)
-        {
-            queueClient = CreateQueueClient(settings);
-
-            return new CompositeDisposable
-            {
-                bus.Events<IScheduledCommand>().Subscribe(c => Enqueue(c)),
-                exceptionSubject.Subscribe(ex => bus.PublishErrorAsync(new EventHandlingError(ex, handler))),
-                Disposable.Create(() => queueClient.Close())
-            };
-        }
         
         internal static QueueClient CreateQueueClient(ServiceBusSettings settings)
         {
@@ -103,7 +80,8 @@ namespace Microsoft.Its.Domain.ServiceBus
         {
             var message = new BrokeredMessage(scheduledCommand.ToJson())
             {
-                SessionId = scheduledCommand.AggregateId.ToString()
+                // FIX: (Enqueue)  
+                // SessionId = scheduledCommand.AggregateId.ToString()
             };
 
             if (scheduledCommand.DueTime != null)
