@@ -650,7 +650,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
                         // all but the last command (which didn't come due yet) should have been marked as applied
                         scheduledCommands
-                            .Reverse()
+                            .OrderByDescending(c => c.CreatedTime)
                             .Skip(1)
                             .Should()
                             .OnlyContain(c => c.AppliedTime != null);
@@ -726,7 +726,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
                         // all but the last command (which didn't come due yet) should have been marked as applied
                         scheduledCommands
-                            .Reverse()
+                            .OrderByDescending(c => c.CreatedTime)
                             .Skip(1)
                             .Should()
                             .OnlyContain(c => c.AppliedTime != null);

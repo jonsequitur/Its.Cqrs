@@ -91,7 +91,7 @@ namespace Microsoft.Its.Domain
                         });
         }
 
-        internal static IScheduledCommand<TAggregate> CreateScheduledCommand<TCommand, TAggregate>(
+        internal static ScheduledCommand<TAggregate> CreateScheduledCommand<TCommand, TAggregate>(
             Guid aggregateId,
             TCommand command,
             DateTimeOffset? dueTime,
@@ -107,7 +107,7 @@ namespace Microsoft.Its.Domain
                     throw new ArgumentException("An AggregateId must be set on the event on which the scheduled command depends.");
                 }
 
-                if (String.IsNullOrWhiteSpace(deliveryDependsOn.ETag))
+                if (string.IsNullOrWhiteSpace(deliveryDependsOn.ETag))
                 {
                     deliveryDependsOn.IfTypeIs<Event>()
                                      .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N"))
@@ -124,7 +124,7 @@ namespace Microsoft.Its.Domain
                 };
             }
 
-            if (String.IsNullOrEmpty(command.ETag))
+            if (string.IsNullOrEmpty(command.ETag))
             {
                 command.IfTypeIs<Command>()
                        .ThenDo(c => c.ETag = CommandContext.Current
@@ -133,7 +133,7 @@ namespace Microsoft.Its.Domain
                                                            .Else(() => Guid.NewGuid().ToString("N")));
             }
 
-            var scheduledCommand = new CommandScheduled<TAggregate>
+            return new ScheduledCommand<TAggregate>
             {
                 Command = command,
                 DueTime = dueTime,
@@ -141,7 +141,21 @@ namespace Microsoft.Its.Domain
                 SequenceNumber = -DateTimeOffset.UtcNow.Ticks,
                 DeliveryPrecondition = precondition
             };
-            return scheduledCommand;
+        }
+
+        public static Event<TAggregate> ToEvent<TAggregate>(
+            this ScheduledCommand<TAggregate> scheduledCommand) 
+            where TAggregate : IEventSourced
+        {
+            return new CommandScheduled<TAggregate>
+            {
+                Command = scheduledCommand.Command,
+                DeliveryPrecondition = scheduledCommand.DeliveryPrecondition,
+                SequenceNumber = scheduledCommand.SequenceNumber,
+                AggregateId = scheduledCommand.AggregateId,
+                DueTime = scheduledCommand.DueTime,
+                Result = scheduledCommand.Result
+            };
         }
 
         public static async Task<IScheduledCommand<TAggregate>> Schedule<TCommand, TAggregate>(

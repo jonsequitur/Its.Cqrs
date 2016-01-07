@@ -20,14 +20,26 @@ namespace Microsoft.Its.Domain
         IScheduledCommand<TAggregate>
         where TAggregate : IEventSourced
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandScheduled{TAggregate}"/> class.
+        /// </summary>
         public CommandScheduled()
         {
             ETag = Guid.NewGuid().ToString("N");
         }
 
+        /// <summary>
+        /// Gets the command to be applied at a later time.
+        /// </summary>
         [JsonConverter(typeof (CommandConverter))]
         public ICommand<TAggregate> Command { get; set; }
 
+        /// <summary>
+        /// Gets the time at which the command is scheduled to be applied.
+        /// </summary>
+        /// <remarks>
+        /// If this value is null, the command should be delivered as soon as possible.
+        /// </remarks>
         public DateTimeOffset? DueTime { get; set; }
 
         /// <summary>
@@ -38,10 +50,23 @@ namespace Microsoft.Its.Domain
         [JsonIgnore]
         public ScheduledCommandResult Result { get; set; }
 
+        /// <summary>
+        /// Updates an aggregate to a new state.
+        /// </summary>
+        /// <param name="aggregate">The aggregate to be updated.</param>
+        /// <remarks>
+        /// This method is called when materializing an aggregate from an event stream.
+        /// </remarks>
         public override void Update(TAggregate aggregate)
         {
         }
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
         public override string ToString()
         {
             return string.Format("{0}{1}{2}{3}",
