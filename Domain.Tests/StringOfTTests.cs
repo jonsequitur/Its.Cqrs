@@ -224,6 +224,16 @@ namespace Microsoft.Its.Domain.Tests
             s.Should().Be("null");
         }
 
+        [Test]
+        public void StringT_of_int_correctly_deserialized_from_null()
+        {
+            var json = "{\"CountryCode\":null}";
+
+            var s = JsonConvert.DeserializeObject<Address>(json);
+
+            s.CountryCode.Should().Be(null);
+        }
+
         public class Address
         {
             public CountryCode CountryCode { get; set; }

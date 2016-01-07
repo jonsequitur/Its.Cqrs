@@ -171,6 +171,16 @@ namespace Microsoft.Its.Domain.Tests
             var s = JsonConvert.SerializeObject(id);
             s.Should().Be("null");
         }
+
+        [Test]
+        public void ObjectId_of_int_correctly_deserialized_from_null()
+        {
+            var json = "{\"Id\":null}";
+
+            var s = JsonConvert.DeserializeObject<Widget>(json);
+
+            s.Id.Should().Be(null);
+        }
     }
 
     public class Widget

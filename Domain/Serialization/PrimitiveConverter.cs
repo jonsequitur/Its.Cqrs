@@ -20,8 +20,12 @@ namespace Microsoft.Its.Domain.Serialization
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            var deserialize = deserializers.GetOrAdd(objectType,CreateDeserializer);
             var jToken = JToken.ReadFrom(reader);
+            if (jToken == null || string.IsNullOrEmpty(jToken.ToString()))
+            {
+                return null;
+            }
+            var deserialize = deserializers.GetOrAdd(objectType,CreateDeserializer);
             return deserialize(jToken);
         }
 
