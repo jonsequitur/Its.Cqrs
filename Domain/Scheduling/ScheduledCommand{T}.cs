@@ -1,6 +1,3 @@
-// Copyright (c) Microsoft. All rights reserved. 
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
 using System;
 using System.Diagnostics;
 using Microsoft.Its.Domain.Serialization;
@@ -15,24 +12,25 @@ namespace Microsoft.Its.Domain
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
     [EventName("Scheduled")]
     [DebuggerDisplay("{ToString()}")]
-    public class CommandScheduled<TAggregate> :
-        Event<TAggregate>,
+    public class ScheduledCommand<TAggregate> :
         IScheduledCommand<TAggregate>
         where TAggregate : IEventSourced
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandScheduled{TAggregate}"/> class.
-        /// </summary>
-        public CommandScheduled()
-        {
-            ETag = Guid.NewGuid().ToString("N");
-        }
-
         /// <summary>
         /// Gets the command to be applied at a later time.
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
         public ICommand<TAggregate> Command { get; set; }
+
+        /// <summary>
+        /// Gets the id of the aggregate to which the command will be applied when delivered.
+        /// </summary>
+        public Guid AggregateId { get; set; }
+
+        /// <summary>
+        /// Gets the sequence number of the scheduled command.
+        /// </summary>
+        public long SequenceNumber { get; set; }
 
         /// <summary>
         /// Gets the time at which the command is scheduled to be applied.
@@ -49,17 +47,6 @@ namespace Microsoft.Its.Domain
 
         [JsonIgnore]
         public ScheduledCommandResult Result { get; set; }
-
-        /// <summary>
-        /// Updates an aggregate to a new state.
-        /// </summary>
-        /// <param name="aggregate">The aggregate to be updated.</param>
-        /// <remarks>
-        /// This method is called when materializing an aggregate from an event stream.
-        /// </remarks>
-        public override void Update(TAggregate aggregate)
-        {
-        }
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.

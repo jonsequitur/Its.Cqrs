@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
+using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
@@ -33,8 +34,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     .Should()
                     .Contain(new[]
                     {
-                        typeof (IScheduledCommand<Order>),
-                        typeof (IScheduledCommand<CustomerAccount>)
+                        typeof (CommandScheduled<Order>),
+                        typeof (CommandScheduled<CustomerAccount>)
                     });
         }
 
@@ -75,7 +76,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 //assert 
                 activity.Should()
-                        .ContainSingle(a => a.ScheduledCommand.AggregateId == order.Id &&
+                        .ContainSingle(a => a.ScheduledCommand
+                                             .IfTypeIs<IScheduledCommand<Order>>()
+                                             .Then(c => c.AggregateId == order.Id)
+                                             .ElseDefault() &&
                                             a is CommandScheduled);
             }
         }
@@ -102,7 +106,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 //assert 
                 activity.Should()
-                        .ContainSingle(a => a.ScheduledCommand.AggregateId == order.Id &&
+                        .ContainSingle(a => a.ScheduledCommand
+                                             .IfTypeIs<IScheduledCommand<Order>>()
+                                             .Then(c => c.AggregateId == order.Id)
+                                             .ElseDefault() &&
                                             a is CommandSucceeded);
             }
         }
@@ -125,7 +132,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 //assert 
                 activity.Should()
-                        .ContainSingle(a => a.ScheduledCommand.AggregateId == order.Id &&
+                        .ContainSingle(a => a.ScheduledCommand
+                                             .IfTypeIs<IScheduledCommand<Order>>()
+                                             .Then(c => c.AggregateId == order.Id)
+                                             .ElseDefault() &&
                                             a is CommandSucceeded);
             }
         }

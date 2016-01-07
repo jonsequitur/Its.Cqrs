@@ -60,21 +60,5 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                         .ElseDefault();
             }
         }
-
-        DateTimeOffset IEvent.Timestamp
-        {
-            get
-            {
-                return CreatedTime;
-            }
-        }
-
-        string IEvent.ETag
-        {
-            get
-            {
-                return null;
-            }
-        }
     }
 }

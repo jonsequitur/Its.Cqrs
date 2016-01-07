@@ -65,7 +65,7 @@ namespace Microsoft.Its.Domain
         ///     Records an event, updating the aggregate's state and adding the event to PendingEvents.
         /// </summary>
         /// <remarks>It is not necessary to specify the AggregateId or SequenceNumber properties on the recorded event. The <see cref="EventSourcedAggregate" /> class handles this.</remarks>
-        protected Event<T> RecordEvent(Event<T> e)
+        protected IEvent<T> RecordEvent(IEvent<T> e)
         {
             AddPendingEvent(e);
             e.Update((T)this);
@@ -102,22 +102,24 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("command");
             }
 
-            var scheduled = (CommandScheduled<T>) CommandScheduler.CreateScheduledCommand<TCommand, T>(
+            var scheduled = CommandScheduler.CreateScheduledCommand<TCommand, T>(
                 Id,
                 command,
                 due);
 
-            RecordEvent(scheduled);
+            var commandScheduledEvent = scheduled.ToEvent();
 
             if (Configuration.Current.IsUsingCommandSchedulerPipeline())
             {
                 scheduled.DeliveryPrecondition = new CommandPrecondition
                 {
                     AggregateId = Id,
-                    ETag = scheduled.ETag
+                    ETag = commandScheduledEvent.ETag
                 };
                 await Configuration.Current.CommandScheduler<T>().Schedule(scheduled);
             }
+
+            RecordEvent(commandScheduledEvent);
         }
 
         internal virtual void HandleCommandValidationFailure(ICommand command, ValidationReport validationReport)

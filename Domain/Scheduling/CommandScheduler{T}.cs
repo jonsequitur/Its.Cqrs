@@ -10,7 +10,7 @@ namespace Microsoft.Its.Domain
     /// A basic command scheduler implementation that can be used as the basis for composing command scheduling behaviors.
     /// </summary>
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
-    internal  class CommandScheduler<TAggregate> :
+    internal class CommandScheduler<TAggregate> :
         ICommandScheduler<TAggregate>
         where TAggregate : class, IEventSourced
     {
@@ -80,7 +80,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Verifies that the command precondition has been met.
         /// </summary>
-        protected async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
+        private async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
         {
             return await preconditionVerifier.IsPreconditionSatisfied(scheduledCommand);
         }

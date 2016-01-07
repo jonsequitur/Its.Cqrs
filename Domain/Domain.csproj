@@ -149,6 +149,7 @@
     <Compile Include="Scheduling\ScheduledCommandExtensions.cs" />
     <Compile Include="Scheduling\ScheduledCommandInterceptor{T}.cs" />
     <Compile Include="Scheduling\CommandSchedulerPipelineInitializer.cs" />
+    <Compile Include="Scheduling\ScheduledCommand{T}.cs" />
     <Compile Include="Serialization\PrimitiveConverter.cs" />
     <Compile Include="Snapshots\ICreateSnapshot{T}.cs" />
     <Compile Include="Snapshots\InMemorySnapshotRepository{T}.cs" />

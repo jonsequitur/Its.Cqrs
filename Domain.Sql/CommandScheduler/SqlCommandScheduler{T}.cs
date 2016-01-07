@@ -21,7 +21,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public Func<IScheduledCommand<TAggregate>, string> GetClockLookupKey = cmd => null;
         public GetClockName GetClockName = cmd => null;
         private readonly CommandPreconditionVerifier commandPreconditionVerifier;
-        private readonly IHaveConsequencesWhen<IScheduledCommand<TAggregate>> consequenter;
+        private readonly IHaveConsequencesWhen<CommandScheduled<TAggregate>> consequenter;
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
         private readonly IEventBus eventBus;
         private readonly Func<IEventSourcedRepository<TAggregate>> getRepository;
@@ -52,7 +52,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
             this.eventBus = eventBus;
             this.commandPreconditionVerifier = commandPreconditionVerifier;
-            consequenter = Consequenter.Create<IScheduledCommand<TAggregate>>(e =>
+            consequenter = Consequenter.Create<CommandScheduled<TAggregate>>(e =>
             {
                 Task.Run(() => Schedule(e)).Wait();
             });
@@ -162,7 +162,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                           .Else(() => "[null]"),
                 Clocks = Domain.Clock.Current.ToString(),
                 scheduledCommand.AggregateId,
-                scheduledCommand.ETag
+                scheduledCommand.Command.ETag
             }.ToString();
         }
     }
