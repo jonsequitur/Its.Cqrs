@@ -21,16 +21,15 @@ namespace Microsoft.Its.Domain.Api.Tests
     [TestFixture]
     public class ValidationTests
     {
-        private static object workaround = typeof (OrderApiController);
+        // this is a shim to make sure that the Sample.Domain.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
+        private static object workaround = typeof(OrderApiController);
 
-        static ValidationTests()
+        [SetUp]
+        public void SetUp()
         {
+            TestSetUp.InitializeEventStore();
             Logging.Configure();
             Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
-        }
-
-        public ValidationTests()
-        {
             Command<Order>.AuthorizeDefault = (order, command) => true;
         }
 

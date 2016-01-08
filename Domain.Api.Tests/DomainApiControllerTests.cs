@@ -23,6 +23,12 @@ namespace Microsoft.Its.Domain.Api.Tests
         // this is a shim to make sure that the Sample.Domain.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
         private static object workaround = typeof (OrderApiController);
 
+        [SetUp]
+        public void SetUp()
+        {
+            TestSetUp.InitializeEventStore();
+        }
+
         [Test]
         public async Task ApplyBatch_can_accept_an_array_of_commands()
         {

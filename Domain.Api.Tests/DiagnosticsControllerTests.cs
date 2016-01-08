@@ -18,6 +18,12 @@ namespace Microsoft.Its.Domain.Api.Tests
     [TestFixture]
     public class DiagnosticsControllerTests
     {
+        [TestFixtureSetUp]
+        public void TestFixtureSetUp()
+        {
+            TestSetUp.InitializeEventStore();
+        }
+
         [Ignore("Test not finished")]
         [Test]
         public void Related_events_are_available_via_diagnostics_endpoint()
