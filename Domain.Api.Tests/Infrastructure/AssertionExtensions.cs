@@ -37,9 +37,9 @@ namespace Microsoft.Its.Domain.Api.Tests.Infrastructure
                                       actualStatusCode));
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                ThrowVerboseAssertion(response, ex);
+                ThrowVerboseAssertion(response);
             }
             return response;
         }
@@ -48,13 +48,13 @@ namespace Microsoft.Its.Domain.Api.Tests.Infrastructure
         {
             if (response.StatusCode != code)
             {
-                ThrowVerboseAssertion(response, null);
+                ThrowVerboseAssertion(response);
             }
 
             return response;
         }
 
-        private static void ThrowVerboseAssertion(HttpResponseMessage response, Exception ex)
+        private static void ThrowVerboseAssertion(HttpResponseMessage response)
         {
             var message = string.Format("{0}{1}{1}{2}",
                                         response,
