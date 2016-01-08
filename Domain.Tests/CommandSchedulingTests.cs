@@ -7,7 +7,6 @@ using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
-using System.Threading;
 using System.Threading.Tasks;
 using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Testing;
