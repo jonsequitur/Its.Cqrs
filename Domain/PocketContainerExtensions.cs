@@ -10,20 +10,39 @@ namespace Microsoft.Its.Domain
     {
         public static PocketContainer UseImmediateCommandScheduling(this PocketContainer container)
         {
-            return container.AddStrategy(type =>
+            container.AddStrategy(type =>
             {
                 if (type.IsInterface &&  
                     type.IsGenericType && 
                     type.GetGenericTypeDefinition() == typeof(ICommandScheduler<>))
                 {
-                    var aggregateType = type.GetGenericArguments().First();
-                    var schedulerType = typeof (CommandScheduler<>).MakeGenericType(aggregateType);
+                    var targetType = type.GetGenericArguments().First();
+                    var schedulerType = typeof (CommandScheduler<>).MakeGenericType(targetType);
 
                     return c => c.Resolve(schedulerType);
                 }
 
                 return null;
             });
+
+            container.AddStrategy(type =>
+            {
+                if (type.IsInterface &&
+                    type.IsGenericType &&
+                    type.GetGenericTypeDefinition() == typeof(ICanHaveCommandsApplied<>))
+                {
+                    var targetType = type.GetGenericArguments().First();
+                    var schedulerType = typeof(EventSourcedCommandApplier<>).MakeGenericType(targetType);
+
+                    return c => c.Resolve(schedulerType);
+                }
+
+                return null;
+            });
+
+
+
+            return container;
         }
     }
 }
