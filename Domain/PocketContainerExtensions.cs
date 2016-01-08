@@ -29,7 +29,7 @@ namespace Microsoft.Its.Domain
             {
                 if (type.IsInterface &&
                     type.IsGenericType &&
-                    type.GetGenericTypeDefinition() == typeof(ICanHaveCommandsApplied<>))
+                    type.GetGenericTypeDefinition() == typeof(ICommandApplier<>))
                 {
                     var targetType = type.GetGenericArguments().First();
                     var schedulerType = typeof(EventSourcedCommandApplier<>).MakeGenericType(targetType);

@@ -137,6 +137,7 @@
     <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
     <Compile Include="ExceptionExtensions.cs" />
     <Compile Include="Scheduling\EventSourcedCommandApplier.cs" />
+    <Compile Include="Scheduling\ICommandApplier.cs" />
     <Compile Include="Scheduling\ICommandSchedulerPipelineInitializer.cs" />
     <Compile Include="Scheduling\ISpecifySchedulingBehavior.cs" />
     <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />

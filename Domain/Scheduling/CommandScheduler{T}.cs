@@ -14,11 +14,11 @@ namespace Microsoft.Its.Domain
         ICommandScheduler<TAggregate>
         where TAggregate : class, IEventSourced
     {
-        protected readonly ICanHaveCommandsApplied<TAggregate> Target;
+        protected readonly ICommandApplier<TAggregate> Target;
         private readonly ICommandPreconditionVerifier preconditionVerifier;
 
         public CommandScheduler(
-            ICanHaveCommandsApplied<TAggregate> target,
+            ICommandApplier<TAggregate> target,
             ICommandPreconditionVerifier preconditionVerifier = null)
         {
             if (target == null)
@@ -84,10 +84,5 @@ namespace Microsoft.Its.Domain
         {
             return await preconditionVerifier.IsPreconditionSatisfied(scheduledCommand);
         }
-    }
-
-    internal interface ICanHaveCommandsApplied<out T>
-    {
-        Task ApplyScheduledCommand(IScheduledCommand<T> scheduledCommand, ICommandPreconditionVerifier preconditionVerifier);
     }
 }

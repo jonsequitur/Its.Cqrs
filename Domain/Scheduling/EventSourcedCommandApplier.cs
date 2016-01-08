@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
-    internal class EventSourcedCommandApplier<TAggregate> : ICanHaveCommandsApplied<TAggregate> where TAggregate : class, IEventSourced
+    internal class EventSourcedCommandApplier<TAggregate> : ICommandApplier<TAggregate> where TAggregate : class, IEventSourced
     {
         private readonly IEventSourcedRepository<TAggregate> repository;
 
