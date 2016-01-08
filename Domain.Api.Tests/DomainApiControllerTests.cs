@@ -12,6 +12,7 @@ using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.Tests;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
+using Sample.Domain.Api.Controllers;
 using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Api.Tests
@@ -19,6 +20,9 @@ namespace Microsoft.Its.Domain.Api.Tests
     [TestFixture]
     public class DomainApiControllerTests : EventStoreDbTest
     {
+        // this is a shim to make sure that the Sample.Domain.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
+        private static object workaround = typeof (OrderApiController);
+
         [Test]
         public async Task ApplyBatch_can_accept_an_array_of_commands()
         {
