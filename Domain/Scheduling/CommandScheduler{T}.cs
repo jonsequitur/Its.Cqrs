@@ -14,18 +14,18 @@ namespace Microsoft.Its.Domain
         ICommandScheduler<TAggregate>
         where TAggregate : class, IEventSourced
     {
-        protected readonly IEventSourcedRepository<TAggregate> repository;
+        protected readonly ICommandApplier<TAggregate> Target;
         private readonly ICommandPreconditionVerifier preconditionVerifier;
 
         public CommandScheduler(
-            IEventSourcedRepository<TAggregate> repository,
+            ICommandApplier<TAggregate> target,
             ICommandPreconditionVerifier preconditionVerifier = null)
         {
-            if (repository == null)
+            if (target == null)
             {
-                throw new ArgumentNullException("repository");
+                throw new ArgumentNullException("target");
             }
-            this.repository = repository;
+            this.Target = target;
             this.preconditionVerifier = preconditionVerifier ??
                                         Configuration.Current.CommandPreconditionVerifier();
         }
@@ -74,7 +74,7 @@ namespace Microsoft.Its.Domain
         /// </remarks>
         public virtual async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            await repository.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
+            await Target.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
         }
 
         /// <summary>
