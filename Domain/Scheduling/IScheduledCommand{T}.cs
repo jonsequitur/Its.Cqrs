@@ -8,14 +8,13 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// Represents that a command has been scheduled for future execution against a specific aggregate type.
     /// </summary>
-    public interface IScheduledCommand<in TAggregate> :
+    public interface IScheduledCommand<in TTarget> :
         IScheduledCommand
-        where TAggregate : IEventSourced
     {
         /// <summary>
         /// Gets the command to be applied at a later time.
         /// </summary>
-        ICommand<TAggregate> Command { get; }
+        ICommand<TTarget> Command { get; }
 
         /// <summary>
         /// Gets the id of the aggregate to which the command will be applied when delivered.

@@ -9,23 +9,22 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// A basic command scheduler implementation that can be used as the basis for composing command scheduling behaviors.
     /// </summary>
-    /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
-    internal class CommandScheduler<TAggregate> :
-        ICommandScheduler<TAggregate>
-        where TAggregate : class, IEventSourced
+    /// <typeparam name="TTarget">The type of the command target.</typeparam>
+    internal class CommandScheduler<TTarget> : ICommandScheduler<TTarget> 
+        where TTarget : class
     {
-        protected readonly IEventSourcedRepository<TAggregate> repository;
+        private readonly ICommandApplier<TTarget> commandApplier;
         private readonly ICommandPreconditionVerifier preconditionVerifier;
 
         public CommandScheduler(
-            IEventSourcedRepository<TAggregate> repository,
+            ICommandApplier<TTarget> commandApplier,
             ICommandPreconditionVerifier preconditionVerifier = null)
         {
-            if (repository == null)
+            if (commandApplier == null)
             {
-                throw new ArgumentNullException("repository");
+                throw new ArgumentNullException("commandApplier");
             }
-            this.repository = repository;
+            this.commandApplier = commandApplier;
             this.preconditionVerifier = preconditionVerifier ??
                                         Configuration.Current.CommandPreconditionVerifier();
         }
@@ -38,7 +37,7 @@ namespace Microsoft.Its.Domain
         /// A task that is complete when the command has been successfully scheduled.
         /// </returns>
         /// <exception cref="System.NotSupportedException">Non-immediate scheduling is not supported.</exception>
-        public virtual async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
+        public virtual async Task Schedule(IScheduledCommand<TTarget> scheduledCommand)
         {
             if (scheduledCommand.Command.CanBeDeliveredDuringScheduling() && scheduledCommand.IsDue())
             {
@@ -51,7 +50,7 @@ namespace Microsoft.Its.Domain
                 else
                 {
                     // resolve the command scheduler so that delivery goes through the whole pipeline
-                    await Configuration.Current.CommandScheduler<TAggregate>().Deliver(scheduledCommand);
+                    await Configuration.Current.CommandScheduler<TTarget>().Deliver(scheduledCommand);
                     return;
                 }
             }
@@ -63,18 +62,18 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        /// Delivers the specified scheduled command to the target aggregate.
+        /// Delivers the specified scheduled command to the target.
         /// </summary>
-        /// <param name="scheduledCommand">The scheduled command to be applied to the aggregate.</param>
+        /// <param name="scheduledCommand">The scheduled command to be applied to the target.</param>
         /// <returns>
         /// A task that is complete when the command has been applied.
         /// </returns>
         /// <remarks>
         /// The scheduler will apply the command and save it, potentially triggering additional consequences.
         /// </remarks>
-        public virtual async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
+        public virtual async Task Deliver(IScheduledCommand<TTarget> scheduledCommand)
         {
-            await repository.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
+            await commandApplier.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
         }
 
         /// <summary>

@@ -55,20 +55,20 @@ namespace Microsoft.Its.Domain
                                                         async cc => await next(cc)))));
         }
 
-        internal static async Task DeliverImmediatelyOnConfiguredScheduler<TAggregate>(
-            IScheduledCommand<TAggregate> command,
+        internal static async Task DeliverImmediatelyOnConfiguredScheduler<TTarget>(
+            IScheduledCommand<TTarget> command,
             Configuration configuration)
-            where TAggregate : class, IEventSourced
+            where TTarget : class
         {
-            var scheduler = configuration.CommandScheduler<TAggregate>();
+            var scheduler = configuration.CommandScheduler<TTarget>();
             await scheduler.Deliver(command);
         }
 
-        internal static void DeliverIfPreconditionIsSatisfiedSoon<TAggregate>(
-            IScheduledCommand<TAggregate> scheduledCommand,
+        internal static void DeliverIfPreconditionIsSatisfiedSoon<TTarget>(
+            IScheduledCommand<TTarget> scheduledCommand,
             Configuration configuration,
             int timeoutInMilliseconds = 10000)
-            where TAggregate : class, IEventSourced
+            where TTarget : class
         {
             var eventBus = configuration.EventBus;
 

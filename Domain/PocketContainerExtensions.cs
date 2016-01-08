@@ -16,9 +16,32 @@ namespace Microsoft.Its.Domain
                     type.IsGenericType && 
                     type.GetGenericTypeDefinition() == typeof(ICommandScheduler<>))
                 {
-                    var aggregateType = type.GetGenericArguments().First();
-                    var schedulerType = typeof (CommandScheduler<>).MakeGenericType(aggregateType);
+                    var targetType = type.GetGenericArguments().First();
+                    var schedulerType = typeof (CommandScheduler<>).MakeGenericType(targetType);
 
+                    return c => c.Resolve(schedulerType);
+                }
+
+                return null;
+            });
+        }
+
+        public static PocketContainer UseAppropriateCommandAppliers(this PocketContainer container)
+        {
+            return container.AddStrategy(type =>
+            {
+                if (type.IsInterface &&
+                    type.IsGenericType &&
+                    type.GetGenericTypeDefinition() == typeof(ICommandApplier<>))
+                {
+                    var targetType = type.GetGenericArguments().First();
+                    if (typeof(IEventSourced).IsAssignableFrom(targetType))
+                    {
+                        var applierType = typeof (EventSourcedCommandApplier<>).MakeGenericType(targetType);
+                        return c => c.Resolve(applierType);
+                    }
+
+                    var schedulerType = typeof(CommandApplier<>).MakeGenericType(targetType);
                     return c => c.Resolve(schedulerType);
                 }
 
