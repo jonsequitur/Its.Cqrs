@@ -225,7 +225,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void StringT_of_int_correctly_deserialized_from_null()
+        public void StringT_correctly_deserializes_null()
         {
             var json = "{\"CountryCode\":null}";
 
