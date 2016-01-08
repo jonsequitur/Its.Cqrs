@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
@@ -8,6 +9,11 @@ namespace Microsoft.Its.Domain
 
         public EventSourcedCommandApplier(IEventSourcedRepository<TAggregate> repository)
         {
+            if (repository == null)
+            {
+                throw new ArgumentNullException("repository");
+            }
+
             this.repository = repository;
         }
 

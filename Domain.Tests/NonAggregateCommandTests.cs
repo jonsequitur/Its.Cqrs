@@ -5,7 +5,7 @@ using NUnit.Framework;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
-    public class CommandTests
+    public class NonAggregateCommandTests
     {
         [Test]
         public void non_event_sourced_command_schedulers_can_be_resolved()
@@ -14,7 +14,6 @@ namespace Microsoft.Its.Domain.Tests
 
             getScheduler.ShouldNotThrow();
         }
-
     }
 
     public class Foo
