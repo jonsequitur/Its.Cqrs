@@ -10,9 +10,8 @@ namespace Microsoft.Its.Domain
     /// A basic command scheduler implementation that can be used as the basis for composing command scheduling behaviors.
     /// </summary>
     /// <typeparam name="TTarget">The type of the command target.</typeparam>
-    internal class CommandScheduler<TTarget> :
-        ICommandScheduler<TTarget>
-        where TTarget : class, IEventSourced
+    internal class CommandScheduler<TTarget> : ICommandScheduler<TTarget> 
+        where TTarget : class
     {
         private readonly ICommandApplier<TTarget> commandApplier;
         private readonly ICommandPreconditionVerifier preconditionVerifier;
@@ -63,9 +62,9 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        /// Delivers the specified scheduled command to the target aggregate.
+        /// Delivers the specified scheduled command to the target.
         /// </summary>
-        /// <param name="scheduledCommand">The scheduled command to be applied to the aggregate.</param>
+        /// <param name="scheduledCommand">The scheduled command to be applied to the target.</param>
         /// <returns>
         /// A task that is complete when the command has been applied.
         /// </returns>
