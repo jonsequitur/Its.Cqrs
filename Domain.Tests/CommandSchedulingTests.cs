@@ -7,6 +7,7 @@ using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Threading;
 using System.Threading.Tasks;
 using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Testing;
@@ -32,14 +33,12 @@ namespace Microsoft.Its.Domain.Tests
         [SetUp]
         public void SetUp()
         {
+            disposables = new CompositeDisposable();
             // disable authorization
             Command<Order>.AuthorizeDefault = (o, c) => true;
             Command<CustomerAccount>.AuthorizeDefault = (o, c) => true;
 
-            disposables = new CompositeDisposable
-            {
-                VirtualClock.Start()
-            };
+            disposables.Add(VirtualClock.Start());
 
             customerAccountId = Any.Guid();
 
@@ -61,7 +60,10 @@ namespace Microsoft.Its.Domain.Tests
         [TearDown]
         public void TearDown()
         {
-            disposables.Dispose();
+            if (disposables != null)
+            {
+                disposables.Dispose();
+            }
         }
 
         [Test]
@@ -480,12 +482,14 @@ namespace Microsoft.Its.Domain.Tests
 
             // initialize twice
             new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
-                .Initialize(configuration);
+                .Initialize(Configuration.Current);
+
             new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
-                .Initialize(configuration);
+                .Initialize(Configuration.Current);
 
             // send a command
-            await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            await Configuration.Current.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+
 
             commandsScheduled.Count.Should().Be(1);
         }
