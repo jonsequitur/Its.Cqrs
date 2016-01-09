@@ -2,8 +2,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
-    internal interface ICommandApplier<out T>
+    internal interface ICommandApplier<out TTarget>
     {
-        Task ApplyScheduledCommand(IScheduledCommand<T> scheduledCommand, ICommandPreconditionVerifier preconditionVerifier);
+        Task ApplyScheduledCommand(IScheduledCommand<TTarget> scheduledCommand, ICommandPreconditionVerifier preconditionVerifier);
     }
 }
