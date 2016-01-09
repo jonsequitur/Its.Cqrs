@@ -40,9 +40,6 @@ namespace Microsoft.Its.Domain
                         var applierType = typeof (EventSourcedCommandApplier<>).MakeGenericType(targetType);
                         return c => c.Resolve(applierType);
                     }
-
-                    var schedulerType = typeof(CommandApplier<>).MakeGenericType(targetType);
-                    return c => c.Resolve(schedulerType);
                 }
 
                 return null;

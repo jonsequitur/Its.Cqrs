@@ -18,15 +18,14 @@ namespace Microsoft.Its.Domain
 
         public CommandScheduler(
             ICommandApplier<TTarget> commandApplier,
-            ICommandPreconditionVerifier preconditionVerifier = null)
+            ICommandPreconditionVerifier preconditionVerifier)
         {
             if (commandApplier == null)
             {
                 throw new ArgumentNullException("commandApplier");
             }
             this.commandApplier = commandApplier;
-            this.preconditionVerifier = preconditionVerifier ??
-                                        Configuration.Current.CommandPreconditionVerifier();
+            this.preconditionVerifier = preconditionVerifier;
         }
 
         /// <summary>
@@ -73,7 +72,7 @@ namespace Microsoft.Its.Domain
         /// </remarks>
         public virtual async Task Deliver(IScheduledCommand<TTarget> scheduledCommand)
         {
-            await commandApplier.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
+            await commandApplier.ApplyScheduledCommand(scheduledCommand);
         }
 
         /// <summary>

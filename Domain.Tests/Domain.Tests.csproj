@@ -131,7 +131,6 @@
     <Compile Include="CommandSchedulerTestAggregate.cs" />
     <Compile Include="CommandSchedulingTests.cs" />
     <Compile Include="AggregateCommandTests.cs" />
-    <Compile Include="NonAggregateCommandTests.cs" />
     <Compile Include="ConfigurationContextTests.cs" />
     <Compile Include="ConfigurationTests.cs" />
     <Compile Include="ConstructorCommandTests.cs" />

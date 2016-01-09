@@ -133,7 +133,6 @@
     <Compile Include="ICommandHandler{TAggregate,TCommand}.cs" />
     <Compile Include="ICommandPreconditionVerifier.cs" />
     <Compile Include="IEventMigratingAggregate.cs" />
-    <Compile Include="Scheduling\CommandApplier.cs" />
     <Compile Include="Scheduling\CommandDelivered.cs" />
     <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
     <Compile Include="ExceptionExtensions.cs" />
