@@ -31,7 +31,7 @@ namespace Microsoft.Its.Domain.Api.Tests
         public void Init()
         {
             EventStoreDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
 
             using (var eventStore = new EventStoreDbContext())
             {

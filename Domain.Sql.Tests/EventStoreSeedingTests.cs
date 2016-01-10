@@ -18,7 +18,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     public class EventStoreSeedingTests
     {
         private const string EventStoreConnectionString =
-            @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsEventStoreSeedingTests";
+            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsEventStoreSeedingTests";
 
         [SetUp]
         public void SetUp()
