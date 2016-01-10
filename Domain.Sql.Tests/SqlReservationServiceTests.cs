@@ -20,9 +20,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
         static SqlReservationServiceTests()
         {
             ReservationServiceDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsReservationService";
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsReservationService";
             EventStoreDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
             Database.SetInitializer(new ReservationServiceDatabaseInitializer());
             Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
 

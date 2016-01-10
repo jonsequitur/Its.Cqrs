@@ -14,7 +14,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         static SqlEventSourcedRepositoryMigrationTests()
         {
             EventStoreDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
             Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
         }
 

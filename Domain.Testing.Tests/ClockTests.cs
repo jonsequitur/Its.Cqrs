@@ -22,7 +22,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             Command<Order>.AuthorizeDefault = (order, command) => true;
             Clock.Reset();
             CommandSchedulerDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
         }
 
         [Test]

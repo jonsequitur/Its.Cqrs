@@ -34,7 +34,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         protected override ScenarioBuilder CreateScenarioBuilder()
         {
             CommandSchedulerDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
 
             var scenarioBuilder = new ScenarioBuilder()
                 .UseSqlCommandScheduler();
