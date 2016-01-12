@@ -16,26 +16,26 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Performs the action of the command upon the aggregate.
         /// </summary>
-        /// <param name="aggregate">The aggregate to which to apply the command.</param>
+        /// <param name="target">The aggregate to which to apply the command.</param>
         /// <exception cref="CommandValidationException">
         ///     If the command cannot be applied due its state or the state of the aggregate, it should throw a
         ///     <see
         ///         cref="CommandValidationException" />
         ///     indicating the specifics of the failure.
         /// </exception>
-        void ApplyTo(T aggregate);
+        void ApplyTo(T target);
 
         /// <summary>
         ///     Performs the action of the command upon the aggregate.
         /// </summary>
-        /// <param name="aggregate">The aggregate to which to apply the command.</param>
+        /// <param name="target">The aggregate to which to apply the command.</param>
         /// <exception cref="CommandValidationException">
         ///     If the command cannot be applied due its state or the state of the aggregate, it should throw a
         ///     <see
         ///         cref="CommandValidationException" />
         ///     indicating the specifics of the failure.
         /// </exception>
-        Task ApplyToAsync(T aggregate);
+        Task ApplyToAsync(T target);
 
         /// <summary>
         ///     Gets a validator that can be used to check the valididty of the command against the state of the aggregate before it is applied.

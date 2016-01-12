@@ -224,7 +224,7 @@ namespace Microsoft.Its.Domain
                 if (eventSourced != null && AppliesToVersion != eventSourced.Version)
                 {
                     throw new ConcurrencyException(
-                        string.Format("The command's AppliesToVersion value ({0}) does not match the target's version ({1})",
+                        string.Format("The command's AppliesToVersion value ({0}) does not match the aggregate's version ({1})",
                                       AppliesToVersion,
                                       eventSourced.Version));
                 }
