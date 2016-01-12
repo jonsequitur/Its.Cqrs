@@ -126,19 +126,5 @@ namespace Microsoft.Its.Domain
         {
             RecordEvent(new Annotated<T>(command.Message));
         }
-
-        internal virtual void HandleCommandValidationFailure(ICommand command, ValidationReport validationReport)
-        {
-            throw new CommandValidationException(
-                string.Format("Validation error while applying {0} to a {1}.",
-                              command.CommandName,
-                              GetType().Name),
-                validationReport);
-        }
-
-        protected void ThrowCommandValidationException(ICommand command, ValidationReport validationReport)
-        {
-            HandleCommandValidationFailure(command, validationReport);
-        }
     }
 }
