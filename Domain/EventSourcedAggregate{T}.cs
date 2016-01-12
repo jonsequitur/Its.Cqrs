@@ -122,6 +122,11 @@ namespace Microsoft.Its.Domain
             RecordEvent(commandScheduledEvent);
         }
 
+        public void EnactCommand(Annotate<T> command)
+        {
+            RecordEvent(new Annotated<T>(command.Message));
+        }
+
         internal virtual void HandleCommandValidationFailure(ICommand command, ValidationReport validationReport)
         {
             throw new CommandValidationException(
@@ -134,11 +139,6 @@ namespace Microsoft.Its.Domain
         protected void ThrowCommandValidationException(ICommand command, ValidationReport validationReport)
         {
             HandleCommandValidationFailure(command, validationReport);
-        }
-
-        public void EnactCommand(Annotate<T> command)
-        {
-            RecordEvent(new Annotated<T>(command.Message));
         }
     }
 }

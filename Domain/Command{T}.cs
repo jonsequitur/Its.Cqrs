@@ -177,7 +177,7 @@ namespace Microsoft.Its.Domain
 
         protected virtual void HandleCommandValidationFailure(TTarget target, ValidationReport validationReport)
         {
-            if (target is IEventSourced)
+            if (target is EventSourcedAggregate)
             {
                 ((dynamic) target).HandleCommandValidationFailure((dynamic) this,
                                                                   validationReport);
