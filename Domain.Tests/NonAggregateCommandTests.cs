@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Validation;
 using Its.Validation.Configuration;
+using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 
@@ -12,12 +15,25 @@ namespace Microsoft.Its.Domain.Tests
     public class NonAggregateCommandTests
     {
         internal static int CallCount;
+        private CompositeDisposable disposables;
 
         [SetUp]
         public void Setup()
         {
             Command<Target>.AuthorizeDefault = (account, command) => true;
             CallCount = 0;
+
+            disposables = new CompositeDisposable
+                          {
+                              ConfigurationContext.Establish(new Configuration()
+                                                                 .UseInMemoryEventStore(traceEvents: true))
+                          };
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            disposables.IfNotNull().ThenDo(d => d.Dispose());
         }
 
         [Test]
@@ -59,6 +75,17 @@ namespace Microsoft.Its.Domain.Tests
 
     public class CommandOnTargetCommandHandler : ICommandHandler<Target, CommandOnTarget>
     {
+        private readonly IEventSourcedRepository<MarcoPoloPlayerWhoIsIt> repository;
+
+        public CommandOnTargetCommandHandler(IEventSourcedRepository<MarcoPoloPlayerWhoIsIt> repository)
+        {
+            if (repository == null)
+            {
+                throw new ArgumentNullException("repository");
+            }
+            this.repository = repository;
+        }
+
         public async Task EnactCommand(Target aggregate, CommandOnTarget command)
         {
             NonAggregateCommandTests.CallCount++;
