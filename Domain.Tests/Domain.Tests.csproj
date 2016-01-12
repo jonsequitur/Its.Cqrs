@@ -146,6 +146,7 @@
     <Compile Include="Infrastructure\NoOpEventBus.cs" />
     <Compile Include="InProcessEventBusTests.cs" />
     <Compile Include="MarcoPolo.cs" />
+    <Compile Include="NonAggregateCommandTests.cs" />
     <Compile Include="ObjectIdTests.cs" />
     <Compile Include="OptionalTests.cs" />
     <Compile Include="PrimitiveConverterTests.cs" />

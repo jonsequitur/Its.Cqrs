@@ -9,15 +9,15 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// A basic command scheduler implementation that can be used as the basis for composing command scheduling behaviors.
     /// </summary>
-    /// <typeparam name="TTarget">The type of the command target.</typeparam>
-    internal class CommandScheduler<TTarget> : ICommandScheduler<TTarget> 
-        where TTarget : class
+    /// <typeparam name="TAggregate">The type of the command target.</typeparam>
+    internal class CommandScheduler<TAggregate> : ICommandScheduler<TAggregate> 
+        where TAggregate : class, IEventSourced
     {
-        private readonly ICommandApplier<TTarget> commandApplier;
+        private readonly ICommandApplier<TAggregate> commandApplier;
         private readonly ICommandPreconditionVerifier preconditionVerifier;
 
         public CommandScheduler(
-            ICommandApplier<TTarget> commandApplier,
+            ICommandApplier<TAggregate> commandApplier,
             ICommandPreconditionVerifier preconditionVerifier)
         {
             if (commandApplier == null)
@@ -36,7 +36,7 @@ namespace Microsoft.Its.Domain
         /// A task that is complete when the command has been successfully scheduled.
         /// </returns>
         /// <exception cref="System.NotSupportedException">Non-immediate scheduling is not supported.</exception>
-        public virtual async Task Schedule(IScheduledCommand<TTarget> scheduledCommand)
+        public virtual async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
         {
             if (scheduledCommand.Command.CanBeDeliveredDuringScheduling() && scheduledCommand.IsDue())
             {
@@ -49,7 +49,7 @@ namespace Microsoft.Its.Domain
                 else
                 {
                     // resolve the command scheduler so that delivery goes through the whole pipeline
-                    await Configuration.Current.CommandScheduler<TTarget>().Deliver(scheduledCommand);
+                    await Configuration.Current.CommandScheduler<TAggregate>().Deliver(scheduledCommand);
                     return;
                 }
             }
@@ -70,7 +70,7 @@ namespace Microsoft.Its.Domain
         /// <remarks>
         /// The scheduler will apply the command and save it, potentially triggering additional consequences.
         /// </remarks>
-        public virtual async Task Deliver(IScheduledCommand<TTarget> scheduledCommand)
+        public virtual async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
         {
             await commandApplier.ApplyScheduledCommand(scheduledCommand);
         }
