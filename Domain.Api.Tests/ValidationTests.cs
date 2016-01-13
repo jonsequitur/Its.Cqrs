@@ -27,9 +27,8 @@ namespace Microsoft.Its.Domain.Api.Tests
         [SetUp]
         public void SetUp()
         {
-            TestSetUp.InitializeEventStore();
+            TestSetUp.EnsureEventStoreIsInitialized();
             Logging.Configure();
-            Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
             Command<Order>.AuthorizeDefault = (order, command) => true;
         }
 

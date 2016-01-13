@@ -26,7 +26,7 @@ namespace Microsoft.Its.Domain.Api.Tests
         [SetUp]
         public void SetUp()
         {
-            TestSetUp.InitializeEventStore();
+            TestSetUp.EnsureEventStoreIsInitialized();
         }
 
         [Test]

@@ -30,7 +30,7 @@ namespace Microsoft.Its.Domain.Api.Tests
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
-            TestSetUp.InitializeEventStore();
+            TestSetUp.EnsureEventStoreIsInitialized();
         }
 
         [SetUp]

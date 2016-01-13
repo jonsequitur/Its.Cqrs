@@ -59,10 +59,7 @@ namespace Microsoft.Its.Domain.Tests
         [TearDown]
         public void TearDown()
         {
-            if (disposables != null)
-            {
-                disposables.Dispose();
-            }
+            disposables.IfNotNull().ThenDo(d => d.Dispose());
         }
 
         [Test]
@@ -349,12 +346,11 @@ namespace Microsoft.Its.Domain.Tests
         public async Task Scheduled_commands_triggered_by_a_scheduled_command_are_idempotent()
         {
             var aggregate = new CommandSchedulerTestAggregate();
-            var repository = Configuration.Current
-                                          .Repository<CommandSchedulerTestAggregate>();
+            var repository = configuration.Repository<CommandSchedulerTestAggregate>();
 
             await repository.Save(aggregate);
 
-            var scheduler = Configuration.Current.CommandScheduler<CommandSchedulerTestAggregate>();
+            var scheduler = configuration.CommandScheduler<CommandSchedulerTestAggregate>();
 
             var dueTime = Clock.Now().AddMinutes(5);
 
@@ -481,13 +477,13 @@ namespace Microsoft.Its.Domain.Tests
 
             // initialize twice
             new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
-                .Initialize(Configuration.Current);
+                .Initialize(configuration);
 
             new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
-                .Initialize(Configuration.Current);
+                .Initialize(configuration);
 
             // send a command
-            await Configuration.Current.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
 
 
             commandsScheduled.Count.Should().Be(1);
