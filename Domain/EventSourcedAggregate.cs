@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using Its.Validation;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
@@ -206,6 +207,20 @@ namespace Microsoft.Its.Domain
             {
                 return SourceSnapshot != null;
             }
+        }
+
+        internal virtual void HandleCommandValidationFailure(ICommand command, ValidationReport validationReport)
+        {
+            throw new CommandValidationException(
+                string.Format("Validation error while applying {0} to a {1}.",
+                              command.CommandName,
+                              GetType().Name),
+                validationReport);
+        }
+
+        protected void ThrowCommandValidationException(ICommand command, ValidationReport validationReport)
+        {
+            HandleCommandValidationFailure(command, validationReport);
         }
     }
 
