@@ -163,6 +163,7 @@
     <Compile Include="Infrastructure\TestApi{T}.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SelfDocumentationTests.cs" />
+    <Compile Include="TestSetUp.cs" />
     <Compile Include="ValidationTests.cs" />
   </ItemGroup>
   <ItemGroup>

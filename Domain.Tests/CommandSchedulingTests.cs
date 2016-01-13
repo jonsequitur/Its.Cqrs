@@ -32,14 +32,12 @@ namespace Microsoft.Its.Domain.Tests
         [SetUp]
         public void SetUp()
         {
+            disposables = new CompositeDisposable();
             // disable authorization
             Command<Order>.AuthorizeDefault = (o, c) => true;
             Command<CustomerAccount>.AuthorizeDefault = (o, c) => true;
 
-            disposables = new CompositeDisposable
-            {
-                VirtualClock.Start()
-            };
+            disposables.Add(VirtualClock.Start());
 
             customerAccountId = Any.Guid();
 
@@ -61,7 +59,7 @@ namespace Microsoft.Its.Domain.Tests
         [TearDown]
         public void TearDown()
         {
-            disposables.Dispose();
+            disposables.IfNotNull().ThenDo(d => d.Dispose());
         }
 
         [Test]
@@ -348,12 +346,11 @@ namespace Microsoft.Its.Domain.Tests
         public async Task Scheduled_commands_triggered_by_a_scheduled_command_are_idempotent()
         {
             var aggregate = new CommandSchedulerTestAggregate();
-            var repository = Configuration.Current
-                                          .Repository<CommandSchedulerTestAggregate>();
+            var repository = configuration.Repository<CommandSchedulerTestAggregate>();
 
             await repository.Save(aggregate);
 
-            var scheduler = Configuration.Current.CommandScheduler<CommandSchedulerTestAggregate>();
+            var scheduler = configuration.CommandScheduler<CommandSchedulerTestAggregate>();
 
             var dueTime = Clock.Now().AddMinutes(5);
 
@@ -481,11 +478,13 @@ namespace Microsoft.Its.Domain.Tests
             // initialize twice
             new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
                 .Initialize(configuration);
+
             new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
                 .Initialize(configuration);
 
             // send a command
             await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+
 
             commandsScheduled.Count.Should().Be(1);
         }
