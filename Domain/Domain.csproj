@@ -139,6 +139,7 @@
     <Compile Include="Scheduling\EventSourcedCommandApplier.cs" />
     <Compile Include="Scheduling\ICommandApplier{T}.cs" />
     <Compile Include="Scheduling\ICommandSchedulerPipelineInitializer.cs" />
+    <Compile Include="Scheduling\IScheduledCommandEvent.cs" />
     <Compile Include="Scheduling\ISpecifySchedulingBehavior.cs" />
     <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />

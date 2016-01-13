@@ -17,7 +17,8 @@ namespace Microsoft.Its.Domain
     [DebuggerDisplay("{ToString()}")]
     public class CommandScheduled<TAggregate> :
         Event<TAggregate>,
-        IScheduledCommand<TAggregate>
+        IScheduledCommand<TAggregate>,
+        IScheduledCommandEvent
         where TAggregate : IEventSourced
     {
         /// <summary>
