@@ -9,25 +9,23 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// A basic command scheduler implementation that can be used as the basis for composing command scheduling behaviors.
     /// </summary>
-    /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
-    internal class CommandScheduler<TAggregate> :
-        ICommandScheduler<TAggregate>
+    /// <typeparam name="TAggregate">The type of the command target.</typeparam>
+    internal class CommandScheduler<TAggregate> : ICommandScheduler<TAggregate> 
         where TAggregate : class, IEventSourced
     {
-        protected readonly IEventSourcedRepository<TAggregate> repository;
+        private readonly ICommandApplier<TAggregate> commandApplier;
         private readonly ICommandPreconditionVerifier preconditionVerifier;
 
         public CommandScheduler(
-            IEventSourcedRepository<TAggregate> repository,
-            ICommandPreconditionVerifier preconditionVerifier = null)
+            ICommandApplier<TAggregate> commandApplier,
+            ICommandPreconditionVerifier preconditionVerifier)
         {
-            if (repository == null)
+            if (commandApplier == null)
             {
-                throw new ArgumentNullException("repository");
+                throw new ArgumentNullException("commandApplier");
             }
-            this.repository = repository;
-            this.preconditionVerifier = preconditionVerifier ??
-                                        Configuration.Current.CommandPreconditionVerifier();
+            this.commandApplier = commandApplier;
+            this.preconditionVerifier = preconditionVerifier;
         }
 
         /// <summary>
@@ -63,9 +61,9 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        /// Delivers the specified scheduled command to the target aggregate.
+        /// Delivers the specified scheduled command to the target.
         /// </summary>
-        /// <param name="scheduledCommand">The scheduled command to be applied to the aggregate.</param>
+        /// <param name="scheduledCommand">The scheduled command to be applied to the target.</param>
         /// <returns>
         /// A task that is complete when the command has been applied.
         /// </returns>
@@ -74,7 +72,7 @@ namespace Microsoft.Its.Domain
         /// </remarks>
         public virtual async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            await repository.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
+            await commandApplier.ApplyScheduledCommand(scheduledCommand);
         }
 
         /// <summary>

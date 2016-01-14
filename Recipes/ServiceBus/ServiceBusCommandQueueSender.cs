@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -24,7 +25,8 @@ namespace Microsoft.Its.Domain.ServiceBus
     [System.Diagnostics.DebuggerStepThrough]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
-    public class ServiceBusCommandQueueSender
+    public class ServiceBusCommandQueueSender : IEventHandler,
+                                                IEventHandlerBinder
     {
         private readonly ISubject<IScheduledCommand> messageSubject = new Subject<IScheduledCommand>();
         private readonly ISubject<Exception> exceptionSubject = new Subject<Exception>();
@@ -61,6 +63,28 @@ namespace Microsoft.Its.Domain.ServiceBus
                 return messageSubject;
             }
         }
+
+        IEnumerable<IEventHandlerBinder> IEventHandler.GetBinders()
+        {
+            return new[] { this };
+        }
+
+        /// <summary>
+        /// Subscribes the specified handler to the event bus.
+        /// </summary>
+        /// <param name="handler">The handler.</param>
+        /// <param name="bus">The bus.</param>
+        public IDisposable SubscribeToBus(object handler, IEventBus bus)
+        {
+            queueClient = CreateQueueClient(settings);
+
+            return new CompositeDisposable
+            {
+                bus.Events<IScheduledCommandEvent>().Subscribe(c => Enqueue(c)),
+                exceptionSubject.Subscribe(ex => bus.PublishErrorAsync(new EventHandlingError(ex, handler))),
+                Disposable.Create(() => queueClient.Close())
+            };
+        }
         
         internal static QueueClient CreateQueueClient(ServiceBusSettings settings)
         {
@@ -76,20 +100,19 @@ namespace Microsoft.Its.Domain.ServiceBus
                 });
         }
 
-        private async Task Enqueue(IScheduledCommand scheduledCommand)
+        private async Task Enqueue(IScheduledCommandEvent scheduledCommandEvent)
         {
-            var message = new BrokeredMessage(scheduledCommand.ToJson())
+            var message = new BrokeredMessage(scheduledCommandEvent.ToJson())
             {
-                // FIX: (Enqueue)  
-                // SessionId = scheduledCommand.AggregateId.ToString()
+                 SessionId = scheduledCommandEvent.AggregateId.ToString()
             };
 
-            if (scheduledCommand.DueTime != null)
+            if (scheduledCommandEvent.DueTime != null)
             {
-                message.ScheduledEnqueueTimeUtc = scheduledCommand.DueTime.Value.UtcDateTime.Add(MessageDeliveryOffsetFromCommandDueTime);
+                message.ScheduledEnqueueTimeUtc = scheduledCommandEvent.DueTime.Value.UtcDateTime.Add(MessageDeliveryOffsetFromCommandDueTime);
             }
 
-            messageSubject.OnNext(scheduledCommand);
+            messageSubject.OnNext(scheduledCommandEvent);
 
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
