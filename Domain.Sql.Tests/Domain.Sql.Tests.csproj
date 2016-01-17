@@ -123,6 +123,7 @@
     <Compile Include="%28Its.Recipes%29\TestInputGenerator.cs" />
     <Compile Include="%28Pocket%29\PocketContainer.cs" />
     <Compile Include="CatchupWrapper.cs" />
+    <Compile Include="DatabaseSetupAndMigrationTests.cs" />
     <Compile Include="EventStoreDbTest.cs" />
     <Compile Include="DynamicEventTests.cs" />
     <Compile Include="EventExtensionsTests.cs" />

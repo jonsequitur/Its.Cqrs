@@ -109,8 +109,6 @@ namespace Sample.Domain.Ordering
             });
         }
 
-   
-
         public void HandleCommandValidationFailure(ChargeCreditCard command, ValidationReport validationReport)
         {
             if (validationReport.Failures.All(failure => failure.IsRetryable()))

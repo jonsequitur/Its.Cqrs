@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.Entity;
@@ -21,14 +22,14 @@ namespace Microsoft.Its.Domain.Sql
         public static void Unique<TProjection>(
             this DbContext context,
             Expression<Func<TProjection, object>> member,
-            string schema = "dbo") 
+            string schema = "dbo")
             where TProjection : class
         {
             context.Database.ExecuteSqlCommand(AddUniqueIndex(context, member, schema));
         }
 
         internal static string AddUniqueIndex<TProjection>(
-            this DbContext context, 
+            this DbContext context,
             Expression<Func<TProjection, object>> member,
             string schema = "dbo")
             where TProjection : class
@@ -129,7 +130,7 @@ namespace Microsoft.Its.Domain.Sql
 
             var databaseName = context.Database.Connection.Database;
             var dbCreationCmd = string.Format("CREATE DATABASE [{0}] (MAXSIZE={1}GB, EDITION='{2}', SERVICE_OBJECTIVE='{3}')",
-                    databaseName, dbSizeInGB, edition, serviceObjective);
+                                              databaseName, dbSizeInGB, edition, serviceObjective);
 
             // With Azure SQL db V12, database creation TSQL became a sync process. 
             // So we need a 10 minutes command timeout
@@ -139,16 +140,16 @@ namespace Microsoft.Its.Domain.Sql
 
         public static void CreateReadonlyUser(this DbContext context, DbReadonlyUser readonlyUser)
         {
-            var createUserCmd = string.Format("CREATE USER [{0}] FOR LOGIN [{1}]", 
-                readonlyUser.UserName, readonlyUser.LoginName);
+            var createUserCmd = string.Format("CREATE USER [{0}] FOR LOGIN [{1}]",
+                                              readonlyUser.UserName, readonlyUser.LoginName);
             ExecuteNonQuery(context.Database.Connection.ConnectionString, createUserCmd);
 
             var addRoleToUserCmd = string.Format("EXEC sp_addrolemember N'db_datareader', N'{0}'",
-                readonlyUser.UserName);
+                                                 readonlyUser.UserName);
             ExecuteNonQuery(context.Database.Connection.ConnectionString, addRoleToUserCmd);
         }
 
-        private static void WaitUntilDatabaseCreated(this DbContext context)
+        internal static void WaitUntilDatabaseCreated(this DbContext context)
         {
             // wait up to 60 seconds
             var sleepInSeconds = 2;
@@ -178,6 +179,15 @@ namespace Microsoft.Its.Domain.Sql
                 retryCount--;
                 Thread.Sleep(TimeSpan.FromSeconds(sleepInSeconds));
             }
+        }
+
+        public static IEnumerable<IEnumerable<dynamic>> QueryDynamic(
+            this DbContext context,
+            string sql,
+            IDictionary<string, object> parameters = null)
+        {
+            var connection = context.OpenConnection();
+            return connection.QueryDynamic(sql, parameters).ToArray();
         }
 
         private static void ExecuteNonQuery(string connString, string commandText, int commandTimeout = 60)
