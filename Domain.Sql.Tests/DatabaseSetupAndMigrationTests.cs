@@ -1,11 +1,15 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
+using System.Data;
 using System.Data.Entity;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 
@@ -98,15 +102,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
-        private static IEnumerable<string> GetAppliedVersions(DbContext context)
-        {
-            return context.QueryDynamic(@"SELECT MigrationVersion from PocketMigrator.AppliedMigrations")
-                          .Single()
-                          .Select(m => (string) m.MigrationVersion);
-        }
-
         [Test]
-        public async Task When_a_migration_throws_then_the_change_is_rolled_back()
+        public void When_a_migration_throws_then_the_change_is_rolled_back()
         {
             InitializeDatabase<MigrationsTestDbContext>();
 
@@ -142,7 +139,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public void Migrations_are_not_run_more_than_once()
         {
             var callCount = 0;
-            var migrator = new AnonymousMigrator(c => { callCount++; }, version);
+            var migrator = new AnonymousMigrator(c =>
+            {
+                callCount++;
+            }, version);
 
             InitializeDatabase<MigrationsTestDbContext>(migrator);
             InitializeDatabase<MigrationsTestDbContext>(migrator);
@@ -212,6 +212,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
+        private static IEnumerable<string> GetAppliedVersions(DbContext context)
+        {
+            return context.QueryDynamic(@"SELECT MigrationVersion from PocketMigrator.AppliedMigrations")
+                          .Single()
+                          .Select(m => (string) m.MigrationVersion);
+        }
+
         private void InitializeEventStore()
         {
             using (var context = new EventStoreDbContext())
@@ -242,13 +249,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
     public class AnonymousMigrator : IDbMigrator
     {
-        private readonly Action<DbConnection> migrate;
+        private readonly Action<IDbConnection> migrate;
 
-        public AnonymousMigrator(Action<DbConnection> migrate, string version) : this(migrate, new Version(version))
+        public AnonymousMigrator(Action<IDbConnection> migrate, string version) : this(migrate, new Version(version))
         {
         }
 
-        public AnonymousMigrator(Action<DbConnection> migrate, Version version)
+        public AnonymousMigrator(Action<IDbConnection> migrate, Version version)
         {
             if (migrate == null)
             {
@@ -260,7 +267,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public Version MigrationVersion { get; private set; }
 
-        public void Migrate(DbConnection connection)
+        public void Migrate(IDbConnection connection)
         {
             migrate(connection);
         }

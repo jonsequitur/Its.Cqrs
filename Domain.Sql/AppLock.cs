@@ -42,7 +42,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             this.db = db;
             this.lockResourceName = lockResourceName;
-            connection = db.OpenConnection();
+            connection = (DbConnection) db.OpenConnection();
 
             const string cmd = @"
 DECLARE @result int;

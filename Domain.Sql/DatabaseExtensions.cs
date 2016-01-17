@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -17,7 +17,7 @@ using Microsoft.Its.Domain.Serialization;
 
 namespace Microsoft.Its.Domain.Sql
 {
-    public static class DbContextExtensions
+    public static class DatabaseExtensions
     {
         public static void Unique<TProjection>(
             this DbContext context,
@@ -55,6 +55,9 @@ namespace Microsoft.Its.Domain.Sql
                               schema));
         }
 
+        /// <summary>
+        /// Seeds an event store using JSON-serialized events stored in a file.
+        /// </summary>
         public static void SeedFromFile(this EventStoreDbContext context, FileInfo file)
         {
             using (var stream = file.OpenRead())
@@ -87,7 +90,10 @@ namespace Microsoft.Its.Domain.Sql
             return Regex.Replace(matched, @"[\[\]\.]", "");
         }
 
-        internal static DbConnection OpenConnection(this DbContext context)
+        /// <summary>
+        /// Opens the connection.
+        /// </summary>
+        internal static IDbConnection OpenConnection(this DbContext context)
         {
             var connection = context.Database.Connection;
             if (connection.State != ConnectionState.Open)
@@ -97,6 +103,10 @@ namespace Microsoft.Its.Domain.Sql
             return connection;
         }
 
+        /// <summary>
+        /// Determines whether the specified DbContext is configured to use an Azure SQL Database.
+        /// </summary>
+        /// <param name="context">The database context.</param>
         public static bool IsAzureDatabase(this DbContext context)
         {
             return context.Database.Connection.ConnectionString.Contains("database.windows.net");
@@ -199,6 +209,83 @@ namespace Microsoft.Its.Domain.Sql
                 cmd.CommandTimeout = commandTimeout;
                 cmd.CommandText = commandText;
                 cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static IEnumerable<IEnumerable<dynamic>> QueryDynamic(
+            this IDbConnection connection,
+            string sql,
+            IDictionary<string, object> parameters = null)
+        {
+            using (var command = connection.PrepareCommand(sql, parameters))
+            {
+                return command.ExecuteQueriesToDynamic();
+            }
+        }
+
+        public static void Execute(
+            this IDbConnection connection,
+            string sql,
+            IDictionary<string, object> parameters = null)
+        {
+            using (var command = connection.PrepareCommand(sql, parameters))
+            {
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public static IDbCommand PrepareCommand(
+            this IDbConnection connection,
+            string sql,
+            IDictionary<string, object> parameters = null)
+        {
+            var command = connection.CreateCommand();
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = sql;
+
+                if (parameters != null)
+                {
+                    foreach (var pair in parameters)
+                    {
+                        var parameter = command.CreateParameter();
+                        parameter.ParameterName = pair.Key;
+                        parameter.Value = pair.Value ?? DBNull.Value;
+                        command.Parameters.Add(parameter);
+                    }
+                }
+
+                return command;
+            }
+        }
+
+        public static IEnumerable<IEnumerable<dynamic>> ExecuteQueriesToDynamic(
+            this IDbCommand command)
+        {
+            using (var reader = command.ExecuteReader())
+            {
+                do
+                {
+                    var values = new object[reader.FieldCount];
+                    var names = Enumerable.Range(0, reader.FieldCount)
+                                          .Select(reader.GetName)
+                                          .ToArray();
+
+                    var currentResult = new List<ExpandoObject>();
+
+                    while (reader.Read())
+                    {
+                        reader.GetValues(values);
+                        var expando = new ExpandoObject();
+                        for (var i = 0; i < values.Length; i++)
+                        {
+                            expando.TryAdd(names[i], values[i]);
+                        }
+                        currentResult.Add(expando);
+                    }
+
+                    yield return currentResult;
+                } while (reader.NextResult());
             }
         }
     }

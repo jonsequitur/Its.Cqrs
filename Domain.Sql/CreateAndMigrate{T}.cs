@@ -1,6 +1,10 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Data.Entity;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
@@ -8,11 +12,15 @@ using Microsoft.Its.Recipes;
 namespace Microsoft.Its.Domain.Sql
 {
     public class CreateAndMigrate<TContext> :
-        CreateDatabaseIfNotExists<TContext>
+        IDatabaseInitializer<TContext>
         where TContext : DbContext
     {
         private readonly IDbMigrator[] migrators;
 
+        public CreateAndMigrate() : this(new IDbMigrator[0])
+        {
+        }
+        
         public CreateAndMigrate(params IDbMigrator[] migrators)
         {
             this.migrators = Migrator.CreateMigratorsFromEmbeddedResourcesFor<TContext>()
@@ -21,13 +29,7 @@ namespace Microsoft.Its.Domain.Sql
                                      .ToArray();
         }
 
-        public CreateAndMigrate()
-        {
-            migrators = Migrator.CreateMigratorsFromEmbeddedResourcesFor<TContext>()
-                                .ToArray();
-        }
-
-        public override void InitializeDatabase(TContext context)
+        public void InitializeDatabase(TContext context)
         {
             if (context == null)
             {
@@ -41,6 +43,7 @@ namespace Microsoft.Its.Domain.Sql
                 if (!context.Database.CompatibleWithModel(false))
                 {
                     // QUESTION-JOSEQU: (InitializeDatabase) 
+                    Debug.WriteLine("Database is incompatible with entity model for " + typeof (DbContext));
                 }
             }
             else

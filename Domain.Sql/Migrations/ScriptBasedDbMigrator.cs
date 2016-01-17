@@ -1,0 +1,52 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Data;
+using System.Data.Common;
+using System.IO;
+using System.Linq;
+using Microsoft.Its.Domain.Sql.Migrations;
+
+namespace Microsoft.Its.Domain.Sql
+{
+    /// <summary>
+    /// Performs a migration using a SQL script stored as an embedded resource.
+    /// </summary>
+    internal class ScriptBasedDbMigrator : IDbMigrator
+    {
+        public ScriptBasedDbMigrator(string resourceName)
+        {
+            MigrationVersion = resourceName.Split('.', '-')
+                                           .Where(s => s.Contains("_"))
+                                           .Select(s => s.Replace("_", "."))
+                                           .Select(s => new Version(s))
+                                           .Single();
+
+            var stream = typeof (ScriptBasedDbMigrator).Assembly
+                                                       .GetManifestResourceStream(resourceName);
+
+            SqlText = new StreamReader(stream).ReadToEnd();
+        }
+
+        public ScriptBasedDbMigrator(string sqlText, Version migrationVersion)
+        {
+            SqlText = sqlText;
+            MigrationVersion = migrationVersion;
+        }
+
+        public string SqlText { get; private set; }
+
+        public Version MigrationVersion { get; private set; }
+
+        public void Migrate(IDbConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = SqlText;
+                command.ExecuteNonQuery();
+            }
+        }
+    }
+}

@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
+using System.Data;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
@@ -17,7 +17,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
         private static readonly string bootstrapResourceName = string.Format("{0}.Migrations.bootstrap-0_0_0_0.sql", typeof (Migrator).Assembly.GetName().Name);
 
         private static string[] GetAppliedMigrationVersions(
-            DbConnection connection)
+            IDbConnection connection)
         {
             try
             {
@@ -39,6 +39,13 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             }
         }
 
+        /// <summary>
+        /// Ensures that all of the provided migrations have been applied to the database.
+        /// </summary>
+        /// <typeparam name="TContext">The type of the database context.</typeparam>
+        /// <param name="context">The database context specifying which database the migrations are to be applied to.</param>
+        /// <param name="migrators">The migrators to apply.</param>
+        /// <exception cref="System.ArgumentNullException">migrators</exception>
         public static void EnsureDatabaseSchemaIsUpToDate<TContext>(
             this TContext context,
             IDbMigrator[] migrators)
@@ -80,7 +87,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             }
         }
 
-        private static void ApplyMigration<TContext>(IDbMigrator migrator, DbConnection connection) where TContext : DbContext
+        private static void ApplyMigration<TContext>(IDbMigrator migrator, IDbConnection connection) where TContext : DbContext
         {
             var log = migrator.IfTypeIs<ScriptBasedDbMigrator>()
                               .Then(m => m.SqlText)
@@ -108,6 +115,9 @@ namespace Microsoft.Its.Domain.Sql.Migrations
                 });
         }
 
+        /// <summary>
+        /// Creates database migrators from embedded resources found in the source assembly of <typeparamref name="TContext" />.
+        /// </summary>
         public static IEnumerable<IDbMigrator> CreateMigratorsFromEmbeddedResourcesFor<TContext>()
             where TContext : DbContext
         {
@@ -118,7 +128,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
             var baseType = typeof (TContext).BaseType;
 
-            while (baseType != typeof (DbContext))
+            while (baseType != typeof (DbContext) && baseType != null)
             {
                 parentage.Add(baseType);
                 baseType = baseType.BaseType;
