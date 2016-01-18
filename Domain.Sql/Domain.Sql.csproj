@@ -110,6 +110,7 @@
     <Compile Include="EventHandlerProgress.cs" />
     <Compile Include="EventHandlerProgressCalculator.cs" />
     <Compile Include="EventStoreDatabaseInitializer{T}.cs" />
+    <Compile Include="Migrations\AzureSqlDbMigrator.cs" />
     <Compile Include="Migrations\IDbMigrator.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.Designer.cs">

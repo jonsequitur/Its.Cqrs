@@ -239,10 +239,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             using (var context = new TContext())
             {
-                return context.QueryDynamic(@"SELECT MigrationVersion from PocketMigrator.AppliedMigrations")
-                              .Single()
-                              .Select(m => (string) m.MigrationVersion)
-                              .ToArray();
+                return context.OpenConnection().GetAppliedMigrationVersions();
             }
         }
 

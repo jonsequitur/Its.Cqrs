@@ -15,8 +15,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
     {
         private static readonly string bootstrapResourceName = string.Format("{0}.Migrations.bootstrap-0_0_0_0.sql", typeof (Migrator).Assembly.GetName().Name);
 
-        private static string[] GetAppliedMigrationVersions(
-            IDbConnection connection)
+        internal static string[] GetAppliedMigrationVersions(this IDbConnection connection)
         {
             try
             {
@@ -47,7 +46,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
         /// <exception cref="System.ArgumentNullException">migrators</exception>
         public static void EnsureDatabaseSchemaIsUpToDate<TContext>(
             this TContext context,
-            IDbMigrator[] migrators)
+            params IDbMigrator[] migrators)
             where TContext : DbContext
         {
             if (migrators == null)

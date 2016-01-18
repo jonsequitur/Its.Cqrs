@@ -5,9 +5,8 @@ using System;
 using System.Data;
 using System.IO;
 using System.Linq;
-using Microsoft.Its.Domain.Sql.Migrations;
 
-namespace Microsoft.Its.Domain.Sql
+namespace Microsoft.Its.Domain.Sql.Migrations
 {
     /// <summary>
     /// Performs a migration using a SQL script stored as an embedded resource.

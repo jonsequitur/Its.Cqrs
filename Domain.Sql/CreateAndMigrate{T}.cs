@@ -3,6 +3,7 @@
 
 using System;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
@@ -16,12 +17,13 @@ namespace Microsoft.Its.Domain.Sql
         where TContext : DbContext
     {
         private readonly IDbMigrator[] migrators;
+        private static bool bypassInitialization;
 
         public CreateAndMigrate() : this(new IDbMigrator[0])
         {
         }
         
-        public CreateAndMigrate(params IDbMigrator[] migrators)
+        public CreateAndMigrate(IDbMigrator[] migrators)
         {
             this.migrators = Migrator.CreateMigratorsFromEmbeddedResourcesFor<TContext>()
                                      .Concat(migrators)
@@ -34,6 +36,11 @@ namespace Microsoft.Its.Domain.Sql
             if (context == null)
             {
                 throw new ArgumentNullException("context");
+            }
+
+            if (bypassInitialization)
+            {
+                return;
             }
 
             // TODO: (InitializeDatabase) support Azure Database customization & wait time
@@ -58,10 +65,29 @@ namespace Microsoft.Its.Domain.Sql
             context.EnsureDatabaseSchemaIsUpToDate(migrators);
         }
 
-        private static bool CreateDatabaseIfNotExists(TContext context)
+        private bool CreateDatabaseIfNotExists(TContext context)
         {
             try
             {
+                if (context.IsAzureDatabase())
+                {
+                    // create the database
+                    context.CreateAzureDatabase();
+
+                    // this triggers the initializer, which then throws because the schema hasn't been initialized, so we have to suspend initialization momentarily
+                    bypassInitialization = true;
+
+                    // create the initial schema
+                    var sql = ((IObjectContextAdapter) context)
+                        .ObjectContext
+                        .CreateDatabaseScript();
+
+                    context.OpenConnection()
+                           .Execute(sql);
+
+                    return true;
+                }
+
                 return context.Database.CreateIfNotExists();
             }
             catch (SqlException exception)
@@ -72,6 +98,10 @@ namespace Microsoft.Its.Domain.Sql
                 }
 
                 throw;
+            }
+            finally
+            {
+                bypassInitialization = false;
             }
         }
     }

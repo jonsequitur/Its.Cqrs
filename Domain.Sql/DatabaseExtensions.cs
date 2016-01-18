@@ -126,7 +126,11 @@ namespace Microsoft.Its.Domain.Sql
         /// | EDITION = { 'web' | 'business' | 'basic' | 'standard' | 'premium' }
         /// | SERVICE_OBJECTIVE = { 'shared' | 'basic' | 'S0' | 'S1' | 'S2' | 'P1' | 'P2' | 'P3' }
         /// </remarks>
-        public static void CreateAzureDatabase(this DbContext context, int dbSizeInGB, string edition, string serviceObjective)
+        public static void CreateAzureDatabase(
+            this DbContext context, 
+            int dbSizeInGB = 2, 
+            string edition = "standard", 
+            string serviceObjective = "S0")
         {
             if (!context.IsAzureDatabase())
             {
@@ -145,7 +149,7 @@ namespace Microsoft.Its.Domain.Sql
             // With Azure SQL db V12, database creation TSQL became a sync process. 
             // So we need a 10 minutes command timeout
             ExecuteNonQuery(connstrBldr.ConnectionString, dbCreationCmd, commandTimeout: 600);
-            context.WaitUntilDatabaseCreated();
+            context.WaitUntilDatabaseIsCreated(forceInitialize: context is ReadModelDbContext);
         }
 
         public static void CreateReadonlyUser(this DbContext context, DbReadonlyUser readonlyUser)
@@ -159,35 +163,37 @@ namespace Microsoft.Its.Domain.Sql
             ExecuteNonQuery(context.Database.Connection.ConnectionString, addRoleToUserCmd);
         }
 
-        internal static void WaitUntilDatabaseCreated(this DbContext context)
+        internal static void WaitUntilDatabaseIsCreated(this DbContext context, bool forceInitialize)
         {
             // wait up to 60 seconds
-            var sleepInSeconds = 2;
             var retryCount = 30;
-            Exception exception = null;
 
-            while (true)
+            while (retryCount-- > 0)
             {
-                if (retryCount <= 0)
-                {
-                    throw exception ?? new TimeoutException("Database is not ONLINE after 60 seconds");
-                }
-
                 try
                 {
                     if (context.Database.Exists())
                     {
-                        context.Database.Initialize(force: true);
-                        break;
+                        if (forceInitialize)
+                        {
+                            context.Database.Initialize(force: true);
+                        }
+                        return;
                     }
                 }
-                catch (Exception e)
+                catch
                 {
-                    exception = e;
+                    if (retryCount <= 0)
+                    {
+                        throw;
+                    }
+                }
+                if (retryCount <= 0)
+                {
+                    throw new TimeoutException("Database is not ONLINE after 60 seconds");
                 }
 
-                retryCount--;
-                Thread.Sleep(TimeSpan.FromSeconds(sleepInSeconds));
+                Thread.Sleep(TimeSpan.FromSeconds(2));
             }
         }
 

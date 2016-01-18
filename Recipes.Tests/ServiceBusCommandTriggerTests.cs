@@ -43,6 +43,15 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
             Formatter<CommandFailed>.RegisterForAllMembers();
         }
 
+        [TestFixtureSetUp]
+        public void Init()
+        {
+            Settings.Sources = new ISettingsSource[]
+            {
+                new ConfigDirectorySettings(@"c:\dev\.config")
+            };
+        }
+
         [SetUp]
         public override void SetUp()
         {
@@ -53,7 +62,6 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
             using (VirtualClock.Start(DateTimeOffset.Now.AddMonths(1)))
             {
                 disposables = new CompositeDisposable();
-                Settings.Sources = new ISettingsSource[] { new ConfigDirectorySettings(@"c:\dev\.config") }.Concat(Settings.Sources);
 
                 serviceBusSettings = Settings.Get<ServiceBusSettings>();
                 serviceBusSettings.NamePrefix = "itscqrstests";
