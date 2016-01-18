@@ -7,9 +7,7 @@ using System.Data.Entity;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 using Microsoft.Its.Domain.Serialization;
-using log = Its.Log.Lite.Log;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql
@@ -74,19 +72,16 @@ namespace Microsoft.Its.Domain.Sql
                     events = events.Where(e => e.UtcTime <= d);
                 }
 
-                var eventsArray = await events.ToArrayAsync();
+                var storableEventsList = await events.ToListAsync();
+                var domainEventsList = storableEventsList.Select(e => e.ToDomainEvent()).ToList();
 
                 if (snapshot != null)
                 {
-                    aggregate = AggregateType<TAggregate>.FromSnapshot(
-                        snapshot,
-                        eventsArray.Select(e => e.ToDomainEvent()));
+                    aggregate = AggregateType<TAggregate>.FromSnapshot(snapshot, domainEventsList);
                 }
-                else if (eventsArray.Length > 0)
+                else if (domainEventsList.Count > 0)
                 {
-                    aggregate = AggregateType<TAggregate>.FromEventHistory(
-                        id,
-                        eventsArray.Select(e => e.ToDomainEvent()));
+                    aggregate = AggregateType<TAggregate>.FromEventHistory(id, domainEventsList);
                 }
             }
 

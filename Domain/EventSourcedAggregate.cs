@@ -18,7 +18,6 @@ namespace Microsoft.Its.Domain
         private readonly Guid id;
         private readonly EventSequence eventHistory;
         private readonly EventSequence pendingEvents;
-        private readonly IEvent[] sourceEvents;
         internal readonly ISnapshot SourceSnapshot;
 
         /// <summary>
@@ -50,9 +49,9 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("eventHistory");
             }
 
-            sourceEvents = eventHistory.ToArray();
+            InitializeEventHistory(eventHistory);
 
-            if (sourceEvents.Length == 0)
+            if (this.eventHistory.Count == 0)
             {
                 throw new ArgumentException("Event history is empty");
             }
@@ -63,16 +62,14 @@ namespace Microsoft.Its.Domain
         /// </summary>
         /// <param name="snapshot">A snapshot of the aggregate's built-up state.</param>
         /// <param name="eventHistory">The event history.</param>
-        protected internal EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null) :
-            this(snapshot.IfNotNull()
-                         .Then(s => s.AggregateId)
-                         .ElseThrow(() => new ArgumentNullException("snapshot")))
+        protected internal EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null)
+            : this(snapshot.IfNotNull().Then(s => s.AggregateId).ElseThrow(() => new ArgumentNullException("snapshot")))
         {
-            sourceEvents = eventHistory.OrEmpty().ToArray();
             SourceSnapshot = snapshot;
+            InitializeEventHistory(eventHistory.OrEmpty());
         }
 
-        protected internal void InitializeEventHistory()
+        protected internal void InitializeEventHistory(IEnumerable<IEvent> sourceEvents)
         {
             if (eventHistory.Count > 0)
             {
@@ -81,14 +78,9 @@ namespace Microsoft.Its.Domain
 
             eventHistory.AddRange(sourceEvents);
 
-            if (SourceSnapshot != null)
-            {
-                pendingEvents.SetVersion(Math.Max(eventHistory.Version, SourceSnapshot.Version));
-            }
-            else
-            {
-                pendingEvents.SetVersion(eventHistory.Version);
-            }
+            var version = Math.Max(eventHistory.Version, SourceSnapshot == null ? 0 : SourceSnapshot.Version);
+
+            pendingEvents.SetVersion(version);
 
             if (eventHistory.AggregateId != Id)
             {
