@@ -3,7 +3,6 @@
 
 using System;
 using System.Data;
-using System.Data.Common;
 using System.IO;
 using System.Linq;
 using Microsoft.Its.Domain.Sql.Migrations;
@@ -39,7 +38,7 @@ namespace Microsoft.Its.Domain.Sql
 
         public Version MigrationVersion { get; private set; }
 
-        public void Migrate(IDbConnection connection)
+        public MigrationResult Migrate(IDbConnection connection)
         {
             using (var command = connection.CreateCommand())
             {
@@ -47,6 +46,12 @@ namespace Microsoft.Its.Domain.Sql
                 command.CommandText = SqlText;
                 command.ExecuteNonQuery();
             }
+
+            return new MigrationResult
+            {
+                MigrationWasApplied = true, 
+                Log = SqlText
+            };
         }
     }
 }

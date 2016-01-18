@@ -7,7 +7,6 @@ IF object_id('[PocketMigrator].[AppliedMigrations]') IS NULL
 BEGIN
     CREATE TABLE [PocketMigrator].[AppliedMigrations](
         [MigrationVersion] [nvarchar](25) NOT NULL,
-        [AssemblyVersion] [nvarchar](50) NOT NULL,
         [Log] [nvarchar](max) NULL,
         [AppliedDate] [datetimeoffset](7) NULL
      CONSTRAINT [PK_Leases_1] PRIMARY KEY CLUSTERED 

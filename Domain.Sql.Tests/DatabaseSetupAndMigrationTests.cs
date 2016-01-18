@@ -9,6 +9,7 @@ using FluentAssertions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -92,14 +93,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void When_a_migration_is_run_it_creates_a_record_in_the_migrations_table()
         {
-            using (var context = new EventStoreDbContext())
-            {
-                var appliedVersions = GetAppliedVersions(context);
+            var appliedVersions = GetAppliedVersions<EventStoreDbContext>();
 
-                appliedVersions
-                    .Should()
-                    .ContainSingle(v => v == "0.14.0");
-            }
+            appliedVersions
+                .Should()
+                .ContainSingle(v => v == "0.14.0");
         }
 
         [Test]
@@ -122,12 +120,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
             }
 
+            GetAppliedVersions<MigrationsTestDbContext>().Should().NotContain(s => s == version.ToString());
+
             using (var context = new MigrationsTestDbContext())
             {
-                var appliedVersions = GetAppliedVersions(context);
-
-                appliedVersions.Should().NotContain(s => s == version.ToString());
-
                 var result = context.QueryDynamic(
                     @"SELECT * FROM sys.columns WHERE name='@columnName'",
                     new Dictionary<string, object> { { "columnName", columnName } }).Single();
@@ -139,10 +135,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public void Migrations_are_not_run_more_than_once()
         {
             var callCount = 0;
-            var migrator = new AnonymousMigrator(c =>
-            {
-                callCount++;
-            }, version);
+            var migrator = new AnonymousMigrator(c => { callCount++; }, version);
 
             InitializeDatabase<MigrationsTestDbContext>(migrator);
             InitializeDatabase<MigrationsTestDbContext>(migrator);
@@ -212,18 +205,60 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
-        private static IEnumerable<string> GetAppliedVersions(DbContext context)
+        [Test]
+        public void A_migration_with_an_earlier_version_number_can_be_applied_later()
         {
-            return context.QueryDynamic(@"SELECT MigrationVersion from PocketMigrator.AppliedMigrations")
-                          .Single()
-                          .Select(m => (string) m.MigrationVersion);
+            var higherVersion = new AnonymousMigrator(c => { }, new Version(version.Major, version.Minor, version.Build, 2));
+            var lowerVersion = new AnonymousMigrator(c => { }, new Version(version.Major, version.Minor, version.Build));
+
+            InitializeDatabase<MigrationsTestDbContext>(higherVersion);
+            InitializeDatabase<MigrationsTestDbContext>(lowerVersion);
+
+            var appliedMigrations = GetAppliedVersions<MigrationsTestDbContext>();
+
+            appliedMigrations.Should().Contain(m => m == version + ".2");
+            appliedMigrations.Should().Contain(m => m == version.ToString());
+        }
+
+        [Test]
+        public void When_a_migration_signals_that_it_was_not_applied_then_no_record_is_created_in_the_migrations_table()
+        {
+            var migrator = new AnonymousMigrator(c => new MigrationResult
+            {
+                MigrationWasApplied = false
+            }, version);
+
+            InitializeDatabase<MigrationsTestDbContext>(migrator);
+
+            GetAppliedVersions<MigrationsTestDbContext>()
+                .Should().NotContain(v => v == version.ToString());
+        }
+
+        private static IEnumerable<string> GetAppliedVersions<TContext>()
+            where TContext : DbContext, new()
+        {
+            using (var context = new TContext())
+            {
+                return context.QueryDynamic(@"SELECT MigrationVersion from PocketMigrator.AppliedMigrations")
+                              .Single()
+                              .Select(m => (string) m.MigrationVersion)
+                              .ToArray();
+            }
         }
 
         private void InitializeEventStore()
         {
             using (var context = new EventStoreDbContext())
             {
-                new CreateAndMigrate<EventStoreDbContext>().InitializeDatabase(context);
+                new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(context);
+            }
+        }
+
+        private void InitializeCommandSchedulerDatabase()
+        {
+            using (var context = new CommandSchedulerDbContext())
+            {
+                new CommandSchedulerDatabaseInitializer().InitializeDatabase(context);
             }
         }
 
@@ -249,13 +284,22 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
     public class AnonymousMigrator : IDbMigrator
     {
-        private readonly Action<IDbConnection> migrate;
-
-        public AnonymousMigrator(Action<IDbConnection> migrate, string version) : this(migrate, new Version(version))
-        {
-        }
+        private readonly Func<IDbConnection, MigrationResult> migrate;
 
         public AnonymousMigrator(Action<IDbConnection> migrate, Version version)
+        {
+            this.migrate = connection =>
+            {
+                migrate(connection);
+                return new MigrationResult
+                {
+                    MigrationWasApplied = true
+                };
+            };
+            MigrationVersion = version;
+        }
+
+        public AnonymousMigrator(Func<IDbConnection, MigrationResult> migrate, Version version)
         {
             if (migrate == null)
             {
@@ -267,9 +311,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public Version MigrationVersion { get; private set; }
 
-        public void Migrate(IDbConnection connection)
+        public MigrationResult Migrate(IDbConnection connection)
         {
-            migrate(connection);
+            return migrate(connection);
         }
     }
 }

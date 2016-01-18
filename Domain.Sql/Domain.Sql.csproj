@@ -133,6 +133,7 @@
       <DependentUpon>201404242201400_v0_6_12.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\CommandSchedulerMigrationConfiguration.cs" />
+    <Compile Include="Migrations\MigrationResult.cs" />
     <Compile Include="Migrations\Migrator.cs" />
     <Compile Include="ReadModelCatchupResult.cs" />
     <Compile Include="ReservationServiceDatabaseInitializer.cs" />

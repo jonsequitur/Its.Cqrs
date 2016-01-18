@@ -19,6 +19,6 @@ namespace Microsoft.Its.Domain.Sql.Migrations
         /// <summary>
         /// Migrates a database using the specified connection.
         /// </summary>
-        void Migrate(IDbConnection connection);
+        MigrationResult Migrate(IDbConnection connection);
     }
 }

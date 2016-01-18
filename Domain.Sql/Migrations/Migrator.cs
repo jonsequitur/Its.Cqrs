@@ -8,7 +8,6 @@ using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Transactions;
-using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql.Migrations
 {
@@ -72,7 +71,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
                     migrators.OrderBy(m => m.MigrationVersion)
                              .Where(m => !appliedVersions.Contains(m.MigrationVersion.ToString()))
-                             .ForEach(migrator => ApplyMigration<TContext>(migrator, connection));
+                             .ForEach(migrator => ApplyMigration(migrator, connection));
 
                     transaction.Complete();
                 }
@@ -87,32 +86,33 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             }
         }
 
-        private static void ApplyMigration<TContext>(IDbMigrator migrator, IDbConnection connection) where TContext : DbContext
+        private static void ApplyMigration(IDbMigrator migrator, IDbConnection connection)
         {
-            var log = migrator.IfTypeIs<ScriptBasedDbMigrator>()
-                              .Then(m => m.SqlText)
-                              .Else(() => migrator.ToString());
+            var result = migrator.Migrate(connection);
 
-            migrator.Migrate(connection);
-
-            connection.Execute(
-                @"INSERT INTO PocketMigrator.AppliedMigrations
+            if (result.MigrationWasApplied)
+            {
+                connection.Execute(
+                    @"INSERT INTO PocketMigrator.AppliedMigrations
              (MigrationVersion
-             ,AssemblyVersion
              ,Log
              ,AppliedDate)
      VALUES
             (@migrationVersion,
-             @assemblyVersion,
              @log,
              @appliedDate)",
-                parameters: new Dictionary<string, object>
-                {
-                    { "@migrationVersion", migrator.MigrationVersion.ToString() },
-                    { "@assemblyVersion", typeof (TContext).Assembly.GetName().Version.ToString() },
-                    { "@log", log },
-                    { "@appliedDate", DateTimeOffset.UtcNow }
-                });
+                    parameters: new Dictionary<string, object>
+                    {
+                        { "@migrationVersion", migrator.MigrationVersion.ToString() },
+                        {
+                            "@log",
+                            string.Format("{1}\n{0}",
+                                          migrator.GetType().AssemblyQualifiedName,
+                                          result.Log).Trim()
+                        },
+                        { "@appliedDate", DateTimeOffset.UtcNow }
+                    });
+            }
         }
 
         /// <summary>
