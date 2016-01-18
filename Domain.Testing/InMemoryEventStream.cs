@@ -48,6 +48,11 @@ namespace Microsoft.Its.Domain.Testing
             });
         }
 
+        public void RemoveEvents(Guid aggregateId)
+        {
+            events.RemoveWhere(e => e.AggregateId == aggregateId.ToString());
+        }
+
         private void ThrowConcurrencyException(IStoredEvent storedEvent)
         {
             var existing = events.Single(

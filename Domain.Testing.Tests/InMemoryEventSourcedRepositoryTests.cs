@@ -160,7 +160,12 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             await eventStream.Append(events);
         }
-        
+
+        protected override async Task DeleteEventsFromEventStore(Guid aggregateId)
+        {
+            eventStream.RemoveEvents(aggregateId);
+        }
+
         protected override IStoredEvent CreateStoredEvent(string streamName, string type, Guid aggregateId, int sequenceNumber, string body, DateTime utcTime)
         {
             return new InMemoryStoredEvent

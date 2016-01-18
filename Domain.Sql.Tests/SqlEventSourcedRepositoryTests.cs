@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Migrations;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -54,11 +55,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         protected override async Task SaveEventsDirectly(params IStoredEvent[] events)
         {
-            using (var db = new EventStoreDbContext())
-            {
-                foreach (var e in events)
-                {
-                    db.Events.Add(new StorableEvent
+            var storableEvents =
+                events.Select(
+                    e =>
+                    new StorableEvent
                     {
                         AggregateId = Guid.Parse(e.AggregateId),
                         Body = e.Body,
@@ -69,11 +69,23 @@ namespace Microsoft.Its.Domain.Sql.Tests
                         Type = e.Type,
                         UtcTime = e.Timestamp.UtcDateTime
                     });
-                }
-                db.SaveChanges();
+
+            using (var db = new EventStoreDbContext())
+            {
+                db.Events.AddRange(storableEvents);
+                await db.SaveChangesAsync();
             }
         }
-        
+
+        protected override async Task DeleteEventsFromEventStore(Guid aggregateId)
+        {
+            using (var db = new EventStoreDbContext())
+            {
+                db.Database.ExecuteSqlCommand(string.Format("DELETE FROM EventStore.Events WHERE AggregateId = '{0}'", aggregateId));
+                await db.SaveChangesAsync();
+            }
+        }
+
         protected override IStoredEvent CreateStoredEvent(string streamName, string type, Guid aggregateId, int sequenceNumber, string body, DateTime utcTime)
         {
             return new StorableEvent

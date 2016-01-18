@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
@@ -265,6 +266,8 @@ namespace Microsoft.Its.Domain.Tests
         public abstract Task Events_that_cannot_be_deserialized_due_to_unknown_member_do_not_cause_sourcing_to_fail();
 
         protected abstract Task SaveEventsDirectly(params IStoredEvent[] events);
+
+        protected abstract Task DeleteEventsFromEventStore(Guid aggregateId);
 
         [Test]
         public async Task Save_transfers_pending_events_to_event_history()
@@ -624,6 +627,37 @@ namespace Microsoft.Its.Domain.Tests
             var order = await repository.GetLatest(orderId);
 
             order.CustomerName.Should().Be("Waylon Jennings");
+        }
+
+
+        [Category("Performance")]
+        [Test, Timeout(120000)]
+        public async Task When_sourcing_an_aggregate_with_a_large_number_of_source_events_then_the_operation_completes_quickly()
+        {
+            var count = 30000;
+            var aggregateId = Guid.Parse("547E3646-DBE5-43D4-BAC9-E391336340D7");
+            var largeListEvents =
+                Enumerable.Range(1, count)
+                          .Select(i => new EventSourcedAggregateTests.PerfTestAggregate.SimpleEvent { AggregateId = aggregateId, SequenceNumber = i });
+
+            Console.WriteLine("{0}: Removing old events from db", DateTimeOffset.UtcNow.ToString("O"));
+            await DeleteEventsFromEventStore(aggregateId);
+
+            Console.WriteLine("{0}: Adding new events to db", DateTimeOffset.UtcNow.ToString("O"));
+            await SaveEventsDirectly(largeListEvents.Select(e => e.ToStoredEvent()).ToArray());
+
+            var repository = CreateRepository<EventSourcedAggregateTests.PerfTestAggregate>();
+
+            Console.WriteLine("{0}: Sourcing aggregate", DateTimeOffset.UtcNow.ToString("O"));
+            var sw = Stopwatch.StartNew();
+            var t = await repository.GetLatest(aggregateId);
+            sw.Stop();
+
+            Console.WriteLine("Elapsed: {0}ms", sw.ElapsedMilliseconds);
+
+            t.Version.Should().Be(count);
+            t.NumberOfUpdatesExecuted.Should().Be(count);
+            sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
         }
 
         protected abstract IStoredEvent CreateStoredEvent(

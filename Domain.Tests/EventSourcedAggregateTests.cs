@@ -444,5 +444,54 @@ namespace Microsoft.Its.Domain.Tests
                 return hasBeenApplied();
             }
         }
+
+        [Category("Performance")]
+        [Test]
+        public void When_calling_ctor_of_an_aggregate_with_a_large_number_of_source_events_in_non_incrementing_order_then_the_operation_completes_quickly()
+        {
+            var count = 1000000;
+            var largeListOfEvents = Enumerable.Range(1, count).Select(i => new PerfTestAggregate.SimpleEvent { SequenceNumber = i }).ToList();
+            Shuffle(largeListOfEvents, new Random(42));
+
+            var sw = Stopwatch.StartNew();
+            var t = new PerfTestAggregate(Guid.NewGuid(), largeListOfEvents);
+            sw.Stop();
+
+            Console.WriteLine("Elapsed: {0}ms", sw.ElapsedMilliseconds);
+            t.Version.Should().Be(count);
+            t.NumberOfUpdatesExecuted.Should().Be(count);
+            sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
+        }
+
+        private static void Shuffle<T>(IList<T> list, Random randomNumberGenerator)
+        {
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = randomNumberGenerator.Next(n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
+        }
+
+        public class PerfTestAggregate : EventSourcedAggregate<PerfTestAggregate>
+        {
+            public PerfTestAggregate(Guid id, IEnumerable<IEvent> eventHistory)
+                : base(id, eventHistory)
+            {
+            }
+
+            public class SimpleEvent : Event<PerfTestAggregate>
+            {
+                public override void Update(PerfTestAggregate order)
+                {
+                    order.NumberOfUpdatesExecuted++;
+                }
+            }
+
+            public long NumberOfUpdatesExecuted { get; set; }
+        }
     }
 }
