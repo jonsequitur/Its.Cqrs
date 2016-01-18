@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -89,6 +91,43 @@ namespace Microsoft.Its.Domain.Tests
                     .ShouldThrow<ArgumentException>()
                     .And
                     .Message.Should().Contain("Inconsistent aggregate ids");
+        }
+
+        [Test]
+        public void When_source_events_contain_events_with_the_same_sequence_number_and_the_same_types_then_using_them_to_source_an_object_throws()
+        {
+            Action ctorCall = () =>
+            {
+                new Order(
+                    Guid.NewGuid(),
+                    new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" },
+                    new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" }
+                    );
+            };
+
+            ctorCall.Invoking(c => c())
+                    .ShouldThrow<ArgumentException>()
+                    .And
+                    .Message.Should().Contain("Event with SequenceNumber 1 is already present in the sequence.");
+        }
+
+        [Test]
+        public void When_source_events_contain_events_with_the_same_sequence_number_but_different_types_then_using_them_to_source_an_object_throws()
+        {
+            Action ctorCall = () =>
+            {
+                new Order(
+                    Guid.NewGuid(),
+                    new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" },
+                    new Order.CustomerInfoChanged { SequenceNumber = 2, CustomerName = "joe" },
+                    new Order.Cancelled { SequenceNumber = 1, Reason = "just 'cause..."}
+                    );
+            };
+
+            ctorCall.Invoking(c => c())
+                    .ShouldThrow<ArgumentException>()
+                    .And
+                    .Message.Should().Contain("Event with SequenceNumber 1 is already present in the sequence.");
         }
 
         [Test]

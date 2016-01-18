@@ -98,14 +98,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     StreamName = "Order",
                     Type = "UKNOWN",
                     Body = new { ShoeSize = 10.5 }.ToJson(),
-                    SequenceNumber = 1,
+                    SequenceNumber = 2,
                     AggregateId = orderId,
                     UtcTime = DateTime.UtcNow
                 },
                 new Order.CustomerInfoChanged
                 {
                     CustomerName = "Waylon Jennings",
-                    AggregateId = orderId
+                    AggregateId = orderId,
+                    SequenceNumber = 3
                 }.ToStorableEvent()
             };
 
