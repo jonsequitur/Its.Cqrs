@@ -4,6 +4,7 @@
 using System;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using System.Data.Entity.Migrations.Infrastructure;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
@@ -98,6 +99,10 @@ namespace Microsoft.Its.Domain.Sql
                 }
 
                 throw;
+            }
+            catch (AutomaticMigrationsDisabledException)
+            {
+                return false;
             }
             finally
             {
