@@ -54,24 +54,40 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void Probability_of_false_positive_is_accurate_when_filter_is_at_capacity()
         {
-            var filter = new BloomFilter(1000, .01);
-
-            var stringsInFilter = Enumerable.Range(1, 1000).Select(_ => Guid.NewGuid().ToString());
-
-            foreach (var s in stringsInFilter)
+            var attempts = 3;
+            // this test occasionally fails due to the odd outlier, since it's probabilistic, so we retry it a few times
+            while (attempts-- > 0)
             {
-                filter.Add(s);
+                var filter = new BloomFilter(1000, .01);
+
+                var stringsInFilter = Enumerable.Range(1, 1000).Select(_ => Guid.NewGuid().ToString());
+
+                foreach (var s in stringsInFilter)
+                {
+                    filter.Add(s);
+                }
+
+                var falsePositives = Enumerable.Range(1001, 10000)
+                                               .Select(i => i.ToString())
+                                               .Where(s => filter.MayContain(s))
+                                               .ToList();
+
+                Console.WriteLine(falsePositives.Count + " false positives");
+                Console.WriteLine(falsePositives.ToLogString());
+
+                try
+                {
+                    falsePositives.Count.Should().BeInRange(70, 120);
+                    return;
+                }
+                catch
+                {
+                    if (attempts == 0)
+                    {
+                        throw;
+                    }
+                }
             }
-
-            var falsePositives = Enumerable.Range(1001, 10000)
-                                           .Select(i => i.ToString())
-                                           .Where(s => filter.MayContain(s))
-                                           .ToList();
-
-            Console.WriteLine(falsePositives.Count() + " false positives");
-            Console.WriteLine(falsePositives.ToLogString());
-
-            falsePositives.Count.Should().BeInRange(70, 120);
         }
 
         [Test]
