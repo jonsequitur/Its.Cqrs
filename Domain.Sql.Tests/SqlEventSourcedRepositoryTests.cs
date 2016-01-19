@@ -110,7 +110,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     StreamName = "Order",
                     Type = "UKNOWN",
                     Body = new { ShoeSize = 10.5 }.ToJson(),
-                    SequenceNumber = 2,
+                    SequenceNumber = 1,
                     AggregateId = orderId,
                     UtcTime = DateTime.UtcNow
                 },
@@ -118,7 +118,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 {
                     CustomerName = "Waylon Jennings",
                     AggregateId = orderId,
-                    SequenceNumber = 3
+                    SequenceNumber = 2
                 }.ToStorableEvent()
             };
 

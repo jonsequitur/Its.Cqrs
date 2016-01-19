@@ -635,13 +635,10 @@ namespace Microsoft.Its.Domain.Tests
         public async Task When_sourcing_an_aggregate_with_a_large_number_of_source_events_then_the_operation_completes_quickly()
         {
             var count = 30000;
-            var aggregateId = Guid.Parse("547E3646-DBE5-43D4-BAC9-E391336340D7");
+            var aggregateId = Any.Guid();
             var largeListEvents =
                 Enumerable.Range(1, count)
                           .Select(i => new EventSourcedAggregateTests.PerfTestAggregate.SimpleEvent { AggregateId = aggregateId, SequenceNumber = i });
-
-            Console.WriteLine("{0}: Removing old events from db", DateTimeOffset.UtcNow.ToString("O"));
-            await DeleteEventsFromEventStore(aggregateId);
 
             Console.WriteLine("{0}: Adding new events to db", DateTimeOffset.UtcNow.ToString("O"));
             await SaveEventsDirectly(largeListEvents.Select(e => e.ToStoredEvent()).ToArray());
@@ -654,6 +651,9 @@ namespace Microsoft.Its.Domain.Tests
             sw.Stop();
 
             Console.WriteLine("Elapsed: {0}ms", sw.ElapsedMilliseconds);
+
+            Console.WriteLine("{0}: Removing old events from db", DateTimeOffset.UtcNow.ToString("O"));
+            await DeleteEventsFromEventStore(aggregateId);
 
             t.Version.Should().Be(count);
             t.NumberOfUpdatesExecuted.Should().Be(count);
