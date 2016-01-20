@@ -202,7 +202,7 @@ namespace Microsoft.Its.Domain
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
             .Single(m => m.Name == "Create");
 
-        public static async Task ApplyScheduledCommand<TAggregate>(
+        internal static async Task ApplyScheduledCommand<TAggregate>(
             this IEventSourcedRepository<TAggregate> repository,
             IScheduledCommand<TAggregate> scheduled,
             ICommandPreconditionVerifier preconditionVerifier = null)
