@@ -5,6 +5,7 @@ using System;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Its.Domain.Sql.Migrations
 {
@@ -13,13 +14,34 @@ namespace Microsoft.Its.Domain.Sql.Migrations
     /// </summary>
     internal class ScriptBasedDbMigrator : IDbMigrator
     {
+        // resourceNameParsesr parses out the scope and version from the resource name
+        // e.g. Microsoft.Its.Domain.Sql.EventStoreDbContext-1_0_0_192.sql
+        //                               ^-----------------^ ^-------^
+        //                                      scope         version
+        private static readonly Regex resourceNameParser = new Regex(@"(?<scope>[\w]+)\-(?<version>[0-9_]+)",
+                                                        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         public ScriptBasedDbMigrator(string resourceName)
         {
-            MigrationVersion = resourceName.Split('.', '-')
-                                           .Where(s => s.Contains("_"))
-                                           .Select(s => s.Replace("_", "."))
-                                           .Select(s => new Version(s))
-                                           .Single();
+            if (resourceName == null)
+            {
+                throw new ArgumentNullException("resourceName");
+            }
+
+            var matches = resourceNameParser.Match(resourceName);
+
+            var version = matches.Groups["version"]
+                .Value
+                .Replace("_", ".");
+
+            MigrationVersion = new Version(version);
+
+            Scope = matches.Groups["scope"].Value;
+
+            if (Scope == null)
+            {
+                throw new ArgumentException("resourceName was not in the expected format");
+            }
 
             var stream = typeof (ScriptBasedDbMigrator).Assembly
                                                        .GetManifestResourceStream(resourceName);
@@ -27,13 +49,27 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             SqlText = new StreamReader(stream).ReadToEnd();
         }
 
-        public ScriptBasedDbMigrator(string sqlText, Version migrationVersion)
+        public ScriptBasedDbMigrator(string sqlText, Version migrationVersion, string scope)
         {
+            if (sqlText == null)
+            {
+                throw new ArgumentNullException("sqlText");
+            }
+            if (migrationVersion == null)
+            {
+                throw new ArgumentNullException("migrationVersion");
+            }
+            if (scope == null)
+            {
+                throw new ArgumentNullException("scope");
+            }
             SqlText = sqlText;
             MigrationVersion = migrationVersion;
         }
 
         public string SqlText { get; private set; }
+
+        public string Scope { get; private set; }
 
         public Version MigrationVersion { get; private set; }
 
@@ -48,7 +84,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
             return new MigrationResult
             {
-                MigrationWasApplied = true, 
+                MigrationWasApplied = true,
                 Log = SqlText
             };
         }

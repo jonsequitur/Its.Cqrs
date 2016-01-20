@@ -8,12 +8,13 @@ using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Transactions;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql.Migrations
 {
     internal static class Migrator
     {
-        private static readonly string bootstrapResourceName = string.Format("{0}.Migrations.bootstrap-0_0_0_0.sql", typeof (Migrator).Assembly.GetName().Name);
+        private static readonly string bootstrapResourceName = string.Format("{0}.Migrations.DbContext-0_0_0_0.sql", typeof (Migrator).Assembly.GetName().Name);
 
         internal static string[] GetAppliedMigrationVersions(this IDbConnection connection)
         {
@@ -28,13 +29,54 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             }
             catch (SqlException exception)
             {
-                if (exception.Number == 208)
+                if (exception.Number == 208) // AppliedMigrations table is not present
                 {
                     return new string[0];
                 }
 
                 throw;
             }
+        }
+
+        internal static AppliedMigration[] GetLatestAppliedMigrationVersions(this IDbConnection connection)
+        {
+            try
+            {
+                return connection
+                    .QueryDynamic(
+                        @"WITH cte AS
+(
+   SELECT MigrationScope, MigrationVersion,
+         ROW_NUMBER() OVER (PARTITION BY MigrationScope ORDER BY Sequence DESC) AS rowNumber
+   FROM PocketMigrator.AppliedMigrations
+)
+SELECT *
+FROM cte
+WHERE rowNumber = 1")
+                    .Single()
+                    .Select(x => new AppliedMigration
+                    {
+                        MigrationScope = x.MigrationScope,
+                        MigrationVersion = new Version ((string)x.MigrationVersion)
+                    })
+                    .ToArray();
+            }
+            catch (SqlException exception) // AppliedMigrations table is not present
+            {
+                if (exception.Number == 208)
+                {
+                    return new AppliedMigration[0];
+                }
+
+                throw;
+            }
+        }
+
+        internal class AppliedMigration
+        {
+            public string MigrationScope { get; set; }
+
+            public Version MigrationVersion { get; set; }
         }
 
         /// <summary>
@@ -66,10 +108,14 @@ namespace Microsoft.Its.Domain.Sql.Migrations
                     // don't dispose this connection, since it's managed by the DbContext
                     var connection = context.OpenConnection();
 
-                    var appliedVersions = GetAppliedMigrationVersions(connection);
+                    var appliedVersions = connection.GetLatestAppliedMigrationVersions()
+                                                    .ToDictionary(v => v.MigrationScope,
+                                                                  v => v);
 
                     migrators.OrderBy(m => m.MigrationVersion)
-                             .Where(m => !appliedVersions.Contains(m.MigrationVersion.ToString()))
+                             .Where(m => appliedVersions.IfContains(m.Scope)
+                                                        .Then(a => m.MigrationVersion > a.MigrationVersion)
+                                                        .Else(() => true))
                              .ForEach(migrator => ApplyMigration(migrator, connection));
 
                     transaction.Complete();
@@ -93,23 +139,25 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             {
                 connection.Execute(
                     @"INSERT INTO PocketMigrator.AppliedMigrations
-             (MigrationVersion
-             ,Log
-             ,AppliedDate)
+             (MigrationScope,
+              MigrationVersion,
+              Log,
+              AppliedDate)
      VALUES
-            (@migrationVersion,
+            (@migrationScope, 
+             @migrationVersion,
              @log,
-             @appliedDate)",
+             GetDate())",
                     parameters: new Dictionary<string, object>
                     {
+                        { "@migrationScope", migrator.Scope },
                         { "@migrationVersion", migrator.MigrationVersion.ToString() },
                         {
                             "@log",
                             string.Format("{1}\n{0}",
                                           migrator.GetType().AssemblyQualifiedName,
                                           result.Log).Trim()
-                        },
-                        { "@appliedDate", DateTimeOffset.UtcNow }
+                        }
                     });
             }
         }
@@ -146,7 +194,6 @@ namespace Microsoft.Its.Domain.Sql.Migrations
                                      .OrderBy(m => m.MigrationVersion)
                                      .ToList();
 
-            // all migrations need the bootstrap migrator
             migrators.Insert(0, new ScriptBasedDbMigrator(bootstrapResourceName));
 
             return migrators;

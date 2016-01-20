@@ -40,8 +40,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     new Version("0.0.42.1"));
                 context.EnsureDatabaseSchemaIsUpToDate(migrator);
 
-                context.OpenConnection().GetAppliedMigrationVersions()
-                       .Should().Contain("0.0.42.1");
+                context.OpenConnection()
+                       .GetAppliedMigrationVersions()
+                       .Should()
+                       .Contain("0.0.42.1");
             }
         }
     }

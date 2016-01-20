@@ -9,7 +9,6 @@ using FluentAssertions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -150,7 +149,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var first = new AnonymousMigrator(c => { calls.Add("first"); },
                                               new Version(version.Major, version.Minor, version.Build, 1));
-
             var second = new AnonymousMigrator(c => { calls.Add("second"); },
                                                new Version(version.Major, version.Minor, version.Build, 2));
 
@@ -206,10 +204,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void A_migration_with_an_earlier_version_number_can_be_applied_later()
+        public void A_migration_with_an_earlier_version_number_can_be_applied_later_if_they_have_different_scopes()
         {
-            var higherVersion = new AnonymousMigrator(c => { }, new Version(version.Major, version.Minor, version.Build, 2));
-            var lowerVersion = new AnonymousMigrator(c => { }, new Version(version.Major, version.Minor, version.Build));
+            var higherVersion = new AnonymousMigrator(
+                c => { }, 
+                new Version(version.Major, version.Minor, version.Build, 2),
+                "Scope1");
+            var lowerVersion = new AnonymousMigrator(
+                c => { }, 
+                new Version(version.Major, version.Minor, version.Build),
+                "Scope2");
 
             InitializeDatabase<MigrationsTestDbContext>(higherVersion);
             InitializeDatabase<MigrationsTestDbContext>(lowerVersion);
@@ -218,6 +222,29 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             appliedMigrations.Should().Contain(m => m == version + ".2");
             appliedMigrations.Should().Contain(m => m == version.ToString());
+        }
+
+        [Test]
+        public void A_migration_with_an_earlier_version_number_cannot_be_applied_later_if_they_have_the_same_scope()
+        {
+            var higherVersion = new AnonymousMigrator(
+                c => { }, 
+                new Version(version.Major, version.Minor, version.Build, 2),
+                "Test"
+            );
+            var lowerVersion = new AnonymousMigrator(
+                c => { }, 
+                new Version(version.Major, version.Minor, version.Build),
+                "Test"
+            );
+
+            InitializeDatabase<MigrationsTestDbContext>(higherVersion);
+            InitializeDatabase<MigrationsTestDbContext>(lowerVersion);
+
+            var appliedMigrations = GetAppliedVersions<MigrationsTestDbContext>();
+
+            appliedMigrations.Should().Contain(m => m == version + ".2");
+            appliedMigrations.Should().NotContain(m => m == version.ToString());
         }
 
         [Test]
@@ -251,14 +278,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
-        private void InitializeCommandSchedulerDatabase()
-        {
-            using (var context = new CommandSchedulerDbContext())
-            {
-                new CommandSchedulerDatabaseInitializer().InitializeDatabase(context);
-            }
-        }
-
         private void InitializeDatabase<TContext>(params IDbMigrator[] migrators)
             where TContext : DbContext, new()
         {
@@ -283,8 +302,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
     {
         private readonly Func<IDbConnection, MigrationResult> migrate;
 
-        public AnonymousMigrator(Action<IDbConnection> migrate, Version version)
+        public AnonymousMigrator(Action<IDbConnection> migrate, Version version, string scope = "Test")
         {
+            if (scope == null)
+            {
+                throw new ArgumentNullException("scope");
+            }
+
             this.migrate = connection =>
             {
                 migrate(connection);
@@ -294,17 +318,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 };
             };
             MigrationVersion = version;
+            Scope = scope;
         }
 
-        public AnonymousMigrator(Func<IDbConnection, MigrationResult> migrate, Version version)
+        public AnonymousMigrator(Func<IDbConnection, MigrationResult> migrate, Version version, string scope = "Test")
         {
             if (migrate == null)
             {
                 throw new ArgumentNullException("migrate");
             }
+            if (scope == null)
+            {
+                throw new ArgumentNullException("scope");
+            }
             this.migrate = migrate;
+            Scope = scope;
             MigrationVersion = version;
         }
+
+        public string Scope { get; private set; }
 
         public Version MigrationVersion { get; private set; }
 

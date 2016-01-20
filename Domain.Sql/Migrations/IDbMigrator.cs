@@ -11,6 +11,8 @@ namespace Microsoft.Its.Domain.Sql.Migrations
     /// </summary>
     public interface IDbMigrator
     {
+        string Scope { get; }
+
         /// <summary>
         /// Gets the migration version.
         /// </summary>
