@@ -199,6 +199,11 @@ namespace Pocket
         {
             public static Func<PocketContainer, T> UsingLongestConstructor<T>()
             {
+                if (typeof(Delegate).IsAssignableFrom(typeof(T)))
+                {
+                    throw new TypeInitializationException(typeof(T).FullName, null);
+                }
+
                 var ctors = typeof (T).GetConstructors();
 
                 var longestCtorParamCount = ctors.Max(c => c.GetParameters().Count());

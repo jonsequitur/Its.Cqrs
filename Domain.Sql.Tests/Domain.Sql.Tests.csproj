@@ -120,9 +120,9 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="%28Pocket%29\PocketContainer.cs" />
     <Compile Include="%28Pocket%29\PocketContainerAutoMockingStrategy.cs" />
     <Compile Include="%28Its.Recipes%29\TestInputGenerator.cs" />
-    <Compile Include="%28Pocket%29\PocketContainer.cs" />
     <Compile Include="CatchupWrapper.cs" />
     <Compile Include="EventStoreDbTest.cs" />
     <Compile Include="DynamicEventTests.cs" />
