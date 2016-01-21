@@ -1,5 +1,7 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
-using System.Collections.Generic;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -14,14 +16,12 @@ namespace Microsoft.Its.Domain.Tests
     [TestFixture]
     public class NonAggregateCommandTests
     {
-        internal static int CallCount;
         private CompositeDisposable disposables;
 
         [SetUp]
         public void Setup()
         {
             Command<Target>.AuthorizeDefault = (account, command) => true;
-            CallCount = 0;
 
             disposables = new CompositeDisposable
                           {
@@ -33,21 +33,23 @@ namespace Microsoft.Its.Domain.Tests
         [TearDown]
         public void TearDown()
         {
-            disposables.IfNotNull().ThenDo(d => d.Dispose());
+            disposables.Dispose();
         }
 
         [Test]
         public async Task when_a_command_is_applied_directly_the_command_is_executed()
         {
-            await new CommandOnTarget { }.ApplyToAsync(new Target());
-            CallCount.Should().Be(1);
+            var target = new Target();
+            await target.ApplyAsync(new CommandOnTarget()); 
+            target.CommandsAppliedCount.Should().Be(1);
         }
 
         [Test] 
         public async Task when_a_command_is_applied_directly_with_an_etag_the_command_is_executed()
         {
-            await new CommandOnTarget { ETag = Any.Guid().ToString() }.ApplyToAsync(new Target());
-            CallCount.Should().Be(1);
+            var target = new Target();
+            await new CommandOnTarget { ETag = Any.Guid().ToString() }.ApplyToAsync(target);
+            target.CommandsAppliedCount.Should().Be(1);
         }
 
         [Test]
@@ -71,6 +73,7 @@ namespace Microsoft.Its.Domain.Tests
     public class Target
     {
         public bool FailCommandApplications { get; set; }
+        public int CommandsAppliedCount { get; set; }
     }
 
     public class CommandOnTargetCommandHandler : ICommandHandler<Target, CommandOnTarget>
@@ -86,12 +89,12 @@ namespace Microsoft.Its.Domain.Tests
             this.repository = repository;
         }
 
-        public async Task EnactCommand(Target aggregate, CommandOnTarget command)
+        public async Task EnactCommand(Target target, CommandOnTarget command)
         {
-            NonAggregateCommandTests.CallCount++;
+            target.CommandsAppliedCount++;
         }
 
-        public async Task HandleScheduledCommandException(Target aggregate, CommandFailed<CommandOnTarget> command)
+        public async Task HandleScheduledCommandException(Target target, CommandFailed<CommandOnTarget> command)
         {
         }
     }
