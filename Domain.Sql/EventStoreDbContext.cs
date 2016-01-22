@@ -77,7 +77,7 @@ namespace Microsoft.Its.Domain.Sql
         }
 
         public DbSet<StorableEvent> Events { get; set; }
-
+        
         public static string NameOrConnectionString
         {
             get

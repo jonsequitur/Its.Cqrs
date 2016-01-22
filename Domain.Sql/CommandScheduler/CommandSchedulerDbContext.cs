@@ -48,6 +48,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             modelBuilder.Configurations.Add(new ClockMappingsEntityTypeConfiguration());
             modelBuilder.Configurations.Add(new CommandExecutionErrorEntityTypeConfiguration());
             modelBuilder.Configurations.Add(new ScheduledCommandEntityTypeConfiguration());
+            modelBuilder.Configurations.Add(new ETagEntityTypeConfiguration());
 
             // add infrastructure for catchup tracking
             modelBuilder.Configurations.Add(new ReadModelInfoEntityModelConfiguration.ReadModelInfoEntityTypeConfiguration());
@@ -85,6 +86,20 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 Ignore(c => c.Result);
                 Ignore(c => c.NonDurable);
+            }
+        }
+
+        private class ETagEntityTypeConfiguration : EntityTypeConfiguration<ETag>
+        {
+            public ETagEntityTypeConfiguration()
+            {
+                ToTable("ScheduledCommand", "ETag");
+
+                HasKey(c => new { c.AggregateId, c.ETagValue });
+
+                Property(c => c.CreatedTime)
+                    .IsRequired();
+
             }
         }
 

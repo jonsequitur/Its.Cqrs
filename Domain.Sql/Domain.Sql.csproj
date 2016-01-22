@@ -92,6 +92,7 @@
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
     <Compile Include="CommandScheduler\CommandPreconditionVerifier.cs" />
     <Compile Include="CommandScheduler\CommandSchedulingEventHandler.cs" />
+    <Compile Include="CommandScheduler\ETag.cs" />
     <Compile Include="CommandScheduler\ICommandSchedulerDispatcher.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockRepository.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockTrigger.cs" />
@@ -105,21 +106,16 @@
     <Compile Include="CommandScheduler\SchedulerInitializer.cs" />
     <Compile Include="CommandScheduler\SqlCommandSchedulerExtensions.cs" />
     <Compile Include="CommandScheduler\Storage.cs" />
+    <Compile Include="CreateAndMigrate{T}.cs" />
     <Compile Include="DbReadonlyUser.cs" />
     <Compile Include="EventHandlerProgress.cs" />
     <Compile Include="EventHandlerProgressCalculator.cs" />
     <Compile Include="EventStoreDatabaseInitializer{T}.cs" />
+    <Compile Include="Migrations\AzureSqlDbMigrator.cs" />
+    <Compile Include="Migrations\IDbMigrator.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.cs" />
     <Compile Include="Migrations\201407120005564_v0_8_2.Designer.cs">
       <DependentUpon>201407120005564_v0_8_2.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201409181840497_InitialCreate.cs" />
-    <Compile Include="Migrations\201409181840497_InitialCreate.Designer.cs">
-      <DependentUpon>201409181840497_InitialCreate.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201409182131143_v0_9_0.cs" />
-    <Compile Include="Migrations\201409182131143_v0_9_0.Designer.cs">
-      <DependentUpon>201409182131143_v0_9_0.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\EventStoreMigrationConfiguration.cs" />
     <Compile Include="Migrations\201404221343370_v0_6_11.cs" />
@@ -131,6 +127,8 @@
       <DependentUpon>201404242201400_v0_6_12.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\CommandSchedulerMigrationConfiguration.cs" />
+    <Compile Include="Migrations\MigrationResult.cs" />
+    <Compile Include="Migrations\Migrator.cs" />
     <Compile Include="ReadModelCatchupResult.cs" />
     <Compile Include="ReservationServiceDatabaseInitializer.cs" />
     <Compile Include="CommandScheduler\SqlCommandScheduler.cs" />
@@ -140,7 +138,7 @@
     <Compile Include="EventBusExtensions.cs" />
     <Compile Include="ExclusiveEventStoreCatchupQuery.cs" />
     <Compile Include="EventContractResolver.cs" />
-    <Compile Include="DbContextExtensions.cs" />
+    <Compile Include="DatabaseExtensions.cs" />
     <Compile Include="CopyEventStoreIfNotExists.cs" />
     <Compile Include="ReservationServiceDbContext.cs" />
     <Compile Include="ExceptionExtensions.cs" />
@@ -167,6 +165,7 @@
     <Compile Include="CommandScheduler\ScheduledCommand.cs" />
     <Compile Include="CommandScheduler\SqlCommandSchedulerPipelineInitializer{T}.cs" />
     <Compile Include="CommandSchedulerResolver.cs" />
+    <Compile Include="Migrations\ScriptBasedDbMigrator.cs" />
     <Compile Include="Sensors.cs" />
     <Compile Include="SqlReservationService.cs" />
     <Compile Include="StorableEvent.cs" />
@@ -198,13 +197,15 @@
     <EmbeddedResource Include="Migrations\201407120005564_v0_8_2.resx">
       <DependentUpon>201407120005564_v0_8_2.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201409181840497_InitialCreate.resx">
-      <DependentUpon>201409181840497_InitialCreate.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201409182131143_v0_9_0.resx">
-      <DependentUpon>201409182131143_v0_9_0.cs</DependentUpon>
-    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\EventStoreDbContext-0_14_0.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\DbContext-0_0_0_0.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\CommandSchedulerDbContext-0_14_0.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

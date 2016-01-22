@@ -3,41 +3,31 @@
 
 using System;
 using System.Data.Entity;
-using System.Data.Entity.Migrations;
 using System.Linq;
 using Microsoft.Its.Domain.Sql.Migrations;
-using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql
 {
-    public class EventStoreDatabaseInitializer<TContext> : IDatabaseInitializer<TContext>
+    /// <summary>
+    /// Creates and migrates an event store database.
+    /// </summary>
+    public class EventStoreDatabaseInitializer<TContext> :
+        CreateAndMigrate<TContext>
         where TContext : DbContext
     {
-        private bool seeded;
-
-        public void InitializeDatabase(TContext context)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventStoreDatabaseInitializer{TContext}"/> class.
+        /// </summary>
+        public EventStoreDatabaseInitializer()
         {
-            var dbMigrator = new DbMigrator(new EventStoreMigrationConfiguration<TContext>());
-
-            if (dbMigrator.GetPendingMigrations().ToArray().Any())
-            {
-                dbMigrator.Update();
-            }
-
-            OnSeed.IfNotNull()
-                  .ThenDo(seed =>
-                  {
-                      if (!seeded)
-                      {
-                          seeded = true;
-                          seed(context);
-                          context.SaveChanges();
-                      }
-                  });
         }
 
-        public Action<TContext> OnSeed = context =>
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventStoreDatabaseInitializer{TContext}"/> class.
+        /// </summary>
+        /// <param name="migrators">The migrations to apply during initialization.</param>
+        public EventStoreDatabaseInitializer(params IDbMigrator[] migrators) : base(migrators)
         {
-        };
+        }
     }
 }

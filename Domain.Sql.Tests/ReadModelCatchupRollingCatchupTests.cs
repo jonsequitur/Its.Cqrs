@@ -96,7 +96,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 // wait on both catchups to complete
                 catchup1
                     .Progress
-                    .Merge(catchup2.Progress)
+                    .Timeout(DefaultTimeout)
+                    .Merge(catchup2.Progress
+                                   .Timeout(DefaultTimeout))
                     .Where(p => p.IsEndOfBatch)
                     .Take(2)
                     .Timeout(DefaultTimeout)
@@ -406,7 +408,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public void When_one_concurrent_catchup_instance_terminates_due_to_eventstore_connection_loss_then_another_tries_to_take_over_immediately()
         {
             // arrange
-            int numberOfEventsToWrite = 100;
+            var numberOfEventsToWrite = 100;
             Events.Write(numberOfEventsToWrite);
 
             var projector1 = new Projector<IEvent>(() => new ReadModels1DbContext());
@@ -485,8 +487,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var projector1 = new Projector<IEvent>(() => new ReadModels1DbContext());
             var projector2 = new Projector<IEvent>(() => new ReadModels1DbContext());
-            var catchup1StatusReports = new List<ReadModelCatchupStatus>();
-            var catchup2StatusReports = new List<ReadModelCatchupStatus>();
 
             using (var catchup1 = CreateReadModelCatchup<ReadModels1DbContext>(projector1))
             using (var catchup2 = CreateReadModelCatchup<ReadModels1DbContext>(projector2))
@@ -495,12 +495,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 var catchup2Progress = catchup2.Progress;
                 catchup1Progress.ForEachAsync(s =>
                 {
-                    catchup1StatusReports.Add(s);
                     Console.WriteLine("catchup1: " + s);
                 });
                 catchup2Progress.ForEachAsync(s =>
                 {
-                    catchup2StatusReports.Add(s);
                     Console.WriteLine("catchup2: " + s);
                 });
 
@@ -553,7 +551,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 }
             };
             var projector2 = new Projector<IEvent>(() => new ReadModels1DbContext());
-            var catchup1StatusReports = new List<ReadModelCatchupStatus>();
             var catchup2StatusReports = new List<ReadModelCatchupStatus>();
 
             using (var catchup1 = CreateReadModelCatchup<ReadModels1DbContext>(projector1))
@@ -562,7 +559,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 bool catchup1Disposed = false;
                 catchup1.Progress.ForEachAsync(s =>
                 {
-                    catchup1StatusReports.Add(s);
                     Console.WriteLine("catchup1: " + s);
 
                     // when the batch is done, dispose, which should allow catchup2 to try
