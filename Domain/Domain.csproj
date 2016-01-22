@@ -136,7 +136,10 @@
     <Compile Include="Scheduling\CommandDelivered.cs" />
     <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
     <Compile Include="ExceptionExtensions.cs" />
+    <Compile Include="EventSourcedCommandApplier.cs" />
+    <Compile Include="ICommandApplier{T}.cs" />
     <Compile Include="Scheduling\ICommandSchedulerPipelineInitializer.cs" />
+    <Compile Include="Scheduling\IScheduledCommandEvent.cs" />
     <Compile Include="Scheduling\ISpecifySchedulingBehavior.cs" />
     <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
@@ -183,7 +186,6 @@
     <Compile Include="IHaveExtensibleMetada.cs" />
     <Compile Include="ICommand.cs" />
     <Compile Include="Reservations\IReservationService.cs" />
-    <Compile Include="Scheduling\EventSourcedRepositoryExtensions.cs" />
     <Compile Include="Scheduling\ICommandScheduler.cs" />
     <Compile Include="Scheduling\IScheduledCommand.cs" />
     <Compile Include="Scheduling\ScheduledCommandException.cs" />

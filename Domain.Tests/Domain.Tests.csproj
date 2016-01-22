@@ -52,12 +52,13 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\FluentAssertions.2.1.0.0\lib\net45\FluentAssertions.dll</HintPath>
     </Reference>
-    <Reference Include="Its.Configuration">
-      <HintPath>..\packages\Its.Configuration.0.10.1\lib\net40\Its.Configuration.dll</HintPath>
-    </Reference>
-    <Reference Include="Its.Log, Version=2.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Its.Configuration, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Log.2.9.11\lib\net40\Its.Log.dll</HintPath>
+      <HintPath>..\packages\Its.Configuration.1.0.5\lib\net40\Its.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="Its.Log">
+      <HintPath>..\packages\Its.Log.2.9.12\lib\net451\Its.Log.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -130,7 +131,7 @@
     <Compile Include="CommandSchedulerMessageExchangeTests.cs" />
     <Compile Include="CommandSchedulerTestAggregate.cs" />
     <Compile Include="CommandSchedulingTests.cs" />
-    <Compile Include="CommandTests.cs" />
+    <Compile Include="AggregateCommandTests.cs" />
     <Compile Include="ConfigurationContextTests.cs" />
     <Compile Include="ConfigurationTests.cs" />
     <Compile Include="ConstructorCommandTests.cs" />
@@ -146,6 +147,7 @@
     <Compile Include="Infrastructure\NoOpEventBus.cs" />
     <Compile Include="InProcessEventBusTests.cs" />
     <Compile Include="MarcoPolo.cs" />
+    <Compile Include="NonAggregateCommandTests.cs" />
     <Compile Include="ObjectIdTests.cs" />
     <Compile Include="OptionalTests.cs" />
     <Compile Include="PrimitiveConverterTests.cs" />

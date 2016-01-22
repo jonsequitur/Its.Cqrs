@@ -15,23 +15,23 @@ using Newtonsoft.Json;
 namespace Microsoft.Its.Domain
 {
     /// <summary>
-    /// A command that can be applied to an aggregate to trigger some action and record an applicable state change.
+    /// A command that can be applied to an target to trigger some action and record an applicable state change.
     /// </summary>
-    /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+    /// <typeparam name="TTarget">The type of the target.</typeparam>
     [DebuggerStepThrough]
     [DebuggerDisplay("{ToString()}")]
-    public abstract class Command<TAggregate> : Command, ICommand<TAggregate>
-        where TAggregate : class
+    public abstract class Command<TTarget> : Command, ICommand<TTarget>
+        where TTarget : class
     {
         private static readonly ConcurrentDictionary<string, Type> knownTypesByName = new ConcurrentDictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
         private static readonly ConcurrentDictionary<string, Type> handlerTypesByName = new ConcurrentDictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
-        private static readonly Type[] knownTypes = Discover.ConcreteTypesDerivedFrom(typeof (ICommand<TAggregate>)).ToArray();
+        private static readonly Type[] knownTypes = Discover.ConcreteTypesDerivedFrom(typeof (ICommand<TTarget>)).ToArray();
 
         /// <summary>
-        ///     The default authorization method used by all commands for <typeparamref name="TAggregate" />.
+        ///     The default authorization method used by all commands for <typeparamref name="TTarget" />.
         /// </summary>
-        public static Func<TAggregate, Command<TAggregate>, bool> AuthorizeDefault = (aggregate, command) => command.Principal.IsAuthorizedTo(command, aggregate);
+        public static Func<TTarget, Command<TTarget>, bool> AuthorizeDefault = (target, command) => command.Principal.IsAuthorizedTo(command, target);
 
         private dynamic handler;
 
@@ -40,25 +40,25 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        ///     Performs the action of the command upon the aggregate.
+        ///     Performs the action of the command upon the target.
         /// </summary>
-        /// <param name="aggregate">The aggregate to which to apply the command.</param>
+        /// <param name="target">The target to which to apply the command.</param>
         /// <exception cref="CommandValidationException">
-        ///     If the command cannot be applied due its state or the state of the aggregate, it should throw a
+        ///     If the command cannot be applied due its state or the state of the target, it should throw a
         ///     <see
         ///         cref="CommandValidationException" />
         ///     indicating the specifics of the failure.
         /// </exception>
-        public virtual void ApplyTo(TAggregate aggregate)
+        public virtual void ApplyTo(TTarget target)
         {
-            if (aggregate == null)
+            if (target == null)
             {
-                throw new ArgumentNullException("aggregate");
+                throw new ArgumentNullException("target");
             }
 
             if (!string.IsNullOrWhiteSpace(ETag))
             {
-                var eventSourced = aggregate as IEventSourced;
+                var eventSourced = target as IEventSourced;
                 if (eventSourced.HasETag(ETag))
                 {
                     return;
@@ -66,59 +66,58 @@ namespace Microsoft.Its.Domain
             }
 
             // validate that the command's state is valid in and of itself
-            var validationReport = RunAllValidations(aggregate, false);
+            var validationReport = RunAllValidations(target, false);
 
             using (CommandContext.Establish(this))
             {
                 if (validationReport.HasFailures)
                 {
-                    HandleCommandValidationFailure(aggregate, validationReport);
+                    HandleCommandValidationFailure(target, validationReport);
                 }
                 else
                 {
-                    EnactCommand(aggregate);
+                    EnactCommand(target);
                 }
             }
         }
 
         /// <summary>
-        ///     Performs the action of the command upon the aggregate.
+        ///     Performs the action of the command upon the target.
         /// </summary>
-        /// <param name="aggregate">The aggregate to which to apply the command.</param>
+        /// <param name="target">The target to which to apply the command.</param>
         /// <exception cref="CommandValidationException">
-        ///     If the command cannot be applied due its state or the state of the aggregate, it should throw a
+        ///     If the command cannot be applied due its state or the state of the target, it should throw a
         ///     <see
         ///         cref="CommandValidationException" />
         ///     indicating the specifics of the failure.
         /// </exception>
-        public virtual async Task ApplyToAsync(TAggregate aggregate)
+        public virtual async Task ApplyToAsync(TTarget target)
         {
-            if (aggregate == null)
+            if (target == null)
             {
-                throw new ArgumentNullException("aggregate");
+                throw new ArgumentNullException("target");
             }
 
             if (!string.IsNullOrWhiteSpace(ETag))
             {
-                var eventSourced = aggregate as IEventSourced;
+                var eventSourced = target as IEventSourced;
                 if (eventSourced.HasETag(ETag))
                 {
                     return;
                 }
             }
 
-            // validate that the command's state is valid in and of itself
-            var validationReport = RunAllValidations(aggregate, false);
+            var validationReport = RunAllValidations(target, false);
 
             using (CommandContext.Establish(this))
             {
                 if (validationReport.HasFailures)
                 {
-                    HandleCommandValidationFailure(aggregate, validationReport);
+                    HandleCommandValidationFailure(target, validationReport);
                 }
                 else
                 {
-                    await EnactCommandAsync(aggregate);
+                    await EnactCommandAsync(target);
                 }
             }
         }
@@ -126,26 +125,26 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Enacts the command once authorizations and validations have succeeded.
         /// </summary>
-        /// <param name="aggregate">The aggregate upon which to enact the command.</param>
-        protected virtual void EnactCommand(TAggregate aggregate)
+        /// <param name="target">The target upon which to enact the command.</param>
+        protected virtual void EnactCommand(TTarget target)
         {
-            Task.Run(() => EnactCommandAsync(aggregate)).Wait();
+            Task.Run(() => EnactCommandAsync(target)).Wait();
         }
         
         /// <summary>
         /// Enacts the command once authorizations and validations have succeeded.
         /// </summary>
-        /// <param name="aggregate">The aggregate upon which to enact the command.</param>
-        protected virtual async Task EnactCommandAsync(TAggregate aggregate)
+        /// <param name="target">The target upon which to enact the command.</param>
+        protected virtual async Task EnactCommandAsync(TTarget target)
         {
             if (Handler == null)
             {
-                Action enactCommand = () => ((dynamic) aggregate).EnactCommand((dynamic) this);
+                Action enactCommand = () => ((dynamic) target).EnactCommand((dynamic) this);
                 await Task.Run(enactCommand);
             }
             else
             {
-                await (Task) Handler.EnactCommand((dynamic) aggregate, (dynamic) this);
+                await (Task) Handler.EnactCommand((dynamic) target, (dynamic) this);
             }
         }
 
@@ -153,7 +152,7 @@ namespace Microsoft.Its.Domain
         {
             return handlerTypesByName.GetOrAdd(CommandName, name =>
             {
-                var handlerType = CommandHandler.Type(typeof (TAggregate), GetType());
+                var handlerType = CommandHandler.Type(typeof (TTarget), GetType());
                 var handlerTypes = CommandHandler.KnownTypes.DerivedFrom(handlerType).ToArray();
 
                 var numberOfHandlerTypes = handlerTypes.Length;
@@ -176,10 +175,21 @@ namespace Microsoft.Its.Domain
             }) != null;
         }
 
-        protected virtual void HandleCommandValidationFailure(TAggregate aggregate, ValidationReport validationReport)
+        protected virtual void HandleCommandValidationFailure(TTarget target, ValidationReport validationReport)
         {
-            ((dynamic) aggregate).HandleCommandValidationFailure((dynamic) this,
-                                                      validationReport);
+            if (target is EventSourcedAggregate)
+            {
+                ((dynamic) target).HandleCommandValidationFailure((dynamic) this,
+                                                                  validationReport);
+            }
+            else
+            {
+                throw new CommandValidationException(
+                    string.Format("Validation error while applying {0} to a {1}.",
+                                  CommandName,
+                                  target.GetType().Name),
+                    validationReport);
+            }
         }
 
         internal dynamic Handler
@@ -195,21 +205,21 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        internal void AuthorizeOrThrow(TAggregate aggregate)
+        internal void AuthorizeOrThrow(TTarget target)
         {
-            if (!Authorize(aggregate))
+            if (!Authorize(target))
             {
                 throw new CommandAuthorizationException("Unauthorized");
             }
         }
 
-        internal ValidationReport RunAllValidations(TAggregate aggregate, bool throwOnValidationFailure = false)
+        internal ValidationReport RunAllValidations(TTarget target, bool throwOnValidationFailure = false)
         {
-            AuthorizeOrThrow(aggregate);
+            AuthorizeOrThrow(target);
 
             if (AppliesToVersion != null)
             {
-                var eventSourced = aggregate as IEventSourced;
+                var eventSourced = target as IEventSourced;
 
                 if (eventSourced != null && AppliesToVersion != eventSourced.Version)
                 {
@@ -245,15 +255,15 @@ namespace Microsoft.Its.Domain
                 return validationReport;
             }
 
-            return ExecuteValidator(aggregate);
+            return ExecuteValidator(target);
         }
 
-        private ValidationReport ExecuteValidator(TAggregate aggregate)
+        private ValidationReport ExecuteValidator(TTarget target)
         {
             return (Validator ??
-                    new ValidationRule<TAggregate>(a => true)
+                    new ValidationRule<TTarget>(a => true)
                         .WithSuccessMessage("No rules defined for " + GetType()))
-                .Execute(aggregate);
+                .Execute(target);
         }
 
         private ValidationReport ExecutePreparedCommandValidator()
@@ -280,25 +290,25 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        ///     Determines whether the command is authorized to be applied to the specified aggregate.
+        ///     Determines whether the command is authorized to be applied to the specified target.
         /// </summary>
-        /// <param name="aggregate">The aggregate.</param>
+        /// <param name="target">The target.</param>
         /// <returns>true if the command is authorized; otherwise, false.</returns>
-        public virtual bool Authorize(TAggregate aggregate)
+        public virtual bool Authorize(TTarget target)
         {
-            return AuthorizeDefault(aggregate, this);
+            return AuthorizeDefault(target, this);
         }
 
         /// <summary>
-        /// If set, requires that the command be applied to this version of the aggregate; otherwise, <see cref="ApplyTo" /> will throw..
+        /// If set, requires that the command be applied to this version of the target; otherwise, <see cref="ApplyTo" /> will throw..
         /// </summary>
         public virtual long? AppliesToVersion { get; set; }
 
         /// <summary>
-        ///     Gets a validator that can be used to check the valididty of the command against the state of the aggregate before it is applied.
+        ///     Gets a validator that can be used to check the valididty of the command against the state of the target before it is applied.
         /// </summary>
         [JsonIgnore]
-        public virtual IValidationRule<TAggregate> Validator
+        public virtual IValidationRule<TTarget> Validator
         {
             get
             {
@@ -307,7 +317,7 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        ///     Gets a validator to check the state of the command in and of itself, as distinct from an aggregate.
+        ///     Gets a validator to check the state of the command in and of itself, as distinct from an target.
         /// </summary>
         /// <remarks>
         ///     By default, this returns a <see cref="ValidationPlan{TCommand}" /> where TCommand is the command's actual type, with rules built up from any System.ComponentModel.DataAnnotations attributes applied to its properties.
@@ -343,15 +353,15 @@ namespace Microsoft.Its.Domain
                                           KnownTypes.SingleOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
         }
 
-        public static IValidationRule<TAggregate> CommandHasNotBeenApplied(ICommand command)
+        public static IValidationRule<TTarget> CommandHasNotBeenApplied(ICommand command)
         {
-            if (string.IsNullOrWhiteSpace(command.ETag) || typeof (EventSourcedAggregate).IsAssignableFrom(typeof (TAggregate)))
+            if (string.IsNullOrWhiteSpace(command.ETag) || typeof (EventSourcedAggregate).IsAssignableFrom(typeof (TTarget)))
             {
-                return Validate.That<TAggregate>(a => true)
+                return Validate.That<TTarget>(a => true)
                                .WithSuccessMessage("Command is not checked for idempotency via the ETag property.");
             }
 
-            return Validate.That<TAggregate>(aggregate => (aggregate as EventSourcedAggregate)
+            return Validate.That<TTarget>(target => (target as EventSourcedAggregate)
                                                               .Events()
                                                               .OfType<Event>()
                                                               .Every(e => e.ETag != command.ETag))
@@ -361,7 +371,7 @@ namespace Microsoft.Its.Domain
         public override string ToString()
         {
             return string.Format("{0}.{1}",
-                                 typeof (TAggregate).Name,
+                                 typeof (TTarget).Name,
                                  CommandName);
         }
     }

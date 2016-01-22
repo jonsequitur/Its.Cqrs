@@ -9,8 +9,7 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// Schedules commands for deferred execution.
     /// </summary>
-    public interface ICommandScheduler<out TAggregate>
-        where TAggregate : IEventSourced
+    public interface ICommandScheduler<out TAggregate> where TAggregate : IEventSourced
     {
         /// <summary>
         /// Schedules the specified command.

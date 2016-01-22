@@ -25,6 +25,7 @@ namespace Microsoft.Its.Domain.Api.Tests
         [SetUp]
         public void SetUp()
         {
+            TestSetUp.EnsureEventStoreIsInitialized();
             Command<Order>.AuthorizeDefault = (order, command) => true;
         }
 

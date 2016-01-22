@@ -8,37 +8,37 @@ using Its.Validation;
 namespace Microsoft.Its.Domain
 {
     /// <summary>
-    ///     A command that can be applied to an aggregate to trigger some action and record an applicable state change.
+    ///     A command that can be applied to an target to trigger some action and record an applicable state change.
     /// </summary>
-    /// <typeparam name="T">The type of the aggregate.</typeparam>
+    /// <typeparam name="T">The type of the target.</typeparam>
     public interface ICommand<in T> : ICommand
     {
         /// <summary>
-        ///     Performs the action of the command upon the aggregate.
+        ///     Performs the action of the command upon the target.
         /// </summary>
-        /// <param name="aggregate">The aggregate to which to apply the command.</param>
+        /// <param name="target">The target to which to apply the command.</param>
         /// <exception cref="CommandValidationException">
-        ///     If the command cannot be applied due its state or the state of the aggregate, it should throw a
+        ///     If the command cannot be applied due its state or the state of the target, it should throw a
         ///     <see
         ///         cref="CommandValidationException" />
         ///     indicating the specifics of the failure.
         /// </exception>
-        void ApplyTo(T aggregate);
+        void ApplyTo(T target);
 
         /// <summary>
-        ///     Performs the action of the command upon the aggregate.
+        ///     Performs the action of the command upon the target.
         /// </summary>
-        /// <param name="aggregate">The aggregate to which to apply the command.</param>
+        /// <param name="target">The target to which to apply the command.</param>
         /// <exception cref="CommandValidationException">
-        ///     If the command cannot be applied due its state or the state of the aggregate, it should throw a
+        ///     If the command cannot be applied due its state or the state of the target, it should throw a
         ///     <see
         ///         cref="CommandValidationException" />
         ///     indicating the specifics of the failure.
         /// </exception>
-        Task ApplyToAsync(T aggregate);
+        Task ApplyToAsync(T target);
 
         /// <summary>
-        ///     Gets a validator that can be used to check the valididty of the command against the state of the aggregate before it is applied.
+        ///     Gets a validator that can be used to check the valididty of the command against the state of the target before it is applied.
         /// </summary>
         IValidationRule<T> Validator { get; }
     }
