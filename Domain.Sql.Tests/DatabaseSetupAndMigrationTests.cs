@@ -80,11 +80,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void event_store_type_and_aggregate_id_are_indexed()
+        public void event_store_type_and_id_are_indexed()
         {
             using (var context = new EventStoreDbContext())
             {
-                var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_AggregateId_and_Type' AND object_id = OBJECT_ID('eventstore.events')").Single();
+                var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_Id_and_Type' AND object_id = OBJECT_ID('eventstore.events')").Single();
                 result.Should().NotBeEmpty();
             }
         }
@@ -318,7 +318,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 };
             };
             MigrationVersion = version;
-            Scope = scope;
+            MigrationScope = scope;
         }
 
         public AnonymousMigrator(Func<IDbConnection, MigrationResult> migrate, Version version, string scope = "Test")
@@ -332,11 +332,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 throw new ArgumentNullException("scope");
             }
             this.migrate = migrate;
-            Scope = scope;
+            MigrationScope = scope;
             MigrationVersion = version;
         }
 
-        public string Scope { get; private set; }
+        public string MigrationScope { get; private set; }
 
         public Version MigrationVersion { get; private set; }
 

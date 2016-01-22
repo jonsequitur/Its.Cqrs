@@ -36,7 +36,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
         public string MaxSize { get; private set; }
 
-        public string Scope
+        public string MigrationScope
         {
             get
             {

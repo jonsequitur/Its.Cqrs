@@ -7,11 +7,11 @@ using System.Data;
 namespace Microsoft.Its.Domain.Sql.Migrations
 {
     /// <summary>
-    /// Performs a one-time database migration or other other operation.
+    /// Performs a one-time database migration or other operation.
     /// </summary>
     public interface IDbMigrator
     {
-        string Scope { get; }
+        string MigrationScope { get; }
 
         /// <summary>
         /// Gets the migration version.

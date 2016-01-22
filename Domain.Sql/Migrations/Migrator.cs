@@ -113,7 +113,7 @@ WHERE rowNumber = 1")
                                                                   v => v);
 
                     migrators.OrderBy(m => m.MigrationVersion)
-                             .Where(m => appliedVersions.IfContains(m.Scope)
+                             .Where(m => appliedVersions.IfContains(m.MigrationScope)
                                                         .Then(a => m.MigrationVersion > a.MigrationVersion)
                                                         .Else(() => true))
                              .ForEach(migrator => ApplyMigration(migrator, connection));
@@ -150,11 +150,11 @@ WHERE rowNumber = 1")
              GetDate())",
                     parameters: new Dictionary<string, object>
                     {
-                        { "@migrationScope", migrator.Scope },
+                        { "@migrationScope", migrator.MigrationScope },
                         { "@migrationVersion", migrator.MigrationVersion.ToString() },
                         {
                             "@log",
-                            string.Format("{1}\n{0}",
+                            string.Format("{0}\n\n{1}",
                                           migrator.GetType().AssemblyQualifiedName,
                                           result.Log).Trim()
                         }

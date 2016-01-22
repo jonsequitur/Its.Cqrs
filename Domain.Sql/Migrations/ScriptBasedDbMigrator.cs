@@ -36,9 +36,9 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
             MigrationVersion = new Version(version);
 
-            Scope = matches.Groups["scope"].Value;
+            MigrationScope = matches.Groups["scope"].Value;
 
-            if (Scope == null)
+            if (MigrationScope == null)
             {
                 throw new ArgumentException("resourceName was not in the expected format");
             }
@@ -69,7 +69,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
         public string SqlText { get; private set; }
 
-        public string Scope { get; private set; }
+        public string MigrationScope { get; private set; }
 
         public Version MigrationVersion { get; private set; }
 
