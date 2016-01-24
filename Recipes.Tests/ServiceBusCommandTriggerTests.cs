@@ -118,7 +118,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                 aggregateIds.ForEach(async id =>
                 {
-                    var order = CommandSchedulingTests.CreateOrder(orderId: id);
+                    var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder(orderId: id);
 
                     // due enough in the future that the scheduler won't apply the commands immediately
                     var due = Clock.Now().AddSeconds(5);
@@ -181,7 +181,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 await receiver.StartReceivingMessages();
 
                 // due enough in the future that the scheduler won't apply the commands immediately
-                var order = await CommandSchedulingTests.CreateOrder(orderId: aggregateId)
+                var order = await EventSourcedAggregateCommandSchedulingTests.CreateOrder(orderId: aggregateId)
                                                         .ApplyAsync(new ShipOn(Clock.Now().AddMinutes(2)));
 
                 await Configuration.Current.Repository<Order>().Save(order);
@@ -215,7 +215,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
             var aggregateId = Any.Guid();
 
             // due in the past so that it's scheduled immediately
-            var order = CommandSchedulingTests.CreateOrder(orderId: aggregateId)
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder(orderId: aggregateId)
                                               .Apply(new ShipOn(Clock.Now().AddSeconds(-5)));
             queueSender.MessageDeliveryOffsetFromCommandDueTime = TimeSpan.FromSeconds(0);
 

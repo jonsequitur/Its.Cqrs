@@ -60,7 +60,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Activity_is_notified_when_a_command_is_scheduled()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             var activity = new List<ICommandSchedulerActivity>();
 
@@ -88,7 +88,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Activity_is_notified_when_a_command_is_delivered_immediately()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             var activity = new List<ICommandSchedulerActivity>();
 
@@ -118,7 +118,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task SqlCommandScheduler_Activity_is_notified_when_a_command_is_delivered_via_Trigger()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             var activity = new List<ICommandSchedulerActivity>();
 
@@ -144,7 +144,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task A_command_is_not_marked_as_applied_if_no_handler_is_registered()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             order.Apply(
                 new ChargeCreditCardOn
                 {

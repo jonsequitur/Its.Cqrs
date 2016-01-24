@@ -93,7 +93,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var shipmentId = Any.AlphanumericString(8, 8);
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
             {
@@ -119,7 +119,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var shipmentId = Any.AlphanumericString(8, 8);
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             var shipDate = Clock.Now().AddMonths(1).Date;
             order.Apply(new ShipOn(shipDate)
@@ -146,7 +146,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var shipmentId = Any.AlphanumericString(8, 8);
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             var shipDate = Clock.Now().AddMonths(1).Date;
             order.Apply(new ShipOn(shipDate)
@@ -174,7 +174,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var shipmentId = Any.AlphanumericString(8, 8);
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(2).Date)
             {
@@ -196,7 +196,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Scheduled_commands_are_delivered_immediately_if_a_past_due_time_is_specified_on_the_realtime_clock()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             // act
             order.Apply(new ShipOn(Clock.Now().Subtract(TimeSpan.FromDays(2))));
@@ -215,7 +215,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Scheduled_commands_are_delivered_immediately_if_a_past_due_time_is_specified_on_a_scheduler_clock()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             await clockTrigger.AdvanceClock(clockName, clockRepository.ReadClock(clockName).AddDays(10));
 
@@ -283,7 +283,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             clockRepository.CreateClock(clockTwo, Clock.Now());
 
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(2).Date)
             {
@@ -339,7 +339,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task A_clock_can_be_associated_with_an_aggregate_so_that_its_scheduled_commands_can_be_advanced_later()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             clockRepository.AssociateWithClock(clockName, order.Id.ToString());
 
             // act
@@ -408,7 +408,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_it_is_retried_by_default()
         {
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             await orderRepository.Save(order);
 
             TriggerConcurrencyExceptionOnOrderCommands(order.Id);
@@ -432,7 +432,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_commands_that_its_handler_scheduled_are_not_duplicated()
         {
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             await accountRepository.Save(new CustomerAccount(order.CustomerId).Apply(new ChangeEmailAddress(Any.Email())));
             await orderRepository.Save(order);
 
@@ -470,7 +470,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_it_is_not_marked_as_applied()
         {
             // arrange 
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             var ship = new Ship();
 
             order.Apply(ship);
@@ -508,7 +508,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_a_scheduled_command_fails_then_the_error_is_recorded()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             var innerRepository = new SqlEventSourcedRepository<Order>();
             var saveCount = 0;
             Configuration.Current
@@ -543,7 +543,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task When_two_different_callers_advance_the_same_clock_at_the_same_time_then_commands_are_only_run_once()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             var barrier = new Barrier(2);
 
             // act
@@ -583,7 +583,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task A_command_handler_can_control_retries_of_a_failed_command()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             order.Apply(
                 new ChargeCreditCardOn
                 {
@@ -618,7 +618,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task A_command_handler_can_retry_a_failed_command_as_soon_as_it_wants()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             order.Apply(
                 new ChargeCreditCardOn
                 {
@@ -653,7 +653,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task A_command_handler_can_retry_a_failed_command_as_late_as_it_wants()
         {
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
             order.Apply(
                 new ChargeCreditCardOn
                 {
@@ -767,7 +767,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var shipmentId = Any.AlphanumericString(8, 8);
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
 
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
             {
@@ -803,7 +803,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var customerAccountId = Any.Guid();
             await accountRepository.Save(new CustomerAccount(customerAccountId)
                                              .Apply(new ChangeEmailAddress(Any.Email())));
-            var order = CommandSchedulingTests.CreateOrder(customerAccountId: customerAccountId);
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder(customerAccountId: customerAccountId);
 
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
             {
@@ -831,7 +831,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var customerAccountId = Any.Guid();
             await accountRepository.Save(new CustomerAccount(customerAccountId)
                                              .Apply(new ChangeEmailAddress(Any.Email())));
-            var order = CommandSchedulingTests.CreateOrder(customerAccountId: customerAccountId);
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder(customerAccountId: customerAccountId);
 
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
             {
@@ -859,7 +859,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var customerAccountId = Any.Guid();
             await accountRepository.Save(new CustomerAccount(customerAccountId)
                                              .Apply(new ChangeEmailAddress(Any.Email())));
-            var order = CommandSchedulingTests.CreateOrder(customerAccountId: customerAccountId);
+            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder(customerAccountId: customerAccountId);
 
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
             {
