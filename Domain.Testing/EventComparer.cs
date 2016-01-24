@@ -15,7 +15,10 @@ namespace Microsoft.Its.Domain.Testing
 
         public int GetHashCode(IStoredEvent obj)
         {
-            return (obj.AggregateId + "|" + obj).GetHashCode();
+            unchecked
+            {
+                return (obj.SequenceNumber.GetHashCode() * 397) ^ obj.AggregateId.GetHashCode();
+            }
         }
     }
 }

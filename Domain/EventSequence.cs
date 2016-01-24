@@ -82,10 +82,8 @@ namespace Microsoft.Its.Domain
                                                           @event.SequenceNumber));
             }
 
-            version = events.Count > 0 ? 
-                Math.Max(@event.SequenceNumber, events.Max(ee => ee.SequenceNumber)) : 
-                @event.SequenceNumber;
-          
+            version = Math.Max(version, @event.SequenceNumber);
+
             events.Add(@event);
         }
 

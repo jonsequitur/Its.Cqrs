@@ -53,8 +53,6 @@ namespace Microsoft.Its.Domain
 
         protected void BuildUpStateFromEventHistory()
         {
-            InitializeEventHistory();
-
             foreach (var @event in EventHistory.OfType<IEvent<T>>())
             {
                 @event.Update((T) this);

@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
@@ -1153,6 +1154,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                  .OrderBy(c => c.CreatedTime)
                                  .ToArray();
 
+                Console.WriteLine(commands.ToDiagnosticJson());
                 commands.Count().Should().Be(2);
                 commands.Last().FinalAttemptTime.Should().NotBeNull();
             }
