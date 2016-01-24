@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
-    internal class EventSourcedCommandApplier<TAggregate> : ICommandApplier<TAggregate> where TAggregate : class, IEventSourced
+    internal class EventSourcedCommandApplier<TTarget> : ICommandApplier<TTarget>
+        where TTarget : class, IEventSourced
     {
-        private readonly IEventSourcedRepository<TAggregate> repository;
+        private readonly IEventSourcedRepository<TTarget> repository;
         private readonly ICommandPreconditionVerifier preconditionVerifier;
 
         public EventSourcedCommandApplier(
-            IEventSourcedRepository<TAggregate> repository, 
+            IEventSourcedRepository<TTarget> repository,
             ICommandPreconditionVerifier preconditionVerifier)
         {
             if (repository == null)
@@ -28,9 +29,17 @@ namespace Microsoft.Its.Domain
             this.preconditionVerifier = preconditionVerifier;
         }
 
-        public async Task ApplyScheduledCommand(IScheduledCommand<TAggregate> scheduledCommand)
+        public async Task ApplyScheduledCommand(IScheduledCommand<TTarget> scheduledCommand)
         {
             await repository.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
+        }
+    }
+
+    internal class DefaultCommandApplier<TTarget> : ICommandApplier<TTarget>
+        where TTarget : class
+    {
+        public async Task ApplyScheduledCommand(IScheduledCommand<TTarget> scheduledCommand)
+        {
         }
     }
 }

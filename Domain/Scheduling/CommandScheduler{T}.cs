@@ -11,7 +11,7 @@ namespace Microsoft.Its.Domain
     /// </summary>
     /// <typeparam name="TAggregate">The type of the command target.</typeparam>
     internal class CommandScheduler<TAggregate> : ICommandScheduler<TAggregate> 
-        where TAggregate : class, IEventSourced
+        where TAggregate : class
     {
         private readonly ICommandApplier<TAggregate> commandApplier;
         private readonly ICommandPreconditionVerifier preconditionVerifier;
@@ -72,6 +72,11 @@ namespace Microsoft.Its.Domain
         /// </remarks>
         public virtual async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
         {
+            if (scheduledCommand.Result is CommandDelivered)
+            {
+                return;
+            }
+
             await commandApplier.ApplyScheduledCommand(scheduledCommand);
         }
 

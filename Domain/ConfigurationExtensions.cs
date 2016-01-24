@@ -26,7 +26,7 @@ namespace Microsoft.Its.Domain
         /// Gets an <see cref="ICommandScheduler{TAggregate}" />.
         /// </summary>
         public static ICommandScheduler<TAggregate> CommandScheduler<TAggregate>(this Configuration configuration)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             return configuration.Container.Resolve<ICommandScheduler<TAggregate>>();
         }

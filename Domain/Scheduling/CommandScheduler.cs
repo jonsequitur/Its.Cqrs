@@ -24,7 +24,6 @@ namespace Microsoft.Its.Domain
             DateTimeOffset? dueTime = null,
             IEvent deliveryDependsOn = null)
             where TCommand : ICommand<TAggregate>
-            where TAggregate : IEventSourced
         {
             if (aggregateId == Guid.Empty)
             {
@@ -88,7 +87,7 @@ namespace Microsoft.Its.Domain
         internal static async Task DeliverImmediatelyOnConfiguredScheduler<TAggregate>(
             IScheduledCommand<TAggregate> command,
             Configuration configuration)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             var scheduler = configuration.CommandScheduler<TAggregate>();
             await scheduler.Deliver(command);
@@ -98,7 +97,7 @@ namespace Microsoft.Its.Domain
             IScheduledCommand<TAggregate> scheduledCommand,
             Configuration configuration,
             int timeoutInMilliseconds = 10000)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             var eventBus = configuration.EventBus;
 
@@ -120,7 +119,7 @@ namespace Microsoft.Its.Domain
             TCommand command,
             DateTimeOffset? dueTime,
             IEvent deliveryDependsOn = null)
-            where TCommand : ICommand<TAggregate> where TAggregate : IEventSourced
+            where TCommand : ICommand<TAggregate> 
         {
             CommandPrecondition precondition = null;
 
@@ -210,11 +209,6 @@ namespace Microsoft.Its.Domain
         {
             TAggregate aggregate = null;
             Exception exception = null;
-
-            if (scheduled.Result is CommandDelivered)
-            {
-                return;
-            }
 
             try
             {

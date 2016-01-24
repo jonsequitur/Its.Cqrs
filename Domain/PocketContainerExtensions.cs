@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
 using Pocket;
 
@@ -26,20 +27,21 @@ namespace Microsoft.Its.Domain
             });
         }
 
-        public static PocketContainer UseAppropriateCommandAppliers(this PocketContainer container)
+        public static PocketContainer AddCommandApplierStrategy(this PocketContainer container)
         {
             return container.AddStrategy(type =>
             {
                 if (type.IsInterface &&
                     type.IsGenericType &&
-                    type.GetGenericTypeDefinition() == typeof(ICommandApplier<>))
+                    type.GetGenericTypeDefinition() == typeof (ICommandApplier<>))
                 {
                     var targetType = type.GetGenericArguments().First();
-                    if (typeof(IEventSourced).IsAssignableFrom(targetType))
-                    {
-                        var applierType = typeof (EventSourcedCommandApplier<>).MakeGenericType(targetType);
-                        return c => c.Resolve(applierType);
-                    }
+
+                    var applierType = typeof (IEventSourced).IsAssignableFrom(targetType)
+                                          ? typeof (EventSourcedCommandApplier<>).MakeGenericType(targetType)
+                                          : typeof (DefaultCommandApplier<>).MakeGenericType(targetType);
+
+                    return c => c.Resolve(applierType);
                 }
 
                 return null;

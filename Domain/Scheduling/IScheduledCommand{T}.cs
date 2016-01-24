@@ -10,7 +10,6 @@ namespace Microsoft.Its.Domain
     /// </summary>
     public interface IScheduledCommand<in TAggregate> :
         IScheduledCommand
-        where TAggregate : IEventSourced
     {
         /// <summary>
         /// Gets the command to be applied at a later time.

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
-    internal interface ICommandApplier<out TAggregate> where TAggregate : IEventSourced
+    internal interface ICommandApplier<out TAggregate> 
     {
         Task ApplyScheduledCommand(IScheduledCommand<TAggregate> scheduledCommand);
     }

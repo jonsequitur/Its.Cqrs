@@ -14,7 +14,6 @@ namespace Microsoft.Its.Domain
     [DebuggerDisplay("{ToString()}")]
     public class ScheduledCommand<TAggregate> :
         IScheduledCommand<TAggregate>
-        where TAggregate : IEventSourced
     {
         /// <summary>
         /// Gets the command to be applied at a later time.

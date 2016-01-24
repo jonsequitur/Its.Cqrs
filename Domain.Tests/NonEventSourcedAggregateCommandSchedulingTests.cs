@@ -2,13 +2,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Tests
 {
+    [Ignore("Scenario under development")]
     [Category("Command scheduling")]
     [TestFixture]
     public class NonEventSourcedAggregateCommandSchedulingTests
@@ -41,7 +44,14 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task CommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
         {
-            Assert.Fail("Test not written yet.");
+            var target = new CommandTarget();
+
+            await configuration.CommandScheduler<CommandTarget>()
+                               .Schedule(Guid.NewGuid(), new ValidCommand());
+
+            target.CommandsApplied
+                  .Should()
+                  .ContainSingle(c => c is ValidCommand);
         }
 
         [Test]
@@ -85,5 +95,34 @@ namespace Microsoft.Its.Domain.Tests
         {
             Assert.Fail("Test not written yet.");
         }
+    }
+
+    public class CommandTarget
+    {
+        private readonly ConcurrentBag<ICommand> commandsApplied = new ConcurrentBag<ICommand>();
+
+        public ConcurrentBag<ICommand> CommandsApplied
+        {
+            get
+            {
+                return commandsApplied;
+            }
+        }
+    }
+
+    public class CommandTargetCommandHandler : ICommandHandler<CommandTarget, ValidCommand>
+    {
+        public async Task EnactCommand(CommandTarget target, ValidCommand command)
+        {
+            target.CommandsApplied.Add(command);
+        }
+
+        public async Task HandleScheduledCommandException(CommandTarget target, CommandFailed<ValidCommand> command)
+        {
+        }
+    }
+
+    public class ValidCommand : Command<CommandTarget>
+    {
     }
 }

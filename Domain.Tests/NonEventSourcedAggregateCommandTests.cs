@@ -14,7 +14,7 @@ using NUnit.Framework;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
-    public class NonAggregateCommandTests
+    public class NonEventSourcedAggregateCommandTests
     {
         private CompositeDisposable disposables;
 
@@ -24,10 +24,10 @@ namespace Microsoft.Its.Domain.Tests
             Command<Target>.AuthorizeDefault = (account, command) => true;
 
             disposables = new CompositeDisposable
-                          {
-                              ConfigurationContext.Establish(new Configuration()
-                                                                 .UseInMemoryEventStore(traceEvents: true))
-                          };
+            {
+                ConfigurationContext.Establish(new Configuration()
+                                                   .UseInMemoryEventStore(traceEvents: true))
+            };
         }
 
         [TearDown]
@@ -40,11 +40,11 @@ namespace Microsoft.Its.Domain.Tests
         public async Task when_a_command_is_applied_directly_the_command_is_executed()
         {
             var target = new Target();
-            await target.ApplyAsync(new CommandOnTarget()); 
+            await target.ApplyAsync(new CommandOnTarget());
             target.CommandsAppliedCount.Should().Be(1);
         }
 
-        [Test] 
+        [Test]
         public async Task when_a_command_is_applied_directly_with_an_etag_the_command_is_executed()
         {
             var target = new Target();
@@ -63,11 +63,10 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void target_validations_are_checked()
         {
-            Action applyCommand = () => (new CommandOnTarget { }.ApplyToAsync(new Target() { FailCommandApplications = true })).Wait();
+            Action applyCommand = () => (new CommandOnTarget().ApplyToAsync(new Target { FailCommandApplications = true })).Wait();
 
             applyCommand.ShouldThrow<CommandValidationException>();
         }
-
     }
 
     public class Target
