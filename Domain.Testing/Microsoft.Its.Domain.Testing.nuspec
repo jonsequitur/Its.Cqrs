@@ -8,11 +8,11 @@
     <owners>Microsoft,jonsequitur</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Test conveniences for Its.Domain and related Its.Cqrs projects.</description>
-    <copyright>Copyright 2015</copyright>
+    <copyright>Copyright 2016</copyright>
     <tags>testing CQRS Its.Cqrs</tags>
     <dependencies>
-      <dependency id="Its.Domain" version="[0.13.6-beta,1)" />
-      <dependency id="Its.Domain.Sql" version="[0.13.6-beta,1)" />
+      <dependency id="Its.Domain" version="[0.13.7-beta,1)" />
+      <dependency id="Its.Domain.Sql" version="[0.13.7-beta,1)" />
       <dependency id="Rx-Main" version="[2.2.5,)" />
     </dependencies>
   </metadata>
