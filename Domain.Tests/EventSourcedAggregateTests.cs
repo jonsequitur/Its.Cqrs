@@ -460,7 +460,7 @@ namespace Microsoft.Its.Domain.Tests
             Console.WriteLine("Elapsed: {0}ms", sw.ElapsedMilliseconds);
             t.Version.Should().Be(count);
             t.NumberOfUpdatesExecuted.Should().Be(count);
-            sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
+            sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(20));
         }
 
         private static void Shuffle<T>(IList<T> list, Random randomNumberGenerator)
