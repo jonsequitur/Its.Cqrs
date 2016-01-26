@@ -13,9 +13,9 @@ namespace Microsoft.Its.Domain
         {
             return container.AddStrategy(type =>
             {
-                if (type.IsInterface &&  
-                    type.IsGenericType && 
-                    type.GetGenericTypeDefinition() == typeof(ICommandScheduler<>))
+                if (type.IsInterface &&
+                    type.IsGenericType &&
+                    type.GetGenericTypeDefinition() == typeof (ICommandScheduler<>))
                 {
                     var targetType = type.GetGenericArguments().First();
                     var schedulerType = typeof (CommandScheduler<>).MakeGenericType(targetType);
@@ -27,21 +27,23 @@ namespace Microsoft.Its.Domain
             });
         }
 
-        public static PocketContainer AddCommandApplierStrategy(this PocketContainer container)
+        public static PocketContainer AddStoreStrategy(this PocketContainer container)
         {
             return container.AddStrategy(type =>
             {
                 if (type.IsInterface &&
                     type.IsGenericType &&
-                    type.GetGenericTypeDefinition() == typeof (ICommandApplier<>))
+                    type.GetGenericTypeDefinition() == typeof (IStore<>))
                 {
                     var targetType = type.GetGenericArguments().First();
 
-                    var applierType = typeof (IEventSourced).IsAssignableFrom(targetType)
-                                          ? typeof (EventSourcedCommandApplier<>).MakeGenericType(targetType)
-                                          : typeof (DefaultCommandApplier<>).MakeGenericType(targetType);
+                    Type applierType;
+                    if (typeof (IEventSourced).IsAssignableFrom(targetType))
+                    {
+                        applierType = typeof (IEventSourcedRepository<>).MakeGenericType(targetType);
 
-                    return c => c.Resolve(applierType);
+                        return c => c.Resolve(applierType);
+                    }
                 }
 
                 return null;

@@ -13,18 +13,18 @@ namespace Microsoft.Its.Domain
     internal class CommandScheduler<TAggregate> : ICommandScheduler<TAggregate> 
         where TAggregate : class
     {
-        private readonly ICommandApplier<TAggregate> commandApplier;
+        private readonly IStore<TAggregate> store;
         private readonly ICommandPreconditionVerifier preconditionVerifier;
 
         public CommandScheduler(
-            ICommandApplier<TAggregate> commandApplier,
+            IStore<TAggregate> store,
             ICommandPreconditionVerifier preconditionVerifier)
         {
-            if (commandApplier == null)
+            if (store == null)
             {
-                throw new ArgumentNullException("commandApplier");
+                throw new ArgumentNullException("store");
             }
-            this.commandApplier = commandApplier;
+            this.store = store;
             this.preconditionVerifier = preconditionVerifier;
         }
 
@@ -77,7 +77,7 @@ namespace Microsoft.Its.Domain
                 return;
             }
 
-            await commandApplier.ApplyScheduledCommand(scheduledCommand);
+            await store.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
         }
 
         /// <summary>

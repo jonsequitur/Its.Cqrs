@@ -202,10 +202,10 @@ namespace Microsoft.Its.Domain
             .Single(m => m.Name == "Create");
 
         internal static async Task ApplyScheduledCommand<TAggregate>(
-            this IEventSourcedRepository<TAggregate> repository,
+            this IStore<TAggregate> repository,
             IScheduledCommand<TAggregate> scheduled,
             ICommandPreconditionVerifier preconditionVerifier = null)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             TAggregate aggregate = null;
             Exception exception = null;
@@ -257,11 +257,11 @@ namespace Microsoft.Its.Domain
         }
 
         private static async Task FailScheduledCommand<TAggregate>(
-            IEventSourcedRepository<TAggregate> repository,
+            IStore<TAggregate> repository,
             IScheduledCommand<TAggregate> scheduled,
             Exception exception = null,
             TAggregate aggregate = null)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             var failure = (CommandFailed) createMethod
                                               .MakeGenericMethod(scheduled.Command.GetType())

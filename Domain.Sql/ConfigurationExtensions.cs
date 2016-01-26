@@ -53,7 +53,7 @@ namespace Microsoft.Its.Domain.Sql
 
             configuration.Container
                          .Register(c => createEventStoreDbContext())
-                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<CommandPreconditionVerifier>());
+                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<SqlEventStoreCommandPreconditionVerifier>());
 
             return configuration;
         }
@@ -114,7 +114,7 @@ namespace Microsoft.Its.Domain.Sql
                      .Register<ISchedulerClockRepository>(
                          c => c.Resolve<SchedulerClockRepository>())
                      .Register<ICommandPreconditionVerifier>(
-                         c => c.Resolve<CommandPreconditionVerifier>())
+                         c => c.Resolve<SqlEventStoreCommandPreconditionVerifier>())
                      .Register<ISchedulerClockTrigger>(
                          c => c.Resolve<SchedulerClockTrigger>());
 

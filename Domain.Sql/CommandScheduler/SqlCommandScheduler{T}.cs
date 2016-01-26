@@ -20,7 +20,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public IObserver<ICommandSchedulerActivity> Activity = Observer.Create<ICommandSchedulerActivity>(a => { });
         public Func<IScheduledCommand<TAggregate>, string> GetClockLookupKey = cmd => null;
         public GetClockName GetClockName = cmd => null;
-        private readonly CommandPreconditionVerifier commandPreconditionVerifier;
+        private readonly SqlEventStoreCommandPreconditionVerifier commandPreconditionVerifier;
         private readonly IHaveConsequencesWhen<CommandScheduled<TAggregate>> consequenter;
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
         private readonly IEventBus eventBus;
@@ -30,7 +30,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             Func<IEventSourcedRepository<TAggregate>> getRepository,
             Func<CommandSchedulerDbContext> createCommandSchedulerDbContext,
             IEventBus eventBus,
-            CommandPreconditionVerifier commandPreconditionVerifier)
+            SqlEventStoreCommandPreconditionVerifier commandPreconditionVerifier)
         {
             if (getRepository == null)
             {
