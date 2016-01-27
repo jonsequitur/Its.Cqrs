@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace Microsoft.Its.Domain
 {
     internal class CommandSchedulerPipeline<TAggregate>
-        where TAggregate : class, IEventSourced
+        where TAggregate : class
     {
         private readonly List<ScheduledCommandInterceptor<TAggregate>> onSchedule = new List<ScheduledCommandInterceptor<TAggregate>>();
 

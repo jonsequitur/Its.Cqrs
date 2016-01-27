@@ -145,7 +145,7 @@ namespace Microsoft.Its.Domain
             this Configuration configuration,
             ScheduledCommandInterceptor<TAggregate> schedule = null,
             ScheduledCommandInterceptor<TAggregate> deliver = null)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             if (!configuration.IsUsingCommandSchedulerPipeline())
             {

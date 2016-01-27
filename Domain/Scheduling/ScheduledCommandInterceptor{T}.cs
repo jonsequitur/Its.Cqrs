@@ -9,5 +9,5 @@ namespace Microsoft.Its.Domain
 {
     public delegate Task ScheduledCommandInterceptor<TAggregate>(
         IScheduledCommand<TAggregate> command,
-        Func<IScheduledCommand<TAggregate>, Task> next) where TAggregate : IEventSourced;
+        Func<IScheduledCommand<TAggregate>, Task> next);
 }

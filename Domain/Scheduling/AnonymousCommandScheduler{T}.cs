@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
-    internal class AnonymousCommandScheduler<TAggregate> : ICommandScheduler<TAggregate> where TAggregate : IEventSourced
+    internal class AnonymousCommandScheduler<TAggregate> : ICommandScheduler<TAggregate>
     {
         private readonly Func<IScheduledCommand<TAggregate>, Task> schedule;
         private readonly Func<IScheduledCommand<TAggregate>, Task> deliver;

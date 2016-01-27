@@ -35,7 +35,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         private async Task Schedule<TAggregate>(
             IScheduledCommand<TAggregate> cmd,
             Func<IScheduledCommand<TAggregate>, Task> next)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             await Storage.StoreScheduledCommand(
                 cmd,
@@ -48,7 +48,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         private async Task Deliver<TAggregate>(
             IScheduledCommand<TAggregate> cmd, 
             Func<IScheduledCommand<TAggregate>, Task> next)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             IClock clock = null;
             if (cmd.DueTime != null)
