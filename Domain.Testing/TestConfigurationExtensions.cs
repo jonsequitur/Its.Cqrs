@@ -2,12 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Newtonsoft.Json;
 using Pocket;
 
@@ -34,6 +32,25 @@ namespace Microsoft.Its.Domain.Testing
         {
             configuration.Container.RegisterGeneric(variantsOf: typeof (ICommandScheduler<>),
                                                     to: typeof (IgnoreCommandScheduling<>));
+            return configuration;
+        }
+
+        public static Configuration UseInMemoryCommandTargetStore(this Configuration configuration)
+        {
+            configuration.Container
+                         .AddStrategy(type =>
+                         {
+                             if (type.IsGenericType &&
+                                 type.GetGenericTypeDefinition() == typeof (IStore<>))
+                             {
+                                 var targetType = type.GetGenericArguments().Single();
+                                 var storeType = typeof (InMemoryStore<>).MakeGenericType(targetType);
+                                 return c => Activator.CreateInstance(storeType , new object[] { (dynamic)null });
+                             }
+
+                             return null;
+                         });
+
             return configuration;
         }
 

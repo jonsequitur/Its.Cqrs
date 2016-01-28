@@ -16,7 +16,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         internal static async Task<ScheduledCommand> StoreScheduledCommand<TAggregate>(
             IScheduledCommand<TAggregate> scheduledCommand,
             Func<CommandSchedulerDbContext> createDbContext,
-            Func<IScheduledCommand<TAggregate>, CommandSchedulerDbContext, Task<string>> clockNameForEvent) where TAggregate : class, IEventSourced
+            Func<IScheduledCommand<TAggregate>, CommandSchedulerDbContext, Task<string>> clockNameForEvent) where TAggregate : class
         {
             ScheduledCommand storedScheduledCommand;
 
@@ -46,7 +46,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 {
                     AggregateId = scheduledCommand.AggregateId,
                     SequenceNumber = scheduledCommand.SequenceNumber,
-                    AggregateType = AggregateType<TAggregate>.EventStreamName,
+                    AggregateType = Command.TargetNameFor(scheduledCommand.Command.GetType()),
                     SerializedCommand = scheduledCommand.ToJson(),
                     CreatedTime = domainTime,
                     DueTime = scheduledCommand.DueTime,
@@ -122,7 +122,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         internal static async Task UpdateScheduledCommand<TAggregate>(
             IScheduledCommand<TAggregate> scheduledCommand,
-            Func<CommandSchedulerDbContext> createDbContext) where TAggregate : class, IEventSourced
+            Func<CommandSchedulerDbContext> createDbContext) where TAggregate : class
         {
             using (var db = createDbContext())
             {

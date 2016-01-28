@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -42,6 +43,10 @@ namespace Microsoft.Its.Domain.Tests
 
             disposables.Add(ConfigurationContext.Establish(configuration));
             disposables.Add(configuration);
+
+            Formatter.ListExpansionLimit = 100;
+            Console.WriteLine("Command.KnownTypes: \n" + Command.KnownTypes.Select(t => t.FullName).ToLogString());
+            Console.WriteLine("Command.KnownTargetTypes: \n" + Command.KnownTargetTypes.Select(t => t.FullName).ToLogString());
         }
 
         [TearDown]
@@ -145,24 +150,24 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task When_CommandSchedulerPipeline_tracing_is_enabled_then_by_default_trace_output_goes_to_SystemDiagnosticsTrace()
         {
-            configuration.TraceScheduledCommands();
+            configuration.UseInMemoryCommandTargetStore();
 
             var log = new List<string>();
             using (LogTraceOutputTo(log))
             {
-                await configuration.CommandScheduler<Order>()
-                                   .Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+                await configuration.CommandScheduler<CommandTarget>()
+                                   .Schedule(Any.Guid(), new CreateCommandTarget());
             }
 
             log.Count.Should().Be(4);
-            log.Should().Contain(e => e.Contains("[Scheduling]") &&
-                                      e.Contains("Order.CreateOrder"));
-            log.Should().Contain(e => e.Contains("[Scheduled]") &&
-                                      e.Contains("Order.CreateOrder"));
-            log.Should().Contain(e => e.Contains("[Delivering]") &&
-                                      e.Contains("Order.CreateOrder"));
-            log.Should().Contain(e => e.Contains("[Delivered]") &&
-                                      e.Contains("Order.CreateOrder"));
+            log.Should().ContainSingle(e => e.Contains("[Scheduling]") &&
+                                            e.Contains("CommandTarget.CreateCommandTarget"));
+            log.Should().ContainSingle(e => e.Contains("[Scheduled]") &&
+                                            e.Contains("CommandTarget.CreateCommandTarget"));
+            log.Should().ContainSingle(e => e.Contains("[Delivering]") &&
+                                            e.Contains("CommandTarget.CreateCommandTarget"));
+            log.Should().ContainSingle(e => e.Contains("[Delivered]") &&
+                                            e.Contains("CommandTarget.CreateCommandTarget"));
         }
 
         [Test]
@@ -280,8 +285,6 @@ namespace Microsoft.Its.Domain.Tests
 
         public IDisposable LogTraceOutputTo(List<string> log)
         {
-            configuration.TraceScheduledCommands();
-
             var listener = new TraceListener();
             Trace.Listeners.Add(listener);
 

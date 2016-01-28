@@ -3,21 +3,25 @@
 
 using System;
 using System.Collections.Concurrent;
+using FluentAssertions;
+using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
-using FluentAssertions;
+using Its.Validation;
+using Its.Validation.Configuration;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Tests
 {
-    [Ignore("Scenario under development")]
     [Category("Command scheduling")]
     [TestFixture]
     public class NonEventSourcedAggregateCommandSchedulingTests
     {
-        private CompositeDisposable disposables;
+        private CompositeDisposable disposables = new CompositeDisposable();
         private Configuration configuration;
+        private CommandTarget target;
+        private string targetId;
 
         [SetUp]
         public void SetUp()
@@ -27,8 +31,19 @@ namespace Microsoft.Its.Domain.Tests
                 VirtualClock.Start()
             };
 
+            targetId = Guid.NewGuid().ToString();
+            target = new CommandTarget();
+
+            var store = new InMemoryStore<CommandTarget>(_ => targetId)
+            {
+                target
+            };
+
+            Command<CommandTarget>.AuthorizeDefault = (commandTarget, command) => true;
+
             configuration = new Configuration()
                 .UseInMemoryCommandScheduling()
+                .UseDependency<IStore<CommandTarget>>(_ => store)
                 .TraceScheduledCommands();
 
             disposables.Add(ConfigurationContext.Establish(configuration));
@@ -44,26 +59,49 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task CommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
         {
-            var target = new CommandTarget();
-
             await configuration.CommandScheduler<CommandTarget>()
-                               .Schedule(Guid.NewGuid(), new ValidCommand());
+                               .Schedule(Guid.Parse(targetId), new TestCommand());
 
-            target.CommandsApplied
+            target.CommandsEnacted
                   .Should()
-                  .ContainSingle(c => c is ValidCommand);
+                  .ContainSingle(c => c is TestCommand);
         }
 
         [Test]
         public async Task When_a_scheduled_command_fails_validation_then_a_failure_event_can_be_recorded_in_HandleScheduledCommandException_method()
         {
-            Assert.Fail("Test not written yet.");
+            await configuration.CommandScheduler<CommandTarget>()
+                               .Schedule(Guid.Parse(targetId), new TestCommand(isValid: false));
+
+            target.CommandsFailed
+                  .Select(f => f.ScheduledCommand)
+                  .Cast<IScheduledCommand<CommandTarget>>()
+                  .Should()
+                  .ContainSingle(c => c.Command is TestCommand);
         }
 
         [Test]
-        public async Task When_applying_a_scheduled_command_throws_unexpectedly_then_further_command_scheduling_is_not_interrupted()
+        public async Task When_applying_a_scheduled_command_throws_then_further_command_scheduling_is_not_interrupted()
         {
-            Assert.Fail("Test not written yet.");
+            await configuration.CommandScheduler<CommandTarget>()
+                               .Schedule(Guid.Parse(targetId),
+                                         new TestCommand(isValid: false),
+                                         dueTime: Clock.Now().AddMinutes(1));
+            await configuration.CommandScheduler<CommandTarget>()
+                               .Schedule(Guid.Parse(targetId),
+                                         new TestCommand(),
+                                         dueTime: Clock.Now().AddMinutes(2));
+
+            VirtualClock.Current.AdvanceBy(TimeSpan.FromHours(1));
+
+            target.CommandsEnacted
+                  .Should()
+                  .ContainSingle(c => c is TestCommand);
+            target.CommandsFailed
+                  .Select(f => f.ScheduledCommand)
+                  .Cast<IScheduledCommand<CommandTarget>>()
+                  .Should()
+                  .ContainSingle(c => c.Command is TestCommand);
         }
 
         [Test]
@@ -99,30 +137,62 @@ namespace Microsoft.Its.Domain.Tests
 
     public class CommandTarget
     {
-        private readonly ConcurrentBag<ICommand> commandsApplied = new ConcurrentBag<ICommand>();
+        private readonly ConcurrentBag<ICommand<CommandTarget>> commandsEnacted = new ConcurrentBag<ICommand<CommandTarget>>();
+        private readonly ConcurrentBag<CommandFailed> commandsFailed = new ConcurrentBag<CommandFailed>();
 
-        public ConcurrentBag<ICommand> CommandsApplied
+        public CommandTarget(CreateCommandTarget create = null)
+        {
+        }
+
+        public ConcurrentBag<ICommand<CommandTarget>> CommandsEnacted
         {
             get
             {
-                return commandsApplied;
+                return commandsEnacted;
+            }
+        }
+
+        public ConcurrentBag<CommandFailed> CommandsFailed
+        {
+            get
+            {
+                return commandsFailed;
             }
         }
     }
 
-    public class CommandTargetCommandHandler : ICommandHandler<CommandTarget, ValidCommand>
+    public class CommandTargetCommandHandler : ICommandHandler<CommandTarget, TestCommand>
     {
-        public async Task EnactCommand(CommandTarget target, ValidCommand command)
+        public async Task EnactCommand(CommandTarget target, TestCommand command)
         {
-            target.CommandsApplied.Add(command);
+            target.CommandsEnacted.Add(command);
         }
 
-        public async Task HandleScheduledCommandException(CommandTarget target, CommandFailed<ValidCommand> command)
+        public async Task HandleScheduledCommandException(CommandTarget target, CommandFailed<TestCommand> command)
         {
+            target.CommandsFailed.Add(command);
         }
     }
 
-    public class ValidCommand : Command<CommandTarget>
+    public class CreateCommandTarget : ConstructorCommand<CommandTarget>
     {
+    }
+
+    public class TestCommand : Command<CommandTarget>
+    {
+        private readonly bool isValid;
+
+        public TestCommand(string etag = null, bool isValid = true) : base(etag)
+        {
+            this.isValid = isValid;
+        }
+
+        public override IValidationRule CommandValidator
+        {
+            get
+            {
+                return Validate.That<TestCommand>(cmd => cmd.isValid);
+            }
+        }
     }
 }

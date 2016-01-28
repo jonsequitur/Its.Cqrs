@@ -45,7 +45,6 @@ namespace Microsoft.Its.Domain
             this ICommandScheduler<TAggregate> scheduler,
             ScheduledCommandInterceptor<TAggregate> schedule = null,
             ScheduledCommandInterceptor<TAggregate> deliver = null)
-            where TAggregate : IEventSourced
         {
             schedule = schedule ?? (async (c, next) => await next(c));
             deliver = deliver ?? (async (c, next) => await next(c));
@@ -58,7 +57,6 @@ namespace Microsoft.Its.Domain
         internal static ICommandScheduler<TAggregate> Create<TAggregate>(
             Func<IScheduledCommand<TAggregate>, Task> schedule,
             Func<IScheduledCommand<TAggregate>, Task> deliver)
-            where TAggregate : IEventSourced
         {
             return new AnonymousCommandScheduler<TAggregate>(
                 schedule,
@@ -67,7 +65,6 @@ namespace Microsoft.Its.Domain
 
         internal static ScheduledCommandInterceptor<TAggregate> Compose<TAggregate>(
             this IEnumerable<ScheduledCommandInterceptor<TAggregate>> pipeline)
-            where TAggregate : IEventSourced
         {
             var delegates = pipeline.OrEmpty().ToArray();
 
@@ -202,7 +199,7 @@ namespace Microsoft.Its.Domain
             .Single(m => m.Name == "Create");
 
         internal static async Task ApplyScheduledCommand<TAggregate>(
-            this IStore<TAggregate> repository,
+            this IStore<TAggregate> store,
             IScheduledCommand<TAggregate> scheduled,
             ICommandPreconditionVerifier preconditionVerifier = null)
             where TAggregate : class
@@ -215,19 +212,25 @@ namespace Microsoft.Its.Domain
                 if (preconditionVerifier != null &&
                     !await preconditionVerifier.IsPreconditionSatisfied(scheduled))
                 {
-                    await FailScheduledCommand(repository,
+                    await FailScheduledCommand(store,
                                                scheduled,
                                                new PreconditionNotMetException(scheduled.DeliveryPrecondition));
                     return;
                 }
 
-                aggregate = await repository.GetLatest(scheduled.AggregateId);
+                aggregate = await store.Get(scheduled.AggregateId.ToString());
 
                 if (aggregate == null)
                 {
                     if (scheduled.Command is ConstructorCommand<TAggregate>)
                     {
                         var ctor = typeof (TAggregate).GetConstructor(new[] { scheduled.Command.GetType() });
+
+                        if (ctor == null)
+                        {
+                            throw new InvalidOperationException(string.Format("No constructor was found on type {0} for constructor command {1}.", typeof(TAggregate), scheduled.Command));
+                        }
+
                         aggregate = (TAggregate) ctor.Invoke(new[] { scheduled.Command });
                     }
                     else
@@ -242,7 +245,7 @@ namespace Microsoft.Its.Domain
                     await aggregate.ApplyAsync(scheduled.Command);
                 }
 
-                await repository.Save(aggregate);
+                await store.Put(aggregate);
 
                 scheduled.Result = new CommandSucceeded(scheduled);
 
@@ -253,11 +256,11 @@ namespace Microsoft.Its.Domain
                 exception = ex;
             }
 
-            await FailScheduledCommand(repository, scheduled, exception, aggregate);
+            await FailScheduledCommand(store, scheduled, exception, aggregate);
         }
 
         private static async Task FailScheduledCommand<TAggregate>(
-            IStore<TAggregate> repository,
+            IStore<TAggregate> store,
             IScheduledCommand<TAggregate> scheduled,
             Exception exception = null,
             TAggregate aggregate = null)
@@ -300,7 +303,7 @@ namespace Microsoft.Its.Domain
                 {
                     try
                     {
-                        await repository.Save(aggregate);
+                        await store.Put(aggregate);
                     }
                     catch (Exception ex)
                     {

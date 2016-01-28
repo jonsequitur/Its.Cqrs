@@ -54,7 +54,7 @@ namespace Microsoft.Its.Domain.Testing
         }
 
         internal static ScheduledCommandInterceptor<TAggregate> WithInMemoryDeferredScheduling<TAggregate>(Configuration configuration)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             return async (command, next) =>
             {

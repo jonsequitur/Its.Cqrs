@@ -20,10 +20,12 @@ namespace Microsoft.Its.Domain
         {
             configuration.Properties.GetOrAdd(GetKeyIndicatingInitialized(), _ =>
             {
-                AggregateType.KnownTypes.ForEach(aggregateType =>
-                {
-                    initializeFor.MakeGenericMethod(aggregateType).Invoke(this, new[] { configuration });
-                });
+                Command.KnownTargetTypes
+                       .ForEach(type =>
+                       {
+                           initializeFor.MakeGenericMethod(type)
+                                        .Invoke(this, new[] { configuration });
+                       });
                 return true;
             });
         }
@@ -34,6 +36,6 @@ namespace Microsoft.Its.Domain
         }
 
         protected abstract void InitializeFor<TAggregate>(Configuration configuration)
-            where TAggregate : class, IEventSourced;
+            where TAggregate : class;
     }
 }

@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Subjects;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql;
@@ -25,6 +27,7 @@ namespace Microsoft.Its.Domain.Testing
         private readonly Subject<DateTimeOffset> movements = new Subject<DateTimeOffset>();
         private readonly RxScheduler Scheduler;
         private readonly ConcurrentHashSet<IClock> schedulerClocks = new ConcurrentHashSet<IClock>();
+        private string caller;
 
         private VirtualClock(DateTimeOffset now)
         {
@@ -174,16 +177,21 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="now">The time to which the virtual clock is set.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException">You must dispose the current VirtualClock before starting another.</exception>
-        public static VirtualClock Start(DateTimeOffset? now = null)
+        public static VirtualClock Start(DateTimeOffset? now = null, [CallerMemberName] string caller = null)
         {
             if (Clock.Current is VirtualClock)
             {
-                throw new InvalidOperationException("You must dispose the current VirtualClock before starting another.");
+                throw new InvalidOperationException(string.Format("You must dispose the current VirtualClock (created by {0}) before starting another.", (Clock.Current as VirtualClock).caller));
             }
+
 
             Configuration.Current.EnsureCommandSchedulerPipelineTrackerIsInitialized();
 
-            var virtualClock = new VirtualClock(now ?? DateTimeOffset.Now);
+            var virtualClock = new VirtualClock(now ?? DateTimeOffset.Now)
+            {
+                caller = caller
+            };
+
             Clock.Current = virtualClock;
 
             return virtualClock;
@@ -193,7 +201,6 @@ namespace Microsoft.Its.Domain.Testing
             IScheduledCommand<TAggregate> scheduledCommand,
             DateTimeOffset dueTime,
             Func<IScheduler, IScheduledCommand<TAggregate>, IDisposable> func)
-            where TAggregate : IEventSourced
         {
             var scheduler = Clock.Current.IfTypeIs<VirtualClock>()
                                  .Then(c => (IScheduler) c.Scheduler)

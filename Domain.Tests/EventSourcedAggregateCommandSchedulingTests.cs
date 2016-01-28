@@ -57,7 +57,7 @@ namespace Microsoft.Its.Domain.Tests
         [TearDown]
         public void TearDown()
         {
-            disposables.IfNotNull().ThenDo(d => d.Dispose());
+            disposables.Dispose();
         }
 
         [Test]
@@ -111,7 +111,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task When_applying_a_scheduled_command_throws_unexpectedly_then_further_command_scheduling_is_not_interrupted()
+        public async Task When_applying_a_scheduled_command_throws_then_further_command_scheduling_is_not_interrupted()
         {
             // arrange
             var order1 = CreateOrder(customerAccountId: customerAccountId)
