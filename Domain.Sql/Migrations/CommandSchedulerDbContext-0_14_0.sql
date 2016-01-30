@@ -1,7 +1,7 @@
 if not exists(select * from sys.tables where object_id = OBJECT_ID('Scheduler.ETag'))
 begin
      CREATE TABLE [Scheduler].[ETag](
-        [Scope] [nvarchar](50)] NOT NULL,
+        [Scope] [nvarchar](50) NOT NULL,
         [ETagValue] [nvarchar](50) NOT NULL,     
         [CreatedTime] [datetimeoffset](7) NOT NULL
      CONSTRAINT [PK_ETag] PRIMARY KEY CLUSTERED 
