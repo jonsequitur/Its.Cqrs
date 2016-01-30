@@ -20,10 +20,10 @@ namespace Microsoft.Its.Domain.Testing
             this.eventStream = eventStream;
         }
 
-        public async Task<bool> HasBeenApplied(Guid aggregateId, string etag)
+        public async Task<bool> HasBeenApplied(string scope, string etag)
         {
-            return eventStream.Events.Any(a => new Guid(a.AggregateId) == aggregateId &&
-                                               a.ETag == etag);
+            return eventStream.Events.Any(e => e.AggregateId.ToString() == scope &&
+                                               e.ETag == etag);
         }
     }
 }

@@ -18,8 +18,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                              (() => new EventStoreDbContext());
         }
 
-        public async Task<bool> HasBeenApplied(Guid aggregateId, string etag)
+        public async Task<bool> HasBeenApplied(string scope, string etag)
         {
+            var aggregateId = Guid.Parse(scope);
+
             using (var eventStore = createEventStoreDbContext())
             {
                 return await eventStore.Events

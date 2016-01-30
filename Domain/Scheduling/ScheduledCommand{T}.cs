@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
@@ -42,7 +43,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Indicates a precondition ETag for a specific aggregate. If no event on the target aggregate exists with this ETag, the command will fail, and the aggregate can decide whether to reschedule or ignore the command.
         /// </summary>
-        public CommandPrecondition DeliveryPrecondition { get; set; }
+        public IPrecondition DeliveryPrecondition { get; set; }
 
         [JsonIgnore]
         public ScheduledCommandResult Result { get; set; }

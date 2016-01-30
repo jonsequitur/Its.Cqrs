@@ -47,7 +47,7 @@ namespace Microsoft.Its.Domain
             }
 
             return await preconditionVerifier.HasBeenApplied(
-                precondition.AggregateId, 
+                precondition.Scope, 
                 precondition.ETag);
         }
     }

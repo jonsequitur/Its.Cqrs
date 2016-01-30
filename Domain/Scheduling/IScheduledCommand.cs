@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
@@ -19,7 +20,8 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Indicates a precondition for the command to be delivered. If the precondition does not exist, then command will fail, and the aggregate can decide whether to reschedule or ignore the command.
         /// </summary>
-        CommandPrecondition DeliveryPrecondition { get; }
+        [JsonConverter(typeof (PreconditionConverter))]
+        IPrecondition DeliveryPrecondition { get; }
 
         ScheduledCommandResult Result { get; set; }
     }

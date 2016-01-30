@@ -400,7 +400,7 @@ namespace Microsoft.Its.Domain.Tests
                 this.hasBeenApplied = hasBeenApplied;
             }
 
-            public async Task<bool> HasBeenApplied(Guid aggregateId, string etag)
+            public async Task<bool> HasBeenApplied(string scope, string etag)
             {
                 return hasBeenApplied();
             }

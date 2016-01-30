@@ -111,12 +111,10 @@ namespace Microsoft.Its.Domain
 
             if (Configuration.Current.IsUsingCommandSchedulerPipeline())
             {
-                scheduled.DeliveryPrecondition = new CommandPrecondition
-                {
-                    AggregateId = Id,
-                    ETag = commandScheduledEvent.ETag
-                };
-                await Configuration.Current.CommandScheduler<T>().Schedule(scheduled);
+                scheduled.DeliveryPrecondition = new CommandPrecondition(commandScheduledEvent.ETag, Id);
+                await Configuration.Current
+                                   .CommandScheduler<T>()
+                                   .Schedule(scheduled);
             }
 
             RecordEvent(commandScheduledEvent);

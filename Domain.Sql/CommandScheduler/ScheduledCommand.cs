@@ -51,7 +51,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         internal bool NonDurable { get; set; }
 
-        CommandPrecondition IScheduledCommand.DeliveryPrecondition
+        IPrecondition IScheduledCommand.DeliveryPrecondition
         {
             get
             {

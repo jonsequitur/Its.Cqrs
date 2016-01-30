@@ -240,7 +240,15 @@ namespace Microsoft.Its.Domain.ServiceBus
         {
             public DateTimeOffset? DueTime { get; private set; }
 
-            public CommandPrecondition DeliveryPrecondition { get; private set; }
+            public CommandPrecondition DeliveryPrecondition { get; set; }
+
+            IPrecondition IScheduledCommand.DeliveryPrecondition
+            {
+                get
+                {
+                    return DeliveryPrecondition;
+                }
+            }
 
             [JsonIgnore]
             public ScheduledCommandResult Result { get; set; }

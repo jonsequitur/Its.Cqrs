@@ -11,6 +11,6 @@ namespace Microsoft.Its.Domain
     /// </summary>
     public interface ICommandPreconditionVerifier
     {
-        Task<bool> HasBeenApplied(Guid aggregateId, string etag);
+        Task<bool> HasBeenApplied(string scope, string etag);
     }
 }

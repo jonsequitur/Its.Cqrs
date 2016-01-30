@@ -279,7 +279,7 @@ namespace Microsoft.Its.Domain
                 var preconditionVerifier = Configuration.Current.CommandPreconditionVerifier();
 
                 return Task.Run(() => preconditionVerifier.HasBeenApplied(
-                    aggregate.Id,
+                    aggregate.Id.ToString(),
                     etag)).Result;
             }
 

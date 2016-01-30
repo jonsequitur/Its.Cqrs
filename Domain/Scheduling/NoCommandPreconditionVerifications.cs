@@ -8,7 +8,7 @@ namespace Microsoft.Its.Domain
 {
     internal class NoCommandPreconditionVerifications : ICommandPreconditionVerifier
     {
-        public Task<bool> HasBeenApplied(Guid aggregateId, string etag)
+        public Task<bool> HasBeenApplied(string scope, string etag)
         {
             throw new InvalidOperationException("No ICommandPreconditionVerifier has been configured.");
         }
