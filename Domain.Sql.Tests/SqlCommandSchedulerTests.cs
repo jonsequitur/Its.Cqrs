@@ -819,7 +819,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                   .Should()
                   .ContainSingle(a => a.ScheduledCommand
                                        .IfTypeIs<IScheduledCommand<Order>>()
-                                       .Then(c => c.AggregateId == order.Id)
+                                       .Then(c => c.TargetId == order.Id.ToString())
                                        .ElseDefault());
         }
 
@@ -847,7 +847,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                   .Should()
                   .ContainSingle(a => a.ScheduledCommand
                                        .IfTypeIs<IScheduledCommand<Order>>()
-                                       .Then(c => c.AggregateId == order.Id)
+                                       .Then(c => c.TargetId == order.Id.ToString())
                                        .ElseDefault());
         }
 

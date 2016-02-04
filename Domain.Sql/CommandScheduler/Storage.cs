@@ -44,7 +44,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 storedScheduledCommand = new ScheduledCommand
                 {
-                    AggregateId = scheduledCommand.AggregateId,
+                    AggregateId = ScheduledCommand<TAggregate>.TargetGuid(scheduledCommand),
                     SequenceNumber = scheduledCommand.SequenceNumber,
                     AggregateType = Command.TargetNameFor(scheduledCommand.Command.GetType()),
                     SerializedCommand = scheduledCommand.ToJson(),
@@ -62,7 +62,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 Debug.WriteLine(String.Format("Storing command '{0}' ({1}:{2}) on clock '{3}'",
                                               scheduledCommand.Command.CommandName,
-                                              scheduledCommand.AggregateId,
+                                              scheduledCommand.TargetId,
                                               scheduledCommand.SequenceNumber,
                                               clockName));
 
@@ -126,9 +126,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             using (var db = createDbContext())
             {
+                var scheduledCommandGuid = ScheduledCommand<TAggregate>.TargetGuid(scheduledCommand);
+
                 var storedCommand = await db.ScheduledCommands
-                                            .SingleOrDefaultAsync(c => c.AggregateId == scheduledCommand.AggregateId &&
-                                                              c.SequenceNumber == scheduledCommand.SequenceNumber);
+                                            .SingleOrDefaultAsync(
+                                                c => c.AggregateId == scheduledCommandGuid &&
+                                                     c.SequenceNumber == scheduledCommand.SequenceNumber);
 
                 if (storedCommand == null)
                 {

@@ -95,11 +95,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 ToTable("ScheduledCommand", "ETag");
 
-                HasKey(c => new { c.AggregateId, c.ETagValue });
+                HasKey(c => new { c.Id });
 
                 Property(c => c.CreatedTime)
                     .IsRequired();
-
             }
         }
 

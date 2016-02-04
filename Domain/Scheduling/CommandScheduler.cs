@@ -48,7 +48,7 @@ namespace Microsoft.Its.Domain
             where TCommand : ICommand<TTarget>
         {
             var scheduledCommand = CreateScheduledCommand<TCommand, TTarget>(
-                Guid.Parse(targetId),
+                targetId,
                 command,
                 dueTime,
                 deliveryDependsOn);
@@ -139,9 +139,23 @@ namespace Microsoft.Its.Domain
             IPrecondition deliveryDependsOn = null)
             where TCommand : ICommand<TAggregate>
         {
-            if (aggregateId == Guid.Empty)
+            return CreateScheduledCommand<TCommand, TAggregate>(
+                aggregateId.ToString("N"),
+                command,
+                dueTime,
+                deliveryDependsOn);
+        }
+
+        internal static ScheduledCommand<TAggregate> CreateScheduledCommand<TCommand, TAggregate>(
+            string targetId,
+            TCommand command,
+            DateTimeOffset? dueTime,
+            IPrecondition deliveryDependsOn = null)
+            where TCommand : ICommand<TAggregate>
+        {
+            if (string.IsNullOrWhiteSpace(targetId))
             {
-                throw new ArgumentException("Parameter aggregateId cannot be an empty Guid.");
+                throw new ArgumentException("Parameter targetId cannot be null, empty or whitespace.");
             }
 
             if (string.IsNullOrEmpty(command.ETag))
@@ -149,15 +163,15 @@ namespace Microsoft.Its.Domain
                 command.IfTypeIs<Command>()
                        .ThenDo(c => c.ETag = CommandContext.Current
                                                            .IfNotNull()
-                                                           .Then(ctx => ctx.NextETag(aggregateId.ToString("N")))
-                                                           .Else(() => Guid.NewGuid().ToString("N")));
+                                                           .Then(ctx => ctx.NextETag(targetId))
+                                                           .Else(() => Guid.NewGuid().ToString("N").ToETag()));
             }
 
             return new ScheduledCommand<TAggregate>
             {
                 Command = command,
                 DueTime = dueTime,
-                AggregateId = aggregateId,
+                TargetId = targetId,
                 SequenceNumber = -DateTimeOffset.UtcNow.Ticks,
                 DeliveryPrecondition = deliveryDependsOn
             };
@@ -176,8 +190,9 @@ namespace Microsoft.Its.Domain
 
                 if (string.IsNullOrWhiteSpace(deliveryDependsOn.ETag))
                 {
+                    // set an etag if one is not already assigned
                     deliveryDependsOn.IfTypeIs<Event>()
-                                     .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N"))
+                                     .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N").ToETag())
                                      .ElseDo(() => { throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends."); });
                 }
 
@@ -196,7 +211,7 @@ namespace Microsoft.Its.Domain
                 Command = scheduledCommand.Command,
                 DeliveryPrecondition = scheduledCommand.DeliveryPrecondition,
                 SequenceNumber = scheduledCommand.SequenceNumber,
-                AggregateId = scheduledCommand.AggregateId,
+                AggregateId = Guid.Parse(scheduledCommand.TargetId),
                 DueTime = scheduledCommand.DueTime,
                 Result = scheduledCommand.Result
             };
@@ -236,7 +251,7 @@ namespace Microsoft.Its.Domain
             where TAggregate : class
         {
             TAggregate aggregate = null;
-            Exception exception = null;
+            Exception exception;
 
             try
             {
@@ -249,7 +264,7 @@ namespace Microsoft.Its.Domain
                     return;
                 }
 
-                aggregate = await store.Get(scheduled.AggregateId.ToString());
+                aggregate = await store.Get(scheduled.TargetId);
 
                 if (aggregate == null)
                 {
@@ -269,7 +284,7 @@ namespace Microsoft.Its.Domain
                     {
                         throw new PreconditionNotMetException(
                             string.Format("No {0} was found with id {1} so the command could not be applied.",
-                                          typeof (TAggregate).Name, scheduled.AggregateId));
+                                          typeof (TAggregate).Name, scheduled.TargetId));
                     }
                 }
                 else

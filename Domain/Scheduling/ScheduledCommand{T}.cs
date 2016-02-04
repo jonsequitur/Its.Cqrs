@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
@@ -10,22 +9,47 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// An event that indicates that a command was scheduled.
     /// </summary>
-    /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+    /// <typeparam name="TTarget">The type of the aggregate.</typeparam>
     [EventName("Scheduled")]
     [DebuggerDisplay("{ToString()}")]
-    public class ScheduledCommand<TAggregate> :
-        IScheduledCommand<TAggregate>
+    public class ScheduledCommand<TTarget> :
+        IScheduledCommand<TTarget>
     {
+        private static readonly bool targetIsEventSourced;
+
+        static ScheduledCommand()
+        {
+            if (typeof (IEventSourced).IsAssignableFrom(typeof (TTarget)))
+            {
+                targetIsEventSourced = true;
+                TargetGuid = command => Guid.Parse(command.TargetId);
+            }
+            else
+            {
+                TargetGuid = command => command.TargetId.ToGuidV3();
+            }
+        }
+
         /// <summary>
         /// Gets the command to be applied at a later time.
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
-        public ICommand<TAggregate> Command { get; set; }
+        public ICommand<TTarget> Command { get; set; }
 
         /// <summary>
-        /// Gets the id of the aggregate to which the command will be applied when delivered.
+        /// Gets the id of the object to which the command will be applied when delivered.
         /// </summary>
-        public Guid AggregateId { get; set; }
+        public string TargetId { get; set; }
+
+        public Guid? AggregateId
+        {
+            get
+            {
+                return targetIsEventSourced
+                           ? (Guid?) Guid.Parse(TargetId)
+                           : null;
+            }
+        }
 
         /// <summary>
         /// Gets the sequence number of the scheduled command.
@@ -68,5 +92,7 @@ namespace Microsoft.Its.Domain
                                        .Then(r => ", " + r)
                                        .ElseDefault());
         }
+
+        internal static readonly Func<IScheduledCommand<TTarget>, Guid> TargetGuid;
     }
 }

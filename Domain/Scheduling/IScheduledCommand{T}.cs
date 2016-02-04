@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the id of the aggregate to which the command will be applied when delivered.
         /// </summary>
-        Guid AggregateId { get; }
+        string TargetId { get; }
 
         /// <summary>
         /// Gets the sequence number of the scheduled command.

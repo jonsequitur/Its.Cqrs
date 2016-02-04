@@ -3,6 +3,7 @@
 
 using System;
 using FluentAssertions;
+using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Sample.Domain.Ordering;
 using Sample.Domain.Ordering.Commands;
@@ -90,6 +91,30 @@ namespace Microsoft.Its.Domain.Tests
             command.Result = new CommandSucceeded(command);
 
             command.IsDue().Should().BeFalse();
+        }
+
+        [Test]
+        public void A_ScheduledCommand_with_an_non_event_sourced_target_has_a_null_AggregateId()
+        {
+            var command = new ScheduledCommand<CommandTarget>
+            {
+                TargetId = Any.Guid().ToString()
+            };
+
+            command.AggregateId.Should().Be(null);
+        }
+
+        [Test]
+        public void A_ScheduledCommand_with_an_event_sourced_target_has_a_non_null_AggregateId()
+        {
+            var id = Any.Guid();
+
+            var command = new ScheduledCommand<Order>
+            {
+                TargetId = id.ToString()
+            };
+
+            command.AggregateId.Should().Be(id);
         }
     }
 }

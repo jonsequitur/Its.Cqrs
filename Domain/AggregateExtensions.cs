@@ -255,6 +255,10 @@ namespace Microsoft.Its.Domain
         public static bool HasETag<TAggregate>(this TAggregate aggregate, string etag)
             where TAggregate : class, IEventSourced
         {
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException("aggregate");
+            }
             if (string.IsNullOrWhiteSpace(etag))
             {
                 return false;

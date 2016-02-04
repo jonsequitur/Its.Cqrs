@@ -156,7 +156,7 @@ namespace Microsoft.Its.Domain.Tests
             using (LogTraceOutputTo(log))
             {
                 await configuration.CommandScheduler<CommandTarget>()
-                                   .Schedule(Any.Guid(), new CreateCommandTarget());
+                                   .Schedule(Any.Guid(), new CreateCommandTarget(Any.Word()));
             }
 
             log.Count.Should().Be(4);

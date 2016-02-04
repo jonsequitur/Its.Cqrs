@@ -53,7 +53,7 @@ namespace Microsoft.Its.Domain
         public override string ToString()
         {
             return string.Format("{0}...{1}",
-                                 scope.Substring(0, 4),
+                                 scope.Substring(0, Math.Min(scope.Length, 4)),
                                  ETag);
         }
     }

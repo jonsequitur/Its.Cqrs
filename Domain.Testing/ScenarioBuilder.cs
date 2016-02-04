@@ -100,7 +100,7 @@ namespace Microsoft.Its.Domain.Testing
             if (configuration.IsUsingCommandSchedulerPipeline() &&
                 !configuration.IsUsingInMemoryCommandScheduling())
             {
-                var clockName = "TEST-" + Guid.NewGuid().ToString("N");
+                var clockName = "TEST-" + Guid.NewGuid().ToString("N").ToETag();
                 Configuration.Properties["CommandSchedulerClockName"] = clockName;
                 Configuration.Container.Register<GetClockName>(c => e => clockName);
                 var clockRepository = Configuration.SchedulerClockRepository();

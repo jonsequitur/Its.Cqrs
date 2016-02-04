@@ -22,6 +22,9 @@ namespace Microsoft.Its.Domain.Testing
             configuration.IsUsingCommandSchedulerPipeline(true);
 
             configuration.Container
+                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>());
+
+            configuration.Container
                          .Resolve<InMemoryCommandSchedulerPipelineInitializer>()
                          .Initialize(configuration);
 
@@ -45,7 +48,7 @@ namespace Microsoft.Its.Domain.Testing
                              {
                                  var targetType = type.GetGenericArguments().Single();
                                  var storeType = typeof (InMemoryStore<>).MakeGenericType(targetType);
-                                 return c => Activator.CreateInstance(storeType , new object[] { (dynamic)null });
+                                 return c => Activator.CreateInstance(storeType , new object[] { (dynamic)null, (dynamic)null });
                              }
 
                              return null;

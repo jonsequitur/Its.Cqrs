@@ -26,7 +26,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public CommandScheduled()
         {
-            ETag = Guid.NewGuid().ToString("N");
+            ETag = Guid.NewGuid().ToString("N").ToETag();
         }
 
         /// <summary>
@@ -34,6 +34,14 @@ namespace Microsoft.Its.Domain
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
         public ICommand<TAggregate> Command { get; set; }
+
+        string IScheduledCommand<TAggregate>.TargetId
+        {
+            get
+            {
+                return AggregateId.ToString();
+            }
+        }
 
         /// <summary>
         /// Gets the time at which the command is scheduled to be applied.

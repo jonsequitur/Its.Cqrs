@@ -135,7 +135,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 await queueReceiver.StartReceivingMessages();
 
                 schedulerActivity
-                    .Select(a => a.AggregateId)
+                    .Select(a => Guid.Parse(a.TargetId))
                     .ShouldBeEquivalentTo(aggregateIds);
             }
         }
@@ -163,7 +163,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 await queueReceiver.StartReceivingMessages();
 
                 schedulerActivity
-                    .Select(a => a.AggregateId)
+                    .Select(a => Guid.Parse(a.TargetId))
                     .ShouldBeEquivalentTo(aggregateIds);
             }
         }
@@ -188,7 +188,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                 await receiver.Messages
                               .OfType<IScheduledCommand<Order>>()
-                              .FirstAsync(c => c.AggregateId == aggregateId)
+                              .FirstAsync(c => c.TargetId == aggregateId.ToString())
                               .Timeout(TimeSpan.FromMinutes(1));
 
                 await Task.Delay(1000);
@@ -226,7 +226,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 var receivedMessages = new List<IScheduledCommand>();
                 receiver.Messages
                         .Where(m => m.IfTypeIs<IScheduledCommand<Order>>()
-                                     .Then(c => c.AggregateId == aggregateId)
+                                     .Then(c => c.TargetId == aggregateId.ToString())
                                      .ElseDefault())
                         .Subscribe(receivedMessages.Add);
 
@@ -236,7 +236,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                 receivedMessages.Should()
                                 .ContainSingle(m => m.IfTypeIs<IScheduledCommand<Order>>()
-                                                     .Then(c => c.AggregateId == aggregateId)
+                                                     .Then(c => c.TargetId == aggregateId.ToString())
                                                      .ElseDefault());
             }
 
@@ -246,7 +246,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                 receiver.Messages
                         .Where(m => m.IfTypeIs<IScheduledCommand<Order>>()
-                                     .Then(c => c.AggregateId == aggregateId)
+                                     .Then(c => c.TargetId == aggregateId.ToString())
                                      .ElseDefault())
                         .Subscribe(receivedMessages.Add);
 

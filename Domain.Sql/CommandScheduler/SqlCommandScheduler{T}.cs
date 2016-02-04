@@ -161,7 +161,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                           .Then(t => t.ToString("O"))
                                           .Else(() => "[null]"),
                 Clocks = Domain.Clock.Current.ToString(),
-                scheduledCommand.AggregateId,
+                scheduledCommand.TargetId,
                 scheduledCommand.Command.ETag
             }.ToString();
         }

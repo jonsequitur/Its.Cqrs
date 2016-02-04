@@ -31,6 +31,9 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the aggregate type supports instantiation via snapshots.
+        /// </summary>
         public static bool SupportsSnapshots
         {
             get

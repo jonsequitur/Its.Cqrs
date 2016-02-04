@@ -78,7 +78,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 activity.Should()
                         .ContainSingle(a => a.ScheduledCommand
                                              .IfTypeIs<IScheduledCommand<Order>>()
-                                             .Then(c => c.AggregateId == order.Id)
+                                             .Then(c => c.TargetId == order.Id.ToString())
                                              .ElseDefault() &&
                                             a is CommandScheduled);
             }
@@ -108,7 +108,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 activity.Should()
                         .ContainSingle(a => a.ScheduledCommand
                                              .IfTypeIs<IScheduledCommand<Order>>()
-                                             .Then(c => c.AggregateId == order.Id)
+                                             .Then(c => c.TargetId == order.Id.ToString())
                                              .ElseDefault() &&
                                             a is CommandSucceeded);
             }
@@ -134,7 +134,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 activity.Should()
                         .ContainSingle(a => a.ScheduledCommand
                                              .IfTypeIs<IScheduledCommand<Order>>()
-                                             .Then(c => c.AggregateId == order.Id)
+                                             .Then(c => c.TargetId == order.Id.ToString())
                                              .ElseDefault() &&
                                             a is CommandSucceeded);
             }

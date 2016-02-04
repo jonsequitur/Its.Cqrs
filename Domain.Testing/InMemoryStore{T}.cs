@@ -15,13 +15,20 @@ namespace Microsoft.Its.Domain.Testing
     {
         private readonly ConcurrentDictionary<string, T> dictionary = new ConcurrentDictionary<string, T>();
 
-        private readonly Func<T, string> getId = t => t.GetHashCode().ToString();
+        private readonly Func<T, string> getId;
+        private readonly Func<string, T> create;
 
-        public InMemoryStore(Func<T, string> getId = null)
+        public InMemoryStore(Func<T, string> getId = null, Func<string, T> create = null)
         {
+            this.create = create;
+
             if (getId != null)
             {
                 this.getId = getId;
+            }
+            else
+            {
+                this.getId = t => t.GetHashCode().ToString();
             }
         }
 
@@ -30,6 +37,11 @@ namespace Microsoft.Its.Domain.Testing
             T value;
 
             dictionary.TryGetValue(id, out value);
+
+            if (value == null && create != null)
+            {
+                value = create(id);
+            }
 
             return Task.FromResult(value);
         }
