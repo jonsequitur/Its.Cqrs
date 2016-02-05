@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -89,6 +91,43 @@ namespace Microsoft.Its.Domain.Tests
                     .ShouldThrow<ArgumentException>()
                     .And
                     .Message.Should().Contain("Inconsistent aggregate ids");
+        }
+
+        [Test]
+        public void When_source_events_contain_events_with_the_same_sequence_number_and_the_same_types_then_using_them_to_source_an_object_throws()
+        {
+            Action ctorCall = () =>
+            {
+                new Order(
+                    Guid.NewGuid(),
+                    new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" },
+                    new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" }
+                    );
+            };
+
+            ctorCall.Invoking(c => c())
+                    .ShouldThrow<ArgumentException>()
+                    .And
+                    .Message.Should().Contain("Event with SequenceNumber 1 is already present in the sequence.");
+        }
+
+        [Test]
+        public void When_source_events_contain_events_with_the_same_sequence_number_but_different_types_then_using_them_to_source_an_object_throws()
+        {
+            Action ctorCall = () =>
+            {
+                new Order(
+                    Guid.NewGuid(),
+                    new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" },
+                    new Order.CustomerInfoChanged { SequenceNumber = 2, CustomerName = "joe" },
+                    new Order.Cancelled { SequenceNumber = 1, Reason = "just 'cause..."}
+                    );
+            };
+
+            ctorCall.Invoking(c => c())
+                    .ShouldThrow<ArgumentException>()
+                    .And
+                    .Message.Should().Contain("Event with SequenceNumber 1 is already present in the sequence.");
         }
 
         [Test]
@@ -404,6 +443,55 @@ namespace Microsoft.Its.Domain.Tests
             {
                 return hasBeenApplied();
             }
+        }
+
+        [Category("Performance")]
+        [Test]
+        public void When_calling_ctor_of_an_aggregate_with_a_large_number_of_source_events_in_non_incrementing_order_then_the_operation_completes_quickly()
+        {
+            var count = 1000000;
+            var largeListOfEvents = Enumerable.Range(1, count).Select(i => new PerfTestAggregate.SimpleEvent { SequenceNumber = i }).ToList();
+            Shuffle(largeListOfEvents, new Random(42));
+
+            var sw = Stopwatch.StartNew();
+            var t = new PerfTestAggregate(Guid.NewGuid(), largeListOfEvents);
+            sw.Stop();
+
+            Console.WriteLine("Elapsed: {0}ms", sw.ElapsedMilliseconds);
+            t.Version.Should().Be(count);
+            t.NumberOfUpdatesExecuted.Should().Be(count);
+            sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(20));
+    }
+
+        private static void Shuffle<T>(IList<T> list, Random randomNumberGenerator)
+        {
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = randomNumberGenerator.Next(n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
+        }
+
+        public class PerfTestAggregate : EventSourcedAggregate<PerfTestAggregate>
+        {
+            public PerfTestAggregate(Guid id, IEnumerable<IEvent> eventHistory)
+                : base(id, eventHistory)
+            {
+            }
+
+            public class SimpleEvent : Event<PerfTestAggregate>
+            {
+                public override void Update(PerfTestAggregate order)
+                {
+                    order.NumberOfUpdatesExecuted++;
+                }
+            }
+
+            public long NumberOfUpdatesExecuted { get; set; }
         }
     }
 }

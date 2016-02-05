@@ -9,6 +9,7 @@ using FluentAssertions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -20,6 +21,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
     {
         private const string EventStoreConnectionString =
             @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestEventStore";
+        private const string CommandSchedulerConnectionString =
+            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestCommandScheduler";
 
         private Version version = new Version(10, 0, 0);
 
@@ -28,8 +31,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             EventStoreDbContext.NameOrConnectionString = EventStoreConnectionString;
             Database.Delete(EventStoreConnectionString);
+            Database.Delete(CommandSchedulerConnectionString);
             Database.Delete(MigrationsTestDbContext.ConnectionString);
             InitializeEventStore();
+            InitializeCommandScheduler();
         }
 
         [SetUp]
@@ -261,6 +266,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 .Should().NotContain(v => v == version.ToString());
         }
 
+        [Test]
+        public async Task Command_scheduler_database_contains_a_default_clock()
+        {
+            using (var db = new CommandSchedulerDbContext(CommandSchedulerConnectionString))
+            {
+                db.Clocks.Should().ContainSingle(c => c.Name == "default");
+            }
+        }
+
         private static IEnumerable<string> GetAppliedVersions<TContext>()
             where TContext : DbContext, new()
         {
@@ -275,6 +289,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (var context = new EventStoreDbContext())
             {
                 new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(context);
+            }
+        }
+        private void InitializeCommandScheduler()
+        {
+            using (var context = new CommandSchedulerDbContext(CommandSchedulerConnectionString))
+            {
+                new EventStoreDatabaseInitializer<CommandSchedulerDbContext>().InitializeDatabase(context);
             }
         }
 

@@ -17,7 +17,10 @@ namespace Microsoft.Its.Domain
 
         public int GetHashCode(IEvent obj)
         {
-            return (obj.AggregateId + "|" + obj).GetHashCode();
+            unchecked
+            {
+                return (obj.SequenceNumber.GetHashCode() * 397) ^ obj.AggregateId.GetHashCode();
+            }
         }
     }
 }
