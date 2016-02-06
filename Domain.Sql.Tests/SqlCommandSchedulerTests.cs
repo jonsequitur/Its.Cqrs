@@ -27,7 +27,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     public abstract class SqlCommandSchedulerTests
     {
-        private EventStoreDbTest eventStoreDbTest;
+        protected EventStoreDbTest eventStoreDbTest;
         private IEventSourcedRepository<CustomerAccount> accountRepository;
         protected IEventSourcedRepository<Order> orderRepository;
         protected CompositeDisposable disposables;
@@ -1291,40 +1291,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 command.FinalAttemptTime
                        .Should()
                        .NotBeNull();
-            }
-        }
-
-        [Test]
-        public async Task UseSqlCommandScheduling_can_include_using_a_catchup_for_durability()
-        {
-            var configuration = new Configuration()
-                .UseSqlEventStore()
-                .UseSqlCommandScheduling(catchup => catchup.StartAtEventId = eventStoreDbTest.HighestEventId);
-            configuration.SqlCommandScheduler().GetClockName = e => clockName;
-            disposables.Add(configuration);
-
-            var aggregateIds = Enumerable.Range(1, 5).Select(_ => Any.Guid()).ToArray();
-
-            Events.Write(5, i => new CommandScheduled<Order>
-            {
-                Command = new CreateOrder(Any.FullName()),
-                AggregateId = aggregateIds[i - 1],
-                SequenceNumber = -DateTimeOffset.UtcNow.Ticks
-            });
-
-            await configuration.Container
-                               .Resolve<ReadModelCatchup<CommandSchedulerDbContext>>()
-                               .SingleBatchAsync();
-
-            using (var db = new CommandSchedulerDbContext())
-            {
-                var scheduledAggregateIds = db.ScheduledCommands
-                                              .Where(c => aggregateIds.Any(id => id == c.AggregateId))
-                                              .Select(c => c.AggregateId)
-                                              .ToArray();
-
-                scheduledAggregateIds.Should()
-                                     .BeEquivalentTo(aggregateIds);
             }
         }
 
