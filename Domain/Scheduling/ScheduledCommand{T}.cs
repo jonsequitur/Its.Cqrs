@@ -10,7 +10,6 @@ namespace Microsoft.Its.Domain
     /// An event that indicates that a command was scheduled.
     /// </summary>
     /// <typeparam name="TTarget">The type of the aggregate.</typeparam>
-    [EventName("Scheduled")]
     [DebuggerDisplay("{ToString()}")]
     public class ScheduledCommand<TTarget> :
         IScheduledCommand<TTarget>
@@ -109,8 +108,11 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Indicates a precondition ETag for a specific aggregate. If no event on the target aggregate exists with this ETag, the command will fail, and the aggregate can decide whether to reschedule or ignore the command.
         /// </summary>
-        public IPrecondition DeliveryPrecondition { get; set; }
+        public IPrecondition DeliveryPrecondition { get; private set; }
 
+        /// <summary>
+        /// Gets or sets the result of the scheduled command if it has been sent to the scheduler.
+        /// </summary>
         [JsonIgnore]
         public ScheduledCommandResult Result { get; set; }
 

@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Log.Instrumentation;
+using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using Microsoft.Reactive.Testing;
 using NUnit.Framework;
@@ -82,12 +83,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 // TODO: (Events_committed_to_the_event_store_are_caught_up_by_multiple_independent_read_model_stores) is this leading to intermittent test failures by leaving a dangling app lock?
                 startThread("catchup1", () =>
                 {
-                    catchup1.Run().Wait();
+                    catchup1.Run().TimeoutAfter(DefaultTimeout).Wait();
                     catchup1.Dispose();
                 });
                 startThread("catchup2", () =>
                 {
-                    catchup2.Run().Wait();
+                    catchup2.Run().TimeoutAfter(DefaultTimeout).Wait();
                     catchup2.Dispose();
                 });
 

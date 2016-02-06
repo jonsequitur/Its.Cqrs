@@ -18,15 +18,17 @@ namespace Microsoft.Its.Domain
     public class CommandScheduled<TAggregate> :
         Event<TAggregate>,
         IScheduledCommand<TAggregate>,
+#pragma warning disable 618
         IScheduledCommandEvent
+#pragma warning restore 618
         where TAggregate : IEventSourced
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandScheduled{TAggregate}"/> class.
-        /// </summary>
         public CommandScheduled()
         {
-            ETag = Guid.NewGuid().ToString("N").ToETag();
+            if (string.IsNullOrWhiteSpace(ETag))
+            {
+                ETag = Guid.NewGuid().ToString("N").ToETag();
+            }
         }
 
         /// <summary>

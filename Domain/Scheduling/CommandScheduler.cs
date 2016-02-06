@@ -158,21 +158,6 @@ namespace Microsoft.Its.Domain
             return precondition;
         }
 
-        public static Event<TAggregate> ToEvent<TAggregate>(
-            this ScheduledCommand<TAggregate> scheduledCommand)
-            where TAggregate : IEventSourced
-        {
-            return new CommandScheduled<TAggregate>
-            {
-                Command = scheduledCommand.Command,
-                DeliveryPrecondition = scheduledCommand.DeliveryPrecondition,
-                SequenceNumber = scheduledCommand.SequenceNumber,
-                AggregateId = Guid.Parse(scheduledCommand.TargetId),
-                DueTime = scheduledCommand.DueTime,
-                Result = scheduledCommand.Result
-            };
-        }
-
         internal static void DeliverIfPreconditionIsSatisfiedWithin<TAggregate>(
             this ICommandScheduler<TAggregate> scheduler,
             TimeSpan timespan,

@@ -99,19 +99,24 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("command");
             }
 
-            var scheduled = new ScheduledCommand<T>(
-                command,
-                Id,
-                due);
-
-            var commandScheduledEvent = scheduled.ToEvent();
+            var commandScheduledEvent = new CommandScheduled<T>
+            {
+                AggregateId = Id,
+                Command = command,
+                DueTime = due
+            };
 
             if (Configuration.Current.IsUsingCommandSchedulerPipeline())
             {
-                scheduled.DeliveryPrecondition = new CommandPrecondition(commandScheduledEvent.ETag, Id);
+                var scheduledCommand = new ScheduledCommand<T>(
+                    command,
+                    Id,
+                    due,
+                    new CommandPrecondition(commandScheduledEvent.ETag, Id));
+
                 await Configuration.Current
                                    .CommandScheduler<T>()
-                                   .Schedule(scheduled);
+                                   .Schedule(scheduledCommand);
             }
 
             RecordEvent(commandScheduledEvent);
