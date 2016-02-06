@@ -20,10 +20,5 @@ namespace Microsoft.Its.Domain
         /// Gets the id of the aggregate to which the command will be applied when delivered.
         /// </summary>
         string TargetId { get; }
-
-        /// <summary>
-        /// Gets the sequence number of the scheduled command.
-        /// </summary>
-        long SequenceNumber { get; }
     }
 }

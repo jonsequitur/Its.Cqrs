@@ -45,7 +45,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 storedScheduledCommand = new ScheduledCommand
                 {
                     AggregateId = ScheduledCommand<TAggregate>.TargetGuid(scheduledCommand),
-                    SequenceNumber = scheduledCommand.SequenceNumber,
+                    SequenceNumber = scheduledCommand
+                        .IfTypeIs<IEvent>()
+                        .Then(e => e.SequenceNumber)
+                        .Else(() => -DateTimeOffset.UtcNow.Ticks),
                     AggregateType = Command.TargetNameFor(scheduledCommand.Command.GetType()),
                     SerializedCommand = scheduledCommand.ToJson(),
                     CreatedTime = domainTime,
@@ -63,7 +66,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 Debug.WriteLine(String.Format("Storing command '{0}' ({1}:{2}) on clock '{3}'",
                                               scheduledCommand.Command.CommandName,
                                               scheduledCommand.TargetId,
-                                              scheduledCommand.SequenceNumber,
+                                              storedScheduledCommand.SequenceNumber,
                                               clockName));
 
                 db.ScheduledCommands.Add(storedScheduledCommand);
@@ -99,6 +102,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 }
             }
 
+            scheduledCommand.IfTypeIs<ScheduledCommand<TAggregate>>()
+                            .ThenDo(c => c.SequenceNumber = storedScheduledCommand.SequenceNumber);
+
             return storedScheduledCommand;
         }
 
@@ -109,6 +115,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             var command = scheduled.ToScheduledCommand<TAggregate>();
 
+            // FIX: (DeserializeAndDeliverScheduledCommand) is this still needed?
             //here we are setting the command.SequenceNumber to the scheduled.SequenceNumber because when
             //multiple commands are scheduled simultaniously against the same aggregate we were decrementing the 
             //scheduled.SequenceNumber correctly, however we were not updating the command.SequenceNumber.
@@ -128,10 +135,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 var scheduledCommandGuid = ScheduledCommand<TAggregate>.TargetGuid(scheduledCommand);
 
-                var storedCommand = await db.ScheduledCommands
-                                            .SingleOrDefaultAsync(
-                                                c => c.AggregateId == scheduledCommandGuid &&
-                                                     c.SequenceNumber == scheduledCommand.SequenceNumber);
+                var storedCommand = await GetStoredScheduledCommand(
+                    scheduledCommand,
+                    db,
+                    scheduledCommandGuid);
 
                 if (storedCommand == null)
                 {
@@ -139,7 +146,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     {
                         return;
                     }
-                    
+
                     throw new InvalidOperationException("Scheduled command not found");
                 }
 
@@ -153,31 +160,58 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 }
                 else
                 {
-                    var failure = (CommandFailed) result;
-
-                    // reschedule as appropriate
-                    var now = Domain.Clock.Now();
-                    if (failure.IsCanceled || failure.RetryAfter == null)
-                    {
-                        // no further retries
-                        storedCommand.FinalAttemptTime = now;
-                    }
-                    else
-                    {
-                        storedCommand.DueTime = now + failure.RetryAfter;
-                    }
-
-                    db.Errors.Add(new CommandExecutionError
-                    {
-                        ScheduledCommand = storedCommand,
-                        Error = result.IfTypeIs<CommandFailed>()
-                                      .Then(f => f.Exception.ToJson())
-                                      .ElseDefault()
-                    });
+                    RescheduleIfAppropriate(storedCommand, result, db);
                 }
 
                 await db.SaveChangesAsync();
             }
+        }
+
+        private static async Task<ScheduledCommand> GetStoredScheduledCommand<TAggregate>(
+            IScheduledCommand<TAggregate> scheduledCommand, 
+            CommandSchedulerDbContext db, 
+            Guid scheduledCommandGuid) where TAggregate : class
+        {
+            var sequenceNumber = scheduledCommand
+                .IfTypeIs<IEvent>()
+                .Then(c => c.SequenceNumber)
+                .Else(() => scheduledCommand
+                    .IfTypeIs<ScheduledCommand<TAggregate>>()
+                    .Then(c => c.SequenceNumber)     )
+                .ElseThrow(() => new InvalidOperationException("Cannot look up stored scheduled command based on a " + scheduledCommand.GetType()));
+
+            var storedCommand = await db.ScheduledCommands
+                                        .SingleOrDefaultAsync(
+                                            c => c.AggregateId == scheduledCommandGuid &&
+                                                 c.SequenceNumber == sequenceNumber);
+            return storedCommand;
+        }
+
+        private static void RescheduleIfAppropriate(
+            ScheduledCommand storedCommand,
+            ScheduledCommandResult result,
+            CommandSchedulerDbContext db)
+        {
+            var failure = (CommandFailed) result;
+
+            var now = Domain.Clock.Now();
+            if (failure.IsCanceled || failure.RetryAfter == null)
+            {
+                // no further retries
+                storedCommand.FinalAttemptTime = now;
+            }
+            else
+            {
+                storedCommand.DueTime = now + failure.RetryAfter;
+            }
+
+            db.Errors.Add(new CommandExecutionError
+            {
+                ScheduledCommand = storedCommand,
+                Error = result.IfTypeIs<CommandFailed>()
+                              .Then(f => f.Exception.ToJson())
+                              .ElseDefault()
+            });
         }
     }
 }

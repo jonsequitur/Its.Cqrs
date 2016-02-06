@@ -68,7 +68,6 @@ namespace Microsoft.Its.Domain
             TargetId = targetId;
             DueTime = dueTime;
             DeliveryPrecondition = deliveryPrecondition;
-            SequenceNumber = -DateTimeOffset.UtcNow.Ticks;
         }
 
         /// <summary>
@@ -95,7 +94,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the sequence number of the scheduled command.
         /// </summary>
-        public long SequenceNumber { get; set; }
+        internal long SequenceNumber { get; set; }
 
         /// <summary>
         /// Gets the time at which the command is scheduled to be applied.
