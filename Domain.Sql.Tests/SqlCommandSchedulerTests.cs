@@ -209,7 +209,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
         }
-
       
         [Test]
         public async Task Scheduled_commands_are_delivered_immediately_if_a_past_due_time_is_specified_on_a_scheduler_clock()
@@ -1074,7 +1073,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_a_non_scheduler_assigned_negative_SequenceNumber_collides_then_it_is_ignores()
+        public async Task When_a_non_scheduler_assigned_negative_SequenceNumber_collides_then_it_is_ignored()
         {
             // arrange
             var commandScheduler = Configuration.Current.CommandScheduler<Order>();

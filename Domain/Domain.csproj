@@ -131,7 +131,7 @@
     <Compile Include="IClock.cs" />
     <Compile Include="EventHandling\Projector.cs" />
     <Compile Include="ICommandHandler{T,TCommand}.cs" />
-    <Compile Include="ICommandPreconditionVerifier.cs" />
+    <Compile Include="IETagChecker.cs" />
     <Compile Include="IEventMigratingAggregate.cs" />
     <Compile Include="IStore{T}.cs" />
     <Compile Include="Scheduling\CommandDelivered.cs" />
@@ -141,7 +141,7 @@
     <Compile Include="Scheduling\IPrecondition.cs" />
     <Compile Include="Scheduling\IScheduledCommandEvent.cs" />
     <Compile Include="Scheduling\ISpecifySchedulingBehavior.cs" />
-    <Compile Include="Scheduling\NoCommandPreconditionVerifications.cs" />
+    <Compile Include="Scheduling\NoEventStoreETagVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />
     <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />
     <Compile Include="Scheduling\CommandScheduler.cs" />

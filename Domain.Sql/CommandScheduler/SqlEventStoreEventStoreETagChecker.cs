@@ -8,17 +8,17 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    public class SqlEventStoreCommandPreconditionVerifier : ICommandPreconditionVerifier
+    public class SqlEventStoreEventStoreETagChecker : IETagChecker
     {
         private readonly Func<EventStoreDbContext> createEventStoreDbContext;
 
-        public SqlEventStoreCommandPreconditionVerifier(Func<EventStoreDbContext> createEventStoreDbContext = null)
+        public SqlEventStoreEventStoreETagChecker(Func<EventStoreDbContext> createEventStoreDbContext = null)
         {
             this.createEventStoreDbContext = createEventStoreDbContext ??
                                              (() => new EventStoreDbContext());
         }
 
-        public async Task<bool> HasBeenApplied(string scope, string etag)
+        public async Task<bool> HasBeenRecorded(string scope, string etag)
         {
             var aggregateId = Guid.Parse(scope);
 

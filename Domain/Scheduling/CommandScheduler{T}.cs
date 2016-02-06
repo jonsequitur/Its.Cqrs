@@ -14,18 +14,22 @@ namespace Microsoft.Its.Domain
         where TAggregate : class
     {
         private readonly IStore<TAggregate> store;
-        private readonly ICommandPreconditionVerifier preconditionVerifier;
+        private readonly IETagChecker etagChecker;
 
         public CommandScheduler(
             IStore<TAggregate> store,
-            ICommandPreconditionVerifier preconditionVerifier)
+            IETagChecker etagChecker)
         {
             if (store == null)
             {
                 throw new ArgumentNullException("store");
             }
+            if (etagChecker == null)
+            {
+                throw new ArgumentNullException("etagChecker");
+            }
             this.store = store;
-            this.preconditionVerifier = preconditionVerifier;
+            this.etagChecker = etagChecker;
         }
 
         /// <summary>
@@ -77,7 +81,7 @@ namespace Microsoft.Its.Domain
                 return;
             }
 
-            await store.ApplyScheduledCommand(scheduledCommand, preconditionVerifier);
+            await store.ApplyScheduledCommand(scheduledCommand, etagChecker);
         }
 
         /// <summary>
@@ -85,7 +89,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         private async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
         {
-            return await preconditionVerifier.IsPreconditionSatisfied(scheduledCommand);
+            return await etagChecker.IsPreconditionSatisfied(scheduledCommand);
         }
     }
 }

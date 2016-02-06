@@ -22,7 +22,7 @@ namespace Microsoft.Its.Domain.Testing
             configuration.IsUsingCommandSchedulerPipeline(true);
 
             configuration.Container
-                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>());
+                         .Register<IETagChecker>(c => c.Resolve<InMemoryEventStoreETagChecker>());
 
             configuration.Container
                          .Resolve<InMemoryCommandSchedulerPipelineInitializer>()
@@ -65,7 +65,7 @@ namespace Microsoft.Its.Domain.Testing
 
             configuration.Container
                          .AddStrategy(type => InMemoryEventSourcedRepositoryStrategy(type, configuration.Container))
-                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>())
+                         .Register<IETagChecker>(c => c.Resolve<InMemoryEventStoreETagChecker>())
                          .RegisterSingle(c => inMemoryEventStream)
                          .RegisterSingle<ISnapshotRepository>(c => new InMemorySnapshotRepository());
 

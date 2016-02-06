@@ -90,7 +90,7 @@
     </Compile>
     <Compile Include="AppLock.cs" />
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
-    <Compile Include="CommandScheduler\SqlEventStoreCommandPreconditionVerifier.cs" />
+    <Compile Include="CommandScheduler\SqlEventStoreEventStoreETagChecker.cs" />
     <Compile Include="CommandScheduler\CommandSchedulingEventHandler.cs" />
     <Compile Include="CommandScheduler\ETag.cs" />
     <Compile Include="CommandScheduler\ICommandSchedulerDispatcher.cs" />

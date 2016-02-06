@@ -188,7 +188,7 @@ namespace Microsoft.Its.Domain
         internal static async Task ApplyScheduledCommand<TAggregate>(
             this IStore<TAggregate> store,
             IScheduledCommand<TAggregate> scheduled,
-            ICommandPreconditionVerifier preconditionVerifier = null)
+            IETagChecker preconditionChecker = null)
             where TAggregate : class
         {
             TAggregate aggregate = null;
@@ -196,8 +196,8 @@ namespace Microsoft.Its.Domain
 
             try
             {
-                if (preconditionVerifier != null &&
-                    !await preconditionVerifier.IsPreconditionSatisfied(scheduled))
+                if (preconditionChecker != null &&
+                    !await preconditionChecker.IsPreconditionSatisfied(scheduled))
                 {
                     await FailScheduledCommand(store,
                                                scheduled,

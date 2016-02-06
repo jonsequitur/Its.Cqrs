@@ -31,12 +31,12 @@ namespace Microsoft.Its.Domain
         }
 
         public static async Task<bool> IsPreconditionSatisfied(
-            this ICommandPreconditionVerifier preconditionVerifier,
+            this IETagChecker preconditionChecker,
             IScheduledCommand scheduledCommand)
         {
-            if (preconditionVerifier == null)
+            if (preconditionChecker == null)
             {
-                throw new ArgumentNullException("preconditionVerifier");
+                throw new ArgumentNullException("preconditionChecker");
             }
 
             var precondition = scheduledCommand.DeliveryPrecondition;
@@ -46,7 +46,7 @@ namespace Microsoft.Its.Domain
                 return true;
             }
 
-            return await preconditionVerifier.HasBeenApplied(
+            return await preconditionChecker.HasBeenRecorded(
                 precondition.Scope, 
                 precondition.ETag);
         }

@@ -20,7 +20,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public IObserver<ICommandSchedulerActivity> Activity = Observer.Create<ICommandSchedulerActivity>(a => { });
         public Func<IScheduledCommand<TAggregate>, string> GetClockLookupKey = cmd => null;
         public GetClockName GetClockName = cmd => null;
-        private readonly SqlEventStoreCommandPreconditionVerifier commandPreconditionVerifier;
+        private readonly SqlEventStoreEventStoreETagChecker eventStoreETagChecker;
         private readonly IHaveConsequencesWhen<CommandScheduled<TAggregate>> consequenter;
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
         private readonly IEventBus eventBus;
@@ -30,7 +30,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             Func<IEventSourcedRepository<TAggregate>> getRepository,
             Func<CommandSchedulerDbContext> createCommandSchedulerDbContext,
             IEventBus eventBus,
-            SqlEventStoreCommandPreconditionVerifier commandPreconditionVerifier)
+            SqlEventStoreEventStoreETagChecker eventStoreETagChecker)
         {
             if (getRepository == null)
             {
@@ -44,14 +44,14 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 throw new ArgumentNullException("eventBus");
             }
-            if (commandPreconditionVerifier == null)
+            if (eventStoreETagChecker == null)
             {
-                throw new ArgumentNullException("commandPreconditionVerifier");
+                throw new ArgumentNullException("eventStoreETagChecker");
             }
             this.getRepository = getRepository;
             this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
             this.eventBus = eventBus;
-            this.commandPreconditionVerifier = commandPreconditionVerifier;
+            this.eventStoreETagChecker = eventStoreETagChecker;
             consequenter = Consequenter.Create<CommandScheduled<TAggregate>>(e =>
             {
                 Task.Run(() => Schedule(e)).Wait();
@@ -76,7 +76,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 var repository = getRepository();
 
                 await repository.ApplyScheduledCommand(scheduledCommand,
-                                                       commandPreconditionVerifier);
+                                                       eventStoreETagChecker);
 
                 Activity.OnNext(scheduledCommand.Result);
 
@@ -104,7 +104,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             if (scheduledCommand.IsDue(storedScheduledCommand.Clock))
             {
                 // sometimes the command depends on a precondition event that hasn't been saved
-                if (!await commandPreconditionVerifier.IsPreconditionSatisfied(scheduledCommand))
+                if (!await eventStoreETagChecker.IsPreconditionSatisfied(scheduledCommand))
                 {
                     this.DeliverIfPreconditionIsSatisfiedWithin(
                         TimeSpan.FromSeconds(10),

@@ -17,11 +17,6 @@ namespace Microsoft.Its.Domain
             return configuration.Container.Resolve<IEventSourcedRepository<TAggregate>>();
         }
 
-        public static ICommandPreconditionVerifier CommandPreconditionVerifier(this Configuration configuration)
-        {
-            return configuration.Container.Resolve<ICommandPreconditionVerifier>();
-        }
-
         /// <summary>
         /// Gets an <see cref="ICommandScheduler{TAggregate}" />.
         /// </summary>

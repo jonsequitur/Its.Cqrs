@@ -391,7 +391,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var verifierWasCalled = false;
 
-            var preconditionVerifier = new TestCommandPreconditionVerifier(() =>
+            var preconditionVerifier = new TestEventStoreETagChecker(() =>
             {
                 verifierWasCalled = true;
                 return true;
@@ -399,7 +399,7 @@ namespace Microsoft.Its.Domain.Tests
 
             var configuration = Configuration.Current;
 
-            configuration.UseDependency<ICommandPreconditionVerifier>(_ => preconditionVerifier);
+            configuration.UseDependency<IETagChecker>(_ => preconditionVerifier);
 
             var etag = Guid.NewGuid().ToString().ToETag();
 
@@ -426,11 +426,11 @@ namespace Microsoft.Its.Domain.Tests
             verifierWasCalled.Should().BeTrue();
         }
 
-        private class TestCommandPreconditionVerifier : ICommandPreconditionVerifier
+        private class TestEventStoreETagChecker : IETagChecker
         {
             private readonly Func<bool> hasBeenApplied;
 
-            public TestCommandPreconditionVerifier(Func<bool> hasBeenApplied)
+            public TestEventStoreETagChecker(Func<bool> hasBeenApplied)
             {
                 if (hasBeenApplied == null)
                 {
@@ -439,7 +439,7 @@ namespace Microsoft.Its.Domain.Tests
                 this.hasBeenApplied = hasBeenApplied;
             }
 
-            public async Task<bool> HasBeenApplied(string scope, string etag)
+            public async Task<bool> HasBeenRecorded(string scope, string etag)
             {
                 return hasBeenApplied();
             }

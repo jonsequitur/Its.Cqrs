@@ -279,10 +279,12 @@ namespace Microsoft.Its.Domain
                     return false;
                 }
 
-                // maybe... which means we need to do a lookup
-                var preconditionVerifier = Configuration.Current.CommandPreconditionVerifier();
+                // ProbabilisticAnswer.Maybe, which means we need to do a lookup
+                var preconditionVerifier = Configuration.Current
+                                                        .Container
+                                                        .Resolve<IETagChecker>();
 
-                return Task.Run(() => preconditionVerifier.HasBeenApplied(
+                return Task.Run(() => preconditionVerifier.HasBeenRecorded(
                     aggregate.Id.ToString(),
                     etag)).Result;
             }
