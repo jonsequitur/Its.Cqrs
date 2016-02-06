@@ -168,6 +168,20 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task Multiple_scheduled_commands_having_the_some_causative_command_etag_have_repeatable_and_unique_etags()
         {
+            var id = Any.Word();
+            await store.Put(new CommandTarget(id));
+
+            var command = new SendRequests(new[] { Any.Word() })
+            {
+                ETag = "one".ToETag()
+            };
+
+            var scheduled = new ScheduledCommand<CommandTarget>(
+                command, 
+                id);
+
+            await scheduler.Deliver(scheduled);
+
             Assert.Fail("Test not written yet.");
         }
     }

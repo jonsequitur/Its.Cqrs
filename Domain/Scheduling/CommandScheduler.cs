@@ -25,9 +25,9 @@ namespace Microsoft.Its.Domain
             IEvent deliveryDependsOn = null)
             where TCommand : ICommand<TAggregate>
         {
-            var scheduledCommand = CreateScheduledCommand<TCommand, TAggregate>(
-                aggregateId,
+            var scheduledCommand = new ScheduledCommand<TAggregate>(
                 command,
+                aggregateId,
                 dueTime,
                 deliveryDependsOn.ToPrecondition());
 
@@ -47,9 +47,9 @@ namespace Microsoft.Its.Domain
             IPrecondition deliveryDependsOn = null)
             where TCommand : ICommand<TTarget>
         {
-            var scheduledCommand = CreateScheduledCommand<TCommand, TTarget>(
-                targetId,
+            var scheduledCommand = new ScheduledCommand<TTarget>(
                 command,
+                targetId,
                 dueTime,
                 deliveryDependsOn);
 
@@ -132,50 +132,6 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        internal static ScheduledCommand<TAggregate> CreateScheduledCommand<TCommand, TAggregate>(
-            Guid aggregateId,
-            TCommand command,
-            DateTimeOffset? dueTime,
-            IPrecondition deliveryDependsOn = null)
-            where TCommand : ICommand<TAggregate>
-        {
-            return CreateScheduledCommand<TCommand, TAggregate>(
-                aggregateId.ToString("N"),
-                command,
-                dueTime,
-                deliveryDependsOn);
-        }
-
-        internal static ScheduledCommand<TAggregate> CreateScheduledCommand<TCommand, TAggregate>(
-            string targetId,
-            TCommand command,
-            DateTimeOffset? dueTime,
-            IPrecondition deliveryDependsOn = null)
-            where TCommand : ICommand<TAggregate>
-        {
-            if (string.IsNullOrWhiteSpace(targetId))
-            {
-                throw new ArgumentException("Parameter targetId cannot be null, empty or whitespace.");
-            }
-
-            if (string.IsNullOrEmpty(command.ETag))
-            {
-                command.IfTypeIs<Command>()
-                       .ThenDo(c => c.ETag = CommandContext.Current
-                                                           .IfNotNull()
-                                                           .Then(ctx => ctx.NextETag(targetId))
-                                                           .Else(() => Guid.NewGuid().ToString("N").ToETag()));
-            }
-
-            return new ScheduledCommand<TAggregate>
-            {
-                Command = command,
-                DueTime = dueTime,
-                TargetId = targetId,
-                SequenceNumber = -DateTimeOffset.UtcNow.Ticks,
-                DeliveryPrecondition = deliveryDependsOn
-            };
-        }
 
         private static CommandPrecondition ToPrecondition(this IEvent deliveryDependsOn)
         {

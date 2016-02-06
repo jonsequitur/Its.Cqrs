@@ -99,9 +99,9 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("command");
             }
 
-            var scheduled = CommandScheduler.CreateScheduledCommand<TCommand, T>(
-                Id,
+            var scheduled = new ScheduledCommand<T>(
                 command,
+                Id,
                 due);
 
             var commandScheduledEvent = scheduled.ToEvent();

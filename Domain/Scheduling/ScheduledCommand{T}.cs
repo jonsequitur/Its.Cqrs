@@ -30,16 +30,58 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        public ScheduledCommand(
+            ICommand<TTarget> command,
+            Guid aggregateId,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryPrecondition = null) :
+                this(command, aggregateId.ToString("N"),
+                     dueTime,
+                     deliveryPrecondition)
+        {
+        }
+
+        public ScheduledCommand(
+            ICommand<TTarget> command,
+            string targetId,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryPrecondition = null)
+        {
+            if (command == null)
+            {
+                throw new ArgumentNullException("command");
+            }
+            if (string.IsNullOrWhiteSpace(targetId))
+            {
+                throw new ArgumentException("Parameter targetId cannot be null, empty or whitespace.");
+            }
+
+            if (string.IsNullOrEmpty(command.ETag))
+            {
+                command.IfTypeIs<Command>()
+                       .ThenDo(c => c.ETag = CommandContext.Current
+                                                           .IfNotNull()
+                                                           .Then(ctx => ctx.NextETag(targetId))
+                                                           .Else(() => Guid.NewGuid().ToString("N").ToETag()));
+            }
+
+            Command = command;
+            TargetId = targetId;
+            DueTime = dueTime;
+            DeliveryPrecondition = deliveryPrecondition;
+            SequenceNumber = -DateTimeOffset.UtcNow.Ticks;
+        }
+
         /// <summary>
         /// Gets the command to be applied at a later time.
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
-        public ICommand<TTarget> Command { get; set; }
+        public ICommand<TTarget> Command { get; private set; }
 
         /// <summary>
         /// Gets the id of the object to which the command will be applied when delivered.
         /// </summary>
-        public string TargetId { get; set; }
+        public string TargetId { get; private set; }
 
         public Guid? AggregateId
         {
@@ -62,7 +104,7 @@ namespace Microsoft.Its.Domain
         /// <remarks>
         /// If this value is null, the command should be delivered as soon as possible.
         /// </remarks>
-        public DateTimeOffset? DueTime { get; set; }
+        public DateTimeOffset? DueTime { get; private set; }
 
         /// <summary>
         /// Indicates a precondition ETag for a specific aggregate. If no event on the target aggregate exists with this ETag, the command will fail, and the aggregate can decide whether to reschedule or ignore the command.
