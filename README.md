@@ -28,4 +28,4 @@ Systems built using these patterns can offer some improvements over the "traditi
 * Simplified deployments. Read model databases are projections from one or more event streams. These databases can be treated as disposable, queryable caches. This allows multiple versions of an application with different data schema needs to run at the same time, each with their own read model database.
 * Improved auditability. The event stream is append-only, and captures the important steps in the process you've modeled in your domain. This improves diagnosability, allows you to "debug history" when something unexpected happens, and can provide insights into how the system is being used that are lost in traditional systems where data is being overwritten.
 
-
+Read more [in the wiki](https://github.com/jonsequitur/Its.Cqrs/wiki).
