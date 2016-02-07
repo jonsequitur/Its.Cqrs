@@ -132,10 +132,9 @@ namespace Microsoft.Its.Domain
             }
         }
 
-
-        private static CommandPrecondition ToPrecondition(this IEvent deliveryDependsOn)
+        private static EventHasBeenRecordedPrecondition ToPrecondition(this IEvent deliveryDependsOn)
         {
-            CommandPrecondition precondition = null;
+            EventHasBeenRecordedPrecondition precondition = null;
 
             if (deliveryDependsOn != null)
             {
@@ -152,7 +151,7 @@ namespace Microsoft.Its.Domain
                                      .ElseDo(() => { throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends."); });
                 }
 
-                precondition = new CommandPrecondition(deliveryDependsOn.ETag, deliveryDependsOn.AggregateId);
+                precondition = new EventHasBeenRecordedPrecondition(deliveryDependsOn.ETag, deliveryDependsOn.AggregateId);
             }
 
             return precondition;

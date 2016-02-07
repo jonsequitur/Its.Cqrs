@@ -110,19 +110,6 @@ namespace Microsoft.Its.Domain.Tests
                   .ContainSingle(c => c.Command is TestCommand);
         }
 
-        [Test]
-        public async Task If_Schedule_is_dependent_on_a_precondition_with_no_ETag_then_it_sets_one()
-        {
-            var precondition = new CommandPrecondition(etag: "hello".ToETag(), scope: Any.Word());
-
-            await scheduler.Schedule(
-                Any.Word(),
-                new TestCommand(),
-                deliveryDependsOn: precondition);
-
-            precondition.ETag.Should().NotBeNullOrEmpty();
-        }
-
         [Ignore]
         [Test]
         public async Task Scheduled_commands_triggered_by_a_scheduled_command_are_idempotent()

@@ -62,6 +62,8 @@ namespace Microsoft.Its.Domain.Testing
                 {
                     var clock = Clock.Current;
 
+                    command.Result = new CommandScheduled(command, clock);
+
                     VirtualClock.Schedule(
                         command,
                         command.DueTime ?? Clock.Now().AddTicks(1),
@@ -71,7 +73,6 @@ namespace Microsoft.Its.Domain.Testing
                             return Disposable.Empty;
                         });
 
-                    command.Result = new CommandScheduled(command, clock);
                 }
 
                 await next(command);

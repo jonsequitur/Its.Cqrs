@@ -28,7 +28,7 @@ namespace Microsoft.Its.Domain.Testing
             }
             else
             {
-                this.getId = t => t.GetHashCode().ToString();
+                this.getId = t => ((dynamic)t).Id;
             }
         }
 

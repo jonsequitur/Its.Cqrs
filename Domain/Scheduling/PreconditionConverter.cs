@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            return serializer.Deserialize<CommandPrecondition>(reader);
+            return serializer.Deserialize<EventHasBeenRecordedPrecondition>(reader);
         }
 
         public override bool CanConvert(Type objectType)

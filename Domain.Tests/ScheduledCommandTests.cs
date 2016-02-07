@@ -106,5 +106,21 @@ namespace Microsoft.Its.Domain.Tests
 
             command.AggregateId.Should().Be(id);
         }
+
+        [Test]
+        public void A_ScheduledCommand_cannot_be_set_to_Scheduled_once_it_has_been_Delivered()
+        {
+            var command = new ScheduledCommand<CommandTarget>(
+                new TestCommand(),
+                Any.Guid().ToString());
+
+            command.Result = new CommandSucceeded(command);
+
+            Action setToScheduled = () =>
+                                    command.Result = new CommandScheduled(command);
+
+            setToScheduled.ShouldThrow<ArgumentException>()
+                          .WithMessage("Command cannot be scheduled again when it has already been delivered.");
+        }
     }
 }

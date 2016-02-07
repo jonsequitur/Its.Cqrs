@@ -202,9 +202,10 @@ namespace Microsoft.Its.Domain.Testing
             DateTimeOffset dueTime,
             Func<IScheduler, IScheduledCommand<TAggregate>, IDisposable> func)
         {
-            var scheduler = Clock.Current.IfTypeIs<VirtualClock>()
+            var scheduler = Clock.Current
+                                 .IfTypeIs<VirtualClock>()
                                  .Then(c => (IScheduler) c.Scheduler)
-                                 .Else(() => TaskPoolScheduler.Default);
+                                 .Else(() => CurrentThreadScheduler.Instance);
 
             return scheduler.Schedule(scheduledCommand, dueTime, func);
         }

@@ -43,15 +43,25 @@ namespace Microsoft.Its.Domain.Testing
             configuration.Container
                          .AddStrategy(type =>
                          {
-                             if (type.IsGenericType &&
-                                 type.GetGenericTypeDefinition() == typeof (IStore<>))
+                             if (!type.IsGenericType ||
+                                 type.GetGenericTypeDefinition() != typeof (IStore<>))
                              {
-                                 var targetType = type.GetGenericArguments().Single();
-                                 var storeType = typeof (InMemoryStore<>).MakeGenericType(targetType);
-                                 return c => Activator.CreateInstance(storeType , new object[] { (dynamic)null, (dynamic)null });
+                                 return null;
                              }
 
-                             return null;
+                             var targetType = type.GetGenericArguments().Single();
+
+                             if (typeof(IEventSourced).IsAssignableFrom(targetType))
+                             {
+                                 return null;
+                             }
+
+                             var storeType = typeof (InMemoryStore<>).MakeGenericType(targetType);
+
+                             var store = Activator.CreateInstance(storeType,
+                                                                  new object[] { (dynamic) null, (dynamic) null });
+
+                             return c => store;
                          });
 
             return configuration;

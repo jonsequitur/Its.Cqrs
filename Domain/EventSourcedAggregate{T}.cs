@@ -112,7 +112,7 @@ namespace Microsoft.Its.Domain
                     command,
                     Id,
                     due,
-                    new CommandPrecondition(commandScheduledEvent.ETag, Id));
+                    new EventHasBeenRecordedPrecondition(commandScheduledEvent.ETag, Id));
 
                 await Configuration.Current
                                    .CommandScheduler<T>()

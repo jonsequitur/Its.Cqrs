@@ -23,6 +23,8 @@ namespace Microsoft.Its.Domain
 #pragma warning restore 618
         where TAggregate : IEventSourced
     {
+        private ScheduledCommandResult result;
+
         public CommandScheduled()
         {
             if (string.IsNullOrWhiteSpace(ETag))
@@ -59,7 +61,17 @@ namespace Microsoft.Its.Domain
         public IPrecondition DeliveryPrecondition { get; set; }
 
         [JsonIgnore]
-        public ScheduledCommandResult Result { get; set; }
+        public ScheduledCommandResult Result    
+        {
+            get
+            {
+                return result;
+            }
+            set
+            {
+                result = value;
+            }
+        }
 
         /// <summary>
         /// Updates an aggregate to a new state.

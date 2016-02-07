@@ -47,7 +47,7 @@ namespace Microsoft.Its.Domain
             }
 
             return await preconditionChecker.HasBeenRecorded(
-                precondition.Scope, 
+                precondition.Scope,
                 precondition.ETag);
         }
     }

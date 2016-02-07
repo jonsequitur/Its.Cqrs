@@ -128,10 +128,11 @@
     <Compile Include="AuthorizationTests.cs" />
     <Compile Include="BloomFilterTests.cs" />
     <Compile Include="CommandContextTests.cs" />
+    <Compile Include="CommandSchedulerIdempotencyTests.cs" />
     <Compile Include="CommandSchedulerPipelineTests.cs" />
     <Compile Include="CommandSchedulerTestAggregate.cs" />
     <Compile Include="EventSourcedAggregateCommandSchedulingTests.cs" />
-    <Compile Include="AggregateCommandTests.cs" />
+    <Compile Include="EventSourcedAggregateCommandTests.cs" />
     <Compile Include="ConfigurationContextTests.cs" />
     <Compile Include="ConfigurationTests.cs" />
     <Compile Include="ConstructorCommandTests.cs" />
@@ -145,6 +146,8 @@
     <Compile Include="HashTests.cs" />
     <Compile Include="Infrastructure\Logging.cs" />
     <Compile Include="Infrastructure\NoOpEventBus.cs" />
+    <Compile Include="InMemoryCommandSchedulerIdempotencyTests_EventSourced.cs" />
+    <Compile Include="InMemoryCommandSchedulerIdempotencyTests_NonEventSourced.cs" />
     <Compile Include="InProcessEventBusTests.cs" />
     <Compile Include="MarcoPolo.cs" />
     <Compile Include="NonEventSourcedAggregateCommandTests.cs" />

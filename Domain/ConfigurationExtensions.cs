@@ -18,6 +18,15 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
+        /// Gets an <see cref="IStore{TAggregate}" />.
+        /// </summary>
+        public static IStore<TTarget> Store<TTarget>(this Configuration configuration)
+            where TTarget : class
+        {
+            return configuration.Container.Resolve<IStore<TTarget>>();
+        }
+
+        /// <summary>
         /// Gets an <see cref="ICommandScheduler{TAggregate}" />.
         /// </summary>
         public static ICommandScheduler<TAggregate> CommandScheduler<TAggregate>(this Configuration configuration)

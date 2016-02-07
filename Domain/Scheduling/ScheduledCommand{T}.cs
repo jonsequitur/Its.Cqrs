@@ -113,7 +113,30 @@ namespace Microsoft.Its.Domain
         /// Gets or sets the result of the scheduled command if it has been sent to the scheduler.
         /// </summary>
         [JsonIgnore]
-        public ScheduledCommandResult Result { get; set; }
+        public ScheduledCommandResult Result
+        {
+            get
+            {
+                return result;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException("value", "Result cannot be set to null.");
+                }
+
+                if (result is CommandDelivered)
+                {
+                    if (value is CommandScheduled)
+                    {
+                        throw new ArgumentException("Command cannot be scheduled again when it has already been delivered.");
+                    }
+                }
+                
+                result = value;
+            }
+        }
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
@@ -137,5 +160,6 @@ namespace Microsoft.Its.Domain
         }
 
         internal static readonly Func<IScheduledCommand<TTarget>, Guid> TargetGuid;
+        private ScheduledCommandResult result;
     }
 }

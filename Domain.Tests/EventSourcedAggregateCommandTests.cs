@@ -20,7 +20,7 @@ using Microsoft.Its.Domain.Testing;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
-    public class AggregateCommandTests
+    public class EventSourcedAggregateCommandTests
     {
         private CompositeDisposable disposables;
 
