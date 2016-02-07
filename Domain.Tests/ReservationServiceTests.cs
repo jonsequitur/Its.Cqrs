@@ -381,7 +381,7 @@ namespace Microsoft.Its.Domain.Tests
 
             // assert
             var reservation = await CreateReservationQuery().GetReservedValue(reservedValue, promoCode);
-            reservation.Expiration.Should().BeNull();
+            reservation.Expiration.Should().NotHaveValue();
         }
 
         [Test]
@@ -410,7 +410,7 @@ namespace Microsoft.Its.Domain.Tests
 
             // assert
             var reservation = await CreateReservationQuery().GetReservedValue(reservedValue, promoCode);
-            reservation.Expiration.Should().BeNull();
+            reservation.Expiration.Should().NotHaveValue();
             reservation.ConfirmationToken.Should().Be(value);
         }
 
@@ -434,7 +434,7 @@ namespace Microsoft.Its.Domain.Tests
 
             // assert
             var reservation = await CreateReservationQuery().GetReservedValue(username, "UserName");
-            reservation.Expiration.Should().BeNull();
+            reservation.Expiration.Should().NotHaveValue();
         }
     }
 

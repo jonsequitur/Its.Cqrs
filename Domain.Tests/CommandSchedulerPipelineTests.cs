@@ -111,7 +111,10 @@ namespace Microsoft.Its.Domain.Tests
 
             await scheduler.Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
 
-            checkpoints.Should().BeEquivalentTo(new[] { "one", "two", "three", "four" });
+            checkpoints.Should()
+                       .ContainInOrder("one", "two", "three", "four")
+                       .And
+                       .HaveCount(4);
         }
 
         [Test]
@@ -123,9 +126,9 @@ namespace Microsoft.Its.Domain.Tests
                 .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
-                        checkpoints.Add("one");
+                        checkpoints.Add("two");
                         await next(cmd);
-                        checkpoints.Add("four");
+                        checkpoints.Add("three");
                     });
 
             // make sure to trigger a resolve
@@ -135,16 +138,19 @@ namespace Microsoft.Its.Domain.Tests
                 .AddToCommandSchedulerPipeline<Order>(
                     schedule: async (cmd, next) =>
                     {
-                        checkpoints.Add("two");
+                        checkpoints.Add("one");
                         await next(cmd);
-                        checkpoints.Add("three");
+                        checkpoints.Add("four");
                     });
 
             scheduler = configuration.CommandScheduler<Order>();
 
             await scheduler.Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
 
-            checkpoints.Should().BeEquivalentTo(new[] { "one", "two", "three", "four" });
+            checkpoints.Should()
+                       .ContainInOrder("one", "two", "three", "four")
+                       .And
+                       .HaveCount(4);
         }
 
         [Test]
@@ -288,7 +294,11 @@ namespace Microsoft.Its.Domain.Tests
             var listener = new TraceListener();
             Trace.Listeners.Add(listener);
 
-            return new CompositeDisposable(Log.Events().Subscribe(e => log.Add(e.ToLogString())), Disposable.Create(() => Trace.Listeners.Remove(listener)));
+            return new CompositeDisposable
+            {
+                Log.Events().Subscribe(e => log.Add(e.ToLogString())),
+                Disposable.Create(() => Trace.Listeners.Remove(listener))
+            };
         }
     }
 }

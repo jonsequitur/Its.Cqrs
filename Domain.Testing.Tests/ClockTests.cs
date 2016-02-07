@@ -41,12 +41,12 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             var time = Any.DateTimeOffset();
 
-            using (VirtualClock.Start(time))
+            using (VirtualClock.Start(time.Subtract(60.Seconds())))
             {
             }
 
             var now = Clock.Now();
-            now.Should().BeInRange(now, DateTimeOffset.Now.AddMilliseconds(10));
+            now.Should().BeCloseTo(DateTimeOffset.UtcNow, 10);
         }
 
         [Test]

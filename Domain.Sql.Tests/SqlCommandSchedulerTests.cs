@@ -247,8 +247,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var dueTime = Clock.Now().AddMinutes(5);
 
-            Console.WriteLine(new { dueTime });
-
             await scheduler.Schedule(
                 aggregate.Id,
                 dueTime: dueTime,
@@ -267,8 +265,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 foreach (var command in db.ScheduledCommands.Where(c => c.AggregateId == aggregate.Id))
                 {
-                    command.AppliedTime.IfNotNull()
-                           .ThenDo(v => v.Should().BeInRange(dueTime.AddMilliseconds(-10), dueTime.AddMilliseconds(10)));
+                    command.AppliedTime
+                           .IfNotNull()
+                           .ThenDo(v => v.Should().BeCloseTo(dueTime, 10));
                 }
             }
         }
@@ -498,7 +497,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 var scheduledCommand = db.ScheduledCommands.Single(c => c.AggregateId == order.Id);
 
-                scheduledCommand.AppliedTime.Should().BeNull();
+                scheduledCommand.AppliedTime.Should().NotHaveValue();
                 scheduledCommand.Attempts.Should().Be(1);
             }
         }
@@ -1154,7 +1153,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 Console.WriteLine(commands.ToDiagnosticJson());
                 commands.Count().Should().Be(2);
-                commands.Last().FinalAttemptTime.Should().NotBeNull();
+                commands.Last().FinalAttemptTime.Should().HaveValue();
             }
         }
 
@@ -1191,7 +1190,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 command.AppliedTime
                        .Should()
-                       .BeNull();
+                       .NotHaveValue();
 
                 command.Attempts
                        .Should()
@@ -1280,7 +1279,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 command.AppliedTime
                        .Should()
-                       .BeNull();
+                       .NotHaveValue();
 
                 command.Attempts
                        .Should()
@@ -1288,7 +1287,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 command.FinalAttemptTime
                        .Should()
-                       .NotBeNull();
+                       .HaveValue();
             }
         }
 
