@@ -2,47 +2,63 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Microsoft.Its.Domain
 {
     [DebuggerStepThrough]
     internal class CommandSchedulerPipelineTraceInitializer : CommandSchedulerPipelineInitializer
     {
-        private Action<IScheduledCommand> onScheduling = cmd =>
-            Trace.WriteLine("[Scheduling] @" + Clock.Now() + ": " + cmd);
+        private Action<IScheduledCommand> onScheduling;
 
-        private Action<IScheduledCommand> onScheduled = cmd =>
-            Trace.WriteLine("[Scheduled] @" + Clock.Now() + ": " + cmd);
+        private Action<IScheduledCommand> onScheduled;
 
-        private Action<IScheduledCommand> onDelivering = cmd =>
-            Trace.WriteLine("[Delivering] @" + Clock.Now() + ": " + cmd);
+        private Action<IScheduledCommand> onDelivering;
 
-        private Action<IScheduledCommand> onDelivered = cmd =>
-            Trace.WriteLine("[Delivered] @" + Clock.Now() + ": " + cmd);
+        private Action<IScheduledCommand> onDelivered;
 
         protected override void InitializeFor<TAggregate>(Configuration configuration)
         {
-            configuration.AddToCommandSchedulerPipeline<TAggregate>(
-                schedule: async (cmd, next) =>
+            ScheduledCommandInterceptor<TAggregate> schedule = null;
+            if (onScheduling != null || onScheduled != null)
+            {
+                onScheduling = onScheduling ?? delegate { };
+                onScheduled = onScheduled ?? delegate { };
+
+                schedule = async (cmd, next) =>
                 {
                     onScheduling(cmd);
                     await next(cmd);
                     onScheduled(cmd);
-                },
-                deliver: async (cmd, next) =>
+                };
+            }
+
+            ScheduledCommandInterceptor<TAggregate> deliver = null;
+            if (onDelivering != null || onDelivered != null)
+            {
+                onDelivering = onDelivering ?? delegate { };
+                onDelivered = onDelivered ?? delegate { };
+
+                deliver = async (cmd, next) =>
                 {
                     onDelivering(cmd);
                     await next(cmd);
                     onDelivered(cmd);
-                });
+                };
+            }
+
+            configuration.AddToCommandSchedulerPipeline(
+                schedule: schedule,
+                deliver: deliver);
         }
 
         public void OnScheduling(Action<IScheduledCommand> action)
         {
             if (action != null)
             {
-                this.onScheduling = action;
+                onScheduling = action;
             }
         }
 
@@ -50,7 +66,7 @@ namespace Microsoft.Its.Domain
         {
             if (action != null)
             {
-                this.onScheduled = action;
+                onScheduled = action;
             }
         }
 
@@ -58,7 +74,7 @@ namespace Microsoft.Its.Domain
         {
             if (action != null)
             {
-                this.onDelivering = action;
+                onDelivering = action;
             }
         }
 
@@ -66,19 +82,27 @@ namespace Microsoft.Its.Domain
         {
             if (action != null)
             {
-                this.onDelivered = action;
+                onDelivered = action;
             }
         }
 
         protected internal override string GetKeyIndicatingInitialized()
         {
+            var hashCodes = new[]
+            {
+                onScheduling,
+                onScheduled,
+                onDelivering,
+                onDelivered
+            }
+                .Where(d => d != null)
+                .Select(d => d.Method.GetHashCode().ToString()).ToDelimitedString("/");
+
             var key = string.Format(
-                "{0} ({1}/{2}/{3}/{4})",
+                "{0} ({1})",
                 base.GetKeyIndicatingInitialized(),
-                onScheduling.Method.GetHashCode(),
-                onScheduled.Method.GetHashCode(),
-                onDelivering.Method.GetHashCode(),
-                onDelivered.Method.GetHashCode());
+                hashCodes);
+
             return key;
         }
     }

@@ -43,8 +43,7 @@ namespace Microsoft.Its.Domain.Tests
 
             configuration = new Configuration()
                 .UseInMemoryCommandScheduling()
-                .UseInMemoryEventStore()
-                .TraceScheduledCommands();
+                .UseInMemoryEventStore();
 
             customerRepository = configuration.Repository<CustomerAccount>();
             orderRepository = configuration.Repository<Order>();
@@ -507,13 +506,28 @@ namespace Microsoft.Its.Domain.Tests
             var log = new List<string>();
             using (LogTraceOutputTo(log))
             {
-                // send a command
-                await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+                await configuration.CommandScheduler<Order>()
+                                   .Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
             }
 
             log.Count.Should().Be(4);
             commandsScheduled.Count.Should().Be(1);
             commandsDelivered.Count.Should().Be(1);
+        }
+
+        [Test]
+        public async Task When_pipeline_tracing_is_enabled_with_specific_behaviors_then_that_call_does_not_add_Trace_output()
+        {
+            configuration.TraceScheduledCommands(onScheduling: c => { });
+
+            var log = new List<string>();
+            using (LogTraceOutputTo(log))
+            {
+                await configuration.CommandScheduler<Order>()
+                                   .Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            }
+
+            log.Should().BeEmpty();
         }
 
         [Test]
@@ -526,8 +540,8 @@ namespace Microsoft.Its.Domain.Tests
             var log = new List<string>();
             using (LogTraceOutputTo(log))
             {
-                // send a command
-                await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+                await configuration.CommandScheduler<Order>()
+                                   .Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
             }
 
             log.Count.Should().Be(4);
@@ -590,12 +604,14 @@ namespace Microsoft.Its.Domain.Tests
 
         public IDisposable LogTraceOutputTo(List<string> log)
         {
-            configuration.TraceScheduledCommands();
-
             var listener = new TraceListener();
             Trace.Listeners.Add(listener);
 
-            return new CompositeDisposable(Log.Events().Subscribe(e => log.Add(e.ToLogString())), Disposable.Create(() => Trace.Listeners.Remove(listener)));
+            return new CompositeDisposable
+            {
+                Log.Events().Subscribe(e => log.Add(e.ToLogString())),
+                Disposable.Create(() => Trace.Listeners.Remove(listener))
+            };
         }
     }
 }

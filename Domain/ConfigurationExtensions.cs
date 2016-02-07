@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Microsoft.Its.Domain
@@ -104,7 +105,7 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        /// Writes trace information during command scheduling and delivery for all aggregate types. By default, output is send to <see cref="System.Diagnostics.Trace" />.
+        /// Writes trace information during command scheduling and delivery for all aggregate types. If no delegates are specified, then output is written to <see cref="System.Diagnostics.Trace" /> on all events.
         /// </summary>
         /// <param name="configuration">The domain configuration.</param>
         /// <param name="onScheduling">An optional delegate to trace information about a command before calling Schedule on the inner scheduler.</param>
@@ -121,6 +122,24 @@ namespace Microsoft.Its.Domain
         {
             var traceInitializer = configuration.Container
                                                 .Resolve<CommandSchedulerPipelineTraceInitializer>();
+
+            if (onScheduling == null &&
+                onScheduled == null &&
+                onDelivering == null &&
+                onDelivered == null)
+            {
+                onScheduling = cmd =>
+                               Trace.WriteLine("[Scheduling] @" + Clock.Now() + ": " + cmd);
+
+                onScheduled = cmd =>
+                              Trace.WriteLine("[Scheduled] @" + Clock.Now() + ": " + cmd);
+
+                onDelivering = cmd =>
+                               Trace.WriteLine("[Delivering] @" + Clock.Now() + ": " + cmd);
+
+                onDelivered = cmd =>
+                              Trace.WriteLine("[Delivered] @" + Clock.Now() + ": " + cmd);
+            }
 
             traceInitializer.OnScheduling(onScheduling);
             traceInitializer.OnScheduled(onScheduled);
