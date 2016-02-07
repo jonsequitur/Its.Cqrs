@@ -164,7 +164,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 db.ScheduledCommands.Single(c => c.AggregateId == order.Id)
                   .AppliedTime
                   .Should()
-                  .BeNull();
+                  .NotHaveValue();
             }
         }
 

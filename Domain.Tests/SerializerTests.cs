@@ -53,7 +53,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var cloned = Serializer.CloneSettings();
             cloned.Converters.Count.Should().Be(Serializer.Settings.Converters.Count);
-            cloned.ShouldBeEquivalentTo(Serializer.Settings);
+            cloned.ShouldBeEquivalentTo(Serializer.Settings, _ => _.ExcludingFields());
         }
 
         [Test]

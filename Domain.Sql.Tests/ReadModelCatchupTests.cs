@@ -591,11 +591,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             var error = errors.Single(e => e.AggregateId == itemAdded.AggregateId);
-            error.SequenceNumber.Should().Be(itemAdded.SequenceNumber);
+            error.SequenceNumber
+                 .Should()
+                 .Be(itemAdded.SequenceNumber);
             error.Event
-                 .ShouldHave()
-                 .Properties(p => p.SequenceNumber)
-                 .EqualTo(itemAdded);
+                 .SequenceNumber
+                 .Should()
+                 .Be(itemAdded.SequenceNumber);
         }
 
         [Ignore("Test needs rebuilding")]
