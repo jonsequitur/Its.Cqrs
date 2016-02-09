@@ -24,6 +24,7 @@ namespace Microsoft.Its.Domain
         where TAggregate : IEventSourced
     {
         private ScheduledCommandResult result;
+        private ICommand<TAggregate> command;
 
         public CommandScheduled()
         {
@@ -37,7 +38,18 @@ namespace Microsoft.Its.Domain
         /// Gets the command to be applied at a later time.
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
-        public ICommand<TAggregate> Command { get; set; }
+        public ICommand<TAggregate> Command
+        {
+            get
+            {
+                return command;
+            }
+            set
+            {
+                command = value;
+                this.EnsureCommandHasETag();
+            }
+        }
 
         string IScheduledCommand<TAggregate>.TargetId
         {
@@ -69,6 +81,7 @@ namespace Microsoft.Its.Domain
             }
             set
             {
+                result.ThrowIfNotAllowedToChangeTo(value);
                 result = value;
             }
         }

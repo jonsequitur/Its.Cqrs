@@ -20,7 +20,7 @@ namespace Microsoft.Its.Domain
             this.command = command;
         }
 
-        public virtual IScheduledCommand ScheduledCommand
+        public IScheduledCommand ScheduledCommand
         {
             get
             {

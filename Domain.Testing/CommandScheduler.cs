@@ -72,7 +72,6 @@ namespace Microsoft.Its.Domain.Testing
                             Domain.CommandScheduler.DeliverImmediatelyOnConfiguredScheduler(c, configuration).Wait();
                             return Disposable.Empty;
                         });
-
                 }
 
                 await next(command);

@@ -42,6 +42,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         public virtual DbSet<CommandExecutionError> Errors { get; set; }
 
+        public virtual DbSet<ETag> ETags { get; set; }
+
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             modelBuilder.Configurations.Add(new ClockEntityTypeConfiguration());
@@ -93,11 +95,20 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             public ETagEntityTypeConfiguration()
             {
-                ToTable("ScheduledCommand", "ETag");
+                ToTable("ETag", "Scheduler");
 
                 HasKey(c => new { c.Id });
 
-                Property(c => c.CreatedTime)
+                Property(c => c.Scope)
+                    .IsRequired();
+                
+                Property(c => c.ETagValue)
+                    .IsRequired();
+
+                Property(c => c.CreatedDomainTime)
+                    .IsRequired();
+
+                Property(c => c.CreatedRealTime)
                     .IsRequired();
             }
         }

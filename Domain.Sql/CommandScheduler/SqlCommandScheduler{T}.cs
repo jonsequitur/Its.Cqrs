@@ -106,7 +106,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 // sometimes the command depends on a precondition event that hasn't been saved
                 if (!await eventStoreETagChecker.IsPreconditionSatisfied(scheduledCommand))
                 {
-                    this.DeliverIfPreconditionIsSatisfiedWithin(
+                    this.DeliverIfPreconditionIsMetWithin(
                         TimeSpan.FromSeconds(10),
                         scheduledCommand,
                         eventBus);

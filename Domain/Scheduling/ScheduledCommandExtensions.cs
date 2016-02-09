@@ -50,5 +50,37 @@ namespace Microsoft.Its.Domain
                 precondition.Scope,
                 precondition.ETag);
         }
+
+        internal static void EnsureCommandHasETag<TTarget>(this IScheduledCommand<TTarget> scheduledCommand)
+        {
+            var command = scheduledCommand.Command;
+
+            if (String.IsNullOrEmpty(command.ETag))
+            {
+                command.IfTypeIs<Command>()
+                       .ThenDo(c => c.ETag = CommandContext.Current
+                                                           .IfNotNull()
+                                                           .Then(ctx => ctx.NextETag(scheduledCommand.TargetId))
+                                                           .Else(() => Guid.NewGuid().ToString("N").ToETag()));
+            }
+        }
+
+        internal static void ThrowIfNotAllowedToChangeTo(
+            this ScheduledCommandResult @from,
+            ScheduledCommandResult to)
+        {
+            if (to == null)
+            {
+                throw new ArgumentNullException("value", "Result cannot be set to null.");
+            }
+
+            if (@from is CommandDelivered)
+            {
+                if (to is CommandScheduled)
+                {
+                    throw new ArgumentException("Command cannot be scheduled again when it has already been delivered.");
+                }
+            }
+        }
     }
 }

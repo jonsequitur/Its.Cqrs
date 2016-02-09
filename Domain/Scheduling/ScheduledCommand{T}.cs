@@ -55,19 +55,12 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentException("Parameter targetId cannot be null, empty or whitespace.");
             }
 
-            if (string.IsNullOrEmpty(command.ETag))
-            {
-                command.IfTypeIs<Command>()
-                       .ThenDo(c => c.ETag = CommandContext.Current
-                                                           .IfNotNull()
-                                                           .Then(ctx => ctx.NextETag(targetId))
-                                                           .Else(() => Guid.NewGuid().ToString("N").ToETag()));
-            }
-
             Command = command;
             TargetId = targetId;
             DueTime = dueTime;
             DeliveryPrecondition = deliveryPrecondition;
+
+            this.EnsureCommandHasETag();
         }
 
         /// <summary>
@@ -100,7 +93,7 @@ namespace Microsoft.Its.Domain
         /// Gets the time at which the command is scheduled to be applied.
         /// </summary>
         /// <remarks>
-        /// If this value is null, the command should be delivered as soon as possible.
+        /// If this to is null, the command should be delivered as soon as possible.
         /// </remarks>
         public DateTimeOffset? DueTime { get; private set; }
 
@@ -121,19 +114,7 @@ namespace Microsoft.Its.Domain
             }
             set
             {
-                if (value == null)
-                {
-                    throw new ArgumentNullException("value", "Result cannot be set to null.");
-                }
-
-                if (result is CommandDelivered)
-                {
-                    if (value is CommandScheduled)
-                    {
-                        throw new ArgumentException("Command cannot be scheduled again when it has already been delivered.");
-                    }
-                }
-                
+                result.ThrowIfNotAllowedToChangeTo(value);
                 result = value;
             }
         }

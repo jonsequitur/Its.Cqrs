@@ -107,7 +107,7 @@ namespace Microsoft.Its.Domain
             await scheduler.Deliver(command);
         }
 
-        internal static void DeliverIfPreconditionIsSatisfiedSoon<TAggregate>(
+        internal static void DeliverIfPreconditionIsMetSoon<TAggregate>(
             IScheduledCommand<TAggregate> scheduledCommand,
             Configuration configuration,
             int timeoutInMilliseconds = 10000)
@@ -157,7 +157,7 @@ namespace Microsoft.Its.Domain
             return precondition;
         }
 
-        internal static void DeliverIfPreconditionIsSatisfiedWithin<TAggregate>(
+        internal static void DeliverIfPreconditionIsMetWithin<TAggregate>(
             this ICommandScheduler<TAggregate> scheduler,
             TimeSpan timespan,
             IScheduledCommand<TAggregate> scheduledCommand,

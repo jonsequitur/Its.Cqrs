@@ -5,6 +5,7 @@ using System;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
@@ -19,7 +20,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             Func<IScheduledCommand<TAggregate>, CommandSchedulerDbContext, Task<string>> clockNameForEvent) where TAggregate : class
         {
             ScheduledCommand storedScheduledCommand;
-            Clock schedulerClock;
 
             using (var db = createDbContext())
             {
@@ -27,14 +27,14 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 // get or create a clock to schedule the command on
                 var clockName = await clockNameForEvent(scheduledCommand, db);
-                schedulerClock = await GetOrAddSchedulerClock(
-                    db, 
-                    clockName, 
+                var schedulerClock = await GetOrAddSchedulerClock(
+                    db,
+                    clockName,
                     domainTime);
 
                 storedScheduledCommand = CreateStoredScheduledCommand(
-                    scheduledCommand, 
-                    domainTime, 
+                    scheduledCommand,
+                    domainTime,
                     schedulerClock);
 
                 if (scheduledCommand.IsDue(storedScheduledCommand.Clock) &&
@@ -50,10 +50,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                               storedScheduledCommand.SequenceNumber,
                                               schedulerClock.Name));
 
-                SaveScheduledCommandToDatabase(db, storedScheduledCommand);
+                await SaveScheduledCommandToDatabase(db,
+                                                     storedScheduledCommand,
+                                                     scheduledCommand);
             }
 
-            scheduledCommand.Result = new CommandScheduled(scheduledCommand, schedulerClock);
             scheduledCommand.IfTypeIs<ScheduledCommand<TAggregate>>()
                             .ThenDo(c => c.SequenceNumber = storedScheduledCommand.SequenceNumber);
 
@@ -134,8 +135,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         }
 
         private static async Task<Clock> GetOrAddSchedulerClock(
-            CommandSchedulerDbContext db, 
-            string clockName, 
+            CommandSchedulerDbContext db,
+            string clockName,
             DateTimeOffset startTime)
         {
             var schedulerClock = await db.Clocks.SingleOrDefaultAsync(c => c.Name == clockName);
@@ -156,21 +157,21 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             db.Clocks.Add(schedulerClock);
             await db.SaveChangesAsync();
-            
+
             return schedulerClock;
         }
 
         private static async Task<ScheduledCommand> GetStoredScheduledCommand<TAggregate>(
-            IScheduledCommand<TAggregate> scheduledCommand, 
-            CommandSchedulerDbContext db, 
+            IScheduledCommand<TAggregate> scheduledCommand,
+            CommandSchedulerDbContext db,
             Guid scheduledCommandGuid) where TAggregate : class
         {
             var sequenceNumber = scheduledCommand
                 .IfTypeIs<IEvent>()
                 .Then(c => c.SequenceNumber)
                 .Else(() => scheduledCommand
-                    .IfTypeIs<ScheduledCommand<TAggregate>>()
-                    .Then(c => c.SequenceNumber)     )
+                                .IfTypeIs<ScheduledCommand<TAggregate>>()
+                                .Then(c => c.SequenceNumber))
                 .ElseThrow(() => new InvalidOperationException("Cannot look up stored scheduled command based on a " + scheduledCommand.GetType()));
 
             var storedCommand = await db.ScheduledCommands
@@ -207,23 +208,36 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             });
         }
 
-        private static void SaveScheduledCommandToDatabase(
-            CommandSchedulerDbContext db, 
-            ScheduledCommand storedScheduledCommand) 
+        private static async Task SaveScheduledCommandToDatabase<TAggregate>(
+            CommandSchedulerDbContext db,
+            ScheduledCommand storedScheduledCommand,
+            IScheduledCommand<TAggregate> scheduledCommand)
         {
             db.ScheduledCommands.Add(storedScheduledCommand);
+            db.ETags.Add(new ETag
+            {
+                Scope = scheduledCommand.TargetId,
+                ETagValue = scheduledCommand.Command.ETag,
+                CreatedDomainTime = Domain.Clock.Now(),
+                CreatedRealTime = DateTimeOffset.UtcNow
+            });
 
             while (true)
             {
                 try
                 {
-                    db.SaveChanges();
+                    await db.SaveChangesAsync();
 
                     break;
                 }
                 catch (DbUpdateException exception)
                 {
-                    if (exception.IsConcurrencyException())
+                    if (!exception.IsConcurrencyException())
+                    {
+                        throw;
+                    }
+
+                    if (exception.ToString().Contains(@"object 'Scheduler.ScheduledCommand'"))
                     {
                         if (storedScheduledCommand.SequenceNumber < 0)
                         {
@@ -232,9 +246,16 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                         }
                         else
                         {
-                            // this is not a scheduler-assigned sequence number, so the concurrency exception indicates an actual issue
+                            // this is not a scheduler-assigned sequence number
                             break;
                         }
+                    }
+                    else if (exception.ToString().Contains(@"object 'Scheduler.ETag'"))
+                    {
+                        scheduledCommand.Result = new CommandDeduplicated(
+                            scheduledCommand,
+                            "Schedule");
+                        return;
                     }
                     else
                     {
@@ -242,6 +263,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     }
                 }
             }
+
+            scheduledCommand.Result = new CommandScheduled(
+                scheduledCommand,
+                storedScheduledCommand.Clock);
         }
     }
 }

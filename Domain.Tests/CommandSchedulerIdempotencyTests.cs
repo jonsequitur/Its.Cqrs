@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Concurrent;
 using System.Reactive.Disposables;
@@ -78,10 +81,14 @@ namespace Microsoft.Its.Domain.Tests
             var targetId = Any.Guid().ToString();
             var etag = Any.Guid().ToString().ToETag();
 
-            await schedule(targetId, etag);
-            await schedule(targetId, etag);
+            await schedule(targetId, etag, dueTime: Clock.Now().AddHours(2));
+            await schedule(targetId, etag, dueTime: Clock.Now().AddHours(2));
 
-            commandsScheduled.Should().HaveCount(1);
+            commandsScheduled
+                .Should()
+                .ContainSingle(c => c.Result is CommandScheduled)
+                .And
+                .ContainSingle(c => c.Result is CommandDeduplicated);
         }
 
         protected abstract ScheduleCommand GetScheduleDelegate();
@@ -104,16 +111,22 @@ namespace Microsoft.Its.Domain.Tests
                 }));
             }
 
-            var command = new ScheduledCommand<Order>(new AddItem
+            var command = new AddItem
             {
                 ETag = etag,
                 ProductName = Any.Word(),
                 Price = 10m
-            }, aggregateId);
+            };
+
+            var scheduledCommand = new ScheduledCommand<Order>(
+                command,
+                aggregateId,
+                dueTime,
+                deliveryDependsOn);
 
             var scheduler = Configuration.Current.CommandScheduler<Order>();
 
-            await scheduler.Schedule(command);
+            await scheduler.Schedule(scheduledCommand);
         }
 
         protected async Task ScheduleCommandAgainstNonEventSourcedAggregate(
@@ -129,7 +142,11 @@ namespace Microsoft.Its.Domain.Tests
                 await repository.Put(new CommandTarget(targetId));
             }
 
-            var command = new ScheduledCommand<CommandTarget>(new TestCommand(etag), targetId);
+            var command = new ScheduledCommand<CommandTarget>(
+                new TestCommand(etag),
+                targetId,
+                dueTime,
+                deliveryDependsOn);
 
             var scheduler = Configuration.Current.CommandScheduler<CommandTarget>();
 

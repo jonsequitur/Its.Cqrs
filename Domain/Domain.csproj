@@ -134,6 +134,7 @@
     <Compile Include="IETagChecker.cs" />
     <Compile Include="IEventMigratingAggregate.cs" />
     <Compile Include="IStore{T}.cs" />
+    <Compile Include="Scheduling\CommandDeduplicated.cs" />
     <Compile Include="Scheduling\CommandDelivered.cs" />
     <Compile Include="Scheduling\CommandSchedulerPipeline{T}.cs" />
     <Compile Include="ExceptionExtensions.cs" />
