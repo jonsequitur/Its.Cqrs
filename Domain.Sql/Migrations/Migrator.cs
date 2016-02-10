@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Transactions;
@@ -101,13 +102,15 @@ WHERE rowNumber = 1")
                 return;
             }
 
+            ((IObjectContextAdapter) context).ObjectContext.CommandTimeout = 600000;
+
             using (var transaction = new TransactionScope())
             {
                 try
                 {
                     // don't dispose this connection, since it's managed by the DbContext
                     var connection = context.OpenConnection();
-
+                    
                     var appliedVersions = connection.GetLatestAppliedMigrationVersions()
                                                     .ToDictionary(v => v.MigrationScope,
                                                                   v => v);

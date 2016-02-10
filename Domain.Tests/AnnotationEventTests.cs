@@ -71,7 +71,7 @@ namespace Microsoft.Its.Domain.Tests
 
             var @event = (await repository.GetLatest(aggregateId)).EventHistory.OfType<Annotated<Order>>().Single();
             @event.Timestamp.Should().NotBe(Clock.Now());
-            @event.Timestamp.Should().BeAfter(actualNow);
+            @event.Timestamp.Should().BeOnOrAfter(actualNow);
         }
     }
 }
