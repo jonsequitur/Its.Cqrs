@@ -24,11 +24,12 @@ end
 
 if not exists(select * from sys.indexes where name='IX_Id_and_Type' and object_id = OBJECT_ID('eventstore.events'))
 begin
-	CREATE NONCLUSTERED INDEX [IX_Id_and_Type] ON [EventStore].[Events]
+	CREATE NONCLUSTERED INDEX [IX_Id_and_Type] ON [EventStore].[Events] 
 	(
-	    [Id] ASC,
+		[Id] ASC,
 		[Type] ASC
-	)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+	)
+	INCLUDE ([StreamName])
 end
 
 
