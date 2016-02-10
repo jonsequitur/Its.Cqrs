@@ -3,12 +3,10 @@
 
 using System;
 using Microsoft.Its.Domain.Testing;
-using NUnit.Framework;
 using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {
-    [Ignore("Not implemented yet")]
     public class InMemoryCommandSchedulerIdempotencyTests_EventSourced : CommandSchedulerIdempotencyTests
     {
         protected override void Configure(

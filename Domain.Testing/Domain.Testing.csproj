@@ -90,6 +90,7 @@
     <Compile Include="ConfigurationExtensions.cs" />
     <Compile Include="EventComparer.cs" />
     <Compile Include="IgnoreCommandScheduling{T}.cs" />
+    <Compile Include="InMemoryCommandETagStore.cs" />
     <Compile Include="InMemoryEventStoreETagChecker.cs" />
     <Compile Include="InMemoryCommandSchedulerPipelineInitializer{T}.cs" />
     <Compile Include="InMemoryReservationService.cs" />

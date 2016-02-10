@@ -58,7 +58,13 @@ namespace Microsoft.Its.Domain.Testing
         {
             return async (command, next) =>
             {
-                if (command.Result == null)
+                var etagStore = configuration.Container.Resolve<InMemoryCommandETagStore>();
+
+                if (!etagStore.TryAdd(scope: command.TargetId, etag: command.Command.ETag))
+                {
+                    command.Result = new CommandDeduplicated(command, "Schedule");
+                }
+                else if (command.Result == null)
                 {
                     var clock = Clock.Current;
 

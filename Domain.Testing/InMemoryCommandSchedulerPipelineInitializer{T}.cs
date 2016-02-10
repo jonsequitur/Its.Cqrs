@@ -10,6 +10,8 @@ namespace Microsoft.Its.Domain.Testing
             configuration.IsUsingCommandSchedulerPipeline(true)
                          .IsUsingInMemoryCommandScheduling(true);
 
+            configuration.Container.RegisterSingle(c => new InMemoryCommandETagStore());
+
             configuration.AddToCommandSchedulerPipeline(
                 CommandScheduler.WithInMemoryDeferredScheduling<TAggregate>(configuration));
         }

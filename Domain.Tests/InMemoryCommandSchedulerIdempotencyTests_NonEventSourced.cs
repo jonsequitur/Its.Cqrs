@@ -3,11 +3,9 @@
 
 using System;
 using Microsoft.Its.Domain.Testing;
-using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Tests
 {
-    [Ignore("Not implemented yet")]
     public class InMemoryCommandSchedulerIdempotencyTests_NonEventSourced : CommandSchedulerIdempotencyTests
     {
         protected override void Configure(
