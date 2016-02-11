@@ -20,7 +20,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     [Category("Command scheduling")]
     [TestFixture]
-    public class SqlCommandSchedulerTests_Legacy : SqlCommandSchedulerTests
+    public class SqlCommandSchedulerTests_Legacy : SqlCommandSchedulerTests_EventSourced
     {
         private SqlCommandScheduler sqlCommandScheduler;
 
@@ -61,7 +61,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Activity_is_notified_when_a_command_is_scheduled()
         {
             // arrange
-            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
+            var order = CommandSchedulingTests_EventSourced.CreateOrder();
 
             var activity = new List<ICommandSchedulerActivity>();
 
@@ -89,7 +89,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Activity_is_notified_when_a_command_is_delivered_immediately()
         {
             // arrange
-            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
+            var order = CommandSchedulingTests_EventSourced.CreateOrder();
 
             var activity = new List<ICommandSchedulerActivity>();
 
@@ -119,7 +119,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task SqlCommandScheduler_Activity_is_notified_when_a_command_is_delivered_via_Trigger()
         {
             // arrange
-            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
+            var order = CommandSchedulingTests_EventSourced.CreateOrder();
 
             var activity = new List<ICommandSchedulerActivity>();
 
@@ -145,7 +145,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task A_command_is_not_marked_as_applied_if_no_handler_is_registered()
         {
             // arrange
-            var order = EventSourcedAggregateCommandSchedulingTests.CreateOrder();
+            var order = CommandSchedulingTests_EventSourced.CreateOrder();
             order.Apply(
                 new ChargeCreditCardOn
                 {

@@ -135,7 +135,7 @@
     <Compile Include="CommandSchedulerIdempotencyTests.cs" />
     <Compile Include="CommandSchedulerPipelineTests.cs" />
     <Compile Include="CommandSchedulerTestAggregate.cs" />
-    <Compile Include="EventSourcedAggregateCommandSchedulingTests.cs" />
+    <Compile Include="CommandSchedulingTests_EventSourced.cs" />
     <Compile Include="EventSourcedAggregateCommandTests.cs" />
     <Compile Include="ConfigurationContextTests.cs" />
     <Compile Include="ConfigurationTests.cs" />

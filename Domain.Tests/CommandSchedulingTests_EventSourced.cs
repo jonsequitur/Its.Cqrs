@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain.Tests
 {
     [Category("Command scheduling")]
     [TestFixture]
-    public class EventSourcedAggregateCommandSchedulingTests
+    public class CommandSchedulingTests_EventSourced
     {
         private CompositeDisposable disposables;
         private Configuration configuration;
