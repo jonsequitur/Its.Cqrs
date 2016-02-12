@@ -6,7 +6,6 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations.Infrastructure;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;

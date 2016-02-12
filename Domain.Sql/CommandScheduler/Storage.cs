@@ -64,7 +64,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         internal static async Task DeserializeAndDeliverScheduledCommand<TAggregate>(
             ScheduledCommand scheduled,
             ICommandScheduler<TAggregate> scheduler)
-            where TAggregate : IEventSourced
         {
             var command = scheduled.ToScheduledCommand<TAggregate>();
 

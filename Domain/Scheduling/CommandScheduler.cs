@@ -257,11 +257,6 @@ namespace Microsoft.Its.Domain
                                               .MakeGenericMethod(scheduled.Command.GetType())
                                               .Invoke(null, new object[] { scheduled.Command, scheduled, exception });
 
-            var previousAttempts = scheduled.IfHas<int>(s => s.Metadata.NumberOfPreviousAttempts)
-                                            .ElseDefault();
-
-            failure.NumberOfPreviousAttempts = previousAttempts;
-
             if (aggregate != null)
             {
                 var scheduledCommandOfT = scheduled.Command as Command<TAggregate>;

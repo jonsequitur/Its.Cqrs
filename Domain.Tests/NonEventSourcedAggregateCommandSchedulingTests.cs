@@ -300,6 +300,14 @@ namespace Microsoft.Its.Domain.Tests
             this.isValid = isValid;
         }
 
+        public bool IsValid
+        {
+            get
+            {
+                return isValid;
+            }
+        }
+
         public override IValidationRule CommandValidator
         {
             get

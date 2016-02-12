@@ -79,8 +79,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             clockRepository.CreateClock(clockName, Clock.Now());
         }
 
-        protected abstract void ConfigureScheduler(Configuration configuration);
-
         [TearDown]
         public void TearDown()
         {
@@ -89,7 +87,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_a_clock_is_advanced_its_associated_commands_are_triggered()
+        public override async Task When_a_clock_is_advanced_its_associated_commands_are_triggered()
         {
             // arrange
             var shipmentId = Any.AlphanumericString(8, 8);
@@ -1126,7 +1124,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_a_constructor_commands_fails_with_a_ConcurrencyException_it_is_not_retried()
+        public async Task When_a_constructor_command_fails_with_a_ConcurrencyException_it_is_not_retried()
         {
             var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
@@ -1135,8 +1133,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             await commandScheduler.Schedule(orderId, new CreateOrder(customerName)
             {
-                AggregateId = orderId,
-                ETag = Any.Guid().ToString()
+                AggregateId = orderId
             });
 
             await commandScheduler.Schedule(orderId, new CreateOrder(customerName)
@@ -1152,8 +1149,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                  .ToArray();
 
                 Console.WriteLine(commands.ToDiagnosticJson());
-                commands.Count().Should().Be(2);
-                commands.Last().FinalAttemptTime.Should().HaveValue();
+                commands.Length.Should().Be(2);
+                commands
+                    .Should()
+                    .ContainSingle(c => c.FinalAttemptTime == null);
             }
         }
 

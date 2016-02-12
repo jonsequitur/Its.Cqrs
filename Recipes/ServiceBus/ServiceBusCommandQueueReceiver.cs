@@ -253,6 +253,16 @@ namespace Microsoft.Its.Domain.ServiceBus
             [JsonIgnore]
             public ScheduledCommandResult Result { get; set; }
 
+            private int NumberOfPreviousAttempts { get; set; }
+
+            int IScheduledCommand.NumberOfPreviousAttempts
+            {
+                get
+                {
+                    return this.NumberOfPreviousAttempts;
+                }
+            }
+
             public BrokeredMessage BrokeredMessage { get; internal set; }
         }
     }

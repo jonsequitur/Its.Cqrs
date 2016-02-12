@@ -86,6 +86,9 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        [JsonIgnore]
+        public int NumberOfPreviousAttempts { get; set; }
+
         /// <summary>
         /// Updates an aggregate to a new state.
         /// </summary>

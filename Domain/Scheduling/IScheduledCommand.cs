@@ -24,5 +24,10 @@ namespace Microsoft.Its.Domain
         IPrecondition DeliveryPrecondition { get; }
 
         ScheduledCommandResult Result { get; set; }
+
+        /// <summary>
+        /// Gets the number of times the scheduler has previously attempted to deliver the command.
+        /// </summary>
+        int NumberOfPreviousAttempts { get; }
     }
 }

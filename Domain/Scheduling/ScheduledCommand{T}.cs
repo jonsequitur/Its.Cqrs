@@ -15,6 +15,8 @@ namespace Microsoft.Its.Domain
         IScheduledCommand<TTarget>
     {
         private static readonly bool targetIsEventSourced;
+        internal static readonly Func<IScheduledCommand<TTarget>, Guid> TargetGuid;
+        private ScheduledCommandResult result;
 
         static ScheduledCommand()
         {
@@ -34,7 +36,24 @@ namespace Microsoft.Its.Domain
             Guid aggregateId,
             DateTimeOffset? dueTime = null,
             IPrecondition deliveryPrecondition = null) :
-                this(command, aggregateId.ToString("N"),
+                this(command, 
+            aggregateId.ToString(),
+                     dueTime,
+                     deliveryPrecondition)
+        {
+        }
+
+        [JsonConstructor]
+        internal ScheduledCommand(
+            ICommand<TTarget> command,
+            string targetId = null,
+            Guid? aggregateId = null,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryPrecondition = null) :
+                this(command,
+                     targetId
+                         .IfNotNull()
+                         .Else(() => aggregateId.Value.ToString()),
                      dueTime,
                      deliveryPrecondition)
         {
@@ -68,6 +87,8 @@ namespace Microsoft.Its.Domain
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
         public ICommand<TTarget> Command { get; private set; }
+        
+        public int NumberOfPreviousAttempts { get; set; }
 
         /// <summary>
         /// Gets the id of the object to which the command will be applied when delivered.
@@ -88,7 +109,7 @@ namespace Microsoft.Its.Domain
         /// Gets the sequence number of the scheduled command.
         /// </summary>
         internal long SequenceNumber { get; set; }
-
+       
         /// <summary>
         /// Gets the time at which the command is scheduled to be applied.
         /// </summary>
@@ -140,7 +161,5 @@ namespace Microsoft.Its.Domain
                                        .ElseDefault());
         }
 
-        internal static readonly Func<IScheduledCommand<TTarget>, Guid> TargetGuid;
-        private ScheduledCommandResult result;
     }
 }

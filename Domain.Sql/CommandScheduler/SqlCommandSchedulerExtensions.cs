@@ -29,15 +29,15 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// Deserializes a scheduled command from the database model to the domain model.
         /// </summary>
         internal static IScheduledCommand<TAggregate> ToScheduledCommand<TAggregate>(
-            this ScheduledCommand scheduled) where TAggregate : IEventSourced
+            this ScheduledCommand scheduled)
         {
             var json = scheduled.SerializedCommand;
 
-            var command = json.FromJsonTo<CommandScheduled<TAggregate>>();
+            var command = json.FromJsonTo<ScheduledCommand<TAggregate>>();
 
             command.SequenceNumber = scheduled.SequenceNumber;
 
-            command.Metadata.NumberOfPreviousAttempts = scheduled.Attempts;
+            command.NumberOfPreviousAttempts = scheduled.Attempts;
 
             return command;
         }

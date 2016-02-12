@@ -34,14 +34,13 @@ namespace Microsoft.Its.Domain
 
         public static string EventStreamName(Type aggregateType)
         {
-            try
+            string value;
+            if (knownTypes.TryGetValue(aggregateType, out value))
             {
-                return knownTypes[aggregateType];
+                return value;
             }
-            catch (KeyNotFoundException)
-            {
-                return aggregateType.Name;
-            }
+
+            return aggregateType.Name;
         }
     }
 }
