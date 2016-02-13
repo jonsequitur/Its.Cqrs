@@ -13,6 +13,11 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql
 {
+    /// <summary>
+    /// Creates a database if it doesn't exist, and runs any migrations that have not been applied.
+    /// </summary>
+    /// <typeparam name="TContext">The type of the database context.</typeparam>
+    /// <seealso cref="System.Data.Entity.IDatabaseInitializer{TContext}" />
     public class CreateAndMigrate<TContext> :
         IDatabaseInitializer<TContext>
         where TContext : DbContext
@@ -63,7 +68,7 @@ namespace Microsoft.Its.Domain.Sql
                 }
             }
 
-            context.EnsureDatabaseSchemaIsUpToDate(migrators);
+            context.EnsureDatabaseIsUpToDate(migrators);
         }
 
         private bool CreateDatabaseIfNotExists(TContext context)

@@ -79,6 +79,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             {
                 command.CommandType = CommandType.Text;
                 command.CommandText = SqlText;
+                command.CommandTimeout = 600;
                 command.ExecuteNonQuery();
             }
 
