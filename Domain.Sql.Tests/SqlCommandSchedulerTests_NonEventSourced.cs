@@ -98,14 +98,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var target = new CommandTarget(Any.CamelCaseName());
-            var store = Configuration.Current.Store<CommandTarget>();
             await store.Put(target);
 
+            // act
             await scheduler.Schedule(target.Id,
                                      new TestCommand(),
                                      Clock.Now().AddDays(2));
 
-            // act
             await Configuration.Current
                                .SchedulerClockTrigger()
                                .AdvanceClock(clockName: clockName,
@@ -117,24 +116,50 @@ namespace Microsoft.Its.Domain.Sql.Tests
             target.CommandsEnacted.Should().HaveCount(0);
         }
 
-        [Ignore]
         [Test]
         public override async Task Scheduled_commands_are_delivered_immediately_if_past_due_per_the_domain_clock()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName());
+            await store.Put(target);
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(),
+                                     Clock.Now().AddMinutes(-2));
+
+            //assert 
+            target = await store.Get(target.Id);
+
+            target.CommandsEnacted.Should().HaveCount(1);
         }
 
-        [Ignore]
         [Test]
         public override async Task Scheduled_commands_are_delivered_immediately_if_past_due_per_the_scheduler_clock()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName());
+            await store.Put(target);
+            var clockRepository = Configuration.Current.SchedulerClockRepository();
+            var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 03:03:48 PM");
+            clockRepository.CreateClock(clockName, schedulerClockTime);
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(),
+                                     schedulerClockTime.AddMinutes(-2));
+
+            //assert 
+            target = await store.Get(target.Id);
+
+            target.CommandsEnacted.Should().HaveCount(1);
         }
 
         [Ignore]
         [Test]
         public override async Task A_command_handler_can_control_retries_of_a_failed_command()
         {
+
             Assert.Fail("Test not written yet.");
         }
 

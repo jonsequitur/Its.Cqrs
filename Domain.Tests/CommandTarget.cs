@@ -71,11 +71,20 @@ namespace Microsoft.Its.Domain.Tests
         public async Task EnactCommand(CommandTarget target, TestCommand command)
         {
             target.CommandsEnacted.Add(command);
+
+            command.CommandHandler_EnactCommand
+                   .IfNotNull()
+                   .ThenDo(enact => enact(target, command));
         }
 
-        public async Task HandleScheduledCommandException(CommandTarget target, CommandFailed<TestCommand> command)
+        public async Task HandleScheduledCommandException(CommandTarget target, CommandFailed<TestCommand> failed)
         {
-            target.CommandsFailed.Add(command);
+            target.CommandsFailed.Add(failed);
+
+            failed.Command
+                   .CommandHandler_HandleScheduledCommandError
+                   .IfNotNull()
+                   .ThenDo(enact => enact(target, failed));
         }
 
         public async Task EnactCommand(CommandTarget requestor, SendRequests command)
@@ -132,6 +141,10 @@ namespace Microsoft.Its.Domain.Tests
     public class TestCommand : Command<CommandTarget>
     {
         private readonly bool isValid;
+
+        public Action<CommandTarget, TestCommand> CommandHandler_EnactCommand;
+
+        public Action<CommandTarget, CommandFailed<TestCommand>> CommandHandler_HandleScheduledCommandError;
 
         public TestCommand(string etag = null, bool isValid = true) : base(etag)
         {
