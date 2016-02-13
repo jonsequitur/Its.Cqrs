@@ -12,7 +12,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [TestFixture]
     public class SqlCommandSchedulerTests_Pipeline : SqlCommandSchedulerTests_EventSourced
     {
-        protected override void ConfigureScheduler(Configuration configuration)
+        protected override void Configure(Configuration configuration)
         {
             configuration.Container.Register<SqlCommandScheduler>(c =>
             {

@@ -203,7 +203,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
-        protected override void ConfigureScheduler(Configuration configuration)
+        protected override void Configure(Configuration configuration)
         {
             configuration.UseSqlCommandScheduling();
             sqlCommandScheduler = configuration.SqlCommandScheduler();
