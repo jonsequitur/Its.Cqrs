@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
@@ -19,7 +20,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     [Category("Command scheduling")]
     [TestFixture]
-    public class SqlCommandSchedulerTests_Legacy : SqlCommandSchedulerTests
+    public class SqlCommandSchedulerTests_Legacy : SqlCommandSchedulerTests_EventSourced
     {
         private SqlCommandScheduler sqlCommandScheduler;
 
@@ -60,7 +61,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Activity_is_notified_when_a_command_is_scheduled()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = CommandSchedulingTests_EventSourced.CreateOrder();
 
             var activity = new List<ICommandSchedulerActivity>();
 
@@ -78,7 +79,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 activity.Should()
                         .ContainSingle(a => a.ScheduledCommand
                                              .IfTypeIs<IScheduledCommand<Order>>()
-                                             .Then(c => c.AggregateId == order.Id)
+                                             .Then(c => c.TargetId == order.Id.ToString())
                                              .ElseDefault() &&
                                             a is CommandScheduled);
             }
@@ -88,7 +89,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Activity_is_notified_when_a_command_is_delivered_immediately()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = CommandSchedulingTests_EventSourced.CreateOrder();
 
             var activity = new List<ICommandSchedulerActivity>();
 
@@ -108,7 +109,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 activity.Should()
                         .ContainSingle(a => a.ScheduledCommand
                                              .IfTypeIs<IScheduledCommand<Order>>()
-                                             .Then(c => c.AggregateId == order.Id)
+                                             .Then(c => c.TargetId == order.Id.ToString())
                                              .ElseDefault() &&
                                             a is CommandSucceeded);
             }
@@ -118,7 +119,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task SqlCommandScheduler_Activity_is_notified_when_a_command_is_delivered_via_Trigger()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = CommandSchedulingTests_EventSourced.CreateOrder();
 
             var activity = new List<ICommandSchedulerActivity>();
 
@@ -134,7 +135,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 activity.Should()
                         .ContainSingle(a => a.ScheduledCommand
                                              .IfTypeIs<IScheduledCommand<Order>>()
-                                             .Then(c => c.AggregateId == order.Id)
+                                             .Then(c => c.TargetId == order.Id.ToString())
                                              .ElseDefault() &&
                                             a is CommandSucceeded);
             }
@@ -144,7 +145,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task A_command_is_not_marked_as_applied_if_no_handler_is_registered()
         {
             // arrange
-            var order = CommandSchedulingTests.CreateOrder();
+            var order = CommandSchedulingTests_EventSourced.CreateOrder();
             order.Apply(
                 new ChargeCreditCardOn
                 {
@@ -168,7 +169,41 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
-        protected override void ConfigureScheduler(Configuration configuration)
+        [Test]
+        public async Task UseSqlCommandScheduling_can_include_using_a_catchup_for_durability()
+        {
+            var configuration = new Configuration()
+                .UseSqlEventStore()
+                .UseSqlCommandScheduling(catchup => catchup.StartAtEventId = eventStoreDbTest.HighestEventId);
+            configuration.SqlCommandScheduler().GetClockName = e => clockName;
+            disposables.Add(configuration);
+
+            var aggregateIds = Enumerable.Range(1, 5).Select(_ => Any.Guid()).ToArray();
+
+            Events.Write(5, i => new CommandScheduled<Order>
+            {
+                Command = new CreateOrder(Any.FullName()),
+                AggregateId = aggregateIds[i - 1],
+                SequenceNumber = -DateTimeOffset.UtcNow.Ticks
+            });
+
+            await configuration.Container
+                               .Resolve<ReadModelCatchup<CommandSchedulerDbContext>>()
+                               .SingleBatchAsync();
+
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var scheduledAggregateIds = db.ScheduledCommands
+                                              .Where(c => aggregateIds.Any(id => id == c.AggregateId))
+                                              .Select(c => c.AggregateId)
+                                              .ToArray();
+
+                scheduledAggregateIds.Should()
+                                     .BeEquivalentTo(aggregateIds);
+            }
+        }
+
+        protected override void Configure(Configuration configuration)
         {
             configuration.UseSqlCommandScheduling();
             sqlCommandScheduler = configuration.SqlCommandScheduler();

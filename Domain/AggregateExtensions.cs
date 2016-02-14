@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
@@ -256,6 +255,10 @@ namespace Microsoft.Its.Domain
         public static bool HasETag<TAggregate>(this TAggregate aggregate, string etag)
             where TAggregate : class, IEventSourced
         {
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException("aggregate");
+            }
             if (string.IsNullOrWhiteSpace(etag))
             {
                 return false;
@@ -276,11 +279,13 @@ namespace Microsoft.Its.Domain
                     return false;
                 }
 
-                // maybe... which means we need to do a lookup
-                var preconditionVerifier = Configuration.Current.CommandPreconditionVerifier();
+                // ProbabilisticAnswer.Maybe, which means we need to do a lookup
+                var preconditionVerifier = Configuration.Current
+                                                        .Container
+                                                        .Resolve<IETagChecker>();
 
-                return Task.Run(() => preconditionVerifier.HasBeenApplied(
-                    aggregate.Id,
+                return Task.Run(() => preconditionVerifier.HasBeenRecorded(
+                    aggregate.Id.ToString(),
                     etag)).Result;
             }
 

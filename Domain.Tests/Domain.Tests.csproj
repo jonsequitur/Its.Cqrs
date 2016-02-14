@@ -131,10 +131,13 @@
     <Compile Include="AuthorizationTests.cs" />
     <Compile Include="BloomFilterTests.cs" />
     <Compile Include="CommandContextTests.cs" />
-    <Compile Include="CommandSchedulerMessageExchangeTests.cs" />
+    <Compile Include="CommandScheduled_T_Tests.cs" />
+    <Compile Include="CommandSchedulerIdempotencyTests.cs" />
+    <Compile Include="CommandSchedulerPipelineTests.cs" />
     <Compile Include="CommandSchedulerTestAggregate.cs" />
-    <Compile Include="CommandSchedulingTests.cs" />
-    <Compile Include="AggregateCommandTests.cs" />
+    <Compile Include="CommandSchedulingTests_EventSourced.cs" />
+    <Compile Include="CommandTarget.cs" />
+    <Compile Include="EventSourcedAggregateCommandTests.cs" />
     <Compile Include="ConfigurationContextTests.cs" />
     <Compile Include="ConfigurationTests.cs" />
     <Compile Include="ConstructorCommandTests.cs" />
@@ -148,14 +151,21 @@
     <Compile Include="HashTests.cs" />
     <Compile Include="Infrastructure\Logging.cs" />
     <Compile Include="Infrastructure\NoOpEventBus.cs" />
+    <Compile Include="InMemoryCommandSchedulerIdempotencyTests_EventSourced.cs" />
+    <Compile Include="InMemoryCommandSchedulerIdempotencyTests_NonEventSourced.cs" />
     <Compile Include="InProcessEventBusTests.cs" />
     <Compile Include="MarcoPolo.cs" />
-    <Compile Include="NonAggregateCommandTests.cs" />
+    <Compile Include="NonEventSourcedAggregateCommandTests.cs" />
+    <Compile Include="NonEventSourcedAggregateCommandSchedulingTests.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="ObjectIdTests.cs" />
     <Compile Include="OptionalTests.cs" />
     <Compile Include="PrimitiveConverterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReservationServiceTests.cs" />
+    <Compile Include="ScheduledCommandTests.cs" />
+    <Compile Include="ScheduledCommand_T_Tests.cs" />
     <Compile Include="SerializerTests.cs" />
     <Compile Include="Infrastructure\TestConsequenter.cs" />
     <Compile Include="SnapshotRepositoryExtensionsTests.cs" />

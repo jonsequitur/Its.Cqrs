@@ -90,7 +90,7 @@
     </Compile>
     <Compile Include="AppLock.cs" />
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
-    <Compile Include="CommandScheduler\CommandPreconditionVerifier.cs" />
+    <Compile Include="CommandScheduler\SqlEventStoreEventStoreETagChecker.cs" />
     <Compile Include="CommandScheduler\CommandSchedulingEventHandler.cs" />
     <Compile Include="CommandScheduler\ETag.cs" />
     <Compile Include="CommandScheduler\ICommandSchedulerDispatcher.cs" />
@@ -206,6 +206,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Migrations\CommandSchedulerDbContext-0_13_8.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\CommandSchedulerDbContext-0_14_0.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

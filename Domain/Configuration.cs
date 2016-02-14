@@ -48,11 +48,11 @@ namespace Microsoft.Its.Domain
             container.AvoidConstructorsWithPrimitiveTypes()
                      .IfOnlyOneImplementationUseIt()
                      .UseImmediateCommandScheduling()
-                     .UseAppropriateCommandAppliers()
+                     .AddStoreStrategy()
                      .RegisterSingle<IReservationService>(c => new NoReservations())
                      .RegisterSingle<IEventBus>(c => new InProcessEventBus())
                      .Register<ISnapshotRepository>(c => new NoSnapshots())
-                     .Register<ICommandPreconditionVerifier>(c => new NoCommandPreconditionVerifications())
+                     .Register<IETagChecker>(c => new NoEventStoreETagVerifications())
                      .RegisterSingle(c => this);
         }
 

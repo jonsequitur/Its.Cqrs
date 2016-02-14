@@ -101,7 +101,7 @@ namespace Microsoft.Its.Domain
             if (!string.IsNullOrWhiteSpace(ETag))
             {
                 var eventSourced = target as IEventSourced;
-                if (eventSourced.HasETag(ETag))
+                if (eventSourced != null && eventSourced.HasETag(ETag))
                 {
                     return;
                 }

@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading;
+using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
@@ -68,24 +68,40 @@ namespace Microsoft.Its.Domain
             ETag = Guid.NewGuid().ToString("N").ToETag();
         }
 
-        private static readonly Lazy<Dictionary<Tuple<Type, string>, Type>> index = new Lazy<Dictionary<Tuple<Type, string>, Type>>
-            (() => AggregateType.KnownTypes
-                                .Select(aggregateType =>
-                                        new
-                                        {
-                                            aggregateType,
-                                            commandTypes = (IEnumerable<Type>) typeof (Command<>).MakeGenericType(aggregateType)
-                                                                                                 .Member()
-                                                                                                 .KnownTypes
-                                        })
-                                .SelectMany(ts => ts.commandTypes
-                                                    .Select(ct =>
-                                                            new
-                                                            {
-                                                                key = Tuple.Create(ts.aggregateType, ct.Name),
-                                                                value = ct
-                                                            }))
-                                .ToDictionary(p => p.key, p => p.value));
+        private static readonly Lazy<Dictionary<Tuple<Type, string>, Type>> indexOfCommandTypesByTargetTypeAndCommandName =
+            new Lazy<Dictionary<Tuple<Type, string>, Type>>(BuildCommandTypeIndex);
+
+        private static readonly Lazy<Dictionary<Type, Type>> indexOfTargetTypesByCommandType =
+            new Lazy<Dictionary<Type, Type>>(() => indexOfCommandTypesByTargetTypeAndCommandName
+                                                       .Value
+                                                       .Distinct()
+                                                       .ToDictionary(keySelector: p => p.Value,
+                                                                     elementSelector: p => p.Key.Item1));
+
+        private static readonly Lazy<Type[]> knownTargetTypes =
+            new Lazy<Type[]>(() =>
+                             indexOfCommandTypesByTargetTypeAndCommandName
+                                 .Value
+                                 .Keys
+                                 .Select(key => key.Item1)
+                                 .Distinct()
+                                 .ToArray());
+
+        private static Dictionary<Tuple<Type, string>, Type> BuildCommandTypeIndex()
+        {
+            return Discover.ConcreteTypesDerivedFrom(typeof (ICommand))
+                           .Select(commandType => new
+                           {
+                               commandType,
+                               targetType = commandType.GetInterface("ICommand`1")
+                                                       .IfNotNull()
+                                                       .Then(i => i.GetGenericArguments().Single())
+                                                       .ElseDefault()
+                           })
+                           .ToDictionary(
+                               p => Tuple.Create(p.targetType, p.commandType.Name),
+                               p => p.commandType);
+        }
 
         /// <summary>
         /// Gets all known <see cref="Command" /> types.
@@ -94,15 +110,31 @@ namespace Microsoft.Its.Domain
         {
             get
             {
-                return index.Value.Values.ToArray();
+                return indexOfCommandTypesByTargetTypeAndCommandName
+                    .Value
+                    .Values
+                    .ToArray();
+            }
+        }
+
+        public static Type[] KnownTargetTypes
+        {
+            get
+            {
+                return knownTargetTypes.Value;
             }
         }
 
         internal static Type FindType(Type aggregateType, string commandName)
         {
             Type type;
-            index.Value.TryGetValue(Tuple.Create(aggregateType, commandName), out type);
+            indexOfCommandTypesByTargetTypeAndCommandName.Value.TryGetValue(Tuple.Create(aggregateType, commandName), out type);
             return type;
+        }
+
+        internal static string TargetNameFor(Type commandType)
+        {
+            return indexOfTargetTypesByCommandType.Value[commandType].Name;
         }
     }
 }

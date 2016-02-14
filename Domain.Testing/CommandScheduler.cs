@@ -54,13 +54,21 @@ namespace Microsoft.Its.Domain.Testing
         }
 
         internal static ScheduledCommandInterceptor<TAggregate> WithInMemoryDeferredScheduling<TAggregate>(Configuration configuration)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             return async (command, next) =>
             {
-                if (command.Result == null)
+                var etagStore = configuration.Container.Resolve<InMemoryCommandETagStore>();
+
+                if (!etagStore.TryAdd(scope: command.TargetId, etag: command.Command.ETag))
+                {
+                    command.Result = new CommandDeduplicated(command, "Schedule");
+                }
+                else if (command.Result == null)
                 {
                     var clock = Clock.Current;
+
+                    command.Result = new CommandScheduled(command, clock);
 
                     VirtualClock.Schedule(
                         command,
@@ -70,8 +78,6 @@ namespace Microsoft.Its.Domain.Testing
                             Domain.CommandScheduler.DeliverImmediatelyOnConfiguredScheduler(c, configuration).Wait();
                             return Disposable.Empty;
                         });
-
-                    command.Result = new CommandScheduled(command, clock);
                 }
 
                 await next(command);

@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 namespace Microsoft.Its.Domain
 {
     /// <summary>
-    /// Verifies whether a command's precondition has been satisfied.
+    /// Verifies whether a precondition has been satisfied.
     /// </summary>
-    public interface ICommandPreconditionVerifier
+    public interface IETagChecker
     {
-        Task<bool> HasBeenApplied(Guid aggregateId, string etag);
+        Task<bool> HasBeenRecorded(string scope, string etag);
     }
 }

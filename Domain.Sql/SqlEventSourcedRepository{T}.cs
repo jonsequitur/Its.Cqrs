@@ -239,5 +239,23 @@ namespace Microsoft.Its.Domain.Sql
         }
 
         public Func<EventStoreDbContext> GetEventStoreContext = () => new EventStoreDbContext();
+
+        /// <summary>
+        ///     Gets a command target by the id.
+        /// </summary>
+        /// <param name="id">The id of the aggregate.</param>
+        /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
+        public async Task<TAggregate> Get(string id)
+        {
+            return await GetLatest(Guid.Parse(id));
+        }
+
+        /// <summary>
+        ///     Persists the state of the command target.
+        /// </summary>
+        public async Task Put(TAggregate aggregate)
+        {
+            await Save(aggregate);
+        }
     }
 }

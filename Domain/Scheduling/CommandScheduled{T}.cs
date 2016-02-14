@@ -18,22 +18,46 @@ namespace Microsoft.Its.Domain
     public class CommandScheduled<TAggregate> :
         Event<TAggregate>,
         IScheduledCommand<TAggregate>,
+#pragma warning disable 618
         IScheduledCommandEvent
+#pragma warning restore 618
         where TAggregate : IEventSourced
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandScheduled{TAggregate}"/> class.
-        /// </summary>
+        private ScheduledCommandResult result;
+        private ICommand<TAggregate> command;
+
         public CommandScheduled()
         {
-            ETag = Guid.NewGuid().ToString("N");
+            if (string.IsNullOrWhiteSpace(ETag))
+            {
+                ETag = Guid.NewGuid().ToString("N").ToETag();
+            }
         }
 
         /// <summary>
         /// Gets the command to be applied at a later time.
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
-        public ICommand<TAggregate> Command { get; set; }
+        public ICommand<TAggregate> Command
+        {
+            get
+            {
+                return command;
+            }
+            set
+            {
+                command = value;
+                this.EnsureCommandHasETag();
+            }
+        }
+
+        string IScheduledCommand<TAggregate>.TargetId
+        {
+            get
+            {
+                return AggregateId.ToString();
+            }
+        }
 
         /// <summary>
         /// Gets the time at which the command is scheduled to be applied.
@@ -46,10 +70,24 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Indicates a precondition ETag for a specific aggregate. If no event on the target aggregate exists with this ETag, the command will fail, and the aggregate can decide whether to reschedule or ignore the command.
         /// </summary>
-        public CommandPrecondition DeliveryPrecondition { get; set; }
+        public IPrecondition DeliveryPrecondition { get; set; }
 
         [JsonIgnore]
-        public ScheduledCommandResult Result { get; set; }
+        public ScheduledCommandResult Result    
+        {
+            get
+            {
+                return result;
+            }
+            set
+            {
+                result.ThrowIfNotAllowedToChangeTo(value);
+                result = value;
+            }
+        }
+
+        [JsonIgnore]
+        public int NumberOfPreviousAttempts { get; set; }
 
         /// <summary>
         /// Updates an aggregate to a new state.

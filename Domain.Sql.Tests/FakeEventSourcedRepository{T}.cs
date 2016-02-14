@@ -3,11 +3,12 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
-    public class FakeEventSourcedRepository<TAggregate> : IEventSourcedRepository<TAggregate> where TAggregate : class, IEventSourced
+    public class FakeEventSourcedRepository<TAggregate> : IEventSourcedRepository<TAggregate>
+        where TAggregate : class, IEventSourced
     {
-        private readonly SqlEventSourcedRepository<TAggregate> innerRepository;
+        private readonly IEventSourcedRepository<TAggregate> innerRepository;
 
-        public FakeEventSourcedRepository(SqlEventSourcedRepository<TAggregate> innerRepository)
+        public FakeEventSourcedRepository(IEventSourcedRepository<TAggregate> innerRepository)
         {
             this.innerRepository = innerRepository;
             OnSave = innerRepository.Save;
@@ -35,9 +36,19 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public Task Refresh(TAggregate aggregate)
         {
-            throw new NotImplementedException();
+            return innerRepository.Refresh(aggregate);
         }
 
         public Func<TAggregate, Task> OnSave;
+
+        public async Task<TAggregate> Get(string id)
+        {
+            return await innerRepository.Get(id);
+        }
+
+        public async Task Put(TAggregate aggregate)
+        {
+            await Save(aggregate);
+        }
     }
 }

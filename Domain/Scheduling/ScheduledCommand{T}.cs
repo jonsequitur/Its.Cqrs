@@ -9,44 +9,136 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// An event that indicates that a command was scheduled.
     /// </summary>
-    /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
-    [EventName("Scheduled")]
+    /// <typeparam name="TTarget">The type of the aggregate.</typeparam>
     [DebuggerDisplay("{ToString()}")]
-    public class ScheduledCommand<TAggregate> :
-        IScheduledCommand<TAggregate>
-        where TAggregate : IEventSourced
+    public class ScheduledCommand<TTarget> :
+        IScheduledCommand<TTarget>
     {
+        private static readonly bool targetIsEventSourced;
+        internal static readonly Func<IScheduledCommand<TTarget>, Guid> TargetGuid;
+        private ScheduledCommandResult result;
+
+        static ScheduledCommand()
+        {
+            if (typeof (IEventSourced).IsAssignableFrom(typeof (TTarget)))
+            {
+                targetIsEventSourced = true;
+                TargetGuid = command => Guid.Parse(command.TargetId);
+            }
+            else
+            {
+                TargetGuid = command => command.TargetId.ToGuidV3();
+            }
+        }
+
+        public ScheduledCommand(
+            ICommand<TTarget> command,
+            Guid aggregateId,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryPrecondition = null) :
+                this(command, 
+            aggregateId.ToString(),
+                     dueTime,
+                     deliveryPrecondition)
+        {
+        }
+
+        [JsonConstructor]
+        internal ScheduledCommand(
+            ICommand<TTarget> command,
+            string targetId = null,
+            Guid? aggregateId = null,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryPrecondition = null) :
+                this(command,
+                     targetId
+                         .IfNotNull()
+                         .Else(() => aggregateId.Value.ToString()),
+                     dueTime,
+                     deliveryPrecondition)
+        {
+        }
+
+        public ScheduledCommand(
+            ICommand<TTarget> command,
+            string targetId,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryPrecondition = null)
+        {
+            if (command == null)
+            {
+                throw new ArgumentNullException("command");
+            }
+            if (string.IsNullOrWhiteSpace(targetId))
+            {
+                throw new ArgumentException("Parameter targetId cannot be null, empty or whitespace.");
+            }
+
+            Command = command;
+            TargetId = targetId;
+            DueTime = dueTime;
+            DeliveryPrecondition = deliveryPrecondition;
+
+            this.EnsureCommandHasETag();
+        }
+
         /// <summary>
         /// Gets the command to be applied at a later time.
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
-        public ICommand<TAggregate> Command { get; set; }
+        public ICommand<TTarget> Command { get; private set; }
+        
+        public int NumberOfPreviousAttempts { get; set; }
 
         /// <summary>
-        /// Gets the id of the aggregate to which the command will be applied when delivered.
+        /// Gets the id of the object to which the command will be applied when delivered.
         /// </summary>
-        public Guid AggregateId { get; set; }
+        public string TargetId { get; private set; }
+
+        public Guid? AggregateId
+        {
+            get
+            {
+                return targetIsEventSourced
+                           ? (Guid?) Guid.Parse(TargetId)
+                           : null;
+            }
+        }
 
         /// <summary>
         /// Gets the sequence number of the scheduled command.
         /// </summary>
-        public long SequenceNumber { get; set; }
-
+        internal long SequenceNumber { get; set; }
+       
         /// <summary>
         /// Gets the time at which the command is scheduled to be applied.
         /// </summary>
         /// <remarks>
-        /// If this value is null, the command should be delivered as soon as possible.
+        /// If this to is null, the command should be delivered as soon as possible.
         /// </remarks>
-        public DateTimeOffset? DueTime { get; set; }
+        public DateTimeOffset? DueTime { get; private set; }
 
         /// <summary>
         /// Indicates a precondition ETag for a specific aggregate. If no event on the target aggregate exists with this ETag, the command will fail, and the aggregate can decide whether to reschedule or ignore the command.
         /// </summary>
-        public CommandPrecondition DeliveryPrecondition { get; set; }
+        public IPrecondition DeliveryPrecondition { get; private set; }
 
+        /// <summary>
+        /// Gets or sets the result of the scheduled command if it has been sent to the scheduler.
+        /// </summary>
         [JsonIgnore]
-        public ScheduledCommandResult Result { get; set; }
+        public ScheduledCommandResult Result
+        {
+            get
+            {
+                return result;
+            }
+            set
+            {
+                result.ThrowIfNotAllowedToChangeTo(value);
+                result = value;
+            }
+        }
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
@@ -68,5 +160,6 @@ namespace Microsoft.Its.Domain
                                        .Then(r => ", " + r)
                                        .ElseDefault());
         }
+
     }
 }

@@ -10,7 +10,6 @@ namespace Microsoft.Its.Domain
     /// </summary>
     public interface IScheduledCommand<in TAggregate> :
         IScheduledCommand
-        where TAggregate : IEventSourced
     {
         /// <summary>
         /// Gets the command to be applied at a later time.
@@ -20,11 +19,6 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the id of the aggregate to which the command will be applied when delivered.
         /// </summary>
-        Guid AggregateId { get; }
-
-        /// <summary>
-        /// Gets the sequence number of the scheduled command.
-        /// </summary>
-        long SequenceNumber { get; }
+        string TargetId { get; }
     }
 }

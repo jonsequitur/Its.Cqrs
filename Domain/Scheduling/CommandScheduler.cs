@@ -24,16 +24,32 @@ namespace Microsoft.Its.Domain
             DateTimeOffset? dueTime = null,
             IEvent deliveryDependsOn = null)
             where TCommand : ICommand<TAggregate>
-            where TAggregate : IEventSourced
         {
-            if (aggregateId == Guid.Empty)
-            {
-                throw new ArgumentException("Parameter aggregateId cannot be an empty Guid.");
-            }
-
-            var scheduledCommand = CreateScheduledCommand<TCommand, TAggregate>(
-                aggregateId,
+            var scheduledCommand = new ScheduledCommand<TAggregate>(
                 command,
+                aggregateId,
+                dueTime,
+                deliveryDependsOn.ToPrecondition());
+
+            await scheduler.Schedule(scheduledCommand);
+
+            return scheduledCommand;
+        }
+        
+        /// <summary>
+        /// Schedules a command on the specified scheduler.
+        /// </summary>
+        public static async Task<IScheduledCommand<TTarget>> Schedule<TCommand, TTarget>(
+            this ICommandScheduler<TTarget> scheduler,
+            string targetId,
+            TCommand command,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryDependsOn = null)
+            where TCommand : ICommand<TTarget>
+        {
+            var scheduledCommand = new ScheduledCommand<TTarget>(
+                command,
+                targetId,
                 dueTime,
                 deliveryDependsOn);
 
@@ -46,7 +62,6 @@ namespace Microsoft.Its.Domain
             this ICommandScheduler<TAggregate> scheduler,
             ScheduledCommandInterceptor<TAggregate> schedule = null,
             ScheduledCommandInterceptor<TAggregate> deliver = null)
-            where TAggregate : IEventSourced
         {
             schedule = schedule ?? (async (c, next) => await next(c));
             deliver = deliver ?? (async (c, next) => await next(c));
@@ -59,7 +74,6 @@ namespace Microsoft.Its.Domain
         internal static ICommandScheduler<TAggregate> Create<TAggregate>(
             Func<IScheduledCommand<TAggregate>, Task> schedule,
             Func<IScheduledCommand<TAggregate>, Task> deliver)
-            where TAggregate : IEventSourced
         {
             return new AnonymousCommandScheduler<TAggregate>(
                 schedule,
@@ -68,7 +82,6 @@ namespace Microsoft.Its.Domain
 
         internal static ScheduledCommandInterceptor<TAggregate> Compose<TAggregate>(
             this IEnumerable<ScheduledCommandInterceptor<TAggregate>> pipeline)
-            where TAggregate : IEventSourced
         {
             var delegates = pipeline.OrEmpty().ToArray();
 
@@ -88,41 +101,40 @@ namespace Microsoft.Its.Domain
         internal static async Task DeliverImmediatelyOnConfiguredScheduler<TAggregate>(
             IScheduledCommand<TAggregate> command,
             Configuration configuration)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             var scheduler = configuration.CommandScheduler<TAggregate>();
             await scheduler.Deliver(command);
         }
 
-        internal static void DeliverIfPreconditionIsSatisfiedSoon<TAggregate>(
+        internal static void DeliverIfPreconditionIsMetSoon<TAggregate>(
             IScheduledCommand<TAggregate> scheduledCommand,
             Configuration configuration,
             int timeoutInMilliseconds = 10000)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
-            var eventBus = configuration.EventBus;
+            Guid aggregateId;
+            if (Guid.TryParse(scheduledCommand.DeliveryPrecondition.Scope, out aggregateId))
+            {
+                var eventBus = configuration.EventBus;
 
-            var timeout = TimeSpan.FromMilliseconds(timeoutInMilliseconds);
+                var timeout = TimeSpan.FromMilliseconds(timeoutInMilliseconds);
 
-            eventBus.Events<IEvent>()
-                    .Where(
-                        e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
-                             e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
-                    .Take(1)
-                    .Timeout(timeout)
-                    .Subscribe(
-                        e => { Task.Run(() => DeliverImmediatelyOnConfiguredScheduler(scheduledCommand, configuration)).Wait(); },
-                        onError: ex => { eventBus.PublishErrorAsync(new EventHandlingError(ex)); });
+                eventBus.Events<IEvent>()
+                        .Where(
+                            e => e.AggregateId == aggregateId &&
+                                 e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
+                        .Take(1)
+                        .Timeout(timeout)
+                        .Subscribe(
+                            e => Task.Run(() => DeliverImmediatelyOnConfiguredScheduler(scheduledCommand, configuration)).Wait(),
+                            onError: ex => eventBus.PublishErrorAsync(new EventHandlingError(ex)));
+            }
         }
 
-        internal static ScheduledCommand<TAggregate> CreateScheduledCommand<TCommand, TAggregate>(
-            Guid aggregateId,
-            TCommand command,
-            DateTimeOffset? dueTime,
-            IEvent deliveryDependsOn = null)
-            where TCommand : ICommand<TAggregate> where TAggregate : IEventSourced
+        private static EventHasBeenRecordedPrecondition ToPrecondition(this IEvent deliveryDependsOn)
         {
-            CommandPrecondition precondition = null;
+            EventHasBeenRecordedPrecondition precondition = null;
 
             if (deliveryDependsOn != null)
             {
@@ -133,67 +145,37 @@ namespace Microsoft.Its.Domain
 
                 if (string.IsNullOrWhiteSpace(deliveryDependsOn.ETag))
                 {
+                    // set an etag if one is not already assigned
                     deliveryDependsOn.IfTypeIs<Event>()
-                                     .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N"))
+                                     .ThenDo(e => e.ETag = Guid.NewGuid().ToString("N").ToETag())
                                      .ElseDo(() => { throw new ArgumentException("An ETag must be set on the event on which the scheduled command depends."); });
                 }
 
-                precondition = new CommandPrecondition
-                {
-                    AggregateId = deliveryDependsOn.AggregateId,
-                    ETag = deliveryDependsOn.ETag
-                };
+                precondition = new EventHasBeenRecordedPrecondition(deliveryDependsOn.ETag, deliveryDependsOn.AggregateId);
             }
 
-            if (string.IsNullOrEmpty(command.ETag))
-            {
-                command.IfTypeIs<Command>()
-                       .ThenDo(c => c.ETag = CommandContext.Current
-                                                           .IfNotNull()
-                                                           .Then(ctx => ctx.NextETag(aggregateId.ToString("N")))
-                                                           .Else(() => Guid.NewGuid().ToString("N")));
-            }
-
-            return new ScheduledCommand<TAggregate>
-            {
-                Command = command,
-                DueTime = dueTime,
-                AggregateId = aggregateId,
-                SequenceNumber = -DateTimeOffset.UtcNow.Ticks,
-                DeliveryPrecondition = precondition
-            };
+            return precondition;
         }
 
-        public static Event<TAggregate> ToEvent<TAggregate>(
-            this ScheduledCommand<TAggregate> scheduledCommand)
-            where TAggregate : IEventSourced
-        {
-            return new CommandScheduled<TAggregate>
-            {
-                Command = scheduledCommand.Command,
-                DeliveryPrecondition = scheduledCommand.DeliveryPrecondition,
-                SequenceNumber = scheduledCommand.SequenceNumber,
-                AggregateId = scheduledCommand.AggregateId,
-                DueTime = scheduledCommand.DueTime,
-                Result = scheduledCommand.Result
-            };
-        }
-
-        internal static void DeliverIfPreconditionIsSatisfiedWithin<TAggregate>(
+        internal static void DeliverIfPreconditionIsMetWithin<TAggregate>(
             this ICommandScheduler<TAggregate> scheduler,
             TimeSpan timespan,
             IScheduledCommand<TAggregate> scheduledCommand,
             IEventBus eventBus) where TAggregate : IEventSourced
         {
-            eventBus.Events<IEvent>()
-                    .Where(
-                        e => e.AggregateId == scheduledCommand.DeliveryPrecondition.AggregateId &&
-                             e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
-                    .Take(1)
-                    .Timeout(timespan)
-                    .Subscribe(
-                        e => { Task.Run(() => scheduler.Deliver(scheduledCommand)).Wait(); },
-                        onError: ex => { eventBus.PublishErrorAsync(new EventHandlingError(ex, scheduler)); });
+            Guid aggregateId;
+            if (Guid.TryParse(scheduledCommand.DeliveryPrecondition.Scope, out aggregateId))
+            {
+                eventBus.Events<IEvent>()
+                        .Where(
+                            e => e.AggregateId == aggregateId &&
+                                 e.ETag == scheduledCommand.DeliveryPrecondition.ETag)
+                        .Take(1)
+                        .Timeout(timespan)
+                        .Subscribe(
+                            e => Task.Run(() => scheduler.Deliver(scheduledCommand)).Wait(),
+                            onError: ex => { eventBus.PublishErrorAsync(new EventHandlingError(ex, scheduler)); });
+            }
         }
 
         internal const int DefaultNumberOfRetriesOnException = 5;
@@ -203,52 +185,60 @@ namespace Microsoft.Its.Domain
             .Single(m => m.Name == "Create");
 
         internal static async Task ApplyScheduledCommand<TAggregate>(
-            this IEventSourcedRepository<TAggregate> repository,
+            this IStore<TAggregate> store,
             IScheduledCommand<TAggregate> scheduled,
-            ICommandPreconditionVerifier preconditionVerifier = null)
-            where TAggregate : class, IEventSourced
+            IETagChecker preconditionChecker = null)
+            where TAggregate : class
         {
             TAggregate aggregate = null;
-            Exception exception = null;
-
-            if (scheduled.Result is CommandDelivered)
-            {
-                return;
-            }
+            Exception exception;
 
             try
             {
-                if (preconditionVerifier != null &&
-                    !await preconditionVerifier.IsPreconditionSatisfied(scheduled))
+                if (preconditionChecker != null &&
+                    !await preconditionChecker.IsPreconditionSatisfied(scheduled))
                 {
-                    await FailScheduledCommand(repository,
+                    await FailScheduledCommand(store,
                                                scheduled,
                                                new PreconditionNotMetException(scheduled.DeliveryPrecondition));
                     return;
                 }
 
-                aggregate = await repository.GetLatest(scheduled.AggregateId);
+                aggregate = await store.Get(scheduled.TargetId);
+
+                var isConstructorCommand = scheduled.Command is ConstructorCommand<TAggregate>;
 
                 if (aggregate == null)
                 {
-                    if (scheduled.Command is ConstructorCommand<TAggregate>)
+                    if (isConstructorCommand)
                     {
                         var ctor = typeof (TAggregate).GetConstructor(new[] { scheduled.Command.GetType() });
+
+                        if (ctor == null)
+                        {
+                            throw new InvalidOperationException(string.Format("No constructor was found on type {0} for constructor command {1}.", typeof (TAggregate),
+                                                                              scheduled.Command));
+                        }
+
                         aggregate = (TAggregate) ctor.Invoke(new[] { scheduled.Command });
                     }
                     else
                     {
                         throw new PreconditionNotMetException(
                             string.Format("No {0} was found with id {1} so the command could not be applied.",
-                                          typeof (TAggregate).Name, scheduled.AggregateId), scheduled.AggregateId);
+                                          typeof (TAggregate).Name, scheduled.TargetId));
                     }
+                }
+                else if (isConstructorCommand)
+                {
+                    throw new ConcurrencyException(string.Format("Command target having id {0} already exists", scheduled.TargetId));
                 }
                 else
                 {
                     await aggregate.ApplyAsync(scheduled.Command);
                 }
 
-                await repository.Save(aggregate);
+                await store.Put(aggregate);
 
                 scheduled.Result = new CommandSucceeded(scheduled);
 
@@ -259,24 +249,19 @@ namespace Microsoft.Its.Domain
                 exception = ex;
             }
 
-            await FailScheduledCommand(repository, scheduled, exception, aggregate);
+            await FailScheduledCommand(store, scheduled, exception, aggregate);
         }
 
         private static async Task FailScheduledCommand<TAggregate>(
-            IEventSourcedRepository<TAggregate> repository,
+            IStore<TAggregate> store,
             IScheduledCommand<TAggregate> scheduled,
             Exception exception = null,
             TAggregate aggregate = null)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             var failure = (CommandFailed) createMethod
                                               .MakeGenericMethod(scheduled.Command.GetType())
                                               .Invoke(null, new object[] { scheduled.Command, scheduled, exception });
-
-            var previousAttempts = scheduled.IfHas<int>(s => s.Metadata.NumberOfPreviousAttempts)
-                                            .ElseDefault();
-
-            failure.NumberOfPreviousAttempts = previousAttempts;
 
             if (aggregate != null)
             {
@@ -306,7 +291,7 @@ namespace Microsoft.Its.Domain
                 {
                     try
                     {
-                        await repository.Save(aggregate);
+                        await store.Put(aggregate);
                     }
                     catch (Exception ex)
                     {

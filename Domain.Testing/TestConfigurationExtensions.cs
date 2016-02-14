@@ -2,12 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Newtonsoft.Json;
 using Pocket;
 
@@ -24,6 +22,9 @@ namespace Microsoft.Its.Domain.Testing
             configuration.IsUsingCommandSchedulerPipeline(true);
 
             configuration.Container
+                         .Register<IETagChecker>(c => c.Resolve<InMemoryEventStoreETagChecker>());
+
+            configuration.Container
                          .Resolve<InMemoryCommandSchedulerPipelineInitializer>()
                          .Initialize(configuration);
 
@@ -37,6 +38,35 @@ namespace Microsoft.Its.Domain.Testing
             return configuration;
         }
 
+        public static Configuration UseInMemoryCommandTargetStore(this Configuration configuration)
+        {
+            configuration.Container
+                         .AddStrategy(type =>
+                         {
+                             if (!type.IsGenericType ||
+                                 type.GetGenericTypeDefinition() != typeof (IStore<>))
+                             {
+                                 return null;
+                             }
+
+                             var targetType = type.GetGenericArguments().Single();
+
+                             if (typeof(IEventSourced).IsAssignableFrom(targetType))
+                             {
+                                 return null;
+                             }
+
+                             var storeType = typeof (InMemoryStore<>).MakeGenericType(targetType);
+
+                             var store = Activator.CreateInstance(storeType,
+                                                                  new object[] { (dynamic) null, (dynamic) null });
+
+                             return c => store;
+                         });
+
+            return configuration;
+        }
+
         public static Configuration UseInMemoryEventStore(
             this Configuration configuration,
             bool traceEvents = false)
@@ -45,7 +75,7 @@ namespace Microsoft.Its.Domain.Testing
 
             configuration.Container
                          .AddStrategy(type => InMemoryEventSourcedRepositoryStrategy(type, configuration.Container))
-                         .Register<ICommandPreconditionVerifier>(c => c.Resolve<InMemoryCommandPreconditionVerifier>())
+                         .Register<IETagChecker>(c => c.Resolve<InMemoryEventStoreETagChecker>())
                          .RegisterSingle(c => inMemoryEventStream)
                          .RegisterSingle<ISnapshotRepository>(c => new InMemorySnapshotRepository());
 

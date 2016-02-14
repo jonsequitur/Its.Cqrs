@@ -19,6 +19,7 @@ namespace Microsoft.Its.Domain.Sql
 {
     public static class DatabaseExtensions
     {
+        [Obsolete]
         public static void Unique<TProjection>(
             this DbContext context,
             Expression<Func<TProjection, object>> member,
@@ -41,6 +42,7 @@ namespace Microsoft.Its.Domain.Sql
                                  schema);
         }
 
+        [Obsolete]
         public static void Unique<TProjection>(
             this DbContext context,
             Expression<Func<TProjection, object>> member1,

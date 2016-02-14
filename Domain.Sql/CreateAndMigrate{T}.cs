@@ -6,7 +6,6 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations.Infrastructure;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
@@ -49,19 +48,11 @@ namespace Microsoft.Its.Domain.Sql
                 return;
             }
 
-            // TODO: (InitializeDatabase) support Azure Database customization & wait time
+            if (!context.Database.Exists())
+            {
+                var created = CreateDatabaseIfNotExists(context);
 
-            if (context.Database.Exists())
-            {
-                if (!context.Database.CompatibleWithModel(false))
-                {
-                    // QUESTION-JOSEQU: (InitializeDatabase) 
-                    Debug.WriteLine("Database is incompatible with entity model for " + typeof (DbContext));
-                }
-            }
-            else
-            {
-                if (!CreateDatabaseIfNotExists(context))
+                if (!created)
                 {
                     // another concurrent caller created the database, so return and let them run the migrations
                     return;

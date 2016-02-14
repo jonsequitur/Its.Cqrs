@@ -18,16 +18,20 @@ namespace Microsoft.Its.Domain
             return configuration.Container.Resolve<IEventSourcedRepository<TAggregate>>();
         }
 
-        public static ICommandPreconditionVerifier CommandPreconditionVerifier(this Configuration configuration)
+        /// <summary>
+        /// Gets an <see cref="IStore{TAggregate}" />.
+        /// </summary>
+        public static IStore<TTarget> Store<TTarget>(this Configuration configuration)
+            where TTarget : class
         {
-            return configuration.Container.Resolve<ICommandPreconditionVerifier>();
+            return configuration.Container.Resolve<IStore<TTarget>>();
         }
 
         /// <summary>
         /// Gets an <see cref="ICommandScheduler{TAggregate}" />.
         /// </summary>
         public static ICommandScheduler<TAggregate> CommandScheduler<TAggregate>(this Configuration configuration)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             return configuration.Container.Resolve<ICommandScheduler<TAggregate>>();
         }
@@ -164,7 +168,7 @@ namespace Microsoft.Its.Domain
             this Configuration configuration,
             ScheduledCommandInterceptor<TAggregate> schedule = null,
             ScheduledCommandInterceptor<TAggregate> deliver = null)
-            where TAggregate : class, IEventSourced
+            where TAggregate : class
         {
             if (!configuration.IsUsingCommandSchedulerPipeline())
             {

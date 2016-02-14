@@ -118,7 +118,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                 aggregateIds.ForEach(async id =>
                 {
-                    var order = CommandSchedulingTests.CreateOrder(orderId: id);
+                    var order = CommandSchedulingTests_EventSourced.CreateOrder(orderId: id);
 
                     // due enough in the future that the scheduler won't apply the commands immediately
                     var due = Clock.Now().AddSeconds(5);
@@ -135,7 +135,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 await queueReceiver.StartReceivingMessages();
 
                 schedulerActivity
-                    .Select(a => a.AggregateId)
+                    .Select(a => Guid.Parse(a.TargetId))
                     .ShouldBeEquivalentTo(aggregateIds);
             }
         }
@@ -163,7 +163,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 await queueReceiver.StartReceivingMessages();
 
                 schedulerActivity
-                    .Select(a => a.AggregateId)
+                    .Select(a => Guid.Parse(a.TargetId))
                     .ShouldBeEquivalentTo(aggregateIds);
             }
         }
@@ -181,14 +181,14 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 await receiver.StartReceivingMessages();
 
                 // due enough in the future that the scheduler won't apply the commands immediately
-                var order = await CommandSchedulingTests.CreateOrder(orderId: aggregateId)
+                var order = await CommandSchedulingTests_EventSourced.CreateOrder(orderId: aggregateId)
                                                         .ApplyAsync(new ShipOn(Clock.Now().AddMinutes(2)));
 
                 await Configuration.Current.Repository<Order>().Save(order);
 
                 await receiver.Messages
                               .OfType<IScheduledCommand<Order>>()
-                              .FirstAsync(c => c.AggregateId == aggregateId)
+                              .FirstAsync(c => c.TargetId == aggregateId.ToString())
                               .Timeout(TimeSpan.FromMinutes(1));
 
                 await Task.Delay(1000);
@@ -215,7 +215,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
             var aggregateId = Any.Guid();
 
             // due in the past so that it's scheduled immediately
-            var order = CommandSchedulingTests.CreateOrder(orderId: aggregateId)
+            var order = CommandSchedulingTests_EventSourced.CreateOrder(orderId: aggregateId)
                                               .Apply(new ShipOn(Clock.Now().AddSeconds(-5)));
             queueSender.MessageDeliveryOffsetFromCommandDueTime = TimeSpan.FromSeconds(0);
 
@@ -226,7 +226,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 var receivedMessages = new List<IScheduledCommand>();
                 receiver.Messages
                         .Where(m => m.IfTypeIs<IScheduledCommand<Order>>()
-                                     .Then(c => c.AggregateId == aggregateId)
+                                     .Then(c => c.TargetId == aggregateId.ToString())
                                      .ElseDefault())
                         .Subscribe(receivedMessages.Add);
 
@@ -236,7 +236,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                 receivedMessages.Should()
                                 .ContainSingle(m => m.IfTypeIs<IScheduledCommand<Order>>()
-                                                     .Then(c => c.AggregateId == aggregateId)
+                                                     .Then(c => c.TargetId == aggregateId.ToString())
                                                      .ElseDefault());
             }
 
@@ -246,7 +246,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
 
                 receiver.Messages
                         .Where(m => m.IfTypeIs<IScheduledCommand<Order>>()
-                                     .Then(c => c.AggregateId == aggregateId)
+                                     .Then(c => c.TargetId == aggregateId.ToString())
                                      .ElseDefault())
                         .Subscribe(receivedMessages.Add);
 

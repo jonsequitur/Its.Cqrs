@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Its.Validation;
 
 namespace Microsoft.Its.Domain
 {
@@ -100,21 +99,24 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException("command");
             }
 
-            var scheduled = CommandScheduler.CreateScheduledCommand<TCommand, T>(
-                Id,
-                command,
-                due);
-
-            var commandScheduledEvent = scheduled.ToEvent();
+            var commandScheduledEvent = new CommandScheduled<T>
+            {
+                AggregateId = Id,
+                Command = command,
+                DueTime = due
+            };
 
             if (Configuration.Current.IsUsingCommandSchedulerPipeline())
             {
-                scheduled.DeliveryPrecondition = new CommandPrecondition
-                {
-                    AggregateId = Id,
-                    ETag = commandScheduledEvent.ETag
-                };
-                await Configuration.Current.CommandScheduler<T>().Schedule(scheduled);
+                var scheduledCommand = new ScheduledCommand<T>(
+                    command,
+                    Id,
+                    due,
+                    new EventHasBeenRecordedPrecondition(commandScheduledEvent.ETag, Id));
+
+                await Configuration.Current
+                                   .CommandScheduler<T>()
+                                   .Schedule(scheduledCommand);
             }
 
             RecordEvent(commandScheduledEvent);

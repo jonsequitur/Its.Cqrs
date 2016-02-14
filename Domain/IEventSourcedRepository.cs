@@ -10,7 +10,8 @@ namespace Microsoft.Its.Domain
     /// Provides lookup and persistence for event sourced aggregates.
     /// </summary>
     /// <typeparam name="TAggregate"></typeparam>
-    public interface IEventSourcedRepository<TAggregate> where TAggregate : class, IEventSourced
+    public interface IEventSourcedRepository<TAggregate> : IStore<TAggregate> 
+        where TAggregate : class, IEventSourced
     {
         /// <summary>
         ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.

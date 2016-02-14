@@ -44,7 +44,13 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets or sets the number of previous attempts that have been made to deliver the scheduled command.
         /// </summary>
-        public int NumberOfPreviousAttempts { get; set; }
+        public int NumberOfPreviousAttempts
+        {
+            get
+            {
+                return ScheduledCommand.NumberOfPreviousAttempts;
+            }
+        }
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.

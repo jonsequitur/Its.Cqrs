@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
-    internal class NoCommandPreconditionVerifications : ICommandPreconditionVerifier
+    internal class NoEventStoreETagVerifications : IETagChecker
     {
-        public Task<bool> HasBeenApplied(Guid aggregateId, string etag)
+        public Task<bool> HasBeenRecorded(string scope, string etag)
         {
-            throw new InvalidOperationException("No ICommandPreconditionVerifier has been configured.");
+            throw new InvalidOperationException("No IETagChecker has been configured.");
         }
     }
 }

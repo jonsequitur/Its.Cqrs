@@ -11,21 +11,25 @@ namespace Microsoft.Its.Domain
     /// </summary>
     /// <typeparam name="TAggregate">The type of the command target.</typeparam>
     internal class CommandScheduler<TAggregate> : ICommandScheduler<TAggregate> 
-        where TAggregate : class, IEventSourced
+        where TAggregate : class
     {
-        private readonly ICommandApplier<TAggregate> commandApplier;
-        private readonly ICommandPreconditionVerifier preconditionVerifier;
+        private readonly IStore<TAggregate> store;
+        private readonly IETagChecker etagChecker;
 
         public CommandScheduler(
-            ICommandApplier<TAggregate> commandApplier,
-            ICommandPreconditionVerifier preconditionVerifier)
+            IStore<TAggregate> store,
+            IETagChecker etagChecker)
         {
-            if (commandApplier == null)
+            if (store == null)
             {
-                throw new ArgumentNullException("commandApplier");
+                throw new ArgumentNullException("store");
             }
-            this.commandApplier = commandApplier;
-            this.preconditionVerifier = preconditionVerifier;
+            if (etagChecker == null)
+            {
+                throw new ArgumentNullException("etagChecker");
+            }
+            this.store = store;
+            this.etagChecker = etagChecker;
         }
 
         /// <summary>
@@ -38,11 +42,16 @@ namespace Microsoft.Its.Domain
         /// <exception cref="System.NotSupportedException">Non-immediate scheduling is not supported.</exception>
         public virtual async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
         {
+            if (scheduledCommand.Result is CommandDeduplicated)
+            {
+                return;
+            }
+
             if (scheduledCommand.Command.CanBeDeliveredDuringScheduling() && scheduledCommand.IsDue())
             {
-                if (!await VerifyPrecondition(scheduledCommand))
+                if (!await PreconditionHasBeenMet(scheduledCommand))
                 {
-                    CommandScheduler.DeliverIfPreconditionIsSatisfiedSoon(
+                    CommandScheduler.DeliverIfPreconditionIsMetSoon(
                         scheduledCommand,
                         Configuration.Current);
                 }
@@ -56,7 +65,7 @@ namespace Microsoft.Its.Domain
 
             if (scheduledCommand.Result == null)
             {
-                throw new NotSupportedException("Deferred scheduling is not supported.");
+                throw new NotSupportedException("Deferred scheduling is not supported by the current command scheduler pipeline configuration.");
             }
         }
 
@@ -72,15 +81,20 @@ namespace Microsoft.Its.Domain
         /// </remarks>
         public virtual async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
         {
-            await commandApplier.ApplyScheduledCommand(scheduledCommand);
+            if (scheduledCommand.Result is CommandDelivered)
+            {
+                return;
+            }
+
+            await store.ApplyScheduledCommand(scheduledCommand, etagChecker);
         }
 
         /// <summary>
         /// Verifies that the command precondition has been met.
         /// </summary>
-        private async Task<bool> VerifyPrecondition(IScheduledCommand scheduledCommand)
+        private async Task<bool> PreconditionHasBeenMet(IScheduledCommand scheduledCommand)
         {
-            return await preconditionVerifier.IsPreconditionSatisfied(scheduledCommand);
+            return await etagChecker.IsPreconditionSatisfied(scheduledCommand);
         }
     }
 }

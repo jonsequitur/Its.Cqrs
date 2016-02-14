@@ -2,15 +2,22 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
     public class ETag
     {
-        public Guid AggregateId { get; set; }
+        public long Id { get; set; }
 
+        [Index("IX_Scope_and_ETag", 1, IsUnique = true)]
+        public string Scope { get; set; }
+
+        [Index("IX_Scope_and_ETag", 2, IsUnique = true)]
         public string ETagValue { get; set; }
 
-        public DateTimeOffset CreatedTime { get; set; } 
+        public DateTimeOffset CreatedDomainTime { get; set; }
+        
+        public DateTimeOffset CreatedRealTime { get; set; }
     }
 }

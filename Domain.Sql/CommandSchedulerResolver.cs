@@ -19,9 +19,9 @@ namespace Microsoft.Its.Domain.Sql
                 throw new ArgumentNullException("container");
             }
 
-             schedulerResolversByAggregateTypeName = new Dictionary<string, Func<dynamic>>();
+            schedulerResolversByAggregateTypeName = new Dictionary<string, Func<dynamic>>();
 
-            AggregateType.KnownTypes.ForEach(aggregateType =>
+            Command.KnownTargetTypes.ForEach(aggregateType =>
             {
                 var schedulerType = typeof (ICommandScheduler<>).MakeGenericType(aggregateType);
 
