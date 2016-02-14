@@ -206,9 +206,11 @@ namespace Microsoft.Its.Domain
 
                 aggregate = await store.Get(scheduled.TargetId);
 
+                var isConstructorCommand = scheduled.Command is ConstructorCommand<TAggregate>;
+
                 if (aggregate == null)
                 {
-                    if (scheduled.Command is ConstructorCommand<TAggregate>)
+                    if (isConstructorCommand)
                     {
                         var ctor = typeof (TAggregate).GetConstructor(new[] { scheduled.Command.GetType() });
 
@@ -226,6 +228,10 @@ namespace Microsoft.Its.Domain
                             string.Format("No {0} was found with id {1} so the command could not be applied.",
                                           typeof (TAggregate).Name, scheduled.TargetId));
                     }
+                }
+                else if (isConstructorCommand)
+                {
+                    throw new ConcurrencyException(string.Format("Command target having id {0} already exists", scheduled.TargetId));
                 }
                 else
                 {

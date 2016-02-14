@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -177,11 +178,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await scheduler.Schedule(target.Id,
                                      new TestCommand(isValid: false),
                                      Clock.Now().Add(2.Minutes()));
-            // first call will fail
             await AdvanceClock(5.Minutes());
-
-            // second call will succeed
-            await AdvanceClock(1.Seconds());
+            await AdvanceClock(1.Seconds()); // should trigger a retry
 
             //assert 
             target = await store.Get(target.Id);
@@ -204,11 +202,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await scheduler.Schedule(target.Id,
                                      new TestCommand(isValid: false),
                                      Clock.Now().Add(2.Minutes()));
-            // first call will fail
             await AdvanceClock(5.Minutes());
-
-            // second call will succeed
-            await AdvanceClock(5.Minutes());
+            await AdvanceClock(5.Minutes()); // should not trigger a retry
 
             //assert 
             target = await store.Get(target.Id);
@@ -253,13 +248,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var db = new CommandSchedulerDbContext())
             {
-                var result = new SchedulerAdvancedResult();
                 var aggregateId = target.Id.ToGuidV3();
                 var command = db.ScheduledCommands
                                 .Single(c => c.AggregateId == aggregateId);
                 await Configuration.Current
                                    .SchedulerClockTrigger()
-                                   .Trigger(command, result, db);
+                                   .Trigger(command, new SchedulerAdvancedResult(), db);
             }
 
             //assert 
@@ -268,11 +262,35 @@ namespace Microsoft.Its.Domain.Sql.Tests
             target.CommandsEnacted.Should().HaveCount(1);
         }
 
-        [Ignore]
         [Test]
         public override async Task When_triggering_specific_commands_then_the_result_can_be_used_to_evaluate_failures()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName());
+            await store.Put(target);
+            var schedulerAdvancedResult = new SchedulerAdvancedResult();
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(isValid: false),
+                                     Clock.Now().AddDays(2));
+
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var aggregateId = target.Id.ToGuidV3();
+                var command = db.ScheduledCommands
+                                .Single(c => c.AggregateId == aggregateId);
+
+                await Configuration.Current
+                                   .SchedulerClockTrigger()
+                                   .Trigger(command, schedulerAdvancedResult, db);
+            }
+
+            //assert 
+            schedulerAdvancedResult
+                .FailedCommands
+                .Should()
+                .HaveCount(1);
         }
 
         [Ignore]
@@ -282,11 +300,27 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Assert.Fail("Test not written yet.");
         }
 
-        [Ignore]
         [Test]
         public override async Task When_a_command_is_scheduled_but_the_target_it_applies_to_is_not_found_then_the_command_is_retried()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var deliveryAttempts = 0;
+            Configuration.Current.AddToCommandSchedulerPipeline<CommandTarget>(
+                deliver: async (command, next) =>
+                {
+                    deliveryAttempts++;
+                    await next(command);
+                });
+
+            // act
+            await scheduler.Schedule(Any.CamelCaseName(),
+                                     new TestCommand(isValid: false),
+                                     Clock.Now().Add(2.Minutes()));
+            await AdvanceClock(1.Days());
+            await AdvanceClock(1.Days()); // should trigger a retry
+
+            //assert 
+            deliveryAttempts.Should().Be(2);
         }
 
         [Test]
@@ -307,11 +341,37 @@ namespace Microsoft.Its.Domain.Sql.Tests
             target.Should().NotBeNull();
         }
 
-        [Ignore]
         [Test]
         public override async Task When_a_constructor_command_fails_with_a_ConcurrencyException_it_is_not_retried()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var deliveredEtags =new List<string>();
+            Configuration.Current.AddToCommandSchedulerPipeline<CommandTarget>(
+                deliver: async (scheduled, next) =>
+                {
+                    deliveredEtags.Add(scheduled.Command.ETag);
+                    await next(scheduled);
+                });
+
+            var id = Any.CamelCaseName();
+    		var etag1 = Any.Word().ToETag();
+    		var etag2 = Any.Word().ToETag();
+            var command1 = new CreateCommandTarget(id, etag: etag1);
+            var command2 = new CreateCommandTarget(id, etag: etag2);
+
+            // act
+            await scheduler.Schedule(id, command1);
+            await scheduler.Schedule(id, command2);
+
+            await AdvanceClock(1.Days());
+            await AdvanceClock(1.Days());
+            await AdvanceClock(1.Days());
+
+            // assert
+            deliveredEtags.Should()
+                          .ContainSingle(e => e == etag1)
+                          .And
+                          .ContainSingle(e => e == etag2);
         }
 
         [Ignore]
