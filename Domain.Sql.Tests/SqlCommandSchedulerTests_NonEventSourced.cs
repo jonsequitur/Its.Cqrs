@@ -2,10 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
@@ -162,25 +162,58 @@ namespace Microsoft.Its.Domain.Sql.Tests
             target.CommandsEnacted.Should().HaveCount(1);
         }
 
-        [Ignore]
-        [Test]
-        public override async Task A_command_handler_can_control_retries_of_a_failed_command()
-        {
-            Assert.Fail("Test not written yet.");
-        }
-
-        [Ignore]
         [Test]
         public override async Task A_command_handler_can_request_retry_of_a_failed_command_as_soon_as_possible()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName())
+            {
+                OnHandleScheduledCommandError = (commandTarget, failed) =>
+                                                failed.Retry(after: 1.Milliseconds())
+            };
+            await store.Put(target);
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(isValid: false),
+                                     Clock.Now().Add(2.Minutes()));
+            // first call will fail
+            await AdvanceClock(5.Minutes());
+
+            // second call will succeed
+            await AdvanceClock(1.Seconds());
+
+            //assert 
+            target = await store.Get(target.Id);
+
+            target.CommandsFailed.Should().HaveCount(2);
         }
 
-        [Ignore]
         [Test]
         public override async Task A_command_handler_can_request_retry_of_a_failed_command_as_late_as_it_wants()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName())
+            {
+                OnHandleScheduledCommandError = (commandTarget, failed) =>
+                                                failed.Retry(after: 1.Hours())
+            };
+            await store.Put(target);
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(isValid: false),
+                                     Clock.Now().Add(2.Minutes()));
+            // first call will fail
+            await AdvanceClock(5.Minutes());
+
+            // second call will succeed
+            await AdvanceClock(5.Minutes());
+
+            //assert 
+            target = await store.Get(target.Id);
+
+            target.CommandsFailed.Should().HaveCount(1);
         }
 
         [Test]

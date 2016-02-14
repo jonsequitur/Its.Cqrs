@@ -576,7 +576,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public override async Task A_command_handler_can_control_retries_of_a_failed_command()
+        public async Task A_command_handler_can_control_retries_of_a_failed_command()
         {
             // arrange
             var order = CommandSchedulingTests_EventSourced.CreateOrder();
