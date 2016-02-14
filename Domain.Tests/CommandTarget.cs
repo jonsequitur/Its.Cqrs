@@ -16,6 +16,9 @@ namespace Microsoft.Its.Domain.Tests
         private readonly ConcurrentBag<ICommand<CommandTarget>> commandsEnacted = new ConcurrentBag<ICommand<CommandTarget>>();
         private readonly ConcurrentBag<CommandFailed> commandsFailed = new ConcurrentBag<CommandFailed>();
 
+        public Action<CommandTarget, CommandFailed<TestCommand>> OnHandleScheduledCommandError;
+        public Action<CommandTarget, TestCommand> OnEnactCommand;
+
         public CommandTarget(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
@@ -72,19 +75,18 @@ namespace Microsoft.Its.Domain.Tests
         {
             target.CommandsEnacted.Add(command);
 
-            command.CommandHandler_EnactCommand
-                   .IfNotNull()
-                   .ThenDo(enact => enact(target, command));
+            target.OnEnactCommand
+                  .IfNotNull()
+                  .ThenDo(enact => enact(target, command));
         }
 
         public async Task HandleScheduledCommandException(CommandTarget target, CommandFailed<TestCommand> failed)
         {
             target.CommandsFailed.Add(failed);
 
-            failed.Command
-                   .CommandHandler_HandleScheduledCommandError
-                   .IfNotNull()
-                   .ThenDo(enact => enact(target, failed));
+            target.OnHandleScheduledCommandError
+                  .IfNotNull()
+                  .ThenDo(enact => enact(target, failed));
         }
 
         public async Task EnactCommand(CommandTarget requestor, SendRequests command)
@@ -141,10 +143,6 @@ namespace Microsoft.Its.Domain.Tests
     public class TestCommand : Command<CommandTarget>
     {
         private readonly bool isValid;
-
-        public Action<CommandTarget, TestCommand> CommandHandler_EnactCommand;
-
-        public Action<CommandTarget, CommandFailed<TestCommand>> CommandHandler_HandleScheduledCommandError;
 
         public TestCommand(string etag = null, bool isValid = true) : base(etag)
         {

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -39,7 +40,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             disposables = new CompositeDisposable
             {
                 Disposable.Create(() => eventStoreDbTest.TearDown()),
-                Disposable.Create(Clock.Reset)
+                Disposable.Create(Clock.Reset),
+                VirtualClock.Start()
             };
 
             var configuration = new Configuration();
@@ -68,6 +70,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
             scheduler = configuration.CommandScheduler<CommandTarget>();
 
             store = configuration.Store<CommandTarget>();
+        }
+
+        private async Task AdvanceClock(TimeSpan @by)
+        {
+            await Configuration.Current
+                               .SchedulerClockTrigger()
+                               .AdvanceClock(clockName: clockName,
+                                             @by: @by);
         }
 
         [Test]
@@ -105,10 +115,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                      new TestCommand(),
                                      Clock.Now().AddDays(2));
 
-            await Configuration.Current
-                               .SchedulerClockTrigger()
-                               .AdvanceClock(clockName: clockName,
-                                             @by: TimeSpan.FromDays(1.1));
+            await AdvanceClock(TimeSpan.FromDays(1.1));
 
             //assert 
             target = await store.Get(target.Id);
@@ -159,7 +166,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public override async Task A_command_handler_can_control_retries_of_a_failed_command()
         {
-
             Assert.Fail("Test not written yet.");
         }
 
@@ -177,18 +183,56 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Assert.Fail("Test not written yet.");
         }
 
-        [Ignore]
         [Test]
         public override async Task A_command_handler_can_cancel_a_scheduled_command_after_it_fails()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName())
+            {
+                OnHandleScheduledCommandError = (commandTarget, failed) => failed.Cancel()
+            };
+            await store.Put(target);
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(isValid: false),
+                                     Clock.Now().AddMinutes(2));
+
+            await AdvanceClock(TimeSpan.FromMinutes(5));
+
+            //assert 
+            target = await store.Get(target.Id);
+
+            target.CommandsFailed.Should().HaveCount(1);
         }
 
-        [Ignore]
         [Test]
         public override async Task Specific_scheduled_commands_can_be_triggered_directly_by_target_id()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName());
+            await store.Put(target);
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(),
+                                     Clock.Now().AddDays(2));
+
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var result = new SchedulerAdvancedResult();
+                var aggregateId = target.Id.ToGuidV3();
+                var command = db.ScheduledCommands
+                                .Single(c => c.AggregateId == aggregateId);
+                await Configuration.Current
+                                   .SchedulerClockTrigger()
+                                   .Trigger(command, result, db);
+            }
+
+            //assert 
+            target = await store.Get(target.Id);
+
+            target.CommandsEnacted.Should().HaveCount(1);
         }
 
         [Ignore]
