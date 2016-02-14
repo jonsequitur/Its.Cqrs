@@ -38,7 +38,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     "S0",
                     "10 GB",
                     new Version("0.0.42.1"));
-                context.EnsureDatabaseSchemaIsUpToDate(migrator);
+                context.EnsureDatabaseIsUpToDate(migrator);
 
                 context.OpenConnection()
                        .GetAppliedMigrationVersions()
