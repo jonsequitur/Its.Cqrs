@@ -140,13 +140,16 @@ namespace Microsoft.Its.Domain.Tests
         public string Id { get; private set; }
     }
 
-    public class TestCommand : Command<CommandTarget>
+    public class TestCommand : Command<CommandTarget>, ISpecifySchedulingBehavior
     {
         private readonly bool isValid;
 
         public TestCommand(string etag = null, bool isValid = true) : base(etag)
         {
             this.isValid = isValid;
+
+            RequiresDurableScheduling = true;
+            CanBeDeliveredDuringScheduling = true;
         }
 
         public bool IsValid
@@ -164,6 +167,10 @@ namespace Microsoft.Its.Domain.Tests
                 return Validate.That<TestCommand>(cmd => cmd.isValid);
             }
         }
+
+        public bool CanBeDeliveredDuringScheduling { get; set; }
+
+        public bool RequiresDurableScheduling { get; set; }
     }
 
     public class SendRequests : Command<CommandTarget>

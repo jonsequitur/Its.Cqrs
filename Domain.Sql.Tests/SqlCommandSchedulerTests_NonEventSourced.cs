@@ -93,10 +93,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                      Clock.Now().AddDays(1));
 
             // act
-            await Configuration.Current
-                               .SchedulerClockTrigger()
-                               .AdvanceClock(clockName: clockName,
-                                             @by: TimeSpan.FromDays(1.1));
+            await AdvanceClock(25.Hours());
 
             //assert 
             target = await store.Get(target.Id);
@@ -226,7 +223,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                      new TestCommand(isValid: false),
                                      Clock.Now().AddMinutes(2));
 
-            await AdvanceClock(TimeSpan.FromMinutes(5));
+            await AdvanceClock(5.Minutes());
 
             //assert 
             target = await store.Get(target.Id);
@@ -293,11 +290,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 .HaveCount(1);
         }
 
-        [Ignore]
         [Test]
         public override async Task When_a_command_is_scheduled_but_an_exception_is_thrown_in_a_handler_then_an_error_is_recorded()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName());
+            await store.Put(target);
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(isValid: false));
+
+            //assert 
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var aggregateId = target.Id.ToGuidV3();
+                var error = db.Errors.Single(e => e.ScheduledCommand.AggregateId == aggregateId);
+
+                error.Error.Should().Contain("CommandValidationException");
+            }
         }
 
         [Test]
@@ -345,7 +356,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task When_a_constructor_command_fails_with_a_ConcurrencyException_it_is_not_retried()
         {
             // arrange
-            var deliveredEtags =new List<string>();
+            var deliveredEtags = new List<string>();
             Configuration.Current.AddToCommandSchedulerPipeline<CommandTarget>(
                 deliver: async (scheduled, next) =>
                 {
@@ -354,8 +365,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 });
 
             var id = Any.CamelCaseName();
-    		var etag1 = Any.Word().ToETag();
-    		var etag2 = Any.Word().ToETag();
+            var etag1 = Any.Word().ToETag();
+            var etag2 = Any.Word().ToETag();
             var command1 = new CreateCommandTarget(id, etag: etag1);
             var command2 = new CreateCommandTarget(id, etag: etag2);
 
@@ -374,25 +385,85 @@ namespace Microsoft.Its.Domain.Sql.Tests
                           .ContainSingle(e => e == etag2);
         }
 
-        [Ignore]
         [Test]
-        public override async Task When_an_immediately_scheduled_command_depends_on_a_precondition_that_has_not_been_met_yet_then_there_is_not_initially_a_concurrency_exception()
+        public override async Task When_an_immediately_scheduled_command_depends_on_a_precondition_that_has_not_been_met_yet_then_there_is_not_initially_an_attempt_recorded()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var targetId = Any.CamelCaseName();
+            var precondition = new EventHasBeenRecordedPrecondition(
+                Guid.NewGuid().ToString().ToETag(),
+                Guid.NewGuid());
+
+            // act
+            await scheduler.Schedule(targetId,
+                                     new CreateCommandTarget(targetId),
+                                     deliveryDependsOn: precondition);
+        
+            // assert
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var aggregateId = targetId.ToGuidV3();
+                var command = db.ScheduledCommands.Single(c => c.AggregateId == aggregateId);
+
+                command.AppliedTime
+                       .Should()
+                       .NotHaveValue();
+
+                command.Attempts
+                       .Should()
+                       .Be(0);
+            }
         }
 
-        [Ignore]
         [Test]
         public override async Task When_a_scheduled_command_depends_on_an_event_that_never_arrives_it_is_eventually_abandoned()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var deliveryAttempts = 0;
+            Configuration.Current.AddToCommandSchedulerPipeline<CommandTarget>(
+                deliver: async (command, next) =>
+                {
+                    deliveryAttempts++;
+                    await next(command);
+                });
+         
+            var precondition = new EventHasBeenRecordedPrecondition(
+                Guid.NewGuid().ToString().ToETag(),
+                Guid.NewGuid());
+
+            // act
+            await scheduler.Schedule(Any.CamelCaseName(),
+                                     new TestCommand(),
+                                     deliveryDependsOn: precondition);
+         
+            for (var i = 0; i < 10; i++)
+            {
+                  await AdvanceClock(1.Days());
+            }
+
+            //assert 
+            deliveryAttempts.Should().Be(6);
         }
 
-        [Ignore]
         [Test]
         public override async Task When_command_is_durable_but_immediate_delivery_succeeds_then_it_is_not_redelivered()
         {
-            Assert.Fail("Test not written yet.");
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName());
+            await store.Put(target);
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand
+                                     {
+                                         RequiresDurableScheduling = true
+                                     });
+            await AdvanceClock(2.Days());
+
+            //assert 
+            target = await store.Get(target.Id);
+
+            target.CommandsEnacted.Should().HaveCount(1);
         }
     }
 }

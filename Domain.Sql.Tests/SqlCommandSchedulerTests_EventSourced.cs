@@ -1157,7 +1157,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public override async Task When_an_immediately_scheduled_command_depends_on_a_precondition_that_has_not_been_met_yet_then_there_is_not_initially_a_concurrency_exception()
+        public override async Task When_an_immediately_scheduled_command_depends_on_a_precondition_that_has_not_been_met_yet_then_there_is_not_initially_an_attempt_recorded()
         {
             var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 

@@ -37,7 +37,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public abstract Task When_a_constructor_command_fails_with_a_ConcurrencyException_it_is_not_retried();
 
-        public abstract Task When_an_immediately_scheduled_command_depends_on_a_precondition_that_has_not_been_met_yet_then_there_is_not_initially_a_concurrency_exception();
+        public abstract Task When_an_immediately_scheduled_command_depends_on_a_precondition_that_has_not_been_met_yet_then_there_is_not_initially_an_attempt_recorded();
 
         public abstract Task When_a_scheduled_command_depends_on_an_event_that_never_arrives_it_is_eventually_abandoned();
 
