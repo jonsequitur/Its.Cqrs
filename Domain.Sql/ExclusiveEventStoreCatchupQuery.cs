@@ -47,16 +47,14 @@ namespace Microsoft.Its.Domain.Sql
                     var eventTypes = matchEvents.Select(m => m.Type).Distinct().ToArray();
                     var aggregates = matchEvents.Select(m => m.StreamName).Distinct().ToArray();
 
-                    if (!aggregates.Contains(MatchEvent.Wildcard))
+                    if (!aggregates.Any(streamName => string.IsNullOrWhiteSpace(streamName) || streamName == MatchEvent.Wildcard))
                     {
-                        var aggregateWildCard = aggregates.Any(string.IsNullOrWhiteSpace) ||
-                                                                aggregates.Contains(MatchEvent.Wildcard);
+                        eventQuery = eventQuery.Where(e => aggregates.Contains(e.StreamName));
 
-                        var eventWildCard = eventTypes.Any(string.IsNullOrWhiteSpace) ||
-                                                                eventTypes.Contains(MatchEvent.Wildcard);
-
-                        eventQuery = eventQuery.Where(e => (aggregateWildCard || aggregates.Contains(e.StreamName)) &&
-                                                           (eventWildCard || eventTypes.Contains(e.Type)));
+                        if (!eventTypes.Any(type => string.IsNullOrWhiteSpace(type) || type == MatchEvent.Wildcard))
+                        {
+                            eventQuery = eventQuery.Where(e => eventTypes.Contains(e.Type));
+                        }
                     }
                 }
 

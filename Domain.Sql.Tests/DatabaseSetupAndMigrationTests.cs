@@ -13,6 +13,8 @@ using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
+using System.Data.SqlClient;
+using Moq;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -212,11 +214,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public void A_migration_with_an_earlier_version_number_can_be_applied_later_if_they_have_different_scopes()
         {
             var higherVersion = new AnonymousMigrator(
-                c => { }, 
+                c => { },
                 new Version(version.Major, version.Minor, version.Build, 2),
                 "Scope1");
             var lowerVersion = new AnonymousMigrator(
-                c => { }, 
+                c => { },
                 new Version(version.Major, version.Minor, version.Build),
                 "Scope2");
 
@@ -233,12 +235,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public void A_migration_with_an_earlier_version_number_cannot_be_applied_later_if_they_have_the_same_scope()
         {
             var higherVersion = new AnonymousMigrator(
-                c => { }, 
+                c => { },
                 new Version(version.Major, version.Minor, version.Build, 2),
                 "Test"
             );
             var lowerVersion = new AnonymousMigrator(
-                c => { }, 
+                c => { },
                 new Version(version.Major, version.Minor, version.Build),
                 "Test"
             );
@@ -273,6 +275,37 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 db.Clocks.Should().ContainSingle(c => c.Name == "default");
             }
+        }
+
+        [Test]
+        public void When_a_read_only_user_connects_to_the_event_store_Then_migrations_should_not_be_run()
+        {
+            var userName = Any.CamelCaseName();
+            var password = "Password#1";
+            var loginName = userName;
+            var user = new DbReadonlyUser(userName, loginName);
+            var builder = new SqlConnectionStringBuilder();
+            var migrated = false;
+
+            using (var db = new EventStoreDbContext())
+            {
+                db.Database.ExecuteSqlCommand(string.Format("CREATE LOGIN [{0}] WITH PASSWORD = '{1}';", userName, password));
+                db.CreateReadonlyUser(user);
+
+                builder.ConnectionString = db.Database.Connection.ConnectionString;
+                builder.IntegratedSecurity = false;
+                builder.UserID = user.LoginName;
+                builder.Password = password;
+            }
+
+            using (var db = new EventStoreDbContext(builder.ConnectionString))
+            {
+                IDbMigrator[] migrations = new[] { new AnonymousMigrator(c => migrated = true, new Version(1, 0), Any.CamelCaseName()) };
+                var initializer = new EventStoreDatabaseInitializer<EventStoreDbContext>(migrations);
+                initializer.InitializeDatabase(db);
+            }
+
+            migrated.Should().BeFalse();
         }
 
         private static IEnumerable<string> GetAppliedVersions<TContext>()
