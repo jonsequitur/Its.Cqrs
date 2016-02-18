@@ -17,6 +17,7 @@ using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
 using Moq;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
@@ -1360,6 +1361,50 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 scheduledAggregateIds.Should()
                                      .BeEmpty();
             }
+        }
+
+        [Test]
+        public override async Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
+        {
+            var commandScheduler = Configuration.Current.CommandScheduler<CustomerAccount>();
+            var reserverationService = new Mock<IReservationService>();
+            reserverationService.Setup(m => m.Reserve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+                                .Returns(() => Task.FromResult(true));
+            Configuration.Current.ReservationService = reserverationService.Object;
+
+            var aggregateId = Any.Guid();
+            await accountRepository.Save(new CustomerAccount(aggregateId).Apply(new RequestNoSpam()));
+            var etag = Any.Guid().ToString().ToETag();
+
+            await commandScheduler.Schedule(aggregateId,
+                                            new RequestUserName
+                                            {
+                                                UserName = Any.Email(),
+                                                ValidUntil = Any.DateTimeOffset(),
+                                                ETag = etag
+                                            },
+                                            Clock.Now().AddHours(1));
+
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var command = db.ScheduledCommands.Single(c => c.SerializedCommand.Contains(etag));
+                command.SerializedCommand = JsonConvert.SerializeObject(new
+                                                                        {
+                                                                            UserName = Any.Email(),
+                                                                            ValidUntil = "invalid DateTimeOffset",
+                                                                            ETag = etag,
+                                                                            CanBeDeliveredDuringScheduling = true,
+                                                                            RequiresDurableScheduling = false
+                                                                        });
+                db.SaveChanges();
+            }
+
+            // act
+             Action advanceClock = () => clockTrigger.AdvanceClock(clockName: clockName,
+                                            @by: TimeSpan.FromHours(2)).Wait();
+
+            advanceClock.ShouldNotThrow();
+
         }
 
         protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)

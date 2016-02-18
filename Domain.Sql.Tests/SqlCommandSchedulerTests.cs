@@ -42,5 +42,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public abstract Task When_a_scheduled_command_depends_on_an_event_that_never_arrives_it_is_eventually_abandoned();
 
         public abstract Task When_command_is_durable_but_immediate_delivery_succeeds_then_it_is_not_redelivered();
+
+        public abstract Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied();
     }
 }

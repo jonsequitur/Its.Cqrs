@@ -465,5 +465,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             target.CommandsEnacted.Should().HaveCount(1);
         }
+
+        [Test]
+        public override Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
