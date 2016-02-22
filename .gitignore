@@ -26,3 +26,5 @@ Artifacts
 Blobs/
 *.xml
 NuGet/
+.vs/
+TestResults/
