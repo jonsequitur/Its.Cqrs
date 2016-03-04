@@ -65,11 +65,16 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             ScheduledCommand scheduled,
             ICommandScheduler<TAggregate> scheduler)
         {
-            var command = scheduled.ToScheduledCommand<TAggregate>();
-
-            await scheduler.Deliver(command);
-
-            scheduled.Result = command.Result;
+            try
+            {
+                var command = scheduled.ToScheduledCommand<TAggregate>();
+                await scheduler.Deliver(command);
+                scheduled.Result = command.Result;
+            }
+            catch (Exception exception)
+            {
+                scheduled.Result = new CommandFailed(scheduled, exception);
+            }
         }
 
         internal static async Task UpdateScheduledCommand<TAggregate>(

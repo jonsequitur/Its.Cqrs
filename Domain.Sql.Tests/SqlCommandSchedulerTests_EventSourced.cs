@@ -1362,6 +1362,45 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
+        [Test]
+        public override async Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
+        {
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
+        
+            var failedAggregateId = Any.Guid();
+            var successfulAggregateId = Any.Guid();
+
+            await commandScheduler.Schedule(failedAggregateId,
+                                            new CreateOrder(Any.FullName()),
+                                            Clock.Now().AddHours(1)); 
+            await commandScheduler.Schedule(successfulAggregateId,
+                                            new CreateOrder(Any.FullName())
+                                            {
+                                                AggregateId = successfulAggregateId
+                                            },
+                                            Clock.Now().AddHours(1.5));
+
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var command = db.ScheduledCommands.Single(c => c.AggregateId == failedAggregateId);
+                var commandBody = command.SerializedCommand.FromJsonTo<dynamic>();
+                commandBody.Command.CustomerId = "not a guid";
+                command.SerializedCommand = commandBody.ToString();
+                db.SaveChanges();
+            }
+
+            // act
+            Action advanceClock = () => clockTrigger.AdvanceClock(clockName: clockName,
+                                                                  @by: TimeSpan.FromHours(2)).Wait();
+
+            // assert
+            advanceClock.ShouldNotThrow();
+
+            var repository = Configuration.Current.Repository<Order>();
+            var successfulAggregate = await repository.GetLatest(successfulAggregateId);
+            successfulAggregate.Should().NotBeNull();
+        }
+
         protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)
         {
             ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () =>
