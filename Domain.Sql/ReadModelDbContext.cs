@@ -59,12 +59,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             return Discover.ConcreteTypesDerivedFrom(typeof (IEntityModelConfiguration));
         }
-
-        protected internal virtual IEnumerable<Type> GetProjectorTypes()
-        {
-            return Discover.ProjectorTypes();
-        }
-
+   
         public static string NameOrConnectionString
         {
             get
