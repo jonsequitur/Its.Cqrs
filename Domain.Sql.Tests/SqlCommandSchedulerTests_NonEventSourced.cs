@@ -7,11 +7,13 @@ using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
+using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -466,10 +468,40 @@ namespace Microsoft.Its.Domain.Sql.Tests
             target.CommandsEnacted.Should().HaveCount(1);
         }
 
-        [Test]
-        public override Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
+        public override async Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
         {
-            throw new NotImplementedException();
+              var commandScheduler = Configuration.Current.CommandScheduler<CommandTarget>();
+        
+            var failedTargetId = Any.CamelCaseName();
+            var successfulTargetId = Any.CamelCaseName();
+
+            await commandScheduler.Schedule(failedTargetId,
+                                            new CreateCommandTarget(failedTargetId),
+                                            Clock.Now().AddHours(1)); 
+            await commandScheduler.Schedule(successfulTargetId,
+                                            new CreateCommandTarget(successfulTargetId),
+                                            Clock.Now().AddHours(1.5));
+
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var command = db.ScheduledCommands.Single(c => c.AggregateId == failedTargetId.ToGuidV3());
+                var commandBody = command.SerializedCommand.FromJsonTo<dynamic>();
+                commandBody.Command.CommandName = "not a command name";
+                command.SerializedCommand = commandBody.ToString();
+                db.SaveChanges();
+            }
+
+            // act
+            Action advanceClock = () => Configuration.Current
+                                                     .SchedulerClockTrigger()
+                                                     .AdvanceClock(clockName: clockName,
+                                                                   @by: TimeSpan.FromHours(2)).Wait();
+
+            // assert
+            advanceClock.ShouldNotThrow();
+
+            var successfulAggregate = await store.Get(successfulTargetId);
+            successfulAggregate.Should().NotBeNull();
         }
     }
 }

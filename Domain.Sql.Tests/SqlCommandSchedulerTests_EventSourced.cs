@@ -17,7 +17,6 @@ using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
 using Moq;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
