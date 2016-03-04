@@ -50,31 +50,5 @@ namespace Microsoft.Its.Domain.Sql
 
             context.SaveChanges();
         }
-
-        /// <summary>
-        /// A that should be overridden to actually add data to the context for seeding. 
-        ///                 The default implementation does nothing.
-        /// </summary>
-        /// <param name="context">The context to seed.</param>
-        protected override void Seed(TDbContext context)
-        {
-            try
-            {
-                var configurerTypes = Discover.ConcreteTypesDerivedFrom(typeof (IDatabaseConfiguration<TDbContext>));
-
-                foreach (var type in configurerTypes)
-                {
-                    dynamic configurer = Activator.CreateInstance(type);
-                    configurer.ConfigureDatabase(context);
-                }
-            }
-            catch (Exception ex)
-            {
-                log.Write(() => ex);
-                throw;
-            }
-
-            base.Seed(context);
-        }
     }
 }

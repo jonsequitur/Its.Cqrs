@@ -143,7 +143,6 @@
     <Compile Include="ReservationServiceDbContext.cs" />
     <Compile Include="ExceptionExtensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="IDatabaseConfiguration.cs" />
     <Compile Include="IEntityModelProjector.cs" />
     <Compile Include="ProjectorExtensions.cs" />
     <Compile Include="QueryableExtensions.cs" />

@@ -14,7 +14,6 @@ using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using System.Data.SqlClient;
-using Moq;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -25,6 +24,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestEventStore";
         private const string CommandSchedulerConnectionString =
             @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestCommandScheduler";
+        private const string ReadModelConnectionString =
+            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestReadModel";
 
         private Version version = new Version(10, 0, 0);
 
@@ -34,6 +35,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             EventStoreDbContext.NameOrConnectionString = EventStoreConnectionString;
             Database.Delete(EventStoreConnectionString);
             Database.Delete(CommandSchedulerConnectionString);
+            Database.Delete(ReadModelConnectionString);
             Database.Delete(MigrationsTestDbContext.ConnectionString);
             InitializeEventStore();
             InitializeCommandScheduler();
@@ -324,6 +326,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(context);
             }
         }
+
         private void InitializeCommandScheduler()
         {
             using (var context = new CommandSchedulerDbContext(CommandSchedulerConnectionString))
