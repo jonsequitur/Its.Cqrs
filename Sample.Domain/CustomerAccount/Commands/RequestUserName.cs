@@ -12,8 +12,6 @@ namespace Sample.Domain
     {
         public string UserName { get; set; }
 
-        public DateTimeOffset ValidUntil { get; set; }
-
         public override IValidationRule CommandValidator
         {
             get
