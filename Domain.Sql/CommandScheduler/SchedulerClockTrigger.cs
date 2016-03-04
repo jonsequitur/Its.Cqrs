@@ -111,7 +111,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 // ToArray closes the connection so that when we perform saves during the loop there are no connection errors
                 foreach (var scheduled in await commands.ToArrayAsync())
                 {
-                    //clock.UtcNow = scheduled.DueTime ?? to.Value;
                     await Trigger(scheduled, result, db);
                 }
 

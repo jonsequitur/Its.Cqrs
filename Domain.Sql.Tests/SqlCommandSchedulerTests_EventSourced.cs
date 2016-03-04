@@ -1366,45 +1366,40 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public override async Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
         {
-            var commandScheduler = Configuration.Current.CommandScheduler<CustomerAccount>();
-            var reserverationService = new Mock<IReservationService>();
-            reserverationService.Setup(m => m.Reserve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
-                                .Returns(() => Task.FromResult(true));
-            Configuration.Current.ReservationService = reserverationService.Object;
+            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
+        
+            var failedAggregateId = Any.Guid();
+            var successfulAggregateId = Any.Guid();
 
-            var aggregateId = Any.Guid();
-            await accountRepository.Save(new CustomerAccount(aggregateId).Apply(new RequestNoSpam()));
-            var etag = Any.Guid().ToString().ToETag();
-
-            await commandScheduler.Schedule(aggregateId,
-                                            new RequestUserName
+            await commandScheduler.Schedule(failedAggregateId,
+                                            new CreateOrder(Any.FullName()),
+                                            Clock.Now().AddHours(1)); 
+            await commandScheduler.Schedule(successfulAggregateId,
+                                            new CreateOrder(Any.FullName())
                                             {
-                                                UserName = Any.Email(),
-                                                ValidUntil = Any.DateTimeOffset(),
-                                                ETag = etag
+                                                AggregateId = successfulAggregateId
                                             },
-                                            Clock.Now().AddHours(1));
+                                            Clock.Now().AddHours(1.5));
 
             using (var db = new CommandSchedulerDbContext())
             {
-                var command = db.ScheduledCommands.Single(c => c.SerializedCommand.Contains(etag));
-                command.SerializedCommand = JsonConvert.SerializeObject(new
-                                                                        {
-                                                                            UserName = Any.Email(),
-                                                                            ValidUntil = "invalid DateTimeOffset",
-                                                                            ETag = etag,
-                                                                            CanBeDeliveredDuringScheduling = true,
-                                                                            RequiresDurableScheduling = false
-                                                                        });
+                var command = db.ScheduledCommands.Single(c => c.AggregateId == failedAggregateId);
+                var commandBody = command.SerializedCommand.FromJsonTo<dynamic>();
+                commandBody.Command.CustomerId = "not a guid";
+                command.SerializedCommand = commandBody.ToString();
                 db.SaveChanges();
             }
 
             // act
-             Action advanceClock = () => clockTrigger.AdvanceClock(clockName: clockName,
-                                            @by: TimeSpan.FromHours(2)).Wait();
+            Action advanceClock = () => clockTrigger.AdvanceClock(clockName: clockName,
+                                                                  @by: TimeSpan.FromHours(2)).Wait();
 
+            // assert
             advanceClock.ShouldNotThrow();
 
+            var repository = Configuration.Current.Repository<Order>();
+            var successfulAggregate = await repository.GetLatest(successfulAggregateId);
+            successfulAggregate.Should().NotBeNull();
         }
 
         protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)
