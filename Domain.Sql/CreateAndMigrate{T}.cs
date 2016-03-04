@@ -27,7 +27,7 @@ namespace Microsoft.Its.Domain.Sql
         public CreateAndMigrate() : this(new IDbMigrator[0])
         {
         }
-        
+
         public CreateAndMigrate(IDbMigrator[] migrators)
         {
             this.migrators = Migrator.CreateMigratorsFromEmbeddedResourcesFor<TContext>()
@@ -59,7 +59,10 @@ namespace Microsoft.Its.Domain.Sql
                 }
             }
 
-            context.EnsureDatabaseIsUpToDate(migrators);
+            if (CurrentUserHasWritePermissions(context))
+            {
+                context.EnsureDatabaseIsUpToDate(migrators);
+            }
         }
 
         private bool CreateDatabaseIfNotExists(TContext context)
@@ -75,7 +78,7 @@ namespace Microsoft.Its.Domain.Sql
                     bypassInitialization = true;
 
                     // create the initial schema
-                    var sql = ((IObjectContextAdapter) context)
+                    var sql = ((IObjectContextAdapter)context)
                         .ObjectContext
                         .CreateDatabaseScript();
 
@@ -104,6 +107,20 @@ namespace Microsoft.Its.Domain.Sql
             {
                 bypassInitialization = false;
             }
+        }
+
+        private bool CurrentUserHasWritePermissions(TContext context)
+        {
+            const string HasPermsSql = "SELECT TOP(1) " +
+                                        "HAS_PERMS_BY_NAME(" +
+                                         "QUOTENAME(DB_NAME()) + '.' + " +
+                                         "QUOTENAME(OBJECT_SCHEMA_NAME(object_id)) + '.' + " +
+                                         "QUOTENAME(name), " +
+                                         "N'OBJECT', " +
+                                         "N'INSERT') " +
+                                       "FROM sys.tables;";
+            var result = context.Database.SqlQuery<int?>(HasPermsSql).Single();
+            return (result ?? 0) == 1;
         }
     }
 }
