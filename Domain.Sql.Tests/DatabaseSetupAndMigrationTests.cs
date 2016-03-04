@@ -14,29 +14,26 @@ using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using System.Data.SqlClient;
+using Sample.Domain.Projections;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
     public class DatabaseSetupAndMigrationTests
     {
-        private const string EventStoreConnectionString =
-            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestEventStore";
         private const string CommandSchedulerConnectionString =
             @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestCommandScheduler";
-        private const string ReadModelConnectionString =
-            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestReadModel";
-
+        
         private Version version = new Version(10, 0, 0);
 
         [TestFixtureSetUp]
         public void Init()
         {
-            EventStoreDbContext.NameOrConnectionString = EventStoreConnectionString;
-            Database.Delete(EventStoreConnectionString);
+            EventStoreDbContext.NameOrConnectionString = MigrationsTestEventStore.ConnectionString;
+            Database.Delete(MigrationsTestEventStore.ConnectionString);
             Database.Delete(CommandSchedulerConnectionString);
-            Database.Delete(ReadModelConnectionString);
-            Database.Delete(MigrationsTestDbContext.ConnectionString);
+            Database.Delete(MigrationsTestReadModels.ConnectionString);
+            Database.Delete(MigrationsTestEventStore.ConnectionString);
             InitializeEventStore();
             InitializeCommandScheduler();
         }
@@ -111,13 +108,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void When_a_migration_throws_then_the_change_is_rolled_back()
         {
-            InitializeDatabase<MigrationsTestDbContext>();
+            InitializeDatabase<MigrationsTestEventStore>();
 
             var columnName = Any.CamelCaseName(3);
 
             try
             {
-                InitializeDatabase<MigrationsTestDbContext>(
+                InitializeDatabase<MigrationsTestEventStore>(
                     new AnonymousMigrator(c =>
                     {
                         c.Execute(string.Format(@"alter table [eventstore].[events] add {0} nvarchar(50) null", columnName));
@@ -128,9 +125,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
             }
 
-            GetAppliedVersions<MigrationsTestDbContext>().Should().NotContain(s => s == version.ToString());
+            GetAppliedVersions<MigrationsTestEventStore>().Should().NotContain(s => s == version.ToString());
 
-            using (var context = new MigrationsTestDbContext())
+            using (var context = new MigrationsTestEventStore())
             {
                 var result = context.QueryDynamic(
                     @"SELECT * FROM sys.columns WHERE name='@columnName'",
@@ -145,8 +142,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var callCount = 0;
             var migrator = new AnonymousMigrator(c => { callCount++; }, version);
 
-            InitializeDatabase<MigrationsTestDbContext>(migrator);
-            InitializeDatabase<MigrationsTestDbContext>(migrator);
+            InitializeDatabase<MigrationsTestEventStore>(migrator);
+            InitializeDatabase<MigrationsTestEventStore>(migrator);
 
             callCount.Should().Be(1);
         }
@@ -161,7 +158,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var second = new AnonymousMigrator(c => { calls.Add("second"); },
                                                new Version(version.Major, version.Minor, version.Build, 2));
 
-            InitializeDatabase<MigrationsTestDbContext>(second, first);
+            InitializeDatabase<MigrationsTestEventStore>(second, first);
 
             calls.Should().ContainInOrder(new[]
             {
@@ -173,12 +170,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task Database_creations_in_a_race_do_not_throw()
         {
-            var task1 = Task.Run(() => InitializeDatabase<MigrationsTestDbContext>());
-            var task2 = Task.Run(() => InitializeDatabase<MigrationsTestDbContext>());
+            var task1 = Task.Run(() => InitializeDatabase<MigrationsTestEventStore>());
+            var task2 = Task.Run(() => InitializeDatabase<MigrationsTestEventStore>());
 
             await Task.WhenAll(task1, task2);
 
-            using (var context = new MigrationsTestDbContext())
+            using (var context = new MigrationsTestEventStore())
             {
                 context.Database.Exists().Should().BeTrue();
             }
@@ -187,7 +184,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task Migrations_in_a_race_do_not_throw()
         {
-            InitializeDatabase<MigrationsTestDbContext>();
+            InitializeDatabase<MigrationsTestEventStore>();
 
             var columnName = Any.CamelCaseName(3);
             var barrier = new Barrier(2);
@@ -198,12 +195,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 barrier.SignalAndWait(10000);
             }, version);
 
-            var task1 = Task.Run(() => InitializeDatabase<MigrationsTestDbContext>(migrator));
-            var task2 = Task.Run(() => InitializeDatabase<MigrationsTestDbContext>(migrator));
+            var task1 = Task.Run(() => InitializeDatabase<MigrationsTestEventStore>(migrator));
+            var task2 = Task.Run(() => InitializeDatabase<MigrationsTestEventStore>(migrator));
 
             await Task.WhenAll(task1, task2);
 
-            using (var context = new MigrationsTestDbContext())
+            using (var context = new MigrationsTestEventStore())
             {
                 var result = context.QueryDynamic(
                     @"SELECT * FROM sys.columns WHERE name='@columnName'",
@@ -224,10 +221,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 new Version(version.Major, version.Minor, version.Build),
                 "Scope2");
 
-            InitializeDatabase<MigrationsTestDbContext>(higherVersion);
-            InitializeDatabase<MigrationsTestDbContext>(lowerVersion);
+            InitializeDatabase<MigrationsTestEventStore>(higherVersion);
+            InitializeDatabase<MigrationsTestEventStore>(lowerVersion);
 
-            var appliedMigrations = GetAppliedVersions<MigrationsTestDbContext>();
+            var appliedMigrations = GetAppliedVersions<MigrationsTestEventStore>();
 
             appliedMigrations.Should().Contain(m => m == version + ".2");
             appliedMigrations.Should().Contain(m => m == version.ToString());
@@ -247,10 +244,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 "Test"
             );
 
-            InitializeDatabase<MigrationsTestDbContext>(higherVersion);
-            InitializeDatabase<MigrationsTestDbContext>(lowerVersion);
+            InitializeDatabase<MigrationsTestEventStore>(higherVersion);
+            InitializeDatabase<MigrationsTestEventStore>(lowerVersion);
 
-            var appliedMigrations = GetAppliedVersions<MigrationsTestDbContext>();
+            var appliedMigrations = GetAppliedVersions<MigrationsTestEventStore>();
 
             appliedMigrations.Should().Contain(m => m == version + ".2");
             appliedMigrations.Should().NotContain(m => m == version.ToString());
@@ -264,9 +261,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 MigrationWasApplied = false
             }, version);
 
-            InitializeDatabase<MigrationsTestDbContext>(migrator);
+            InitializeDatabase<MigrationsTestEventStore>(migrator);
 
-            GetAppliedVersions<MigrationsTestDbContext>()
+            GetAppliedVersions<MigrationsTestEventStore>()
                 .Should().NotContain(v => v == version.ToString());
         }
 
@@ -310,6 +307,32 @@ namespace Microsoft.Its.Domain.Sql.Tests
             migrated.Should().BeFalse();
         }
 
+        [Test]
+        public async Task ReadModelDbContext_drops_the_database_and_recreates_it_when_the_schema_has_changed()
+        {
+            using (var db = new MigrationsTestReadModels(
+                typeof (OrderReportingEntityModelConfiguration)))
+            {
+                new ReadModelDatabaseInitializer<MigrationsTestReadModels>().InitializeDatabase(db);
+
+                db.Set<OrderTally>().Add(new OrderTally());
+
+                db.SaveChanges();
+            }
+
+            Database.Delete(MigrationsTestReadModels.ConnectionString);
+
+            using (var db = new MigrationsTestReadModels(
+                typeof (OrderReportingEntityModelConfiguration),
+                typeof (ProductInventoryEntityModelConfiguration)))
+            {
+                new ReadModelDatabaseInitializer<MigrationsTestReadModels>().InitializeDatabase(db);
+
+                db.Set<OrderTally>().Count().Should().Be(0);
+                db.Set<ProductInventory>().Count().Should().Be(0);
+            }
+        }
+
         private static IEnumerable<string> GetAppliedVersions<TContext>()
             where TContext : DbContext, new()
         {
@@ -345,13 +368,44 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
     }
 
-    public class MigrationsTestDbContext : EventStoreDbContext
+    public class MigrationsTestEventStore : EventStoreDbContext
     {
         public const string ConnectionString =
-            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTest";
+            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestEventStore";
 
-        public MigrationsTestDbContext() : base(ConnectionString)
+        public MigrationsTestEventStore() : base(ConnectionString)
         {
+        }
+    }
+
+    public class MigrationsTestReadModels : ReadModelDbContext
+    {
+        private readonly IEnumerable<Type> entityModelConfigurationTypes;
+
+        public const string ConnectionString =
+            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestReadModels";
+
+        public MigrationsTestReadModels() : base(ConnectionString)
+        {
+        }
+
+        public MigrationsTestReadModels(params Type[] entityModelConfigurationTypes) : base(ConnectionString)
+        {
+            this.entityModelConfigurationTypes = entityModelConfigurationTypes;
+        }
+
+        protected override IEnumerable<Type> GetEntityModelConfigurationTypes()
+        {
+            return EntityModelConfigurationTypes;
+        }
+
+        public IEnumerable<Type> EntityModelConfigurationTypes
+        {
+            get
+            {
+                return entityModelConfigurationTypes;
+            }
+           
         }
     }
 
