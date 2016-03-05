@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
@@ -299,7 +300,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var db = new EventStoreDbContext(builder.ConnectionString))
             {
-                IDbMigrator[] migrations = new[] { new AnonymousMigrator(c => migrated = true, new Version(1, 0), Any.CamelCaseName()) };
+                IDbMigrator[] migrations = { new AnonymousMigrator(c => migrated = true, new Version(1, 0), Any.CamelCaseName()) };
                 var initializer = new EventStoreDatabaseInitializer<EventStoreDbContext>(migrations);
                 initializer.InitializeDatabase(db);
             }
@@ -308,21 +309,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task ReadModelDbContext_drops_the_database_and_recreates_it_when_the_schema_has_changed()
+        public void ReadModelDbContext_drops_the_database_and_recreates_it_when_the_schema_has_changed()
         {
             using (var db = new MigrationsTestReadModels(
                 typeof (OrderReportingEntityModelConfiguration)))
             {
                 new ReadModelDatabaseInitializer<MigrationsTestReadModels>().InitializeDatabase(db);
 
-                db.Set<OrderTally>().Add(new OrderTally());
+                db.Set<OrderTally>().Add(new OrderTally
+                {
+                    Count = 1,
+                    Status = Any.Word()
+                });
 
                 db.SaveChanges();
+
+                db.Set<OrderTally>().Count().Should().Be(1);
             }
 
-            Database.Delete(MigrationsTestReadModels.ConnectionString);
-
-            using (var db = new MigrationsTestReadModels(
+            using (var db = new MigrationsTestReadModels2(
                 typeof (OrderReportingEntityModelConfiguration),
                 typeof (ProductInventoryEntityModelConfiguration)))
             {
@@ -406,6 +411,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 return entityModelConfigurationTypes;
             }
            
+        }
+    }
+
+    public class MigrationsTestReadModels2 : MigrationsTestReadModels
+    {
+        public MigrationsTestReadModels2()
+        {
+        }
+
+        public MigrationsTestReadModels2(params Type[] entityModelConfigurationTypes) : base(entityModelConfigurationTypes)
+        {
         }
     }
 

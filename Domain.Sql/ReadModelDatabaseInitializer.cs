@@ -2,8 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Data.Entity;
-using log = Its.Log.Lite.Log;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -11,44 +9,15 @@ namespace Microsoft.Its.Domain.Sql
     /// Initializes a read model database with a single catchup run if the database does not exist or its schema has changed.
     /// </summary>
     /// <typeparam name="TDbContext">The type of the db context.</typeparam>
-    public class ReadModelDatabaseInitializer<TDbContext> : DropCreateDatabaseIfModelChanges<TDbContext>
+    public class ReadModelDatabaseInitializer<TDbContext> : CreateAndMigrate<TDbContext>
         where TDbContext : ReadModelDbContext, new()
     {
-        public void InitializeDatabase(
-            TDbContext context, 
-            int dbSizeInGB, 
-            string edition, 
-            string serviceObjective, 
-            DbReadonlyUser readonlyUser = null)
+        protected override bool DropDatabaseIfModelIsIncompatible
         {
-            if (context == null)
+            get
             {
-                throw new ArgumentNullException("context");
+                return true;
             }
-
-            if (context.Database.Exists())
-            {
-                if (context.Database.CompatibleWithModel(true))
-                {
-                    return;
-                }
-                context.Database.Delete();
-            }
-
-            if (context.IsAzureDatabase())
-            {
-                context.CreateAzureDatabase(dbSizeInGB, edition, serviceObjective);
-                if (readonlyUser != null)
-                {
-                    context.CreateReadonlyUser(readonlyUser);
-                }
-            }
-            else
-            {
-                context.Database.Create();
-            }
-
-            context.SaveChanges();
         }
     }
 }

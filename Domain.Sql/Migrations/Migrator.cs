@@ -56,6 +56,22 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             return migrators;
         }
 
+        internal static bool CurrentUserHasWritePermissions<TContext>(this TContext context)
+            where TContext : DbContext
+        {
+            const string HasPermsSql = 
+@"SELECT TOP(1) 
+HAS_PERMS_BY_NAME(
+QUOTENAME(DB_NAME()) + '.' + 
+QUOTENAME(OBJECT_SCHEMA_NAME(object_id)) + '.' + 
+QUOTENAME(name), 
+N'OBJECT', 
+N'INSERT') 
+FROM sys.tables;";
+            var result = context.Database.SqlQuery<int?>(HasPermsSql).Single();
+            return (result ?? 0) == 1;
+        }
+
         /// <summary>
         /// Ensures that all of the provided migrations have been applied to the database.
         /// </summary>
@@ -74,6 +90,11 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             }
 
             if (!migrators.Any())
+            {
+                return;
+            }
+
+            if (!context.CurrentUserHasWritePermissions())
             {
                 return;
             }

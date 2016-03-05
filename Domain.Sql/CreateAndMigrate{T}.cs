@@ -48,6 +48,13 @@ namespace Microsoft.Its.Domain.Sql
                 return;
             }
 
+            if (DropDatabaseIfModelIsIncompatible &&
+                context.Database.Exists() &&
+                context.Database.CompatibleWithModel(false))
+            {
+                context.Database.Delete();
+            }
+
             if (!context.Database.Exists())
             {
                 var created = CreateDatabaseIfNotExists(context);
@@ -59,9 +66,14 @@ namespace Microsoft.Its.Domain.Sql
                 }
             }
 
-            if (CurrentUserHasWritePermissions(context))
+            context.EnsureDatabaseIsUpToDate(migrators);
+        }
+
+        protected virtual bool DropDatabaseIfModelIsIncompatible
+        {
+            get
             {
-                context.EnsureDatabaseIsUpToDate(migrators);
+                return false;
             }
         }
 
@@ -107,20 +119,6 @@ namespace Microsoft.Its.Domain.Sql
             {
                 bypassInitialization = false;
             }
-        }
-
-        private bool CurrentUserHasWritePermissions(TContext context)
-        {
-            const string HasPermsSql = "SELECT TOP(1) " +
-                                        "HAS_PERMS_BY_NAME(" +
-                                         "QUOTENAME(DB_NAME()) + '.' + " +
-                                         "QUOTENAME(OBJECT_SCHEMA_NAME(object_id)) + '.' + " +
-                                         "QUOTENAME(name), " +
-                                         "N'OBJECT', " +
-                                         "N'INSERT') " +
-                                       "FROM sys.tables;";
-            var result = context.Database.SqlQuery<int?>(HasPermsSql).Single();
-            return (result ?? 0) == 1;
         }
     }
 }
