@@ -9,4 +9,4 @@ using System.Reflection;
 [assembly: CLSCompliant(true)]
 
 // Edit these for each release + update dependencies in .nuspec files
-[assembly: AssemblyInformationalVersion("0.13.13-beta")]
+[assembly: AssemblyInformationalVersion("0.13.14-beta")]
