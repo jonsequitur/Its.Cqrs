@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using System.Transactions;
 using Microsoft.Its.Recipes;
@@ -100,12 +101,18 @@ FROM sys.tables;";
             }
 
             using (var transaction = new TransactionScope())
+            using (var appLock = new AppLock(context, "PocketMigrator", false))
             {
+                if (!appLock.IsAcquired)
+                {
+                    return;
+                }
+
                 try
                 {
                     // don't dispose this connection, since it's managed by the DbContext
                     var connection = context.OpenConnection();
-                    
+
                     var appliedVersions = connection.GetLatestAppliedMigrationVersions()
                                                     .ToDictionary(v => v.MigrationScope,
                                                                   v => v);

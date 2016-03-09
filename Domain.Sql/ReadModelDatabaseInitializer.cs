@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using Microsoft.Its.Domain.Sql.Migrations;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -12,12 +13,34 @@ namespace Microsoft.Its.Domain.Sql
     public class ReadModelDatabaseInitializer<TDbContext> : CreateAndMigrate<TDbContext>
         where TDbContext : ReadModelDbContext, new()
     {
-        protected override bool DropDatabaseIfModelIsIncompatible
+        private readonly SetDatabaseVersion<TDbContext> version;
+
+        public ReadModelDatabaseInitializer() : this(new SetDatabaseVersion<TDbContext>())
         {
-            get
+        }
+
+        public ReadModelDatabaseInitializer(Version version) : this(new SetDatabaseVersion<TDbContext>(version))
+        {
+        }
+
+        internal ReadModelDatabaseInitializer(SetDatabaseVersion<TDbContext> version) :
+            base(new IDbMigrator[] { version })
+        {
+            if (version == null)
             {
-                return true;
+                throw new ArgumentNullException("version");
             }
+            this.version = version;
+        }
+
+        /// <summary>
+        /// Determines whether the database should be rebuilt.
+        /// </summary>
+        protected override bool ShouldRebuildDatabase(
+            TDbContext context,
+            Version latestVersion)
+        {
+            return latestVersion < version.MigrationVersion;
         }
     }
 }

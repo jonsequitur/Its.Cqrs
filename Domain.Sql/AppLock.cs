@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
@@ -22,8 +23,9 @@ namespace Microsoft.Its.Domain.Sql
 #endif
         class AppLock : IDisposable
     {
-        private readonly EventStoreDbContext db;
+        private readonly DbContext db;
         private readonly string lockResourceName;
+        private readonly bool disposeDbContext;
         private readonly int? resultCode;
         private readonly DbConnection connection;
         private readonly IDisposable disposables;
@@ -34,14 +36,19 @@ namespace Microsoft.Its.Domain.Sql
 #endif
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AppLock"/> class.
+        /// Initializes a new instance of the <see cref="AppLock" /> class.
         /// </summary>
         /// <param name="db">The database.</param>
         /// <param name="lockResourceName">The lock resource.</param>
-        public AppLock(EventStoreDbContext db, string lockResourceName)
+        /// <param name="disposeDbContext">if set to <c>true</c> dispose the database context when the AppLock is disposed.</param>
+        public AppLock(
+            DbContext db,
+            string lockResourceName,
+            bool disposeDbContext = true)
         {
             this.db = db;
             this.lockResourceName = lockResourceName;
+            this.disposeDbContext = disposeDbContext;
             connection = (DbConnection) db.OpenConnection();
 
             const string cmd = @"
@@ -170,10 +177,10 @@ SELECT @result";
         {
 #if DEBUG
             Debug.WriteLine("Disposing {0} AppLock after {1}ms for '{2}' (#{3})",
-                                          IsAcquired ? "acquired" : "unacquired",
-                                          timeSpentInAppLockStopwatch.Elapsed.TotalMilliseconds,
-                                          lockResourceName,
-                                          GetHashCode());
+                            IsAcquired ? "acquired" : "unacquired",
+                            timeSpentInAppLockStopwatch.Elapsed.TotalMilliseconds,
+                            lockResourceName,
+                            GetHashCode());
 
             AppLock @lock;
             Active.TryRemove(this, out @lock);
@@ -181,8 +188,11 @@ SELECT @result";
 
             TryReleaseSqlAppLock();
 
-            connection.Dispose();
-            db.Dispose();
+            if (disposeDbContext)
+            {
+                connection.Dispose();
+                db.Dispose();
+            }
         }
 
         public void Dispose()

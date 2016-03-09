@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
@@ -15,6 +14,7 @@ using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using Sample.Domain.Projections;
 
 namespace Microsoft.Its.Domain.Sql.Tests
@@ -192,6 +192,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var migrator = new AnonymousMigrator(c =>
             {
+                Debug.WriteLine("[MIGRATOR]");
                 c.Execute(string.Format(@"alter table [eventstore].[events] add {0} nvarchar(50) null", columnName));
                 barrier.SignalAndWait(10000);
             }, version);
@@ -202,7 +203,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await Task.WhenAll(task1, task2);
 
             using (var context = new MigrationsTestEventStore())
-            {
+            { 
                 var result = context.QueryDynamic(
                     @"SELECT * FROM sys.columns WHERE name='@columnName'",
                     new Dictionary<string, object> { { "columnName", columnName } }).Single();
@@ -311,10 +312,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void ReadModelDbContext_drops_the_database_and_recreates_it_when_the_schema_has_changed()
         {
-            using (var db = new MigrationsTestReadModels(
-                typeof (OrderReportingEntityModelConfiguration)))
+            // arrange
+            using (var db = new MigrationsTestReadModels())
             {
-                new ReadModelDatabaseInitializer<MigrationsTestReadModels>().InitializeDatabase(db);
+                new ReadModelDatabaseInitializer<MigrationsTestReadModels>(new Version("1.0")).InitializeDatabase(db);
 
                 db.Set<OrderTally>().Add(new OrderTally
                 {
@@ -327,14 +328,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 db.Set<OrderTally>().Count().Should().Be(1);
             }
 
-            using (var db = new MigrationsTestReadModels2(
-                typeof (OrderReportingEntityModelConfiguration),
-                typeof (ProductInventoryEntityModelConfiguration)))
+            using (var db = new MigrationsTestReadModels())
             {
-                new ReadModelDatabaseInitializer<MigrationsTestReadModels>().InitializeDatabase(db);
+                // act
+                new ReadModelDatabaseInitializer<MigrationsTestReadModels>(new Version("1.1")).InitializeDatabase(db);
 
+                // assert
                 db.Set<OrderTally>().Count().Should().Be(0);
-                db.Set<ProductInventory>().Count().Should().Be(0);
             }
         }
 
@@ -385,8 +385,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
     public class MigrationsTestReadModels : ReadModelDbContext
     {
-        private readonly IEnumerable<Type> entityModelConfigurationTypes;
-
         public const string ConnectionString =
             @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestReadModels";
 
@@ -394,35 +392,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
         }
 
-        public MigrationsTestReadModels(params Type[] entityModelConfigurationTypes) : base(ConnectionString)
-        {
-            this.entityModelConfigurationTypes = entityModelConfigurationTypes;
-        }
-
-        protected override IEnumerable<Type> GetEntityModelConfigurationTypes()
-        {
-            return EntityModelConfigurationTypes;
-        }
-
-        public IEnumerable<Type> EntityModelConfigurationTypes
-        {
-            get
-            {
-                return entityModelConfigurationTypes;
-            }
-           
-        }
-    }
-
-    public class MigrationsTestReadModels2 : MigrationsTestReadModels
-    {
-        public MigrationsTestReadModels2()
-        {
-        }
-
-        public MigrationsTestReadModels2(params Type[] entityModelConfigurationTypes) : base(entityModelConfigurationTypes)
-        {
-        }
+        public DbSet<ProductInventory> ProductInventories { get; set; }
     }
 
     public class AnonymousMigrator : IDbMigrator
