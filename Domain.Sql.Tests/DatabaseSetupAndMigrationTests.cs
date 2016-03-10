@@ -310,7 +310,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelDbContext_drops_the_database_and_recreates_it_when_the_schema_has_changed()
+        public void ReadModelDbContext_drops_the_database_and_recreates_it_when_the_version_has_changed()
         {
             // arrange
             using (var db = new MigrationsTestReadModels())
