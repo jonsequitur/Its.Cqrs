@@ -173,28 +173,32 @@ namespace Microsoft.Its.Domain.Serialization
         }
 
         private static Func<StoredEvent, IEvent> GetDeserializer(
-            string aggregateName, 
-            string eventName, 
+            string aggregateName,
+            string eventName,
             JsonSerializerSettings serializerSettings)
         {
-            var aggregateType = AggregateType.KnownTypes
-                                             .SingleOrDefault(t => t.Name == aggregateName);
+            var aggregateType = FindAggregateType(aggregateName);
 
-            if (aggregateType == null)
+            // some events contain specialized names, e.g. CommandScheduled:DoSomething. the latter portion is not interesting from a serialization standpoint, so we strip it off.
+            var eventNameComponents = eventName.Split(':');
+
+            var eventType = FindEventType(
+                aggregateName, 
+                aggregateType, 
+                eventNameComponents.First());
+
+            if (aggregateType == null &&
+                eventType == null)
             {
                 return DeserializeAsDynamicEvent(serializerSettings);
             }
 
-            // some events contain specialized names, e.g. CommandScheduled:DoSomething. the latter portion is not interesting from a serialization standpoint, so we strip it off.
-            var eventNameComponents = eventName.Split(':');
-            var actualEventName = eventNameComponents.First();
-
-            var eventType = FindEventT(aggregateType, actualEventName);
-
             if (eventType == null)
             {
                 // even if the domain no longer cares about some old event type, anonymous events are returned as placeholders in the EventSequence
-                return DeserializeAsAnonymousEvent(serializerSettings, aggregateType);
+                return DeserializeAsAnonymousEvent(
+                    serializerSettings,
+                    aggregateType);
             }
 
             if (typeof (IScheduledCommand).IsAssignableFrom(eventType))
@@ -211,27 +215,87 @@ namespace Microsoft.Its.Domain.Serialization
                 }
             }
 
-            return DeserializeAsEvent(serializerSettings, eventType);
+            return DeserializeAsEventType(serializerSettings, eventType);
         }
 
-        private static Func<StoredEvent, IEvent> DeserializeAsEvent(
-            JsonSerializerSettings serializerSettings, 
+        private static Type FindAggregateType(string aggregateName)
+        {
+            var aggregateType = AggregateType.KnownTypes
+                                             .SingleOrDefault(
+                                                 t => t.Name == aggregateName);
+            return aggregateType;
+        }
+
+        private static Type FindEventType(
+            string aggregateName, 
+            Type aggregateType, 
+            string actualEventName)
+        {
+            Type eventType = null;
+
+            if (aggregateType != null)
+            {
+                eventType = FindEventTType(aggregateType, actualEventName);
+            }
+
+            if (eventType == null)
+            {
+                eventType = FindEventType(aggregateName, actualEventName);
+            }
+           
+            return eventType;
+        }
+
+        private static Type FindEventType(
+            string aggregateName,
+            string eventName)
+        {
+            var candidateTypes = Event.KnownTypes()
+                                      .Where(t => t.Name == eventName &&
+                                                  t.IsNested &&
+                                                  t.DeclaringType.Name == aggregateName)
+                                      .ToArray();
+
+            if (candidateTypes.Length == 1)
+            {
+                return candidateTypes[0];
+            }
+
+            return null;
+        }
+
+        private static Func<StoredEvent, IEvent> DeserializeAsEventType(
+            JsonSerializerSettings serializerSettings,
             Type eventType)
         {
+            if (typeof (Event).IsAssignableFrom(eventType))
+            {
+                return e =>
+                {
+                    var deserialized = (Event) JsonConvert.DeserializeObject(
+                        e.Body,
+                        eventType,
+                        serializerSettings);
+
+                    deserialized.AggregateId = e.AggregateId;
+                    deserialized.SequenceNumber = e.SequenceNumber;
+                    deserialized.Timestamp = e.Timestamp;
+                    deserialized.ETag = e.ETag;
+
+                    return deserialized;
+                };
+            }
+
             return e =>
             {
-                var deserializedEvent = (IEvent) JsonConvert.DeserializeObject(e.Body, eventType, serializerSettings);
+                var deserialized = (IEvent) JsonConvert.DeserializeObject(
+                    e.Body, 
+                    eventType, 
+                    serializerSettings);
 
-                var dEvent = deserializedEvent as Event;
-                if (dEvent != null)
-                {
-                    dEvent.AggregateId = e.AggregateId;
-                    dEvent.SequenceNumber = e.SequenceNumber;
-                    dEvent.Timestamp = e.Timestamp;
-                    dEvent.ETag = e.ETag;
-                }
+                JsonConvert.PopulateObject(e.ToJson(), deserialized);
 
-                return deserializedEvent;
+                return deserialized;
             };
         }
 
@@ -255,7 +319,9 @@ namespace Microsoft.Its.Domain.Serialization
             };
         }
 
-        private static Func<StoredEvent, IEvent> DeserializeAsAnonymousEvent(JsonSerializerSettings serializerSettings, Type aggregateType)
+        private static Func<StoredEvent, IEvent> DeserializeAsAnonymousEvent(
+            JsonSerializerSettings serializerSettings, 
+            Type aggregateType)
         {
             return e =>
                 {
@@ -270,7 +336,9 @@ namespace Microsoft.Its.Domain.Serialization
                 };
         }
 
-        private static Type FindEventT(Type aggregateType, string actualEventName)
+        private static Type FindEventTType(
+            Type aggregateType, 
+            string actualEventName)
         {
             IEnumerable<Type> eventTypes = typeof (Event<>).MakeGenericType(aggregateType).Member().KnownTypes;
 
@@ -284,6 +352,7 @@ namespace Microsoft.Its.Domain.Serialization
                                                         .Else(() =>
                                                               // strip off generic specifications from the type name 
                                                               t.Name.Split('`').First() == actualEventName));
+
             return eventType;
         }
 

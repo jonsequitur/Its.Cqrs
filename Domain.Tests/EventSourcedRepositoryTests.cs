@@ -629,7 +629,6 @@ namespace Microsoft.Its.Domain.Tests
             order.CustomerName.Should().Be("Waylon Jennings");
         }
 
-
         [Category("Performance")]
         [Ignore]
         public async Task When_sourcing_an_aggregate_with_a_large_number_of_source_events_then_the_operation_completes_quickly()
