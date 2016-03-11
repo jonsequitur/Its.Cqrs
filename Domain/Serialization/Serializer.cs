@@ -185,21 +185,11 @@ namespace Microsoft.Its.Domain.Serialization
                 return DeserializeAsDynamicEvent(serializerSettings);
             }
 
-            IEnumerable<Type> eventTypes = typeof (Event<>).MakeGenericType(aggregateType).Member().KnownTypes;
-
             // some events contain specialized names, e.g. CommandScheduled:DoSomething. the latter portion is not interesting from a serialization standpoint, so we strip it off.
             var eventNameComponents = eventName.Split(':');
             var actualEventName = eventNameComponents.First();
-            var eventType = eventTypes.SingleOrDefault(t =>
-                                                       t.GetCustomAttributes(false)
-                                                        .OfType<EventNameAttribute>()
-                                                        .FirstOrDefault()
-                                                        .IfNotNull()
-                                                        .Then(
-                                                            att => att.EventName == actualEventName)
-                                                        .Else(() =>
-                                                              // strip off generic specifications from the type name 
-                                                              t.Name.Split('`').First() == actualEventName));
+
+            var eventType = FindEventT(aggregateType, actualEventName);
 
             if (eventType == null)
             {
@@ -207,33 +197,21 @@ namespace Microsoft.Its.Domain.Serialization
                 return DeserializeAsAnonymousEvent(serializerSettings, aggregateType);
             }
 
-            if (!typeof (IScheduledCommand).IsAssignableFrom(eventType))
+            if (typeof (IScheduledCommand).IsAssignableFrom(eventType))
             {
-                return DeserializeAsEvent(serializerSettings, eventType);
-            }
+                var commandType = Command.FindType(
+                    aggregateType,
+                    eventNameComponents.Last());
 
-            var commandType = Command.FindType(aggregateType, eventNameComponents.Last());
-
-            if (commandType == null)
-            {
-                return DeserializeAsAnonymousEvent(serializerSettings, aggregateType);
-            }
-
-            return e =>
-            {
-                var deserializedEvent = (IEvent) JsonConvert.DeserializeObject(e.Body, eventType, serializerSettings);
-
-                var dEvent = deserializedEvent as Event;
-                if (dEvent != null)
+                if (commandType == null)
                 {
-                    dEvent.AggregateId = e.AggregateId;
-                    dEvent.SequenceNumber = e.SequenceNumber;
-                    dEvent.Timestamp = e.Timestamp;
-                    dEvent.ETag = e.ETag;
+                    return DeserializeAsAnonymousEvent(
+                        serializerSettings,
+                        aggregateType);
                 }
+            }
 
-                return deserializedEvent;
-            };
+            return DeserializeAsEvent(serializerSettings, eventType);
         }
 
         private static Func<StoredEvent, IEvent> DeserializeAsEvent(
@@ -290,6 +268,23 @@ namespace Microsoft.Its.Domain.Serialization
 
                     return anonymousEvent;
                 };
+        }
+
+        private static Type FindEventT(Type aggregateType, string actualEventName)
+        {
+            IEnumerable<Type> eventTypes = typeof (Event<>).MakeGenericType(aggregateType).Member().KnownTypes;
+
+            var eventType = eventTypes.SingleOrDefault(t =>
+                                                       t.GetCustomAttributes(false)
+                                                        .OfType<EventNameAttribute>()
+                                                        .FirstOrDefault()
+                                                        .IfNotNull()
+                                                        .Then(
+                                                            att => att.EventName == actualEventName)
+                                                        .Else(() =>
+                                                              // strip off generic specifications from the type name 
+                                                              t.Name.Split('`').First() == actualEventName));
+            return eventType;
         }
 
         public static IEnumerable<IEvent> FromJsonToEvents(string json)
