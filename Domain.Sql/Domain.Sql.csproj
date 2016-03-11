@@ -143,7 +143,6 @@
     <Compile Include="ReservationServiceDbContext.cs" />
     <Compile Include="ExceptionExtensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="IDatabaseConfiguration.cs" />
     <Compile Include="IEntityModelProjector.cs" />
     <Compile Include="ProjectorExtensions.cs" />
     <Compile Include="QueryableExtensions.cs" />
@@ -167,6 +166,7 @@
     <Compile Include="CommandSchedulerResolver.cs" />
     <Compile Include="Migrations\ScriptBasedDbMigrator.cs" />
     <Compile Include="Sensors.cs" />
+    <Compile Include="SetDatabaseVersion{T}.cs" />
     <Compile Include="SqlReservationService.cs" />
     <Compile Include="StorableEvent.cs" />
     <Compile Include="SqlEventSourcedRepository{T}.cs" />

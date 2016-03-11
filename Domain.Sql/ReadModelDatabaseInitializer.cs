@@ -2,8 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Data.Entity;
-using log = Its.Log.Lite.Log;
+using Microsoft.Its.Domain.Sql.Migrations;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -11,70 +10,47 @@ namespace Microsoft.Its.Domain.Sql
     /// Initializes a read model database with a single catchup run if the database does not exist or its schema has changed.
     /// </summary>
     /// <typeparam name="TDbContext">The type of the db context.</typeparam>
-    public class ReadModelDatabaseInitializer<TDbContext> : DropCreateDatabaseIfModelChanges<TDbContext>
+    public class ReadModelDatabaseInitializer<TDbContext> : CreateAndMigrate<TDbContext>
         where TDbContext : ReadModelDbContext, new()
     {
-        public void InitializeDatabase(
-            TDbContext context, 
-            int dbSizeInGB, 
-            string edition, 
-            string serviceObjective, 
-            DbReadonlyUser readonlyUser = null)
+        private readonly SetDatabaseVersion<TDbContext> version;
+
+        public ReadModelDatabaseInitializer() : this(new SetDatabaseVersion<TDbContext>())
         {
-            if (context == null)
-            {
-                throw new ArgumentNullException("context");
-            }
+        }
 
-            if (context.Database.Exists())
-            {
-                if (context.Database.CompatibleWithModel(true))
-                {
-                    return;
-                }
-                context.Database.Delete();
-            }
+        public ReadModelDatabaseInitializer(Version version) : this(new SetDatabaseVersion<TDbContext>(version))
+        {
+        }
 
-            if (context.IsAzureDatabase())
+        internal ReadModelDatabaseInitializer(SetDatabaseVersion<TDbContext> version) :
+            base(new IDbMigrator[] { version })
+        {
+            if (version == null)
             {
-                context.CreateAzureDatabase(dbSizeInGB, edition, serviceObjective);
-                if (readonlyUser != null)
-                {
-                    context.CreateReadonlyUser(readonlyUser);
-                }
+                throw new ArgumentNullException("version");
             }
-            else
-            {
-                context.Database.Create();
-            }
-
-            context.SaveChanges();
+            this.version = version;
         }
 
         /// <summary>
-        /// A that should be overridden to actually add data to the context for seeding. 
-        ///                 The default implementation does nothing.
+        /// Determines whether the database should be rebuilt.
         /// </summary>
-        /// <param name="context">The context to seed.</param>
-        protected override void Seed(TDbContext context)
+        protected override bool ShouldRebuildDatabase(
+            TDbContext context,
+            Version latestVersion)
         {
-            try
-            {
-                var configurerTypes = Discover.ConcreteTypesDerivedFrom(typeof (IDatabaseConfiguration<TDbContext>));
+             if (latestVersion < version.MigrationVersion)
+             {
+                return true;
+             }
 
-                foreach (var type in configurerTypes)
-                {
-                    dynamic configurer = Activator.CreateInstance(type);
-                    configurer.ConfigureDatabase(context);
-                }
-            }
-            catch (Exception ex)
+            if (!context.Database.CompatibleWithModel(false))
             {
-                log.Write(() => ex);
-                throw;
+                return true;
             }
 
-            base.Seed(context);
+            return false;
         }
     }
 }

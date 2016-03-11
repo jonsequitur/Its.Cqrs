@@ -29,5 +29,15 @@ namespace Microsoft.Its.Domain.Sql
         public EventStoreDatabaseInitializer(params IDbMigrator[] migrators) : base(migrators)
         {
         }
+
+        /// <summary>
+        /// Determines whether the database should be rebuilt.
+        /// </summary>
+        protected override bool ShouldRebuildDatabase(
+            TContext context, 
+            Version latestVersion)
+        {
+            return false;
+        }
     }
 }

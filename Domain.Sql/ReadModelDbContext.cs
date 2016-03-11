@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 
 namespace Microsoft.Its.Domain.Sql
@@ -27,6 +28,10 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
         public ReadModelDbContext(string nameOrConnectionString) : base(nameOrConnectionString)
+        {
+        }
+
+        protected ReadModelDbContext(string nameOrConnectionString, DbCompiledModel model) : base(nameOrConnectionString, model)
         {
         }
 
@@ -59,12 +64,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             return Discover.ConcreteTypesDerivedFrom(typeof (IEntityModelConfiguration));
         }
-
-        protected internal virtual IEnumerable<Type> GetProjectorTypes()
-        {
-            return Discover.ProjectorTypes();
-        }
-
+   
         public static string NameOrConnectionString
         {
             get

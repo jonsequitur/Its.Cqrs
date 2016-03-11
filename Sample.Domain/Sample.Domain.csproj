@@ -154,7 +154,7 @@
     <Compile Include="Ordering\PaymentId.cs" />
     <Compile Include="PaymentMethod.cs" />
     <Compile Include="Projections\OrderTally.cs" />
-    <Compile Include="Projections\OrderReportingEntityModelConfiguration.cs" />
+    <Compile Include="Projections\OrderTallyEntityModelConfiguration.cs" />
     <Compile Include="Projections\ProductInventoryEntityModelConfiguration.cs" />
     <Compile Include="Projections\ProductInventory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

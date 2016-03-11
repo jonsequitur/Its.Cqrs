@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Data.Entity;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Sql;
@@ -23,6 +24,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             Clock.Reset();
             CommandSchedulerDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
+            Database.SetInitializer(new CommandSchedulerDatabaseInitializer());
         }
 
         [Test]

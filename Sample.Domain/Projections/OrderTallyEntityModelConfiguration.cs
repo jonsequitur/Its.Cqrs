@@ -7,7 +7,7 @@ using Microsoft.Its.Domain.Sql;
 
 namespace Sample.Domain.Projections
 {
-    public class OrderReportingEntityModelConfiguration :
+    public class OrderTallyEntityModelConfiguration :
         IEntityModelConfiguration
     {
         public void ConfigureModel(ConfigurationRegistrar configurationRegistrar)

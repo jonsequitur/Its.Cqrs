@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations.Infrastructure;
@@ -24,10 +26,17 @@ namespace Microsoft.Its.Domain.Sql
         private readonly IDbMigrator[] migrators;
         private static bool bypassInitialization;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CreateAndMigrate{TContext}"/> class.
+        /// </summary>
         public CreateAndMigrate() : this(new IDbMigrator[0])
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CreateAndMigrate{TContext}"/> class.
+        /// </summary>
+        /// <param name="migrators">The migrators.</param>
         public CreateAndMigrate(IDbMigrator[] migrators)
         {
             this.migrators = Migrator.CreateMigratorsFromEmbeddedResourcesFor<TContext>()
@@ -36,6 +45,10 @@ namespace Microsoft.Its.Domain.Sql
                                      .ToArray();
         }
 
+        /// <summary>
+        /// Executes the strategy to initialize the database for the given context.
+        /// </summary>
+        /// <param name="context">The context. </param>
         public void InitializeDatabase(TContext context)
         {
             if (context == null)
@@ -48,7 +61,24 @@ namespace Microsoft.Its.Domain.Sql
                 return;
             }
 
-            if (!context.Database.Exists())
+            var databaseExists = context.Database.Exists();
+
+            if (databaseExists)
+            {
+                var databaseVersion = GetDatabaseVersion(context);
+         
+                if (ShouldRebuildDatabase(context, databaseVersion))
+                {
+                    if (context.Database.Connection.State != ConnectionState.Closed)
+                    {
+                        context.Database.Connection.Close();
+                    }
+                    context.Database.Delete();
+                    databaseExists = false;
+                }
+            }
+
+            if (!databaseExists)
             {
                 var created = CreateDatabaseIfNotExists(context);
 
@@ -59,10 +89,29 @@ namespace Microsoft.Its.Domain.Sql
                 }
             }
 
-            if (CurrentUserHasWritePermissions(context))
-            {
-                context.EnsureDatabaseIsUpToDate(migrators);
-            }
+            context.EnsureDatabaseIsUpToDate(migrators);
+        }
+
+        /// <summary>
+        /// Determines whether the database should be rebuilt.
+        /// </summary>
+        protected virtual bool ShouldRebuildDatabase(
+            TContext context, 
+            Version latestVersion)
+        {
+            return false;
+        }
+
+        private static Version GetDatabaseVersion(TContext context)
+        {
+            var versionStamp = new SetDatabaseVersion<TContext>();
+
+            return context.OpenConnection()
+                          .GetLatestAppliedMigrationVersions()
+                          .SingleOrDefault(m => m.MigrationScope == versionStamp.MigrationScope)
+                          .IfNotNull()
+                          .Then(_ => _.MigrationVersion)
+                          .ElseDefault();
         }
 
         private bool CreateDatabaseIfNotExists(TContext context)
@@ -107,20 +156,6 @@ namespace Microsoft.Its.Domain.Sql
             {
                 bypassInitialization = false;
             }
-        }
-
-        private bool CurrentUserHasWritePermissions(TContext context)
-        {
-            const string HasPermsSql = "SELECT TOP(1) " +
-                                        "HAS_PERMS_BY_NAME(" +
-                                         "QUOTENAME(DB_NAME()) + '.' + " +
-                                         "QUOTENAME(OBJECT_SCHEMA_NAME(object_id)) + '.' + " +
-                                         "QUOTENAME(name), " +
-                                         "N'OBJECT', " +
-                                         "N'INSERT') " +
-                                       "FROM sys.tables;";
-            var result = context.Database.SqlQuery<int?>(HasPermsSql).Single();
-            return (result ?? 0) == 1;
         }
     }
 }

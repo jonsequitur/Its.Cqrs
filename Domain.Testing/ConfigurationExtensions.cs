@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
 
@@ -16,7 +15,7 @@ namespace Microsoft.Its.Domain.Testing
     public static class ConfigurationExtensions
     {
         /// <summary>
-        /// Triggers commands scheduled on the <see cref="SqlCommandScheduler" /> when a virtual clock is advanced.
+        /// Triggers commands scheduled on the command scheduler when a virtual clock is advanced.
         /// </summary>
         /// <param name="configuration">A domain configuration instance.</param>
         /// <returns>The modified domain configuration instance.</returns>

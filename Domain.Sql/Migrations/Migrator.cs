@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using System.Transactions;
 using Microsoft.Its.Recipes;
@@ -56,6 +57,22 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             return migrators;
         }
 
+        internal static bool CurrentUserHasWritePermissions<TContext>(this TContext context)
+            where TContext : DbContext
+        {
+            const string HasPermsSql = 
+@"SELECT TOP(1) 
+HAS_PERMS_BY_NAME(
+QUOTENAME(DB_NAME()) + '.' + 
+QUOTENAME(OBJECT_SCHEMA_NAME(object_id)) + '.' + 
+QUOTENAME(name), 
+N'OBJECT', 
+N'INSERT') 
+FROM sys.tables;";
+            var result = context.Database.SqlQuery<int?>(HasPermsSql).Single();
+            return (result ?? 0) == 1;
+        }
+
         /// <summary>
         /// Ensures that all of the provided migrations have been applied to the database.
         /// </summary>
@@ -78,13 +95,24 @@ namespace Microsoft.Its.Domain.Sql.Migrations
                 return;
             }
 
-            using (var transaction = new TransactionScope())
+            if (!context.CurrentUserHasWritePermissions())
             {
+                return;
+            }
+
+            using (var transaction = new TransactionScope())
+            using (var appLock = new AppLock(context, "PocketMigrator", false))
+            {
+                if (!appLock.IsAcquired)
+                {
+                    return;
+                }
+
                 try
                 {
                     // don't dispose this connection, since it's managed by the DbContext
                     var connection = context.OpenConnection();
-                    
+
                     var appliedVersions = connection.GetLatestAppliedMigrationVersions()
                                                     .ToDictionary(v => v.MigrationScope,
                                                                   v => v);
