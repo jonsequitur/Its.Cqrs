@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void A_json_string_containing_multiple_events_can_be_deserialized_using_F()
+        public void A_json_string_containing_multiple_events_can_be_deserialized_using_FromJsonToEvents()
         {
             var file = Settings.GetFile(f => f.Name == "Events.json");
 
