@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
@@ -310,12 +311,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void ReadModelDbContext_drops_the_database_and_recreates_it_when_the_version_has_changed()
+        public void ReadModelDbContext_drops_the_database_and_recreates_it_when_the_schema_has_changed()
         {
             // arrange
-            using (var db = new MigrationsTestReadModels())
+            Database.SetInitializer(new ReadModelDatabaseInitializer<MigrationsTestReadModels>());
+            
+            using (var db = new MigrationsTestReadModels(
+                typeof(OrderTallyEntityModelConfiguration)))
             {
-                new ReadModelDatabaseInitializer<MigrationsTestReadModels>(new Version("1.0")).InitializeDatabase(db);
+                db.Database.Initialize(true);
 
                 db.Set<OrderTally>().Add(new OrderTally
                 {
@@ -328,10 +332,48 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 db.Set<OrderTally>().Count().Should().Be(1);
             }
 
-            using (var db = new MigrationsTestReadModels())
+            using (var db = new MigrationsTestReadModels(
+                typeof(OrderTallyEntityModelConfiguration),
+                typeof(ProductInventoryEntityModelConfiguration)))
             {
                 // act
-                new ReadModelDatabaseInitializer<MigrationsTestReadModels>(new Version("1.1")).InitializeDatabase(db);
+                db.Database.Initialize(true);
+
+                // assert
+                db.Set<OrderTally>().Count().Should().Be(0);
+                db.Set<ProductInventory>().Count().Should().Be(0);
+            }
+        }
+
+        [Test]
+        public void ReadModelDbContext_drops_the_database_and_recreates_it_when_the_version_has_changed()
+        {
+            // arrange
+            Database.SetInitializer(new ReadModelDatabaseInitializer<MigrationsTestReadModels>(new Version("1.0")));
+
+            using (var db = new MigrationsTestReadModels(
+                typeof(OrderTallyEntityModelConfiguration)))
+            {
+                db.Database.Initialize(true);
+
+                db.Set<OrderTally>().Add(new OrderTally
+                {
+                    Count = 1,
+                    Status = Any.Word()
+                });
+
+                db.SaveChanges();
+
+                db.Set<OrderTally>().Count().Should().Be(1);
+            }
+
+            Database.SetInitializer(new ReadModelDatabaseInitializer<MigrationsTestReadModels>(new Version("1.1")));
+
+            using (var db = new MigrationsTestReadModels(
+                typeof(OrderTallyEntityModelConfiguration)))
+            {
+                // act
+                db.Database.Initialize(true);
 
                 // assert
                 db.Set<OrderTally>().Count().Should().Be(0);
@@ -385,14 +427,45 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
     public class MigrationsTestReadModels : ReadModelDbContext
     {
+        private readonly IEnumerable<Type> entityModelConfigurationTypes;
+
         public const string ConnectionString =
             @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestReadModels";
 
         public MigrationsTestReadModels() : base(ConnectionString)
         {
+           
         }
 
-        public DbSet<ProductInventory> ProductInventories { get; set; }
+        public MigrationsTestReadModels(params Type[] entityModelConfigurationTypes) : base(ConnectionString, BuildModel(entityModelConfigurationTypes))
+        {
+            if (entityModelConfigurationTypes == null)
+            {
+                throw new ArgumentNullException("entityModelConfigurationTypes");
+            }
+            this.entityModelConfigurationTypes = entityModelConfigurationTypes;
+        }
+
+        private static DbCompiledModel BuildModel(Type[] types)
+        {
+            var builder = new DbModelBuilder();
+
+            foreach (var configuration in types
+                .Select(Domain.Configuration.Current.Container.Resolve)
+                .Cast<IEntityModelConfiguration>().ToArray())
+            {
+                configuration.ConfigureModel(builder.Configurations);
+            }
+
+            DbModel model = builder.Build(new SqlConnection(ConnectionString));
+            return model.Compile();
+
+        }
+
+        protected override IEnumerable<Type> GetEntityModelConfigurationTypes()
+        {
+            return entityModelConfigurationTypes.OrEmpty();
+        }
     }
 
     public class AnonymousMigrator : IDbMigrator

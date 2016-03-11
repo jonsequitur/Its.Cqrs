@@ -40,7 +40,17 @@ namespace Microsoft.Its.Domain.Sql
             TDbContext context,
             Version latestVersion)
         {
-            return latestVersion < version.MigrationVersion;
+             if (latestVersion < version.MigrationVersion)
+             {
+                return true;
+             }
+
+            if (!context.Database.CompatibleWithModel(false))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
