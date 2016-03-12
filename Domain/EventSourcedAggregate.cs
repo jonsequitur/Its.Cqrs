@@ -46,7 +46,7 @@ namespace Microsoft.Its.Domain
             }
             if (eventHistory == null)
             {
-                throw new ArgumentNullException("eventHistory");
+                throw new ArgumentNullException(nameof(eventHistory));
             }
 
             InitializeEventHistory(eventHistory);
@@ -63,7 +63,7 @@ namespace Microsoft.Its.Domain
         /// <param name="snapshot">A snapshot of the aggregate's built-up state.</param>
         /// <param name="eventHistory">The event history.</param>
         protected internal EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null)
-            : this(snapshot.IfNotNull().Then(s => s.AggregateId).ElseThrow(() => new ArgumentNullException("snapshot")))
+            : this(snapshot.IfNotNull().Then(s => s.AggregateId).ElseThrow(() => new ArgumentNullException(nameof(snapshot))))
         {
             SourceSnapshot = snapshot;
             InitializeEventHistory(eventHistory.OrEmpty());
@@ -78,7 +78,7 @@ namespace Microsoft.Its.Domain
 
             eventHistory.AddRange(sourceEvents);
 
-            var version = Math.Max(eventHistory.Version, SourceSnapshot == null ? 0 : SourceSnapshot.Version);
+            var version = Math.Max(eventHistory.Version, SourceSnapshot?.Version ?? 0);
 
             pendingEvents.SetVersion(version);
 
@@ -91,56 +91,29 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Gets the globally unique id for this aggregate.
         /// </summary>
-        public Guid Id
-        {
-            get
-            {
-                return id;
-            }
-        }
+        public Guid Id => id;
 
         /// <summary>
         /// Gets the version of the aggregate, which is equivalent to the sequence number of the last event.
         /// </summary>
-        public long Version
-        {
-            get
-            {
-                return this.Version();
-            }
-        }
+        public long Version => this.Version();
 
         /// <summary>
         ///     Gets any events for this aggregate that have not yet been committed to the event store.
         /// </summary>
-        public IEnumerable<IEvent> PendingEvents
-        {
-            get
-            {
-                return pendingEvents;
-            }
-        }
+        public IEnumerable<IEvent> PendingEvents => pendingEvents;
 
         /// <summary>
         ///     Gets the complete event history for the aggregate.
         /// </summary>
-        public IEnumerable<IEvent> EventHistory
-        {
-            get
-            {
-                return eventHistory;
-            }
-        }
+        public IEnumerable<IEvent> EventHistory => eventHistory;
 
         /// <summary>
         /// Adds an event to the pending list.
         /// </summary>
         /// <param name="e">The event.</param>
         /// <remarks>Until <see cref="ConfirmSave" /> is called, the event is not moved to event history. <see cref="ConfirmSave" /> should be called to indicate that the event has been successfully committed to the store.</remarks>
-        protected internal void AddPendingEvent(IEvent e)
-        {
-            pendingEvents.Add(e);
-        }
+        protected internal void AddPendingEvent(IEvent e) => pendingEvents.Add(e);
 
         /// <summary>
         /// Enacts the command once all validations and authorizations have passed.
@@ -170,10 +143,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Confirms that a save operation has been successfully completed and that the aggregate should move all pending events to its event history.
         /// </summary>
-        public virtual void ConfirmSave()
-        {
-            pendingEvents.TransferTo(eventHistory);
-        }
+        public virtual void ConfirmSave() => pendingEvents.TransferTo(eventHistory);
 
         internal ProbabilisticAnswer HasETag(string etag)
         {
@@ -193,27 +163,16 @@ namespace Microsoft.Its.Domain
                 : ProbabilisticAnswer.No;
         }
 
-        internal bool WasSourcedFromSnapshot
-        {
-            get
-            {
-                return SourceSnapshot != null;
-            }
-        }
+        internal bool WasSourcedFromSnapshot => SourceSnapshot != null;
 
         internal virtual void HandleCommandValidationFailure(ICommand command, ValidationReport validationReport)
         {
             throw new CommandValidationException(
-                string.Format("Validation error while applying {0} to a {1}.",
-                              command.CommandName,
-                              GetType().Name),
+                $"Validation error while applying {command.CommandName} to a {GetType().Name}.",
                 validationReport);
         }
 
-        protected void ThrowCommandValidationException(ICommand command, ValidationReport validationReport)
-        {
-            HandleCommandValidationFailure(command, validationReport);
-        }
+        protected void ThrowCommandValidationException(ICommand command, ValidationReport validationReport) => HandleCommandValidationFailure(command, validationReport);
     }
 
     internal enum ProbabilisticAnswer

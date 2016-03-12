@@ -2,12 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Data.Entity;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Api.Serialization;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
-using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests.Infrastructure;
 using NUnit.Framework;
 using Newtonsoft.Json.Linq;
@@ -21,12 +20,12 @@ namespace Microsoft.Its.Domain.Api.Tests
     [TestFixture]
     public class ValidationTests
     {
-        // this is a shim to make sure that the Sample.Domain.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
-        private static object workaround = typeof(OrderApiController);
-
         [SetUp]
         public void SetUp()
         {
+             // this is a shim to make sure that the Sample.Domain.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
+            var controller = new OrderApiController(new InMemoryEventSourcedRepository<Order>());
+
             TestSetUp.EnsureEventStoreIsInitialized();
             Logging.Configure();
             Command<Order>.AuthorizeDefault = (order, command) => true;

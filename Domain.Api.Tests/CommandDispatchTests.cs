@@ -12,6 +12,7 @@ using FluentAssertions;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using Moq;
 using NUnit.Framework;
@@ -24,12 +25,12 @@ namespace Microsoft.Its.Domain.Api.Tests
     [TestFixture]
     public class CommandDispatchTests
     {
-        // this is a shim to make sure that the Sample.Domain.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
-        private static object workaround = typeof (OrderApiController);
-
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
+            // this is a shim to make sure that the Sample.Domain.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
+            var controller = new OrderApiController(new InMemoryEventSourcedRepository<Order>());
+
             TestSetUp.EnsureEventStoreIsInitialized();
         }
 

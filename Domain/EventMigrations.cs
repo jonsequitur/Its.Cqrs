@@ -15,17 +15,12 @@ namespace Microsoft.Its.Domain
                 SequenceNumber = sequenceNumber;
             }
 
-            public Guid AggregateId { get; private set; }
+            public Guid AggregateId { get; }
 
-            public long SequenceNumber { get; private set; }
+            public long SequenceNumber { get; }
 
-            public override string Message
-            {
-                get
-                {
-                    return String.Format("Migration failed, because no event with sequence number {0} on aggregate '{1}' was found", SequenceNumber, AggregateId);
-                }
-            }
+            public override string Message =>
+                $"Migration failed, because no event with sequence number {SequenceNumber} on aggregate '{AggregateId}' was found";
         }
 
         public class Rename
@@ -34,7 +29,7 @@ namespace Microsoft.Its.Domain
             {
                 if (String.IsNullOrWhiteSpace(newName))
                 {
-                    throw new ArgumentOutOfRangeException("newName");
+                    throw new ArgumentOutOfRangeException(nameof(newName));
                 }
                 SequenceNumber = sequenceNumber;
                 NewName = newName;
