@@ -18,15 +18,15 @@ namespace Microsoft.Its.Domain.Authorization
         {
             if (resourceType == null)
             {
-                throw new ArgumentNullException("resourceType");
+                throw new ArgumentNullException(nameof(resourceType));
             }
             if (commandType == null)
             {
-                throw new ArgumentNullException("commandType");
+                throw new ArgumentNullException(nameof(commandType));
             }
             if (principalType == null)
             {
-                throw new ArgumentNullException("principalType");
+                throw new ArgumentNullException(nameof(principalType));
             }
             ResourceType = resourceType;
             CommandType = commandType;
@@ -64,6 +64,11 @@ namespace Microsoft.Its.Domain.Authorization
         /// </summary>
         private static Type RelevantTypeFor(Type principalType)
         {
+            if (principalType == null)
+            {
+                throw new ArgumentNullException(nameof(principalType));
+            }
+
             while (principalType.Assembly.IsDynamic)
             {
                 principalType = principalType.BaseType;
@@ -82,30 +87,18 @@ namespace Microsoft.Its.Domain.Authorization
         where TPrincipal : IPrincipal
         where TCommand : ICommand
     {
-        private readonly ValidationPlan<IAuthorizationQuery<TResource, TCommand, TPrincipal>> validationPlan =
-            new ValidationPlan<IAuthorizationQuery<TResource, TCommand, TPrincipal>>
-            {
-                Default
-            };
-
         internal static IValidationRule<IAuthorizationQuery<TResource, TCommand, TPrincipal>> Default =
             new ValidationRule<IAuthorizationQuery<TResource, TCommand, TPrincipal>>(q => false)
                 .WithErrorMessage(
-                    string.Format("Unauthorized by default because no authorization rules have been specified for {0}-{1}-{2}",
-                                  typeof (TResource),
-                                  typeof (TCommand),
-                                  typeof (TPrincipal)));
+                    $"Unauthorized by default because no authorization rules have been specified for {typeof (TResource)}-{typeof (TCommand)}-{typeof (TPrincipal)}");
 
         public AuthorizationPolicy(Type resourceType, Type commandType, Type principalType) : base(resourceType, commandType, principalType)
         {
         }
 
-        public ValidationPlan<IAuthorizationQuery<TResource, TCommand, TPrincipal>> ValidationPlan
+        public ValidationPlan<IAuthorizationQuery<TResource, TCommand, TPrincipal>> ValidationPlan { get; } = new ValidationPlan<IAuthorizationQuery<TResource, TCommand, TPrincipal>>
         {
-            get
-            {
-                return validationPlan;
-            }
-        }
+            Default
+        };
     }
 }

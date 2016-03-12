@@ -2,9 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Serialization
 {
@@ -18,7 +16,7 @@ namespace Microsoft.Its.Domain.Serialization
         {
             get
             {
-                return base.Value<string>("EventStreamName");
+                return Value<string>("EventStreamName");
             }
             set
             {
@@ -30,7 +28,7 @@ namespace Microsoft.Its.Domain.Serialization
         {
             get
             {
-                return base.Value<string>("EventTypeName");
+                return Value<string>("EventTypeName");
             }
             set
             {
@@ -42,7 +40,7 @@ namespace Microsoft.Its.Domain.Serialization
         {
             get
             {
-                return base.Value<long>("SequenceNumber");
+                return Value<long>("SequenceNumber");
             }
             set
             {
@@ -72,7 +70,7 @@ namespace Microsoft.Its.Domain.Serialization
         {
             get
             {
-                return base.Value<DateTimeOffset>("Timestamp");
+                return Value<DateTimeOffset>("Timestamp");
             }
             set
             {
@@ -84,7 +82,7 @@ namespace Microsoft.Its.Domain.Serialization
         {
             get
             {
-                return base.Value<string>("ETag");
+                return Value<string>("ETag");
             }
             set
             {

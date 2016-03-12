@@ -15,10 +15,8 @@ namespace Microsoft.Its.Domain
         /// <param name="bus">The event bus.</param>
         /// <param name="events">The events to be published.</param>
         /// <remarks>No events are actually published until the returned observable is subscribed.</remarks>
-        public static IObservable<System.Reactive.Unit> PublishAsync(this IEventBus bus, params IEvent[] events)
-        {
-            return bus.PublishAsync(events);
-        }
+        public static IObservable<System.Reactive.Unit> PublishAsync(this IEventBus bus, params IEvent[] events) => 
+            bus.PublishAsync(events);
 
         /// <summary>
         ///     Subscribes an event handler to events published on the bus.

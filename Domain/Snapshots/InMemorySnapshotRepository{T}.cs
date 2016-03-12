@@ -13,16 +13,14 @@ namespace Microsoft.Its.Domain
     {
         private readonly ConcurrentDictionary<Guid, ISnapshot> snapshots = new ConcurrentDictionary<Guid, ISnapshot>();
 
-        public async Task<ISnapshot> GetSnapshot(Guid aggregateId, long? maxVersion = null, DateTimeOffset? maxTimestamp = null)
-        {
-            return snapshots.IfContains(aggregateId).ElseDefault();
-        }
+        public async Task<ISnapshot> GetSnapshot(Guid aggregateId, long? maxVersion = null, DateTimeOffset? maxTimestamp = null) => 
+            snapshots.IfContains(aggregateId).ElseDefault();
 
         public async Task SaveSnapshot(ISnapshot snapshot)
         {
             if (snapshot == null)
             {
-                throw new ArgumentNullException("snapshot");
+                throw new ArgumentNullException(nameof(snapshot));
             }
 
             snapshots[snapshot.AggregateId] = snapshot;

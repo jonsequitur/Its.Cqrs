@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Subjects;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -57,10 +56,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <summary>
         /// Gets the current time.
         /// </summary>
-        public DateTimeOffset Now()
-        {
-            return Scheduler.Clock;
-        }
+        public DateTimeOffset Now() => Scheduler.Clock;
 
         /// <summary>
         /// Advances the clock to the specified time.
@@ -154,10 +150,7 @@ namespace Microsoft.Its.Domain.Testing
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         /// <filterpriority>2</filterpriority>
-        public void Dispose()
-        {
-            Clock.Reset();
-        }
+        public void Dispose() => Clock.Reset();
 
         /// <summary>
         /// Notifies the provider that an observer is to receive notifications.
@@ -166,10 +159,7 @@ namespace Microsoft.Its.Domain.Testing
         /// A reference to an interface that allows observers to stop receiving notifications before the provider has finished sending them.
         /// </returns>
         /// <param name="observer">The object that is to receive notifications.</param>
-        public IDisposable Subscribe(IObserver<DateTimeOffset> observer)
-        {
-            return movements.Subscribe(observer);
-        }
+        public IDisposable Subscribe(IObserver<DateTimeOffset> observer) => movements.Subscribe(observer);
 
         /// <summary>
         /// Replaces the domain clock with a virtual clock that can be used to control the current time.
@@ -210,15 +200,16 @@ namespace Microsoft.Its.Domain.Testing
             return scheduler.Schedule(scheduledCommand, dueTime, func);
         }
 
-        public async Task Done()
-        {
-            await Scheduler.Done();
-        }
+        public async Task Done() => await Scheduler.Done();
 
-        public override string ToString()
-        {
-            return GetType() + ": " + Now().ToString("O");
-        }
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>
+        /// A string that represents the current object.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
+        public override string ToString() => $"{GetType()}: {Now().ToString("O")}";
 
         private class RxScheduler : HistoricalScheduler
         {
@@ -263,20 +254,14 @@ namespace Microsoft.Its.Domain.Testing
                 }
             }
 
-            private bool CommandsAreDue
-            {
-                get
-                {
-                    return pending.Any(p => p.Value <= Now);
-                }
-            }
+            private bool CommandsAreDue => pending.Any(p => p.Value <= Now);
         }
 
         internal void OnAdvanceTriggerSchedulerClock(IClock clock)
         {
             if (clock == null)
             {
-                throw new ArgumentNullException("clock");
+                throw new ArgumentNullException(nameof(clock));
             }
             schedulerClocks.Add(clock);
         }

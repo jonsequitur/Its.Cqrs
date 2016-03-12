@@ -4,20 +4,16 @@
 using System;
 using System.Linq;
 using Microsoft.Its.Recipes;
- 
+
 namespace Microsoft.Its.Domain
 {
     public static class Projector
     {
-        public static IUpdateProjectionWhen<TEvent> Create<TEvent>(Action<TEvent> onEvent) where TEvent : IEvent
-        {
-            return new AnonymousProjector<TEvent>(onEvent);
-        }
+        public static IUpdateProjectionWhen<TEvent> Create<TEvent>(Action<TEvent> onEvent) where TEvent : IEvent =>
+            new AnonymousProjector<TEvent>(onEvent);
 
-        public static IUpdateProjectionWhen<IEvent> CreateFor<T>(Action<T> onEvent)
-        {
-            return new DuckTypeProjector<T>(onEvent);
-        }
+        public static IUpdateProjectionWhen<IEvent> CreateFor<T>(Action<T> onEvent) =>
+            new DuckTypeProjector<T>(onEvent);
 
         public static IEventHandler CreateDynamic(
             Action<dynamic> onEvent,
@@ -42,9 +38,7 @@ namespace Microsoft.Its.Domain
             return new DynamicProjector(onEvent, matchEvents);
         }
 
-        public static IEventHandler Combine(params object[] projectors)
-        {
-            return new CompositeEventHandler(projectors);
-        }
+        public static IEventHandler Combine(params object[] projectors) =>
+            new CompositeEventHandler(projectors);
     }
 }

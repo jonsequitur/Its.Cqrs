@@ -24,17 +24,17 @@ namespace Microsoft.Its.Domain.Authorization
         {
             if (principal == null)
             {
-                throw new ArgumentNullException("principal");
+                throw new ArgumentNullException(nameof(principal));
             }
 
             if (resource == null)
             {
-                throw new ArgumentNullException("resource");
+                throw new ArgumentNullException(nameof(resource));
             }
 
             if (command == null)
             {
-                throw new ArgumentNullException("command");
+                throw new ArgumentNullException(nameof(command));
             }
             Command = command;
             Principal = principal;
@@ -44,16 +44,16 @@ namespace Microsoft.Its.Domain.Authorization
         /// <summary>
         ///     Gets the command to be authorized.
         /// </summary>
-        public TCommand Command { get; private set; }
+        public TCommand Command { get; }
 
         /// <summary>
         ///     Gets the resource to which the command would be applied.
         /// </summary>
-        public TResource Resource { get; private set; }
+        public TResource Resource { get; }
 
         /// <summary>
         ///     Gets the principal that would apply the command.
         /// </summary>
-        public TPrincipal Principal { get; private set; }
+        public TPrincipal Principal { get; }
     }
 }

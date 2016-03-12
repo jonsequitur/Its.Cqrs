@@ -15,17 +15,11 @@ namespace Microsoft.Its.Domain
         {
             if (command == null)
             {
-                throw new ArgumentNullException("command");
+                throw new ArgumentNullException(nameof(command));
             }
             this.command = command;
         }
 
-        public IScheduledCommand ScheduledCommand
-        {
-            get
-            {
-                return command;
-            }
-        }
+        public IScheduledCommand ScheduledCommand => command;
     }
 }

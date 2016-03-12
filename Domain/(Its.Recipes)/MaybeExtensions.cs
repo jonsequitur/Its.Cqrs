@@ -56,12 +56,10 @@ namespace Microsoft.Its.Recipes
         /// <returns>
         ///     The value of the Maybe if it has a value; otherwise, the value returned by <paramref name="other" />.
         /// </returns>
-        public static Maybe<T> Else<T>(this Maybe<T> maybe, Func<Maybe<T>> other)
-        {
-            return maybe.HasValue
-                       ? maybe
-                       : other();
-        }
+        public static Maybe<T> Else<T>(this Maybe<T> maybe, Func<Maybe<T>> other) =>
+            maybe.HasValue
+                ? maybe
+                : other();
 
         /// <summary>
         ///     Specifies a function that will be evaluated if the source <see cref="Recipes.Maybe{T}" /> has no value.
@@ -74,15 +72,8 @@ namespace Microsoft.Its.Recipes
         /// <returns>
         ///     The value of the Maybe if it has a value; otherwise, the value returned by <paramref name="otherValue" />.
         /// </returns>
-        public static T Else<T>(this Maybe<Maybe<T>> maybe, Func<T> otherValue)
-        {
-            if (maybe.HasValue)
-            {
-                return maybe.Value.Else(otherValue);
-            }
-
-            return otherValue();
-        }
+        public static T Else<T>(this Maybe<Maybe<T>> maybe, Func<T> otherValue) => 
+            maybe.HasValue ? maybe.Value.Else(otherValue) : otherValue();
 
         /// <summary>
         ///     Specifies a function that will be evaluated if the source <see cref="Recipes.Maybe{T}" /> has no value.
@@ -95,15 +86,8 @@ namespace Microsoft.Its.Recipes
         /// <returns>
         ///     The value of the Maybe if it has a value; otherwise, the value returned by <paramref name="otherValue" />.
         /// </returns>
-        public static T Else<T>(this Maybe<Maybe<Maybe<T>>> maybe, Func<T> otherValue)
-        {
-            if (maybe.HasValue)
-            {
-                return maybe.Value.Else(otherValue);
-            }
-
-            return otherValue();
-        }
+        public static T Else<T>(this Maybe<Maybe<Maybe<T>>> maybe, Func<T> otherValue) => 
+            maybe.HasValue ? maybe.Value.Else(otherValue) : otherValue();
 
         /// <summary>
         ///     Specifies a function that will be evaluated if the source <see cref="Recipes.Maybe{T}" /> has no value.
@@ -116,15 +100,8 @@ namespace Microsoft.Its.Recipes
         /// <returns>
         ///     The value of the Maybe if it has a value; otherwise, the value returned by <paramref name="otherValue" />.
         /// </returns>
-        public static T Else<T>(this Maybe<Maybe<Maybe<Maybe<T>>>> maybe, Func<T> otherValue)
-        {
-            if (maybe.HasValue)
-            {
-                return maybe.Value.Else(otherValue);
-            }
-
-            return otherValue();
-        }
+        public static T Else<T>(this Maybe<Maybe<Maybe<Maybe<T>>>> maybe, Func<T> otherValue) => 
+            maybe.HasValue ? maybe.Value.Else(otherValue) : otherValue();
 
         /// <summary>
         /// Returns the default value for <typeparamref name="T" /> if the <see cref="Recipes.Maybe{T}" /> has no value.
@@ -132,10 +109,8 @@ namespace Microsoft.Its.Recipes
         /// <typeparam name="T">
         ///     The type held by the <see cref="Recipes.Maybe{T}" />.
         /// </typeparam>
-        public static T ElseDefault<T>(this Maybe<T> maybe)
-        {
-            return maybe.Else(() => default(T));
-        }
+        public static T ElseDefault<T>(this Maybe<T> maybe) => 
+            maybe.Else(() => default(T));
 
         /// <summary>
         /// Returns the default value for <typeparamref name="T" /> if the <see cref="Recipes.Maybe{T}" /> has no value.
@@ -143,10 +118,8 @@ namespace Microsoft.Its.Recipes
         /// <typeparam name="T">
         ///     The type held by the <see cref="Recipes.Maybe{T}" />.
         /// </typeparam>
-        public static T ElseDefault<T>(this Maybe<Maybe<T>> maybe)
-        {
-            return maybe.Else(() => default(T));
-        }
+        public static T ElseDefault<T>(this Maybe<Maybe<T>> maybe) => 
+            maybe.Else(() => default(T));
 
         /// <summary>
         /// Returns the default value for <typeparamref name="T" /> if the <see cref="Recipes.Maybe{T}" /> has no value.
@@ -154,10 +127,8 @@ namespace Microsoft.Its.Recipes
         /// <typeparam name="T">
         ///     The type held by the <see cref="Recipes.Maybe{T}" />.
         /// </typeparam>
-        public static T ElseDefault<T>(this Maybe<Maybe<Maybe<T>>> maybe)
-        {
-            return maybe.Else(() => default(T));
-        }
+        public static T ElseDefault<T>(this Maybe<Maybe<Maybe<T>>> maybe) => 
+            maybe.Else(() => default(T));
 
         /// <summary>
         /// Returns the default value for <typeparamref name="T" /> if the <see cref="Recipes.Maybe{T}" /> has no value.
@@ -165,25 +136,15 @@ namespace Microsoft.Its.Recipes
         /// <typeparam name="T">
         ///     The type held by the <see cref="Recipes.Maybe{T}" />.
         /// </typeparam>
-        public static T ElseDefault<T>(this Maybe<Maybe<Maybe<Maybe<T>>>> maybe)
-        {
-            return maybe.Else(() => default(T));
-        }
+        public static T ElseDefault<T>(this Maybe<Maybe<Maybe<Maybe<T>>>> maybe) => 
+            maybe.Else(() => default(T));
 
         /// <summary>
         /// Returns null if the source has no value.
         /// </summary>
         /// <typeparam name="T">The type held by the <see cref="Recipes.Maybe{T}" />.</typeparam>
         public static T? ElseNull<T>(this Maybe<T> maybe)
-            where T : struct
-        {
-            if (maybe.HasValue)
-            {
-                return maybe.Value;
-            }
-
-            return null;
-        }
+            where T : struct => maybe.HasValue ? (T?) maybe.Value : null;
 
         /// <summary>
         /// Performs an action if the <see cref="Recipes.Maybe{T}" /> has no value.
@@ -195,7 +156,7 @@ namespace Microsoft.Its.Recipes
         {
             if (action == null)
             {
-                throw new ArgumentNullException("action");
+                throw new ArgumentNullException(nameof(action));
             }
 
             if (!maybe.HasValue)
@@ -249,15 +210,8 @@ namespace Microsoft.Its.Recipes
         /// <param name="first">The first maybe.</param>
         /// <returns></returns>
         public static T1 And<T1>(
-            this Maybe<T1> first)
-        {
-            if (first.HasValue)
-            {
-                return first.Value;
-            }
-
-            return default(T1);
-        }
+            this Maybe<T1> first) =>
+                first.HasValue ? first.Value : default(T1);
 
         /// <summary>
         /// Attempts to retrieve a value dynamically.
@@ -286,15 +240,8 @@ namespace Microsoft.Its.Recipes
         /// </summary>
         /// <typeparam name="T">The type of the instance wrapped by the <see cref="Recipes.Maybe{T}" />.</typeparam>
         /// <param name="source">The source instance, which may be null.</param>
-        public static Maybe<T> IfNotNull<T>(this T source) where T : class
-        {
-            if (source != null)
-            {
-                return Maybe<T>.Yes(source);
-            }
-
-            return Maybe<T>.No();
-        }
+        public static Maybe<T> IfNotNull<T>(this T source) where T : class => 
+            source != null ? Maybe<T>.Yes(source) : Maybe<T>.No();
 
         /// <summary>
         /// Creates a <see cref="Recipes.Maybe{T}" /> that has a value if <paramref name="source" /> has a value. 
@@ -315,15 +262,8 @@ namespace Microsoft.Its.Recipes
         /// <typeparam name="T">The type of the instance wrapped by the <see cref="Recipes.Maybe{T}" />.</typeparam>
         /// <param name="source">The source instance, which may be null.</param>
         public static Maybe<T> IfNotNull<T>(this T? source)
-            where T : struct
-        {
-            if (source.HasValue)
-            {
-                return Maybe<T>.Yes(source.Value);
-            }
-
-            return Maybe<T>.No();
-        }
+            where T : struct =>
+                source.HasValue ? Maybe<T>.Yes(source.Value) : Maybe<T>.No();
 
         /// <summary>
         /// Creates a <see cref="Recipes.Maybe{T}" /> that has a value if <paramref name="source" /> is not null, empty, or entirely whitespace. 
@@ -362,10 +302,8 @@ namespace Microsoft.Its.Recipes
         /// <typeparam name="T"> The type of the objects in the sequence. </typeparam>
         /// <param name="source"> The source sequence. </param>
         /// <returns> The source sequence or, if it is null, an empty sequence. </returns>
-        public static IEnumerable<T> OrEmpty<T>(this IEnumerable<T> source)
-        {
-            return source ?? Enumerable.Empty<T>();
-        }
+        public static IEnumerable<T> OrEmpty<T>(this IEnumerable<T> source) => 
+            source ?? Enumerable.Empty<T>();
 
         /// <summary>
         /// Attempts to get the value of a Try* method with an out parameter, for example <see cref="Dictionary{TKey,TValue}.TryGetValue" /> or <see cref="ConcurrentQueue{T}.TryDequeue" />.
@@ -379,12 +317,9 @@ namespace Microsoft.Its.Recipes
         {
             TOut result;
 
-            if (tryTryGetValue(source, out result))
-            {
-                return Maybe<TOut>.Yes(result);
-            }
-
-            return Maybe<TOut>.No();
+            return tryTryGetValue(source, out result)
+                       ? Maybe<TOut>.Yes(result)
+                       : Maybe<TOut>.No();
         }
      
         /// <summary>
@@ -414,7 +349,7 @@ namespace Microsoft.Its.Recipes
         {
             if (action == null)
             {
-                throw new ArgumentNullException("action");
+                throw new ArgumentNullException(nameof(action));
             }
 
             if (maybe.HasValue)
@@ -442,11 +377,11 @@ namespace Microsoft.Its.Recipes
         {
             if (getValue == null)
             {
-                throw new ArgumentNullException("getValue");
+                throw new ArgumentNullException(nameof(getValue));
             }
             if (ignore == null)
             {
-                throw new ArgumentNullException("ignore");
+                throw new ArgumentNullException(nameof(ignore));
             }
 
             try
@@ -486,22 +421,17 @@ namespace Microsoft.Its.Recipes
         /// Returns a <see cref="Recipes.Maybe{T}" /> that contains a value.
         /// </summary>
         /// <param name="value">The value.</param>
-        public static Maybe<T> Yes(T value)
-        {
-            return new Maybe<T>
+        public static Maybe<T> Yes(T value) =>
+            new Maybe<T>
             {
                 HasValue = true,
                 value = value
             };
-        }
 
         /// <summary>
         /// Returns a <see cref="Recipes.Maybe{T}" /> that does not contain a value.
         /// </summary>
-        public static Maybe<T> No()
-        {
-            return no;
-        }
+        public static Maybe<T> No() => no;
 
         /// <summary>
         /// Gets the value contained by the <see cref="Recipes.Maybe{T}" />.

@@ -17,24 +17,20 @@ namespace Microsoft.Its.Domain
         {
             if (schedule == null)
             {
-                throw new ArgumentNullException("schedule");
+                throw new ArgumentNullException(nameof(schedule));
             }
             if (deliver == null)
             {
-                throw new ArgumentNullException("deliver");
+                throw new ArgumentNullException(nameof(deliver));
             }
             this.schedule = schedule;
             this.deliver = deliver;
         }
 
-        public async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand)
-        {
+        public async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand) =>
             await schedule(scheduledCommand);
-        }
 
-        public async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand)
-        {
+        public async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand) =>
             await deliver(scheduledCommand);
-        }
     }
 }

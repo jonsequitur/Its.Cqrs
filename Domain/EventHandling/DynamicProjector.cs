@@ -21,7 +21,7 @@ namespace Microsoft.Its.Domain
         {
             if (onEvent == null)
             {
-                throw new ArgumentNullException("onEvent");
+                throw new ArgumentNullException(nameof(onEvent));
             }
             this.onEvent = onEvent;
 
@@ -40,34 +40,20 @@ namespace Microsoft.Its.Domain
 
         public string Name { get; set; }
 
-        public Type EventType
-        {
-            get
-            {
-                return typeof (IEvent);
-            }
-        }
+        public Type EventType => typeof (IEvent);
 
-        public IDisposable SubscribeToBus(object handler, IEventBus bus)
-        {
-            return bus.Events<IEvent>()
-                      .SubscribeDurablyAndPublishErrors(this,
-                                                        e =>
-                                                        {
-                                                            if (matchEvents.Any(me => me.Matches(e)))
-                                                            {
-                                                                onEvent(e);
-                                                            }
-                                                        },
-                                                        bus);
-        }
+        public IDisposable SubscribeToBus(object handler, IEventBus bus) =>
+            bus.Events<IEvent>()
+               .SubscribeDurablyAndPublishErrors(this,
+                                                 e =>
+                                                 {
+                                                     if (matchEvents.Any(me => me.Matches(e)))
+                                                     {
+                                                         onEvent(e);
+                                                     }
+                                                 },
+                                                 bus);
 
-        public IEnumerable<MatchEvent> IncludedEventTypes
-        {
-            get
-            {
-                return matchEvents;
-            }
-        }
+        public IEnumerable<MatchEvent> IncludedEventTypes => matchEvents;
     }
 }

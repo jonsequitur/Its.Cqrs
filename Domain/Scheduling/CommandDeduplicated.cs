@@ -16,9 +16,6 @@ namespace Microsoft.Its.Domain
             this.when = when;
         }
 
-        public override string ToString()
-        {
-            return "Deduplicated on " + when;
-        }
+        public override string ToString() => $"Deduplicated on {when}";
     }
 }

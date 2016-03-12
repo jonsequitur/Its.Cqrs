@@ -17,20 +17,18 @@ namespace Microsoft.Its.Domain.Serialization
         {
             if (deserialize == null)
             {
-                throw new ArgumentNullException("deserialize");
+                throw new ArgumentNullException(nameof(deserialize));
             }
             if (serialize == null)
             {
-                throw new ArgumentNullException("serialize");
+                throw new ArgumentNullException(nameof(serialize));
             }
             this.deserialize = deserialize;
             this.serialize = serialize;
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) =>
             writer.WriteValue(serialize((T) value));
-        }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
@@ -42,17 +40,8 @@ namespace Microsoft.Its.Domain.Serialization
             return deserialize(reader.Value);
         }
 
-        public override bool CanRead
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool CanRead => true;
 
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof (T);
-        }
+        public override bool CanConvert(Type objectType) => objectType == typeof (T);
     }
 }

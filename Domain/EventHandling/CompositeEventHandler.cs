@@ -16,15 +16,12 @@ namespace Microsoft.Its.Domain
         {
             if (projectors == null)
             {
-                throw new ArgumentNullException("projectors");
+                throw new ArgumentNullException(nameof(projectors));
             }
             this.projectors = projectors;
         }
 
-        public IEnumerable<IEventHandlerBinder> GetBinders()
-        {
-            return projectors.SelectMany(EventHandler.GetBinders);
-        }
+        public IEnumerable<IEventHandlerBinder> GetBinders() => projectors.SelectMany(EventHandler.GetBinders);
 
         public string Name { get;  set; }
     }

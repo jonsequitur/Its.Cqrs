@@ -53,7 +53,7 @@ namespace Microsoft.Its.Domain
                 this(command,
                      targetId
                          .IfNotNull()
-                         .Else(() => aggregateId.Value.ToString()),
+                         .Else(() => aggregateId?.ToString()),
                      dueTime,
                      deliveryPrecondition)
         {
@@ -67,7 +67,7 @@ namespace Microsoft.Its.Domain
         {
             if (command == null)
             {
-                throw new ArgumentNullException("command");
+                throw new ArgumentNullException(nameof(command));
             }
             if (string.IsNullOrWhiteSpace(targetId))
             {
@@ -86,24 +86,19 @@ namespace Microsoft.Its.Domain
         /// Gets the command to be applied at a later time.
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
-        public ICommand<TTarget> Command { get; private set; }
+        public ICommand<TTarget> Command { get; }
         
         public int NumberOfPreviousAttempts { get; set; }
 
         /// <summary>
         /// Gets the id of the object to which the command will be applied when delivered.
         /// </summary>
-        public string TargetId { get; private set; }
+        public string TargetId { get; }
 
-        public Guid? AggregateId
-        {
-            get
-            {
-                return targetIsEventSourced
-                           ? (Guid?) Guid.Parse(TargetId)
-                           : null;
-            }
-        }
+        public Guid? AggregateId =>
+            targetIsEventSourced
+                ? (Guid?) Guid.Parse(TargetId)
+                : null;
 
         /// <summary>
         /// Gets the sequence number of the scheduled command.
@@ -116,12 +111,12 @@ namespace Microsoft.Its.Domain
         /// <remarks>
         /// If this to is null, the command should be delivered as soon as possible.
         /// </remarks>
-        public DateTimeOffset? DueTime { get; private set; }
+        public DateTimeOffset? DueTime { get; }
 
         /// <summary>
         /// Indicates a precondition ETag for a specific aggregate. If no event on the target aggregate exists with this ETag, the command will fail, and the aggregate can decide whether to reschedule or ignore the command.
         /// </summary>
-        public IPrecondition DeliveryPrecondition { get; private set; }
+        public IPrecondition DeliveryPrecondition { get; }
 
         /// <summary>
         /// Gets or sets the result of the scheduled command if it has been sent to the scheduler.

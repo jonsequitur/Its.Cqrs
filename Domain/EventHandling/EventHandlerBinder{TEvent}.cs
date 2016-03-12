@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain
         {
             if (projector == null)
             {
-                throw new ArgumentNullException("projector");
+                throw new ArgumentNullException(nameof(projector));
             }
             InnerHandler = projector;
             IsConsequenter = false;
@@ -30,7 +30,7 @@ namespace Microsoft.Its.Domain
         {
             if (consequenter == null)
             {
-                throw new ArgumentNullException("consequenter");
+                throw new ArgumentNullException(nameof(consequenter));
             }
             InnerHandler = consequenter;
             IsConsequenter = true;
@@ -43,15 +43,9 @@ namespace Microsoft.Its.Domain
             handle = (@event, handler) => first(@event, e => next((TEvent) e, null));
         }
 
-        public Type EventType
-        {
-            get
-            {
-                return typeof (TEvent);
-            }
-        }
+        public Type EventType => typeof (TEvent);
 
-        public object InnerHandler { get; private set; }
+        public object InnerHandler { get; }
 
         public IDisposable SubscribeToBus(object handler, IEventBus bus)
         {
@@ -69,16 +63,10 @@ namespace Microsoft.Its.Domain
                 bus);
         }
 
-        public void UpdateProjection(TEvent @event)
-        {
-            handle(@event, e => { });
-        }
+        public void UpdateProjection(TEvent @event) => handle(@event, e => { });
 
-        public void HaveConsequences(TEvent @event)
-        {
-            handle(@event, e => { });
-        }
+        public void HaveConsequences(TEvent @event) => handle(@event, e => { });
 
-        protected bool IsConsequenter { get; private set; }
+        protected bool IsConsequenter { get; }
     }
 }

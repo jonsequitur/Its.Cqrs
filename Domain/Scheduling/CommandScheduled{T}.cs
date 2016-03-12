@@ -51,13 +51,7 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        string IScheduledCommand<TAggregate>.TargetId
-        {
-            get
-            {
-                return AggregateId.ToString();
-            }
-        }
+        string IScheduledCommand<TAggregate>.TargetId => AggregateId.ToString();
 
         /// <summary>
         /// Gets the time at which the command is scheduled to be applied.
@@ -106,19 +100,17 @@ namespace Microsoft.Its.Domain
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
-        public override string ToString()
-        {
-            return string.Format("{0}{1}{2}{3}",
-                                 Command,
-                                 DueTime.IfNotNull()
-                                        .Then(due => " due " + due)
-                                        .ElseDefault(),
-                                 DeliveryPrecondition.IfNotNull()
-                                                     .Then(p => ", depends on " + p)
-                                                     .ElseDefault(),
-                                 Result.IfNotNull()
-                                       .Then(r => ", " + r)
-                                       .ElseDefault());
-        }
+        public override string ToString() =>
+            string.Format("{0}{1}{2}{3}",
+                          Command,
+                          DueTime.IfNotNull()
+                                 .Then(due => " due " + due)
+                                 .ElseDefault(),
+                          DeliveryPrecondition.IfNotNull()
+                                              .Then(p => ", depends on " + p)
+                                              .ElseDefault(),
+                          Result.IfNotNull()
+                                .Then(r => ", " + r)
+                                .ElseDefault());
     }
 }

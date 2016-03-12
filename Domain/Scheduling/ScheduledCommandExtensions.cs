@@ -15,7 +15,7 @@ namespace Microsoft.Its.Domain
         {
             if (command == null)
             {
-                throw new ArgumentNullException("command");
+                throw new ArgumentNullException(nameof(command));
             }
 
             clock = clock ??
@@ -36,7 +36,7 @@ namespace Microsoft.Its.Domain
         {
             if (preconditionChecker == null)
             {
-                throw new ArgumentNullException("preconditionChecker");
+                throw new ArgumentNullException(nameof(preconditionChecker));
             }
 
             var precondition = scheduledCommand.DeliveryPrecondition;
@@ -71,7 +71,7 @@ namespace Microsoft.Its.Domain
         {
             if (to == null)
             {
-                throw new ArgumentNullException("value", "Result cannot be set to null.");
+                throw new ArgumentNullException(nameof(to), "Result cannot be set to null.");
             }
 
             if (@from is CommandDelivered)

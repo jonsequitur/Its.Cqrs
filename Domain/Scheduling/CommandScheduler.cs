@@ -101,11 +101,8 @@ namespace Microsoft.Its.Domain
         internal static async Task DeliverImmediatelyOnConfiguredScheduler<TAggregate>(
             IScheduledCommand<TAggregate> command,
             Configuration configuration)
-            where TAggregate : class
-        {
-            var scheduler = configuration.CommandScheduler<TAggregate>();
-            await scheduler.Deliver(command);
-        }
+            where TAggregate : class =>
+                await configuration.CommandScheduler<TAggregate>().Deliver(command);
 
         internal static void DeliverIfPreconditionIsMetSoon<TAggregate>(
             IScheduledCommand<TAggregate> scheduledCommand,
@@ -216,8 +213,7 @@ namespace Microsoft.Its.Domain
 
                         if (ctor == null)
                         {
-                            throw new InvalidOperationException(string.Format("No constructor was found on type {0} for constructor command {1}.", typeof (TAggregate),
-                                                                              scheduled.Command));
+                            throw new InvalidOperationException($"No constructor was found on type {typeof (TAggregate)} for constructor command {scheduled.Command}.");
                         }
 
                         aggregate = (TAggregate) ctor.Invoke(new[] { scheduled.Command });
@@ -231,7 +227,7 @@ namespace Microsoft.Its.Domain
                 }
                 else if (isConstructorCommand)
                 {
-                    throw new ConcurrencyException(string.Format("Command target having id {0} already exists", scheduled.TargetId));
+                    throw new ConcurrencyException($"Command target having id {scheduled.TargetId} already exists");
                 }
                 else
                 {

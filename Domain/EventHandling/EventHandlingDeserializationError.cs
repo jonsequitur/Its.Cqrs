@@ -10,7 +10,6 @@ namespace Microsoft.Its.Domain
     [DebuggerStepThrough]
     internal class EventHandlingDeserializationError : EventHandlingError, IHaveExtensibleMetada
     {
-        private readonly string body;
         private ExpandoObject metadata;
 
         public EventHandlingDeserializationError(
@@ -28,28 +27,16 @@ namespace Microsoft.Its.Domain
             Actor = actor;
             StreamName = streamName;
             Type = type;
-            this.body = body;
+            Body = body;
             AggregateId = aggregateId;
             SequenceNumber = sequenceNumber;
         }
 
         public string Actor { get; private set; }
 
-        public string Body
-        {
-            get
-            {
-                return body;
-            }
-        }
+        public string Body { get; }
 
-        public dynamic Metadata
-        {
-            get
-            {
-                return metadata ?? (metadata = new ExpandoObject());
-            }
-        }
+        public dynamic Metadata => metadata ?? (metadata = new ExpandoObject());
 
         public DateTimeOffset Timestamp { get; private set; }
 

@@ -32,7 +32,7 @@ namespace Microsoft.Its.Domain
         {
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
 
             return Configuration.Current

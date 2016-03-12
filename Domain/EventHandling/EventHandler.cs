@@ -5,9 +5,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Linq;
 using System.Reactive.Linq;
+using System.Linq;
 using Microsoft.Its.Recipes;
+
 #pragma warning disable 618
 
 namespace Microsoft.Its.Domain
@@ -37,7 +38,7 @@ namespace Microsoft.Its.Domain
                    .ThenDo(h => h.Name = name)
                    .ElseDo(() => handler.IfTypeIs<CompositeEventHandler>()
                                         .ThenDo(h => h.Name = name)
-                                        .ElseDo(() => { throw new NotImplementedException(string.Format("Handlers of type {0} do not support naming yet.", handler)); }));
+                                        .ElseDo(() => { throw new NotImplementedException($"Handlers of type {handler} do not support naming yet."); }));
 
             return handler;
         }
@@ -49,7 +50,7 @@ namespace Microsoft.Its.Domain
 
             if (named == null)
             {
-                throw new NotImplementedException(string.Format("Handlers of type {0} do not support naming yet.", consequenter));
+                throw new NotImplementedException($"Handlers of type {consequenter} do not support naming yet.");
             }
 
             named.Name = name;
@@ -72,19 +73,15 @@ namespace Microsoft.Its.Domain
             return projector;
         }
 
-        public static IEnumerable<IEventHandlerBinder> GetBinders(object handler)
-        {
-            return handler.IfTypeIs<IEventHandler>()
-                          .Then(h => h.GetBinders())
-                          .Else(() => GetBindersUsingReflection(handler));
-        }
+        public static IEnumerable<IEventHandlerBinder> GetBinders(object handler) =>
+            handler.IfTypeIs<IEventHandler>()
+                   .Then(h => h.GetBinders())
+                   .Else(() => GetBindersUsingReflection(handler));
 
-        public static bool IsEventHandlerType(this Type type)
-        {
-            return type.IsConsequenterType() ||
-                   type.IsProjectorType() ||
-                   type.GetInterfaces().Any(i => i == typeof (IEventHandler));
-        }
+        public static bool IsEventHandlerType(this Type type) =>
+            type.IsConsequenterType() ||
+            type.IsProjectorType() ||
+            type.GetInterfaces().Any(i => i == typeof (IEventHandler));
 
         /// <summary>
         /// Gets a short (non-namespace qualified) name for the specified event handler.
@@ -95,7 +92,7 @@ namespace Microsoft.Its.Domain
             EnsureIsHandler(handler);
 
             var named = handler as INamedEventHandler;
-            if (named != null && !string.IsNullOrWhiteSpace(named.Name))
+            if (!string.IsNullOrWhiteSpace(named?.Name))
             {
                 return named.Name;
             }
@@ -130,7 +127,7 @@ namespace Microsoft.Its.Domain
             EnsureIsHandler(handler);
 
             var named = handler as INamedEventHandler;
-            if (named != null && !string.IsNullOrWhiteSpace(named.Name))
+            if (!string.IsNullOrWhiteSpace(named?.Name))
             {
                 return named.Name;
             }
@@ -142,18 +139,17 @@ namespace Microsoft.Its.Domain
         {
             if (handler == null)
             {
-                throw new ArgumentNullException("handler");
+                throw new ArgumentNullException(nameof(handler));
             }
 
             if (!handler.GetType().IsEventHandlerType())
             {
-                throw new ArgumentException(string.Format("Type {0} is not an event handler.", handler));
+                throw new ArgumentException($"Type {handler} is not an event handler.");
             }
         }
 
-        private static IEnumerable<IEventHandlerBinder> GetBindersUsingReflection(object handler)
-        {
-            return reflectedBinders
+        private static IEnumerable<IEventHandlerBinder> GetBindersUsingReflection(object handler) =>
+            reflectedBinders
                 .GetOrAdd(handler.GetType(),
                           t =>
                           {
@@ -164,90 +160,51 @@ namespace Microsoft.Its.Domain
 
                               if (bindings.Length == 0)
                               {
-                                  throw new ArgumentException(String.Format("Type {0} does not implement any event handler interfaces.", handler.GetType()));
+                                  throw new ArgumentException($"Type {handler.GetType()} does not implement any event handler interfaces.");
                               }
 
                               return bindings;
                           });
-        }
 
-        internal static IEnumerable<MatchEvent> MatchesEvents(this object handler)
-        {
-            return GetBinders(handler)
+        internal static IEnumerable<MatchEvent> MatchesEvents(this object handler) =>
+            GetBinders(handler)
                 .SelectMany(binder =>
                             binder.IfTypeIs<IEventQuery>()
                                   .Then(q => q.IncludedEventTypes)
                                   .Else(() => binder.IfTypeIs<ReflectedEventHandlerBinder>()
                                                     .Then(b => MatchBasedOnEventType(b.EventType))
-                                                    .Else(() =>
-                                                    {
-                                                        return Enumerable.Empty<MatchEvent>();
-                                                    })));
-        }
+                                                    .Else(() => { return Enumerable.Empty<MatchEvent>(); })));
 
-        private static IEnumerable<MatchEvent> MatchBasedOnEventType(Type eventType)
-        {
-            var eventTypes = Event.ConcreteTypesOf(eventType)
-                                  .ToArray();
-
-            var matchBasedOnEventType = eventTypes.Select(e => new MatchEvent(type: e.EventName(),
-                streamName: e.AggregateTypeForEventType()
-                             .IfNotNull()
-                             .Then(AggregateType.EventStreamName)
-                             .Else(() => MatchEvent.Wildcard)));
-            return matchBasedOnEventType;
-        }
+        private static IEnumerable<MatchEvent> MatchBasedOnEventType(Type eventType) =>
+            Event.ConcreteTypesOf(eventType)
+                 .Select(e => new MatchEvent(type: e.EventName(),
+                                             streamName: e.AggregateTypeForEventType()
+                                                          .IfNotNull()
+                                                          .Then(AggregateType.EventStreamName)
+                                                          .Else(() => MatchEvent.Wildcard)));
 
         /// <summary>
         /// Gets the innermost handler in a handler chain, or the handler itself if it is not chained.
         /// </summary>
         /// <param name="handler">The handler.</param> 
-        public static object InnerHandler(this object handler)
-        {
-            return handler.IfTypeIs<IEventHandlerWrapper>()
-                          .Then(b => b.InnerHandler.InnerHandler())
-                          .Else(() => handler);
-        }
+        public static object InnerHandler(this object handler) =>
+            handler.IfTypeIs<IEventHandlerWrapper>()
+                   .Then(b => b.InnerHandler.InnerHandler())
+                   .Else(() => handler);
 
         internal static IDisposable SubscribeProjector<TEvent, TProjector>(
             TProjector handler,
             IObservable<TEvent> observable,
             IEventBus bus)
             where TEvent : IEvent
-            where TProjector : class, IUpdateProjectionWhen<TEvent>
-        {
-            return observable
-                .Subscribe(
-                    onNext: e =>
-                    {
-                        try
-                        {
-                            handler.UpdateProjection(e);
-                        }
-                        catch (Exception exception)
-                        {
-                            var error = new EventHandlingError(exception, handler, e);
-                            bus.PublishErrorAsync(error).Wait();
-                        }
-                    },
-                    onError: exception => bus.PublishErrorAsync(new EventHandlingError(exception, handler))
-                                             .Wait());
-        }
-
-        internal static IDisposable SubscribeConsequences<TEvent>(
-            IHaveConsequencesWhen<TEvent> handler,
-            IObservable<TEvent> observable,
-            IEventBus bus)
-            where TEvent : IEvent
-        {
-            return
+            where TProjector : class, IUpdateProjectionWhen<TEvent> =>
                 observable
                     .Subscribe(
                         onNext: e =>
                         {
                             try
                             {
-                                handler.HaveConsequences(e);
+                                handler.UpdateProjection(e);
                             }
                             catch (Exception exception)
                             {
@@ -257,22 +214,18 @@ namespace Microsoft.Its.Domain
                         },
                         onError: exception => bus.PublishErrorAsync(new EventHandlingError(exception, handler))
                                                  .Wait());
-        }
 
-        internal static IDisposable SubscribeDurablyAndPublishErrors<THandler, TEvent>(
-            this IObservable<TEvent> events,
-            THandler handler,
-            Action<TEvent> handle,
+        internal static IDisposable SubscribeConsequences<TEvent>(
+            IHaveConsequencesWhen<TEvent> handler,
+            IObservable<TEvent> observable,
             IEventBus bus)
-            where TEvent : IEvent
-        {
-            return
-                events.Subscribe(
+            where TEvent : IEvent => observable
+                .Subscribe(
                     onNext: e =>
                     {
                         try
                         {
-                            handle(e);
+                            handler.HaveConsequences(e);
                         }
                         catch (Exception exception)
                         {
@@ -282,6 +235,26 @@ namespace Microsoft.Its.Domain
                     },
                     onError: exception => bus.PublishErrorAsync(new EventHandlingError(exception, handler))
                                              .Wait());
-        }
+
+        internal static IDisposable SubscribeDurablyAndPublishErrors<THandler, TEvent>(
+            this IObservable<TEvent> events,
+            THandler handler,
+            Action<TEvent> handle,
+            IEventBus bus)
+            where TEvent : IEvent => events.Subscribe(
+                onNext: e =>
+                {
+                    try
+                    {
+                        handle(e);
+                    }
+                    catch (Exception exception)
+                    {
+                        var error = new EventHandlingError(exception, handler, e);
+                        bus.PublishErrorAsync(error).Wait();
+                    }
+                },
+                onError: exception => bus.PublishErrorAsync(new EventHandlingError(exception, handler))
+                                         .Wait());
     }
 }

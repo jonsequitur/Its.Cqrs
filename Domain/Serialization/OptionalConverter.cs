@@ -28,13 +28,7 @@ namespace Microsoft.Its.Domain.Serialization
                  });
         }
 
-        public override bool CanRead
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool CanRead => true;
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
@@ -43,9 +37,6 @@ namespace Microsoft.Its.Domain.Serialization
             return factories.GetOrAdd(objectType, t => o => t.Member().Create(o)).Invoke(deserialized);
         }
 
-        public override bool CanConvert(Type objectType)
-        {
-            return typeof (IOptional).IsAssignableFrom(objectType);
-        }
+        public override bool CanConvert(Type objectType) => typeof (IOptional).IsAssignableFrom(objectType);
     }
 }

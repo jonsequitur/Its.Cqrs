@@ -10,26 +10,11 @@ namespace Microsoft.Its.Domain.Serialization
     [DebuggerStepThrough]
     public class UriConverter : JsonConverter
     {
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof (Uri);
-        }
+        public override bool CanConvert(Type objectType) => objectType == typeof (Uri);
 
-        public override bool CanWrite
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool CanWrite => true;
 
-        public override bool CanRead
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool CanRead => true;
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
@@ -53,14 +38,11 @@ namespace Microsoft.Its.Domain.Serialization
                 case JsonToken.Null:
                     return null;
                 default:
-                    var msg = string.Format("Unable to deserialize Uri from token type {0}", reader.TokenType);
+                    var msg = $"Unable to deserialize Uri from token type {reader.TokenType}";
                     throw new InvalidOperationException(msg);
             }
         }
 
-        private static Uri CreateUri(string uriString)
-        {
-            return new Uri(uriString);
-        }
+        private static Uri CreateUri(string uriString) => new Uri(uriString);
     }
 }

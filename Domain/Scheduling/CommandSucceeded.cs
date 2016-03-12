@@ -13,9 +13,6 @@ namespace Microsoft.Its.Domain
         {
         }
 
-        public override string ToString()
-        {
-            return "Succeeded";
-        }
+        public override string ToString() => "Succeeded";
     }
 }

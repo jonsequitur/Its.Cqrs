@@ -44,14 +44,14 @@ namespace Microsoft.Its.Domain.Testing
 
             configuration.UseInMemoryEventStore();
 
-            if (configure != null)
-            {
-                configure(Configuration);
-            }
+            configure?.Invoke(Configuration);
         }
 
         /// <summary>
-        /// Specifes a delegate used to create <see cref="EventStoreDbContext" /> instances if <see cref="ScenarioBuilderExtensions.UseSqlEventStore{TScenarioBuilder}" /> is set to true.
+        /// Specifes a delegate used to create <see cref="EventStoreDbContext" /> instances if <see>
+        ///         <cref>ScenarioBuilderExtensions.UseSqlEventStore{TScenarioBuilder}</cref>
+        ///     </see>
+        ///     is set to true.
         /// </summary>
         public Func<EventStoreDbContext> CreateEventStoreDbContext = () => new EventStoreDbContext();
 
@@ -67,21 +67,12 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="aggregateId">The aggregate id.</param>
         /// <returns></returns>
         public AggregateBuilder<TAggregate> For<TAggregate>(Guid aggregateId)
-            where TAggregate : IEventSourced
-        {
-            return (AggregateBuilder<TAggregate>) aggregateBuilders.GetOrAdd(aggregateId, id => new AggregateBuilder<TAggregate>(id, this));
-        }
+            where TAggregate : IEventSourced => (AggregateBuilder<TAggregate>) aggregateBuilders.GetOrAdd(aggregateId, id => new AggregateBuilder<TAggregate>(id, this));
 
         /// <summary>
         /// Gets the domain configuration that the scenario builder uses.
         /// </summary>
-        public Configuration Configuration
-        {
-            get
-            {
-                return configuration;
-            }
-        }
+        public Configuration Configuration => configuration;
 
         /// <summary>
         /// Instantiates aggregates from the events within the scenario, and optionally runs projection catchups through specified handlers.
@@ -136,13 +127,7 @@ namespace Microsoft.Its.Domain.Testing
         /// Gets the initial events for the scenario.
         /// </summary>
         /// <remarks>Events added when saving aggregates via a repository after Prepare is called will not be added to <see cref="InitialEvents" />.</remarks>
-        public IEnumerable<IEvent> InitialEvents
-        {
-            get
-            {
-                return events.ToArray();
-            }
-        }
+        public IEnumerable<IEvent> InitialEvents => events.ToArray();
 
         /// <summary>
         /// Gets the event bus on which events are published when saved to the scenario.
@@ -150,13 +135,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <value>
         /// The event bus.
         /// </value>
-        public FakeEventBus EventBus
-        {
-            get
-            {
-                return eventBus;
-            }
-        }
+        public FakeEventBus EventBus => eventBus;
 
         internal void EnsureScenarioHasNotBeenPrepared()
         {
@@ -176,7 +155,8 @@ namespace Microsoft.Its.Domain.Testing
         {
             var aggregateType = e.AggregateType();
 
-            if (e is IScheduledCommand)
+            var scheduledCommand = e as IScheduledCommand;
+            if (scheduledCommand != null)
             {
                 DateTimeOffset dueTime = ((dynamic) e).DueTime;
                 var now = Clock.Now();
@@ -189,9 +169,8 @@ namespace Microsoft.Its.Domain.Testing
             }
         }
 
-        internal object GetOrAddCommandScheduler(Type aggregateType)
-        {
-            return commandSchedulers.GetOrAdd(aggregateType, t =>
+        internal object GetOrAddCommandScheduler(Type aggregateType) =>
+            commandSchedulers.GetOrAdd(aggregateType, t =>
             {
                 object handler = null;
 
@@ -205,10 +184,8 @@ namespace Microsoft.Its.Domain.Testing
 
                 return handler;
             });
-        }
 
-        private void SourceAggregatesFromInitialEvents()
-        {
+        private void SourceAggregatesFromInitialEvents() =>
             InitialEvents.GroupBy(e => e.AggregateType(),
                                   e => e)
                          .ForEach(es =>
@@ -242,12 +219,9 @@ namespace Microsoft.Its.Domain.Testing
                                  scenario.aggregates.Add(aggregate);
                              });
                          });
-        }
 
-        internal IEventSourcedRepository<TAggregate> GetRepository<TAggregate>() where TAggregate : class, IEventSourced
-        {
-            return Configuration.Container.Resolve<IEventSourcedRepository<TAggregate>>();
-        }
+        internal IEventSourcedRepository<TAggregate> GetRepository<TAggregate>() where TAggregate : class, IEventSourced => 
+            Configuration.Container.Resolve<IEventSourcedRepository<TAggregate>>();
 
         private void PersistEventsToSql(IEnumerable<IEvent> events)
         {
@@ -263,7 +237,6 @@ namespace Microsoft.Its.Domain.Testing
 
         private void RunCatchup()
         {
-            // TODO: (RunCatchup) provide trace output here and throughout
             var projectors = handlers.OrEmpty()
                                      .Where(h => h.GetType().IsProjectorType())
                                      .ToArray();
@@ -302,18 +275,14 @@ namespace Microsoft.Its.Domain.Testing
             }
         }
 
-        private void SubscribeProjectors()
-        {
+        private void SubscribeProjectors() =>
             handlers
                 .Where(h => h.GetType().IsProjectorType())
                 .ForEach(h => EventBus.Subscribe(h));
-        }
 
-        private void SubscribeConsequenters()
-        {
+        private void SubscribeConsequenters() =>
             handlers
                 .Where(h => h.GetType().IsConsequenterType())
                 .ForEach(h => EventBus.Subscribe(h));
-        }
     }
 }
