@@ -80,12 +80,11 @@ namespace Microsoft.Its.Domain.ServiceBus
 
             return new CompositeDisposable
             {
-                bus.Events<IScheduledCommandEvent>().Subscribe(c => Enqueue(c)),
                 exceptionSubject.Subscribe(ex => bus.PublishErrorAsync(new EventHandlingError(ex, handler))),
                 Disposable.Create(() => queueClient.Close())
             };
         }
-        
+
         internal static QueueClient CreateQueueClient(ServiceBusSettings settings)
         {
             return settings.CreateQueueClient(
@@ -98,26 +97,6 @@ namespace Microsoft.Its.Domain.ServiceBus
                     q.MaxDeliveryCount = (int) (TimeSpan.FromDays(45).Ticks / q.LockDuration.Ticks);
                     q.EnableDeadLetteringOnMessageExpiration = false;
                 });
-        }
-
-        private async Task Enqueue(IScheduledCommandEvent scheduledCommandEvent)
-        {
-            var message = new BrokeredMessage(scheduledCommandEvent.ToJson())
-            {
-                 SessionId = scheduledCommandEvent.AggregateId.ToString()
-            };
-
-            if (scheduledCommandEvent.DueTime != null)
-            {
-                message.ScheduledEnqueueTimeUtc = scheduledCommandEvent.DueTime.Value.UtcDateTime.Add(MessageDeliveryOffsetFromCommandDueTime);
-            }
-
-            messageSubject.OnNext(scheduledCommandEvent);
-
-            using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-            {
-                await queueClient.SendAsync(message);
-            }
         }
     }
 }
