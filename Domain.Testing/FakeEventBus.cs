@@ -18,9 +18,7 @@ namespace Microsoft.Its.Domain.Testing
     {
         // TODO: (FakeEventBus) rename this
         private readonly List<IEvent> publishedEvents = new List<IEvent>();
-        private readonly List<EventHandlingError> errors = new List<EventHandlingError>();
         private readonly List<Type> subscribedEventTypes = new List<Type>();
-        private IScheduler scheduler = System.Reactive.Concurrency.Scheduler.Immediate;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FakeEventBus"/> class.
@@ -32,17 +30,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <summary>
         /// Gets or sets the scheduler on which the bus schedules work.
         /// </summary>
-        public IScheduler Scheduler
-        {
-            get
-            {
-                return scheduler;
-            }
-            set
-            {
-                scheduler = value;
-            }
-        }
+        public IScheduler Scheduler { get; set; } = System.Reactive.Concurrency.Scheduler.Immediate;
 
         /// <summary>
         ///     Publishes the specified events.
@@ -51,7 +39,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <returns>
         ///     An <see cref="IObservable{T}" /> that will be notified once each time the event is handled.
         /// </returns>
-        public override IObservable<Unit> PublishAsync(params IEvent[] events)
+        public override IObservable<Unit> PublishAsync(IEvent[] events)
         {
             lock (publishedEvents)
             {
@@ -73,11 +61,6 @@ namespace Microsoft.Its.Domain.Testing
         /// </returns>
         public override IObservable<Unit> PublishErrorAsync(EventHandlingError error)
         {
-            lock (publishedEvents)
-            {
-                errors.Add(error);
-            }
-
             return base.PublishErrorAsync(error)
                        .ObserveOn(Scheduler)
                        .SubscribeOn(Scheduler);

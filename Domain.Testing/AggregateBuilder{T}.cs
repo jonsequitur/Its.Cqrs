@@ -26,7 +26,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (scenarioBuilder == null)
             {
-                throw new ArgumentNullException("scenarioBuilder");
+                throw new ArgumentNullException(nameof(scenarioBuilder));
             }
             this.aggregateId = aggregateId;
             this.scenarioBuilder = scenarioBuilder;
@@ -35,28 +35,17 @@ namespace Microsoft.Its.Domain.Testing
         /// <summary>
         /// Gets the aggregate identifier that will be used for all events added to the scenario via the <see cref="AggregateBuilder{T}" /> instance.
         /// </summary>
-        public Guid AggregateId
-        {
-            get
-            {
-                return aggregateId;
-            }
-        }
+        public Guid AggregateId => aggregateId;
 
         /// <summary>
         /// Gets the initial events of the scenario.
         /// </summary>
         /// <remarks>Events added when saving aggregates via a repository after Prepare is called will not be added to <see cref="InitialEvents" />.</remarks>
-        public IEnumerable<IEvent<TAggregate>> InitialEvents
-        {
-            get
-            {
-                return scenarioBuilder
-                    .InitialEvents
-                    .Where(e => e.AggregateId == aggregateId)
-                    .Cast<IEvent<TAggregate>>();
-            }
-        }
+        public IEnumerable<IEvent<TAggregate>> InitialEvents =>
+            scenarioBuilder
+                .InitialEvents
+                .Where(e => e.AggregateId == aggregateId)
+                .Cast<IEvent<TAggregate>>();
 
         /// <summary>
         /// Adds events for the specified aggregate.

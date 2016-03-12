@@ -53,19 +53,10 @@ namespace Microsoft.Its.Domain.Testing
             return Task.FromResult(Unit.Default);
         }
 
-        public void Add(T value)
-        {
-            Put(value);
-        }
+        public void Add(T value) => Put(value);
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            return dictionary.Values.GetEnumerator();
-        }
+        public IEnumerator<T> GetEnumerator() => dictionary.Values.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

@@ -7,17 +7,15 @@ namespace Microsoft.Its.Domain.Testing
 {
     public class EventComparer : IEqualityComparer<IStoredEvent>
     {
-        public bool Equals(IStoredEvent x, IStoredEvent y)
-        {
-            return x.AggregateId == y.AggregateId &&
-                   x.SequenceNumber == y.SequenceNumber;
-        }
+        public bool Equals(IStoredEvent x, IStoredEvent y) =>
+            x.AggregateId == y.AggregateId &&
+            x.SequenceNumber == y.SequenceNumber;
 
         public int GetHashCode(IStoredEvent obj)
         {
             unchecked
             {
-                return (obj.SequenceNumber.GetHashCode() * 397) ^ obj.AggregateId.GetHashCode();
+                return (obj.SequenceNumber.GetHashCode()*397) ^ obj.AggregateId.GetHashCode();
             }
         }
     }

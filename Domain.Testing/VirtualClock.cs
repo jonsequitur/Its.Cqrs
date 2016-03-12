@@ -155,7 +155,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (Clock.Current is VirtualClock)
             {
-                throw new InvalidOperationException(string.Format("You must dispose the current VirtualClock (created by {0}) before starting another.", (Clock.Current as VirtualClock).caller));
+                throw new InvalidOperationException($"You must dispose the current VirtualClock (created by {((VirtualClock) Clock.Current).caller}) before starting another.");
             }
 
 

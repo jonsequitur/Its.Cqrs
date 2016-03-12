@@ -32,7 +32,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (builder == null)
             {
-                throw new ArgumentNullException("builder");
+                throw new ArgumentNullException(nameof(builder));
             }
             this.builder = builder;
 
@@ -41,49 +41,25 @@ namespace Microsoft.Its.Domain.Testing
             // subscribe to VirtualClock movements and advance the scheduler clock accordingly
             Clock.Current
                  .IfTypeIs<VirtualClock>()
-                 .ThenDo(virtualClock =>
-                 {
-                     subscribedToVirtualClock = true;
-                 });
+                 .ThenDo(virtualClock => { subscribedToVirtualClock = true; });
         }
 
         /// <summary>
         /// Gets the aggregates that have been created within the scenario.
         /// </summary>
-        public IEnumerable<IEventSourced> Aggregates
-        {
-            get
-            {
-                return aggregates;
-            }
-        }
+        public IEnumerable<IEventSourced> Aggregates => aggregates;
 
         /// <summary>
         /// Gets the event bus on which handlers in the scenario are subscribed.
         /// </summary>
-        public FakeEventBus EventBus
-        {
-            get
-            {
-                return builder.EventBus;
-            }
-        }
+        public FakeEventBus EventBus => builder.EventBus;
 
         /// <summary>
         /// Gets the event handling errors, if any, that occur during the course of the scenario, including during <see cref="ScenarioBuilder.Prepare" />.
         /// </summary>
-        public IEnumerable<EventHandlingError> EventHandlingErrors
-        {
-            get
-            {
-                return eventHandlingErrors;
-            }
-        }
+        public IEnumerable<EventHandlingError> EventHandlingErrors => eventHandlingErrors;
 
-        internal void AddEventHandlingError(EventHandlingError error)
-        {
-            eventHandlingErrors.Add(error);
-        }
+        internal void AddEventHandlingError(EventHandlingError error) => eventHandlingErrors.Add(error);
 
         internal async Task AdvanceClock(DateTimeOffset to)
         {
@@ -115,7 +91,7 @@ namespace Microsoft.Its.Domain.Testing
             else
             {
                 var clockTrigger = builder.Configuration.SchedulerClockTrigger();
-                
+
                 SchedulerAdvancedResult result;
                 do
                 {
@@ -124,25 +100,16 @@ namespace Microsoft.Its.Domain.Testing
             }
         }
 
-        internal static TimeSpan DefaultTimeout()
-        {
-            if (!Debugger.IsAttached)
-            {
-                return TimeSpan.FromMinutes(1);
-            }
-
-            return TimeSpan.FromMinutes(15);
-        }
+        internal static TimeSpan DefaultTimeout() =>
+            TimeSpan.FromMinutes(!Debugger.IsAttached ? 1 : 15);
 
         /// <summary>
         ///     Persists the state of the specified aggregate by adding new events to the event store.
         /// </summary>
         /// <param name="aggregate">The aggregate to persist.</param>
         public void Save<TAggregate>(TAggregate aggregate)
-            where TAggregate : class, IEventSourced
-        {
-            SaveAsync(aggregate).Wait();
-        }
+            where TAggregate : class, IEventSourced =>
+                SaveAsync(aggregate).Wait();
 
         /// <summary>
         ///     Persists the state of the specified aggregate by adding new events to the event store.
@@ -161,10 +128,8 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="aggregateId">The id of the aggregate. If null, and there's only a single aggregate of the specified type, it returns that; otherwise, it throws.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
         public TAggregate GetLatest<TAggregate>(Guid? aggregateId = null)
-            where TAggregate : class, IEventSourced
-        {
-            return GetLatestAsync<TAggregate>(aggregateId).Result;
-        }
+            where TAggregate : class, IEventSourced =>
+                GetLatestAsync<TAggregate>(aggregateId).Result;
 
         /// <summary>
         ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
@@ -183,16 +148,15 @@ namespace Microsoft.Its.Domain.Testing
                                 .GetLatest(aggregateId.Value);
         }
 
+        /// <summary>
         ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
         /// </summary>
         /// <param name="version">The version at which to retrieve the aggregate.</param>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
         public TAggregate GetVersion<TAggregate>(Guid aggregateId, long version)
-            where TAggregate : class, IEventSourced
-        {
-            return GetVersionAsync<TAggregate>(aggregateId, version).Result;
-        }
+            where TAggregate : class, IEventSourced =>
+                GetVersionAsync<TAggregate>(aggregateId, version).Result;
 
         /// <summary>
         ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
@@ -201,11 +165,9 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
         public async Task<TAggregate> GetVersionAsync<TAggregate>(Guid aggregateId, long version)
-            where TAggregate : class, IEventSourced
-        {
-            return await builder.GetRepository<TAggregate>()
-                                .GetVersion(aggregateId, version);
-        }
+            where TAggregate : class, IEventSourced =>
+                await builder.GetRepository<TAggregate>()
+                             .GetVersion(aggregateId, version);
 
         /// <summary>
         /// Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
@@ -216,11 +178,9 @@ namespace Microsoft.Its.Domain.Testing
         /// The deserialized aggregate, or null if none exists with the specified id.
         /// </returns>
         public TAggregate GetAsOfDate<TAggregate>(Guid aggregateId, DateTimeOffset asOfDate)
-            where TAggregate : class, IEventSourced
-        {
-            return GetAsOfDateAsync<TAggregate>(aggregateId, asOfDate).Result;
-        }
-        
+            where TAggregate : class, IEventSourced =>
+                GetAsOfDateAsync<TAggregate>(aggregateId, asOfDate).Result;
+
         /// <summary>
         /// Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
         /// </summary>
@@ -230,36 +190,26 @@ namespace Microsoft.Its.Domain.Testing
         /// The deserialized aggregate, or null if none exists with the specified id.
         /// </returns>
         public async Task<TAggregate> GetAsOfDateAsync<TAggregate>(Guid aggregateId, DateTimeOffset asOfDate)
-            where TAggregate : class, IEventSourced
-        {
-            return await builder.GetRepository<TAggregate>()
-                                .GetAsOfDate(aggregateId, asOfDate);
-        }
+            where TAggregate : class, IEventSourced =>
+                await builder.GetRepository<TAggregate>()
+                             .GetAsOfDate(aggregateId, asOfDate);
 
         /// <summary>
         /// Registers an object for disposal when the scenario is disposed.
         /// </summary>
-        public void RegisterForDispose(IDisposable disposable)
-        {
-            disposables.Add(disposable);
-        }
+        public void RegisterForDispose(IDisposable disposable) => disposables.Add(disposable);
 
-        private string GetClockName()
-        {
-            return builder.Configuration
-                          .Properties
-                          .IfContains("CommandSchedulerClockName")
-                          .And()
-                          .IfTypeIs<string>()
-                          .ElseDefault();
-        }
+        private string GetClockName() =>
+            builder.Configuration
+                   .Properties
+                   .IfContains("CommandSchedulerClockName")
+                   .And()
+                   .IfTypeIs<string>()
+                   .ElseDefault();
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        public void Dispose()
-        {
-            disposables.Dispose();
-        }
+        public void Dispose() => disposables.Dispose();
     }
 }

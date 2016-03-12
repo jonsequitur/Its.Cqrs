@@ -29,12 +29,6 @@ namespace Microsoft.Its.Domain.Testing
 
         public long SequenceNumber { get; set; }
 
-        public dynamic Metadata
-        {
-            get
-            {
-                return metadata ?? (metadata = new ExpandoObject());
-            }
-        }
+        public dynamic Metadata => metadata ?? (metadata = new ExpandoObject());
     }
 }

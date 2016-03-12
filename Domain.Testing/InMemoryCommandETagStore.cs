@@ -8,11 +8,9 @@ namespace Microsoft.Its.Domain.Testing
 {
     internal class InMemoryCommandETagStore
     {
-        private readonly ConcurrentDictionary<Tuple<string, string>, DateTimeOffset> dictionary = new ConcurrentDictionary<Tuple<string, string>, DateTimeOffset>(); 
+        private readonly ConcurrentDictionary<Tuple<string, string>, DateTimeOffset> dictionary = new ConcurrentDictionary<Tuple<string, string>, DateTimeOffset>();
 
-        public bool TryAdd(string scope, string etag)
-        {
-            return dictionary.TryAdd(Tuple.Create(scope, etag), DateTimeOffset.Now);
-        }
+        public bool TryAdd(string scope, string etag) =>
+            dictionary.TryAdd(Tuple.Create(scope, etag), DateTimeOffset.Now);
     }
 }

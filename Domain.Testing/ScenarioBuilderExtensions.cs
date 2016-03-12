@@ -4,8 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Testing

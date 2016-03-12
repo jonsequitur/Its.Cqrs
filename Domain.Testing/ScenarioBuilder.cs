@@ -68,7 +68,8 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="aggregateId">The aggregate id.</param>
         /// <returns></returns>
         public AggregateBuilder<TAggregate> For<TAggregate>(Guid aggregateId)
-            where TAggregate : IEventSourced => (AggregateBuilder<TAggregate>) aggregateBuilders.GetOrAdd(aggregateId, id => new AggregateBuilder<TAggregate>(id, this));
+            where TAggregate : IEventSourced =>
+                (AggregateBuilder<TAggregate>) aggregateBuilders.GetOrAdd(aggregateId, id => new AggregateBuilder<TAggregate>(id, this));
 
         /// <summary>
         /// Gets the domain configuration that the scenario builder uses.

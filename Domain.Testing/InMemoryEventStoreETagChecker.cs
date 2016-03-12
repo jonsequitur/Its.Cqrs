@@ -15,15 +15,14 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (eventStream == null)
             {
-                throw new ArgumentNullException("eventStream");
+                throw new ArgumentNullException(nameof(eventStream));
             }
             this.eventStream = eventStream;
         }
 
-        public async Task<bool> HasBeenRecorded(string scope, string etag)
-        {
-            return eventStream.Events.Any(e => e.AggregateId.ToString() == scope &&
-                                               e.ETag == etag);
-        }
+        public Task<bool> HasBeenRecorded(string scope, string etag) =>
+            Task.FromResult(eventStream.Events
+                                       .Any(e => e.AggregateId.ToString() == scope &&
+                                                 e.ETag == etag));
     }
 }
