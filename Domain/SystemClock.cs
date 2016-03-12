@@ -21,14 +21,8 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the current time via <see cref="DateTimeOffset.Now" />.
         /// </summary>
-        public DateTimeOffset Now()
-        {
-            return DateTimeOffset.UtcNow;
-        }
+        public DateTimeOffset Now() => DateTimeOffset.UtcNow;
 
-        public override string ToString()
-        {
-            return GetType() + ": " + Now().ToString("O");
-        }
+        public override string ToString() => $"{GetType()}: {Now().ToString("O")}";
     }
 }

@@ -76,12 +76,11 @@ namespace Microsoft.Its.Domain
         /// <param name="command">The command.</param>
         /// <param name="due">The time when the command should be delivered. If this is null, the scheduler will deliver it as soon as possible.</param>
         /// <exception cref="System.ArgumentNullException">command</exception>
-        protected void ScheduleCommand<TCommand>(TCommand command,
-                                                 DateTimeOffset? due = null)
-            where TCommand : class, ICommand<T>
-        {
-            Task.Run(() => ScheduleCommandAsync(command, due)).Wait();
-        }
+        protected void ScheduleCommand<TCommand>(
+            TCommand command,
+            DateTimeOffset? due = null)
+            where TCommand : class, ICommand<T> =>
+                Task.Run(() => ScheduleCommandAsync(command, due)).Wait();
 
         /// <summary>
         /// Schedules a command for asynchronous and, optionally, deferred delivery.
@@ -96,7 +95,7 @@ namespace Microsoft.Its.Domain
         {
             if (command == null)
             {
-                throw new ArgumentNullException("command");
+                throw new ArgumentNullException(nameof(command));
             }
 
             var commandScheduledEvent = new CommandScheduled<T>

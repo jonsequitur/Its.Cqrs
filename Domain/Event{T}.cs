@@ -26,7 +26,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Gets all known event types (derived from <see cref="IEvent{T}" />) in the loaded assemblies.
         /// </summary>
-        public static Type[] KnownTypes => knownTypes;
+        public new static Type[] KnownTypes => knownTypes;
 
         /// <summary>
         ///     Gets all known event handler types in the loaded assemblies.

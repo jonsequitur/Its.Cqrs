@@ -8,21 +8,17 @@ namespace Microsoft.Its.Domain
 {
     public static class ReferTo
     {
-        public static CommandReference Command<TCommand>() where TCommand : ICommand
-        {
-            return new CommandReference
+        public static CommandReference Command<TCommand>() where TCommand : ICommand =>
+            new CommandReference
             {
-                CommandName = typeof (TCommand).Name,
+                CommandName = typeof (TCommand).Name
             };
-        }
 
-        public static CommandReference Command<TCommand>(Expression<Func<TCommand, object>> member) where TCommand : ICommand
-        {
-            return new CommandReference
+        public static CommandReference Command<TCommand>(Expression<Func<TCommand, object>> member)
+            where TCommand : ICommand => new CommandReference
             {
                 CommandName = typeof (TCommand).Name,
                 CommandField = member.MemberName()
             };
-        }
     }
 }

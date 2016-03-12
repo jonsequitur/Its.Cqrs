@@ -53,23 +53,11 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Gets a value indicating whether a value has been set.
         /// </summary>
-        public bool IsSet
-        {
-            get
-            {
-                return isSet;
-            }
-        }
+        public bool IsSet => isSet;
 
-        public static implicit operator Optional<T>(T value)
-        {
-            return new Optional<T>(value);
-        }
+        public static implicit operator Optional<T>(T value) => new Optional<T>(value);
 
-        public bool Equals(Optional<T> other)
-        {
-            return EqualityComparer<T>.Default.Equals(value, other.value) && isSet.Equals(other.isSet);
-        }
+        public bool Equals(Optional<T> other) => EqualityComparer<T>.Default.Equals(value, other.value) && isSet.Equals(other.isSet);
 
         /// <summary>
         /// Indicates whether this instance and a specified object are equal.
@@ -102,26 +90,14 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        public static bool operator ==(Optional<T> left, object right)
-        {
-            return Equals(left, right);
-        }
+        public static bool operator ==(Optional<T> left, object right) => Equals(left, right);
 
-        public static bool operator !=(Optional<T> left, object right)
-        {
-            return !(left == right);
-        }
+        public static bool operator !=(Optional<T> left, object right) => !(left == right);
 
         /// <summary>
         ///     Gets the value.
         /// </summary>
-        object IOptional.Value
-        {
-            get
-            {
-                return Value;
-            }
-        }
+        object IOptional.Value => Value;
 
         /// <summary>
         ///     Returns a <see cref="System.String" /> that represents this instance.
@@ -132,8 +108,8 @@ namespace Microsoft.Its.Domain
         public override string ToString()
         {
             return IsSet
-                       ? (Value != null ? Value.ToString() : string.Format("Optional<{0}> (set to null)", typeof(T).Name))
-                       : string.Format("Optional<{0}> (not set)", typeof(T).Name);
+                       ? (Value != null ? Value.ToString() : $"Optional<{typeof (T).Name}> (set to null)")
+                       : $"Optional<{typeof (T).Name}> (not set)";
         }
 
         /// <summary>
@@ -145,9 +121,6 @@ namespace Microsoft.Its.Domain
         /// Creates an <see cref="Optional{T}" /> containing the specified value.
         /// </summary>
         /// <param name="value">The optional value.</param>
-        public static Optional<T> Create(T value)
-        {
-            return new Optional<T>(value);
-        }
+        public static Optional<T> Create(T value) => new Optional<T>(value);
     }
 }

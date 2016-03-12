@@ -5,9 +5,6 @@ namespace Microsoft.Its.Domain
 {
     public static class Optional
     {
-        public static Optional<T> Create<T>(T value)
-        {
-            return new Optional<T>(value);
-        }
+        public static Optional<T> Create<T>(T value) => new Optional<T>(value);
     }
 }

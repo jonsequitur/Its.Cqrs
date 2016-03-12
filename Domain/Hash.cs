@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             var inputBytes = Encoding.ASCII.GetBytes(value);
@@ -46,7 +46,7 @@ namespace Microsoft.Its.Domain
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             // concatenate the namespace and input string
