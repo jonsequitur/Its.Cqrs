@@ -126,16 +126,17 @@ namespace Microsoft.Its.Domain
             throw new NotImplementedException(
                 string.Format(
                     @"No command of type {0} is accepted by the {1} aggregate. If you wish to add support for this command, either:
-    1) add the following to {1}:
+
+    1) create an implementation of ICommandHandler<{1}, {0}>.
+
+    or
+
+    2) add the following to {1}:
 
           public void EnactCommand({0} command)
           {{
               RecordEvent( /* NEW_EVENT */ );
-          }}
-
-    or 
-
-    2) create an implementation of ICommandHandler<{1}, {0}>.",
+          }}",
                     command.GetType(),
                     GetType()));
         }
