@@ -25,11 +25,11 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void Global_Configuration_uses_the_InProcessEventBus_Instance()
+        public void Root_Configuration_uses_the_InProcessEventBus_Instance()
         {
-#pragma warning disable 612,618
-            Configuration.Global.EventBus.Should()
-#pragma warning restore 612,618
+            Configuration.Current
+                         .EventBus
+                         .Should()
                          .NotBeNull()
                          .And
                          .BeSameAs(InProcessEventBus.Instance);
