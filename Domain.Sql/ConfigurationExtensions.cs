@@ -16,15 +16,6 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     public static class ConfigurationExtensions
     {
-        public static SqlCommandScheduler SqlCommandScheduler(this Configuration configuration)
-        {
-            if (configuration.IsUsingCommandSchedulerPipeline())
-            {
-                throw new InvalidOperationException("You must first call UseSqlCommandScheduling to enable the use of the legacy SqlCommandScheduler.");
-            }
-            return configuration.Container.Resolve<SqlCommandScheduler>();
-        }
-
         public static ISchedulerClockRepository SchedulerClockRepository(this Configuration configuration)
         {
             return configuration.Container.Resolve<ISchedulerClockRepository>();
@@ -58,56 +49,11 @@ namespace Microsoft.Its.Domain.Sql
             return configuration;
         }
 
-        /// <summary>
-        /// Configures the system to use SQL-backed command scheduling.
-        /// </summary>
-        /// <param name="configuration">The configuration.</param>
-        /// <returns>The updated configuration.</returns>
-        [Obsolete("Please move to UseSqlStorageForScheduledCommands.")]
-        public static Configuration UseSqlCommandScheduling(
-            this Configuration configuration,
-            Action<ReadModelCatchup<CommandSchedulerDbContext>> configureCatchup = null)
-        {
-            var container = configuration.Container;
-
-            container.RegisterDefaultClockName();
-
-            var scheduler = new SqlCommandScheduler(
-                configuration,
-                container.Resolve<Func<CommandSchedulerDbContext>>(),
-                container.Resolve<GetClockName>());
-
-            if (container.All(r => r.Key != typeof (SqlCommandScheduler)))
-            {
-                container.Register(c => scheduler)
-                         .Register<ISchedulerClockTrigger>(c => scheduler)
-                         .Register<ISchedulerClockRepository>(c => scheduler);
-            }
-
-            var subscription = container.Resolve<IEventBus>().Subscribe(scheduler);
-            configuration.RegisterForDisposal(subscription);
-            container.RegisterSingle(c => scheduler);
-
-            if (configureCatchup != null)
-            {
-                var catchup = new ReadModelCatchup<CommandSchedulerDbContext>(scheduler)
-                {
-                    CreateReadModelDbContext = scheduler.CreateCommandSchedulerDbContext
-                };
-                configureCatchup(catchup);
-                catchup.PollEventStore();
-                container.RegisterSingle(c => catchup);
-                configuration.RegisterForDisposal(catchup);
-            }
-
-            configuration.IsUsingCommandSchedulerPipeline(false);
-
-            return configuration;
-        }
-
         public static Configuration UseSqlStorageForScheduledCommands(
             this Configuration configuration)
         {
+            configuration.IsUsingInMemoryCommandScheduling(false);
+
             var container = configuration.Container;
 
             container.RegisterDefaultClockName()

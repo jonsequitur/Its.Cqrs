@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="configuration">The configuration.</param>
         public static Configuration UseInMemoryCommandScheduling(this Configuration configuration)
         {
-            configuration.IsUsingCommandSchedulerPipeline(true);
+            configuration.IsUsingInMemoryCommandScheduling(true);
 
             configuration.Container
                          .Register<IETagChecker>(c => c.Resolve<InMemoryEventStoreETagChecker>());

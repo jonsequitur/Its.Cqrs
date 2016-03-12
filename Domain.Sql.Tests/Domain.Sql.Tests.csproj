@@ -151,7 +151,6 @@
     <Compile Include="SqlCommandSchedulerIdempotencyTests_NonEventSourced.cs" />
     <Compile Include="SqlCommandSchedulerTests.cs" />
     <Compile Include="SqlCommandSchedulerTests_EventSourced.cs" />
-    <Compile Include="SqlCommandSchedulerTests_Legacy.cs" />
     <Compile Include="SqlCommandSchedulerTests_NonEventSourced.cs" />
     <Compile Include="SqlCommandSchedulerTests_Pipeline.cs" />
     <Compile Include="SqlEventSourcedRepositoryMigrationTests.cs" />

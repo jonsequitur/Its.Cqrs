@@ -42,7 +42,8 @@ namespace Microsoft.Its.Domain.Testing
             configuration.Container
                          .Register<IEventBus>(c => eventBus);
 
-            configuration.UseInMemoryEventStore();
+            configuration.UseInMemoryEventStore()
+                         .UseInMemoryCommandScheduling();
 
             if (configure != null)
             {
@@ -97,8 +98,7 @@ namespace Microsoft.Its.Domain.Testing
             prepared = true;
 
             // command scheduling
-            if (configuration.IsUsingCommandSchedulerPipeline() &&
-                !configuration.IsUsingInMemoryCommandScheduling())
+            if (!configuration.IsUsingInMemoryCommandScheduling())
             {
                 var clockName = "TEST-" + Guid.NewGuid().ToString("N").ToETag();
                 Configuration.Properties["CommandSchedulerClockName"] = clockName;
