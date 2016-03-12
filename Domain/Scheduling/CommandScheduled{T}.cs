@@ -17,10 +17,7 @@ namespace Microsoft.Its.Domain
     [DebuggerDisplay("{ToString()}")]
     public class CommandScheduled<TAggregate> :
         Event<TAggregate>,
-        IScheduledCommand<TAggregate>,
-#pragma warning disable 618
-        IScheduledCommandEvent
-#pragma warning restore 618
+        IScheduledCommand<TAggregate>
         where TAggregate : IEventSourced
     {
         private ScheduledCommandResult result;

@@ -90,54 +90,34 @@ namespace Microsoft.Its.Domain.Testing
 
             var configuration = Configuration.Current;
 
-            if (!configuration.IsUsingCommandSchedulerPipeline())
-            {
-                if (schedulerClocks.Any())
-                {
-                    foreach (var clock in schedulerClocks.OfType<Sql.CommandScheduler.Clock>())
-                    {
-                        configuration.SqlCommandScheduler()
-                                     .AdvanceClock(clock.Name, Clock.Now())
-                                     .TimeoutAfter(Scenario.DefaultTimeout())
-                                     .Wait();
-                    }
-                }
-            }
-            else
-            {
-                var commandsInPipeline = configuration.Container.Resolve<CommandsInPipeline>();
+            var commandsInPipeline = configuration.Container.Resolve<CommandsInPipeline>();
 
-                do
+            do
+            {
+                var pendingCommands = commandsInPipeline
+                    .Select(c => c.Result)
+                    .OfType<CommandScheduled>()
+                    .ToArray();
+
+                if (pendingCommands.Any())
                 {
-                    var pendingCommands = commandsInPipeline
-                        .Select(c => c.Result)
-                        .OfType<CommandScheduled>()
+                    var sqlSchedulerClocks = pendingCommands
+                        .Select(s => s.Clock)
+                        .OfType<Sql.CommandScheduler.Clock>()
+                        .Distinct()
                         .ToArray();
 
-                    if (pendingCommands.Any())
+                    if (sqlSchedulerClocks.Any())
                     {
-                        var sqlSchedulerClocks = pendingCommands
-                            .Select(s => s.Clock)
-                            .OfType<Sql.CommandScheduler.Clock>()
-                            .Distinct()
-                            .ToArray();
+                        var clockTrigger = configuration.SchedulerClockTrigger();
 
-                        if (sqlSchedulerClocks.Any())
-                        {
-                            var clockTrigger = configuration.SchedulerClockTrigger();
+                        var appliedCommands = sqlSchedulerClocks
+                            .Select(c => clockTrigger.AdvanceClock(c.Name, Now()) 
+                                                     .TimeoutAfter(Scenario.DefaultTimeout())
+                                                     .Result)
+                            .SelectMany(result => result.SuccessfulCommands);
 
-                            var appliedCommands = sqlSchedulerClocks
-                                .Select(c => clockTrigger.AdvanceClock(c.Name, Now()) 
-                                                         .TimeoutAfter(Scenario.DefaultTimeout())
-                                                         .Result)
-                                .SelectMany(result => result.SuccessfulCommands);
-
-                            if (!appliedCommands.Any())
-                            {
-                                break;
-                            }
-                        }
-                        else
+                        if (!appliedCommands.Any())
                         {
                             break;
                         }
@@ -146,8 +126,12 @@ namespace Microsoft.Its.Domain.Testing
                     {
                         break;
                     }
-                } while (true);
-            }
+                }
+                else
+                {
+                    break;
+                }
+            } while (true);
         }
 
         /// <summary>

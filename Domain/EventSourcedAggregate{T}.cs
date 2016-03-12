@@ -106,18 +106,15 @@ namespace Microsoft.Its.Domain
                 DueTime = due
             };
 
-            if (Configuration.Current.IsUsingCommandSchedulerPipeline())
-            {
-                var scheduledCommand = new ScheduledCommand<T>(
-                    command,
-                    Id,
-                    due,
-                    new EventHasBeenRecordedPrecondition(commandScheduledEvent.ETag, Id));
+            var scheduledCommand = new ScheduledCommand<T>(
+                command,
+                Id,
+                due,
+                new EventHasBeenRecordedPrecondition(commandScheduledEvent.ETag, Id));
 
-                await Configuration.Current
-                                   .CommandScheduler<T>()
-                                   .Schedule(scheduledCommand);
-            }
+            await Configuration.Current
+                               .CommandScheduler<T>()
+                               .Schedule(scheduledCommand);
 
             RecordEvent(commandScheduledEvent);
         }

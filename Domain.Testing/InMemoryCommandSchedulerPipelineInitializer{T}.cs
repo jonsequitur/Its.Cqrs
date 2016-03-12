@@ -7,8 +7,7 @@ namespace Microsoft.Its.Domain.Testing
     {
         protected override void InitializeFor<TAggregate>(Configuration configuration)
         {
-            configuration.IsUsingCommandSchedulerPipeline(true)
-                         .IsUsingInMemoryCommandScheduling(true);
+            configuration.IsUsingInMemoryCommandScheduling(true);
 
             configuration.Container.RegisterSingle(c => new InMemoryCommandETagStore());
 

@@ -56,15 +56,6 @@ namespace Microsoft.Its.Domain
                      .RegisterSingle(c => this);
         }
 
-        [Obsolete("Please use Configuration.Current instead.")]
-        public static Configuration Global
-        {
-            get
-            {
-                return global;
-            }
-        }
-
         /// <summary>
         /// Gets the current configuration. This may vary by context.
         /// </summary>

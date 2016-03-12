@@ -28,5 +28,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                  Name,
                                  UtcNow.ToString("O"));
         }
+
+        public const string DefaultClockName = "default";
     }
 }
