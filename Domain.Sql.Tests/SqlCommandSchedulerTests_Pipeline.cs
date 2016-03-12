@@ -14,12 +14,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
     {
         protected override void Configure(Configuration configuration)
         {
-            configuration.Container.Register<SqlCommandScheduler>(c =>
-            {
-                throw new NotSupportedException("SqlCommandScheduler (legacy) is disabled");
-                return null;
-            });
-
             configuration
                 .UseDependency<GetClockName>(c => e => clockName)
                 .UseSqlStorageForScheduledCommands()

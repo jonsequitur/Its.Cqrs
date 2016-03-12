@@ -28,13 +28,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the name of the command.
         /// </summary>
-        public virtual string CommandName
-        {
-            get
-            {
-                return GetType().Name;
-            }
-        }
+        public virtual string CommandName => GetType().Name;
 
         /// <summary>
         /// Gets the ETag for the command.
@@ -106,24 +100,13 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets all known <see cref="Command" /> types.
         /// </summary>
-        public static Type[] KnownTypes
-        {
-            get
-            {
-                return indexOfCommandTypesByTargetTypeAndCommandName
-                    .Value
-                    .Values
-                    .ToArray();
-            }
-        }
+        public static Type[] KnownTypes =>
+            indexOfCommandTypesByTargetTypeAndCommandName
+                .Value
+                .Values
+                .ToArray();
 
-        public static Type[] KnownTargetTypes
-        {
-            get
-            {
-                return knownTargetTypes.Value;
-            }
-        }
+        public static Type[] KnownTargetTypes => knownTargetTypes.Value;
 
         internal static Type FindType(Type aggregateType, string commandName)
         {
@@ -132,9 +115,6 @@ namespace Microsoft.Its.Domain
             return type;
         }
 
-        internal static string TargetNameFor(Type commandType)
-        {
-            return indexOfTargetTypesByCommandType.Value[commandType].Name;
-        }
+        internal static string TargetNameFor(Type commandType) => indexOfTargetTypesByCommandType.Value[commandType].Name;
     }
 }

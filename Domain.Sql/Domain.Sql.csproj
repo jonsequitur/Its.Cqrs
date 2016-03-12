@@ -104,7 +104,6 @@
     <Compile Include="CommandScheduler\CommandSchedulerDbContext.cs" />
     <Compile Include="CommandScheduler\SchedulerClockRepository.cs" />
     <Compile Include="CommandScheduler\SchedulerClockTrigger.cs" />
-    <Compile Include="CommandScheduler\SchedulerInitializer.cs" />
     <Compile Include="CommandScheduler\SqlCommandSchedulerExtensions.cs" />
     <Compile Include="CommandScheduler\Storage.cs" />
     <Compile Include="CreateAndMigrate{T}.cs" />
@@ -132,9 +131,6 @@
     <Compile Include="Migrations\Migrator.cs" />
     <Compile Include="ReadModelCatchupResult.cs" />
     <Compile Include="ReservationServiceDatabaseInitializer.cs" />
-    <Compile Include="CommandScheduler\SqlCommandScheduler.cs" />
-    <Compile Include="CommandScheduler\SqlCommandSchedulerBinder{T}.cs" />
-    <Compile Include="CommandScheduler\SqlCommandScheduler{T}.cs" />
     <Compile Include="ConfigurationExtensions.cs" />
     <Compile Include="EventBusExtensions.cs" />
     <Compile Include="ExclusiveEventStoreCatchupQuery.cs" />

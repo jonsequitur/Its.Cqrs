@@ -141,7 +141,6 @@
     <Compile Include="ExceptionExtensions.cs" />
     <Compile Include="Scheduling\ICommandSchedulerPipelineInitializer.cs" />
     <Compile Include="Scheduling\IPrecondition.cs" />
-    <Compile Include="Scheduling\IScheduledCommandEvent.cs" />
     <Compile Include="Scheduling\ISpecifySchedulingBehavior.cs" />
     <Compile Include="Scheduling\NoEventStoreETagVerifications.cs" />
     <Compile Include="Reservations\ISynchronousReservationService.cs" />

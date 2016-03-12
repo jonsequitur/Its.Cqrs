@@ -12,8 +12,6 @@ namespace Microsoft.Its.Domain
     [DebuggerStepThrough]
     public class ConfigurationContext : IDisposable
     {
-        private readonly Configuration configuration;
-
         private static readonly string callContextKey = typeof (ConfigurationContext).FullName;
 
         private static readonly ConcurrentDictionary<Guid, ConfigurationContext> contexts = new ConcurrentDictionary<Guid, ConfigurationContext>();
@@ -27,9 +25,9 @@ namespace Microsoft.Its.Domain
         {
             if (configuration == null)
             {
-                throw new ArgumentNullException("configuration");
+                throw new ArgumentNullException(nameof(configuration));
             }
-            this.configuration = configuration;
+            this.Configuration = configuration;
         }
 
         public static ConfigurationContext Establish(Configuration configuration)
@@ -50,24 +48,13 @@ namespace Microsoft.Its.Domain
 
         internal bool AllowOverride { get; set; }
 
-        public static ConfigurationContext Current
-        {
-            get
-            {
-                return CallContext.LogicalGetData(callContextKey)
-                                  .IfTypeIs<Guid>()
-                                  .Then(id => contexts.IfContains(id))
-                                  .ElseDefault();
-            }
-        }
+        public static ConfigurationContext Current =>
+            CallContext.LogicalGetData(callContextKey)
+                       .IfTypeIs<Guid>()
+                       .Then(id => contexts.IfContains(id))
+                       .ElseDefault();
 
-        public Configuration Configuration
-        {
-            get
-            {
-                return configuration;
-            }
-        }
+        public Configuration Configuration { get; }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

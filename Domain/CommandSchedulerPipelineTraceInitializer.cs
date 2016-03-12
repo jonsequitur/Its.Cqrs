@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -98,10 +97,7 @@ namespace Microsoft.Its.Domain
                 .Where(d => d != null)
                 .Select(d => d.Method.GetHashCode().ToString()).ToDelimitedString("/");
 
-            var key = string.Format(
-                "{0} ({1})",
-                base.GetKeyIndicatingInitialized(),
-                hashCodes);
+            var key = $"{base.GetKeyIndicatingInitialized()} ({hashCodes})";
 
             return key;
         }

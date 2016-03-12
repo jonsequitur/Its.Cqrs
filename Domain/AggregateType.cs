@@ -17,20 +17,12 @@ namespace Microsoft.Its.Domain
                     .ToDictionary(t => t,
                                   t => typeof (AggregateType<>).MakeGenericType(t).Member().EventStreamName as string);
 
-        public static Type[] KnownTypes
-        {
-            get
-            {
-                return knownTypes.Keys.ToArray();
-            }
-        }
+        public static Type[] KnownTypes => knownTypes.Keys.ToArray();
 
-        public static string EventStreamName(this IEvent @event)
-        {
-            return @event.IfTypeIs<DynamicEvent>()
-                         .Then(e => e.EventStreamName)
-                         .Else(() => EventStreamName(@event.AggregateType()));
-        }
+        public static string EventStreamName(this IEvent @event) =>
+            @event.IfTypeIs<DynamicEvent>()
+                  .Then(e => e.EventStreamName)
+                  .Else(() => EventStreamName(@event.AggregateType()));
 
         public static string EventStreamName(Type aggregateType)
         {

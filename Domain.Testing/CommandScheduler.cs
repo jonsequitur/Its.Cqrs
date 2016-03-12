@@ -22,7 +22,7 @@ namespace Microsoft.Its.Domain.Testing
             this ISchedulerClockTrigger scheduler,
             string clockName = null)
         {
-            clockName = clockName ?? SqlCommandScheduler.DefaultClockName;
+            clockName = clockName ?? Sql.CommandScheduler.Clock.DefaultClockName;
 
             using (var db = new CommandSchedulerDbContext())
             {
@@ -41,7 +41,8 @@ namespace Microsoft.Its.Domain.Testing
             this Configuration configuration,
             int timeoutInMilliseconds = 5000)
         {
-            var virtualClockDone = Clock.Current.IfTypeIs<VirtualClock>()
+            var virtualClockDone = Clock.Current
+                                        .IfTypeIs<VirtualClock>()
                                         .Then(c => c.Done())
                                         .Else(() => Task.FromResult(Unit.Default));
 

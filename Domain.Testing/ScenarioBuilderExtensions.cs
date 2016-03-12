@@ -153,34 +153,5 @@ namespace Microsoft.Its.Domain.Testing
                        ? now
                        : earliestEvent.Timestamp;
         }
-
-        /// <summary>
-        /// Indicates that the scenario should schedule commands using a SQL-based command scheduler.
-        /// </summary>
-        /// <typeparam name="TScenarioBuilder">The type of the scenario builder.</typeparam>
-        /// <param name="builder">The scenario builder.</param>
-        /// <returns>
-        /// The same scenario builder
-        /// </returns>
-        public static TScenarioBuilder UseSqlCommandScheduler<TScenarioBuilder>(
-            this TScenarioBuilder builder)
-            where TScenarioBuilder : ScenarioBuilder
-        {
-            builder.EnsureScenarioHasNotBeenPrepared();
-
-            builder.Configuration
-                   .UseSqlCommandScheduling()
-                   .TriggerSqlCommandSchedulerWithVirtualClock();
-
-            var scheduler = builder.Configuration.SqlCommandScheduler();
-
-            var clockName = Guid.NewGuid().ToString();
-            scheduler.CreateClock(clockName, DateTimeOffset.Parse("1970-01-01 12:00:00 +00:00"));
-            builder.Configuration.Properties["CommandSchedulerClockName"] = clockName;
-            builder.Configuration.Container.Register<GetClockName>(c => e => clockName);
-            scheduler.GetClockName = @event => clockName;
-
-            return builder;
-        }
     }
 }

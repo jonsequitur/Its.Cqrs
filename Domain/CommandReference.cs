@@ -11,11 +11,9 @@ namespace Microsoft.Its.Domain
 
         public string CommandField { get; set; }
 
-        public override string ToString()
-        {
-            return CommandName + CommandField.IfNotNull()
-                                             .Then(field => "." + field)
-                                             .Else(() => "");
-        }
+        public override string ToString() =>
+            CommandName + CommandField.IfNotNull()
+                                      .Then(field => "." + field)
+                                      .Else(() => "");
     }
 }

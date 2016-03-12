@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void When_ConfigurationContext_Establish_has_not_been_called_then_Configuration_Current_returns_the_global_Configuration()
         {
-            Configuration.Current.Should().BeSameAs(Configuration.Global);
+            Configuration.Current.Should().BeSameAs(Configuration.Current);
         }
 
         [Test]

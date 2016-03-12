@@ -24,9 +24,7 @@ namespace Microsoft.Its.Domain
                                                          OnFailedResolve =
                                                              (type, exception) =>
                                                              new DomainConfigurationException(
-                                                             string.Format(
-                                                                 "Its.Domain can't create an instance of {0} unless you register it first via Configuration.UseDependency or Configuration.UseDependencies.",
-                                                                 type), exception)
+                                                                 $"Its.Domain can't create an instance of {type} unless you register it first via Configuration.UseDependency or Configuration.UseDependencies.", exception)
                                                      };
 
         private readonly ConcurrentDictionary<string, object> properties = new ConcurrentDictionary<string, object>();
@@ -56,29 +54,15 @@ namespace Microsoft.Its.Domain
                      .RegisterSingle(c => this);
         }
 
-        [Obsolete("Please use Configuration.Current instead.")]
-        public static Configuration Global
-        {
-            get
-            {
-                return global;
-            }
-        }
-
         /// <summary>
         /// Gets the current configuration. This may vary by context.
         /// </summary>
         [DebuggerHidden]
-        public static Configuration Current
-        {
-            get
-            {
-                return ConfigurationContext.Current
-                                           .IfNotNull()
-                                           .Then(context => context.Configuration)
-                                           .Else(() => global);
-            }
-        }
+        public static Configuration Current =>
+            ConfigurationContext.Current
+                                .IfNotNull()
+                                .Then(context => context.Configuration)
+                                .Else(() => global);
 
         /// <summary>
         /// Gets or sets the reservation service, if configured.
@@ -99,45 +83,21 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the event bus.
         /// </summary>
-        public IEventBus EventBus
-        {
-            get
-            {
-                return container.Resolve<IEventBus>();
-            }
-        }
+        public IEventBus EventBus => container.Resolve<IEventBus>();
 
         /// <summary>
         /// Registers an object for disposal when the configuration is disposed.
         /// </summary>
         /// <param name="disposable">The object to dispose.</param>
-        public void RegisterForDisposal(IDisposable disposable)
-        {
-            disposables.Add(disposable);
-        }
+        public void RegisterForDisposal(IDisposable disposable) => disposables.Add(disposable);
 
-        internal PocketContainer Container
-        {
-            get
-            {
-                return container;
-            }
-        }
+        internal PocketContainer Container => container;
 
-        internal ConcurrentDictionary<string, object> Properties
-        {
-            get
-            {
-                return properties;
-            }
-        }
+        internal ConcurrentDictionary<string, object> Properties => properties;
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        public void Dispose()
-        {
-            disposables.Dispose();
-        }
+        public void Dispose() => disposables.Dispose();
     }
 }

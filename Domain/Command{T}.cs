@@ -53,7 +53,7 @@ namespace Microsoft.Its.Domain
         {
             if (target == null)
             {
-                throw new ArgumentNullException("target");
+                throw new ArgumentNullException(nameof(target));
             }
 
             if (!string.IsNullOrWhiteSpace(ETag))
@@ -95,7 +95,7 @@ namespace Microsoft.Its.Domain
         {
             if (target == null)
             {
-                throw new ArgumentNullException("target");
+                throw new ArgumentNullException(nameof(target));
             }
 
             if (!string.IsNullOrWhiteSpace(ETag))
@@ -165,9 +165,7 @@ namespace Microsoft.Its.Domain
                 if (numberOfHandlerTypes > 1)
                 {
                     throw new DomainConfigurationException(
-                        string.Format("Multiple handler implementations were found for {0}: {1}. This might be a mistake. If not, you must register one explicitly using Configuration.UseDependency.",
-                                      handlerType.FullName,
-                                      handlerTypes.Select(t => t.FullName).ToDelimitedString(", ")));
+                        $"Multiple handler implementations were found for {handlerType.FullName}: {handlerTypes.Select(t => t.FullName).ToDelimitedString(", ")}. This might be a mistake. If not, you must register one explicitly using Configuration.UseDependency.");
                 }
 
                 return null;
@@ -177,7 +175,8 @@ namespace Microsoft.Its.Domain
 
         protected virtual void HandleCommandValidationFailure(TTarget target, ValidationReport validationReport)
         {
-            if (target is EventSourcedAggregate)
+            var eventSourcedAggregate = target as EventSourcedAggregate;
+            if (eventSourcedAggregate != null)
             {
                 ((dynamic) target).HandleCommandValidationFailure((dynamic) this,
                                                                   validationReport);
@@ -185,9 +184,7 @@ namespace Microsoft.Its.Domain
             else
             {
                 throw new CommandValidationException(
-                    string.Format("Validation error while applying {0} to a {1}.",
-                                  CommandName,
-                                  target.GetType().Name),
+                    $"Validation error while applying {CommandName} to a {target.GetType().Name}.",
                     validationReport);
             }
         }
@@ -224,9 +221,7 @@ namespace Microsoft.Its.Domain
                 if (eventSourced != null && AppliesToVersion != eventSourced.Version)
                 {
                     throw new ConcurrencyException(
-                        string.Format("The command's AppliesToVersion value ({0}) does not match the aggregate's version ({1})",
-                                      AppliesToVersion,
-                                      eventSourced.Version));
+                        $"The command's AppliesToVersion value ({AppliesToVersion}) does not match the aggregate's version ({eventSourced.Version})");
                 }
             }
 
@@ -239,17 +234,15 @@ namespace Microsoft.Its.Domain
             }
             catch (RuntimeBinderException ex)
             {
-                throw new InvalidOperationException(string.Format(
-                    "Property CommandValidator returned a validator of the wrong type. It should return a {0}, but returned a {1}",
-                    typeof (IValidationRule<>).MakeGenericType(GetType()),
-                    CommandValidator.GetType()), ex);
+                throw new InvalidOperationException(
+                    $"Property CommandValidator returned a validator of the wrong type. It should return a {typeof (IValidationRule<>).MakeGenericType(GetType())}, but returned a {CommandValidator.GetType()}", ex);
             }
 
             if (validationReport.HasFailures)
             {
                 if (throwOnValidationFailure)
                 {
-                    throw new CommandValidationException(string.Format("{0} is invalid.", CommandName), validationReport);
+                    throw new CommandValidationException($"{CommandName} is invalid.", validationReport);
                 }
 
                 return validationReport;
@@ -308,13 +301,7 @@ namespace Microsoft.Its.Domain
         ///     Gets a validator that can be used to check the valididty of the command against the state of the target before it is applied.
         /// </summary>
         [JsonIgnore]
-        public virtual IValidationRule<TTarget> Validator
-        {
-            get
-            {
-                return null;
-            }
-        }
+        public virtual IValidationRule<TTarget> Validator => null;
 
         /// <summary>
         ///     Gets a validator to check the state of the command in and of itself, as distinct from an target.
@@ -323,35 +310,20 @@ namespace Microsoft.Its.Domain
         ///     By default, this returns a <see cref="ValidationPlan{TCommand}" /> where TCommand is the command's actual type, with rules built up from any System.ComponentModel.DataAnnotations attributes applied to its properties.
         /// </remarks>
         [JsonIgnore]
-        public virtual IValidationRule CommandValidator
-        {
-            get
-            {
-                return Validation.GetDefaultPlanFor(GetType());
-            }
-        }
+        public virtual IValidationRule CommandValidator => Validation.GetDefaultPlanFor(GetType());
 
         /// <summary>
         ///     Gets all of the the types implementing <see cref="Command{T}" /> discovered within the AppDomain.
         /// </summary>
-        public new static Type[] KnownTypes
-        {
-            get
-            {
-                return knownTypes;
-            }
-        }
+        public new static Type[] KnownTypes => knownTypes;
 
         /// <summary>
         ///     Gets the command type having the specified name.
         /// </summary>
-        public static Type Named(string name)
-        {
-            return
-                knownTypesByName.GetOrAdd(name,
-                                          n =>
-                                          KnownTypes.SingleOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
-        }
+        public static Type Named(string name) =>
+            knownTypesByName.GetOrAdd(name,
+                                      n =>
+                                      KnownTypes.SingleOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
 
         public static IValidationRule<TTarget> CommandHasNotBeenApplied(ICommand command)
         {
@@ -365,14 +337,9 @@ namespace Microsoft.Its.Domain
                                                               .Events()
                                                               .OfType<Event>()
                                                               .Every(e => e.ETag != command.ETag))
-                           .WithErrorMessage(string.Format("Command with ETag '{0}' has already been applied.", command.ETag));
+                           .WithErrorMessage($"Command with ETag '{command.ETag}' has already been applied.");
         }
 
-        public override string ToString()
-        {
-            return string.Format("{0}.{1}",
-                                 typeof (TTarget).Name,
-                                 CommandName);
-        }
+        public override string ToString() => $"{typeof (TTarget).Name}.{CommandName}";
     }
 }

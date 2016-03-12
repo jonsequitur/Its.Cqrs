@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void A_json_string_containing_multiple_events_can_be_deserialized_using_F()
+        public void A_json_string_containing_multiple_events_can_be_deserialized_using_FromJsonToEvents()
         {
             var file = Settings.GetFile(f => f.Name == "Events.json");
 
@@ -69,6 +69,114 @@ namespace Microsoft.Its.Domain.Tests
             var deserialized = Serializer.DeserializeEvent("Order", "Bob", original.AggregateId, original.SequenceNumber, original.Timestamp, original.ToJson());
 
             deserialized.ShouldBeEquivalentTo(original);
+        }
+
+        [Test]
+        public void Serializer_DeserializeEvent_can_deserialize_to_known_Event_T_types()
+        {
+            var aggregateId = Any.Guid();
+            var sequenceNumber = Any.PositiveInt();
+            var details = Any.Paragraph(10);
+            var dateTimeOffset = Any.DateTimeOffset();
+            var uniqueEventId = Any.Long();
+            var eTag = Any.Word().ToETag();
+
+            var deserialized = Serializer.DeserializeEvent(
+                "Order",
+                "Misdelivered",
+                aggregateId,
+                sequenceNumber,
+                dateTimeOffset,
+                new { Details = details }.ToJson(),
+                uniqueEventId,
+                etag: eTag);
+
+            deserialized.Should().BeOfType<Order.Misdelivered>();
+
+            var @event = (Order.Misdelivered) deserialized;
+
+            @event.AggregateId.Should().Be(aggregateId);
+            @event.SequenceNumber.Should().Be(sequenceNumber);
+            @event.Details.Should().Be(details);
+            @event.Timestamp.Should().Be(dateTimeOffset);
+            @event.ETag.Should().Be(eTag);
+
+            ((long) @event.Metadata.AbsoluteSequenceNumber).Should().Be(uniqueEventId);
+        }
+
+        [Test]
+        public void Serializer_DeserializeEvent_can_deserialize_to_nested_IEvent_types()
+        {
+            var aggregateId = Any.Guid();
+            var sequenceNumber = Any.PositiveInt();
+            var value = Any.Paragraph(10);
+            var dateTimeOffset = Any.DateTimeOffset();
+            var eTag = Any.Word().ToETag();
+
+            var deserialized = Serializer.DeserializeEvent(
+                "DeserializationTestPoco",
+                "DeserializationTest_IEvent",
+                aggregateId,
+                sequenceNumber,
+                dateTimeOffset,
+                new { Value = value }.ToJson(),
+                etag: eTag);
+
+            deserialized.Should().BeOfType<DeserializationTestPoco.DeserializationTest_IEvent>();
+
+            var @event = (DeserializationTestPoco.DeserializationTest_IEvent) deserialized;
+
+            @event.AggregateId.Should().Be(aggregateId);
+            @event.SequenceNumber.Should().Be(sequenceNumber);
+            @event.Value.Should().Be(value);
+            @event.Timestamp.Should().Be(dateTimeOffset);
+            @event.ETag.Should().Be(eTag);
+        }
+        
+        [Test]
+        public void Serializer_DeserializeEvent_can_deserialize_to_nested_Event_types()
+        {
+            var aggregateId = Any.Guid();
+            var sequenceNumber = Any.PositiveInt();
+            var value = Any.Paragraph(10);
+            var dateTimeOffset = Any.DateTimeOffset();
+            var eTag = Any.Word().ToETag();
+
+            var deserialized = Serializer.DeserializeEvent(
+                "DeserializationTestPoco",
+                "DeserializationTest_Event",
+                aggregateId,
+                sequenceNumber,
+                dateTimeOffset,
+                new { Value = value }.ToJson(),
+                etag: eTag);
+
+            deserialized.Should().BeOfType<DeserializationTestPoco.DeserializationTest_Event>();
+
+            var @event = (DeserializationTestPoco.DeserializationTest_Event) deserialized;
+
+            @event.AggregateId.Should().Be(aggregateId);
+            @event.SequenceNumber.Should().Be(sequenceNumber);
+            @event.Value.Should().Be(value);
+            @event.Timestamp.Should().Be(dateTimeOffset);
+            @event.ETag.Should().Be(eTag);
+        }
+    }
+
+    public class DeserializationTestPoco
+    {
+        public class DeserializationTest_IEvent : IEvent
+        {
+            public string Value { get; set; }
+            public long SequenceNumber { get; set; }
+            public Guid AggregateId { get; set; }
+            public DateTimeOffset Timestamp { get; set; }
+            public string ETag { get; set; }
+        }
+
+        public class DeserializationTest_Event : Event
+        {
+            public string Value { get; set; }
         }
     }
 }

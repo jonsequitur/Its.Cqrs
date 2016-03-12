@@ -73,7 +73,7 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        /// Returns the known event types for the specified aggregate type.
+        /// Returns the known concrete event types for the specified aggregate type.
         /// </summary>
         /// <param name="aggregateType">Type of the aggregate.</param>
         public static IEnumerable<Type> KnownTypesForAggregateType(Type aggregateType)
@@ -81,6 +81,14 @@ namespace Microsoft.Its.Domain
             return typeof (Event<>).MakeGenericType(aggregateType)
                                    .Member()
                                    .KnownTypes;
+        }
+
+        /// <summary>
+        /// Returns all known concrete event types.
+        /// </summary>
+        public static IEnumerable<Type> KnownTypes()
+        {
+            return Discover.ConcreteTypesDerivedFrom(typeof(IEvent));
         }
 
         internal static Type[] ConcreteTypesOf(Type eventType)

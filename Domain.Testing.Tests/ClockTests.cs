@@ -114,20 +114,6 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
-        public async Task When_using_legacy_SQL_command_scheduling_then_advancing_the_clock_blocks_until_triggered_commands_are_completed()
-        {
-            var configuration = new Configuration()
-                .UseInMemoryEventStore()
-                .UseSqlCommandScheduling()
-                .TriggerSqlCommandSchedulerWithVirtualClock();
-
-            configuration.SqlCommandScheduler()
-                         .GetClockName = e => Any.CamelCaseName();
-
-            await ScheduleCommandAndAdvanceClock(configuration);
-        }
-
-        [Test]
         public async Task When_using_pipelined_SQL_command_scheduling_then_advancing_the_clock_blocks_until_triggered_commands_are_completed()
         {
             var configuration = new Configuration()

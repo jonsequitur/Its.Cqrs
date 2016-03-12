@@ -12,7 +12,7 @@ namespace Microsoft.Its.Domain
         {
             if (message == null)
             {
-                throw new ArgumentNullException("message");
+                throw new ArgumentNullException(nameof(message));
             }
             Message = message;
         }

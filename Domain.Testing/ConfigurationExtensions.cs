@@ -14,35 +14,6 @@ namespace Microsoft.Its.Domain.Testing
 {
     public static class ConfigurationExtensions
     {
-        /// <summary>
-        /// Triggers commands scheduled on the command scheduler when a virtual clock is advanced.
-        /// </summary>
-        /// <param name="configuration">A domain configuration instance.</param>
-        /// <returns>The modified domain configuration instance.</returns>
-        [Obsolete("When using the command scheduler pipepline, VirtualClock integration is automatically enabled.")]
-        public static Configuration TriggerSqlCommandSchedulerWithVirtualClock(this Configuration configuration)
-        {
-            if (configuration.IsUsingCommandSchedulerPipeline())
-            {
-                throw new InvalidOperationException("Only supported after configuring legacy SQL command scheduler by calling UseSqlCommandScheduler.");
-            }
-
-            var scheduler = configuration.SqlCommandScheduler();
-
-            var subscription = scheduler.Activity
-                                        .OfType<CommandScheduled>()
-                                        .Subscribe(scheduled =>
-                                        {
-                                            Clock.Current
-                                                 .IfTypeIs<VirtualClock>()
-                                                 .ThenDo(clock => { clock.OnAdvanceTriggerSchedulerClock(scheduled.Clock); });
-                                        });
-
-            configuration.RegisterForDisposal(subscription);
-
-            return configuration;
-        }
-
         public static async Task AndSave<TAggregate>(this Task<TAggregate> aggregate)
             where TAggregate : class, IEventSourced
         {
@@ -71,31 +42,12 @@ namespace Microsoft.Its.Domain.Testing
 
         internal static void EnsureCommandSchedulerPipelineTrackerIsInitialized(this Configuration configuration)
         {
-            if (!configuration.IsUsingCommandSchedulerPipeline())
-            {
-                return;
-            }
-
             TrackCommandsInPipeline(configuration);
         }
 
         private static void TrackCommandsInPipeline(Configuration configuration)
         {
             new CommandSchedulerPipelineTracker().Initialize(configuration);
-        }
-
-        internal static void IsUsingInMemoryCommandScheduling(this Configuration configuration, bool value)
-        {
-            configuration.Properties["IsUsingInMemoryCommandScheduling"] = value;
-        }
-
-        internal static bool IsUsingInMemoryCommandScheduling(this Configuration configuration)
-        {
-            return configuration.Properties
-                                .IfContains("IsUsingInMemoryCommandScheduling")
-                                .And()
-                                .IfTypeIs<bool>()
-                                .ElseDefault();
         }
     }
 }

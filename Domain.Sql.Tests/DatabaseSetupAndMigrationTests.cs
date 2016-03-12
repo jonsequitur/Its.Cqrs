@@ -193,7 +193,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var migrator = new AnonymousMigrator(c =>
             {
-                Debug.WriteLine("[MIGRATOR]");
                 c.Execute(string.Format(@"alter table [eventstore].[events] add {0} nvarchar(50) null", columnName));
                 barrier.SignalAndWait(10000);
             }, version);

@@ -14,8 +14,6 @@ namespace Microsoft.Its.Domain
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
     public static class AggregateType<TAggregate> where TAggregate : IEventSourced
     {
-        private static readonly string eventStreamName = typeof (TAggregate).Name;
-
         public static readonly Func<Guid, IEnumerable<IEvent>, TAggregate> FromEventHistory = CallEventHistoryConstructor();
         
         public static readonly Func<ISnapshot, IEnumerable<IEvent>, TAggregate> FromSnapshot = CallSnapshotConstructor();
@@ -23,24 +21,12 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the name of the event stream where this aggregate type's events are stored.
         /// </summary>
-        public static string EventStreamName
-        {
-            get
-            {
-                return eventStreamName;
-            }
-        }
+        public static string EventStreamName { get; } = typeof (TAggregate).Name;
 
         /// <summary>
         /// Gets a value indicating whether the aggregate type supports instantiation via snapshots.
         /// </summary>
-        public static bool SupportsSnapshots
-        {
-            get
-            {
-                return FromSnapshot != null;
-            }
-        }
+        public static bool SupportsSnapshots => FromSnapshot != null;
 
         private static Func<Guid, IEnumerable<IEvent>, TAggregate> CallEventHistoryConstructor()
         {

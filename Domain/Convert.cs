@@ -20,10 +20,7 @@ namespace Microsoft.Its.Domain
             return bytes;
         }
 
-        internal static BitArray ToBitArray(this string base64String)
-        {
-            var bytes = System.Convert.FromBase64String(base64String);
-            return new BitArray(bytes);
-        }
+        internal static BitArray ToBitArray(this string base64String) =>
+            new BitArray(System.Convert.FromBase64String(base64String));
     }
 }
