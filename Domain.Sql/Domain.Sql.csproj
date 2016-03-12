@@ -92,9 +92,7 @@
     <Compile Include="AppLock.cs" />
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
     <Compile Include="CommandScheduler\SqlEventStoreEventStoreETagChecker.cs" />
-    <Compile Include="CommandScheduler\CommandSchedulingEventHandler.cs" />
     <Compile Include="CommandScheduler\ETag.cs" />
-    <Compile Include="CommandScheduler\ICommandSchedulerDispatcher.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockRepository.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockTrigger.cs" />
     <Compile Include="CommandScheduler\SchedulerAdvancedResult.cs" />

@@ -25,7 +25,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
         {
             if (resourceName == null)
             {
-                throw new ArgumentNullException("resourceName");
+                throw new ArgumentNullException(nameof(resourceName));
             }
 
             var matches = resourceNameParser.Match(resourceName);
@@ -53,25 +53,25 @@ namespace Microsoft.Its.Domain.Sql.Migrations
         {
             if (sqlText == null)
             {
-                throw new ArgumentNullException("sqlText");
+                throw new ArgumentNullException(nameof(sqlText));
             }
             if (migrationVersion == null)
             {
-                throw new ArgumentNullException("migrationVersion");
+                throw new ArgumentNullException(nameof(migrationVersion));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             SqlText = sqlText;
             MigrationVersion = migrationVersion;
         }
 
-        public string SqlText { get; private set; }
+        public string SqlText { get; }
 
-        public string MigrationScope { get; private set; }
+        public string MigrationScope { get; }
 
-        public Version MigrationVersion { get; private set; }
+        public Version MigrationVersion { get; }
 
         public MigrationResult Migrate(IDbConnection connection)
         {

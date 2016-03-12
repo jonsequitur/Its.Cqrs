@@ -16,7 +16,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         internal static async Task<ScheduledCommand> StoreScheduledCommand<TAggregate>(
             IScheduledCommand<TAggregate> scheduledCommand,
             Func<CommandSchedulerDbContext> createDbContext,
-            Func<IScheduledCommand<TAggregate>, CommandSchedulerDbContext, Task<string>> clockNameForEvent) where TAggregate : class
+            Func<IScheduledCommand<TAggregate>, CommandSchedulerDbContext, Task<string>> clockNameForEvent)
+            where TAggregate : class
         {
             ScheduledCommand storedScheduledCommand;
 
@@ -43,11 +44,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     return storedScheduledCommand;
                 }
 
-                Debug.WriteLine(String.Format("Storing command '{0}' ({1}:{2}) on clock '{3}'",
-                                              scheduledCommand.Command.CommandName,
-                                              scheduledCommand.TargetId,
-                                              storedScheduledCommand.SequenceNumber,
-                                              schedulerClock.Name));
+                Debug.WriteLine(
+                    $"Storing command '{scheduledCommand.Command.CommandName}' ({scheduledCommand.TargetId}:{storedScheduledCommand.SequenceNumber}) on clock '{schedulerClock.Name}'");
 
                 await SaveScheduledCommandToDatabase(db,
                                                      storedScheduledCommand,
@@ -120,22 +118,20 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             IScheduledCommand<TAggregate> scheduledCommand,
             DateTimeOffset domainTime,
             Clock schedulerClock)
-            where TAggregate : class
-        {
-            return new ScheduledCommand
-            {
-                AggregateId = ScheduledCommand<TAggregate>.TargetGuid(scheduledCommand),
-                SequenceNumber = scheduledCommand
-                    .IfTypeIs<IEvent>()
-                    .Then(e => e.SequenceNumber)
-                    .Else(() => -DateTimeOffset.UtcNow.Ticks),
-                AggregateType = Command.TargetNameFor(scheduledCommand.Command.GetType()),
-                SerializedCommand = scheduledCommand.ToJson(),
-                CreatedTime = domainTime,
-                DueTime = scheduledCommand.DueTime,
-                Clock = schedulerClock
-            };
-        }
+            where TAggregate : class =>
+                new ScheduledCommand
+                {
+                    AggregateId = ScheduledCommand<TAggregate>.TargetGuid(scheduledCommand),
+                    SequenceNumber = scheduledCommand
+                        .IfTypeIs<IEvent>()
+                        .Then(e => e.SequenceNumber)
+                        .Else(() => -DateTimeOffset.UtcNow.Ticks),
+                    AggregateType = Command.TargetNameFor(scheduledCommand.Command.GetType()),
+                    SerializedCommand = scheduledCommand.ToJson(),
+                    CreatedTime = domainTime,
+                    DueTime = scheduledCommand.DueTime,
+                    Clock = schedulerClock
+                };
 
         private static async Task<Clock> GetOrAddSchedulerClock(
             CommandSchedulerDbContext db,
@@ -149,7 +145,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 return schedulerClock;
             }
 
-            Debug.WriteLine(String.Format("Creating clock '{0}' @ {1}", clockName, startTime));
+            Debug.WriteLine($"Creating clock '{clockName}' @ {startTime}");
 
             schedulerClock = new Clock
             {

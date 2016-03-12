@@ -51,22 +51,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         internal bool NonDurable { get; set; }
 
-        int IScheduledCommand.NumberOfPreviousAttempts
-        {
-            get
-            {
-                return Attempts;
-            }
-        }
+        int IScheduledCommand.NumberOfPreviousAttempts => Attempts;
 
-        IPrecondition IScheduledCommand.DeliveryPrecondition
-        {
-            get
-            {
-                return SerializedCommand.FromJsonTo<JObject>()
-                                        .IfHas(d => d.DeliveryPrecondition)
-                                        .ElseDefault();
-            }
-        }
+        IPrecondition IScheduledCommand.DeliveryPrecondition =>
+            SerializedCommand.FromJsonTo<JObject>()
+                             .IfHas(d => d.DeliveryPrecondition)
+                             .ElseDefault();
     }
 }

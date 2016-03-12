@@ -10,8 +10,6 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     public struct ReadModelCatchupStatus
     {
-        private DateTimeOffset? eventTimestamp;
-
         /// <summary>
         /// Gets or sets the count of events in the current batch.
         /// </summary>
@@ -30,44 +28,22 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Gets a value indicating whether this status update represents the last event in a batch.
         /// </summary>
-        public bool IsEndOfBatch
-        {
-            get
-            {
-                return BatchCount == NumberOfEventsProcessed;
-            }
-        }
+        public bool IsEndOfBatch => BatchCount == NumberOfEventsProcessed;
 
         /// <summary>
         /// Gets a value indicating whether the status update indicates the start of a batch.
         /// </summary>
-        public bool IsStartOfBatch
-        {
-            get
-            {
-                return NumberOfEventsProcessed == 0;
-            }
-        }
+        public bool IsStartOfBatch => NumberOfEventsProcessed == 0;
 
-        public DateTimeOffset? EventTimestamp   
-        {
-            get
-            {
-                return eventTimestamp;
-            }
-            set
-            {
-                eventTimestamp = value;
-            }
-        }
-        
+        public DateTimeOffset? EventTimestamp { get; set; }
+
         public TimeSpan? Latency
         {
             get
             {
-                if (StatusTimeStamp != null && eventTimestamp != null)
+                if (StatusTimeStamp != null && EventTimestamp != null)
                 {
-                    return StatusTimeStamp.Value - eventTimestamp.Value;
+                    return StatusTimeStamp.Value - EventTimestamp.Value;
                 }
 
                 return null;
@@ -89,27 +65,17 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (NumberOfEventsProcessed > 0)
             {
-                return string.Format("Catchup {0}: Processed {1} of {2} (event id: {3} / recorded: {4} / latency: {5}s)",
-                                     CatchupName,
-                                     NumberOfEventsProcessed,
-                                     BatchCount,
-                                     CurrentEventId,
-                                     EventTimestamp,
-                                     (Latency.Value).TotalSeconds);
+                return
+                    $"Catchup {CatchupName}: Processed {NumberOfEventsProcessed} of {BatchCount} (event id: {CurrentEventId} / recorded: {EventTimestamp} / latency: {(Latency.Value).TotalSeconds}s)";
             }
 
             if (BatchCount == 0)
             {
                 // CurrentEventId will be set to the next expected event id, so when there are no new events, subtracting 1 from it will be clearer
-                return string.Format("Catchup {0}: Found no new events after {1}.",
-                                     CatchupName,
-                                     CurrentEventId - 1);
+                return $"Catchup {CatchupName}: Found no new events after {CurrentEventId - 1}.";
             }
 
-            return string.Format("Catchup {0}: Starting from event {1} for {2} events",
-                                 CatchupName,
-                                 CurrentEventId,
-                                 BatchCount);
+            return $"Catchup {CatchupName}: Starting from event {CurrentEventId} for {BatchCount} events";
         }
     }
 }

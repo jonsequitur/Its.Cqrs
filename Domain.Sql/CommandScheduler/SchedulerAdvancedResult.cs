@@ -24,28 +24,13 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <summary>
         /// Gets a summary of the commands that were applied and failed when the scheduler was triggered.
         /// </summary>
-        public IEnumerable<CommandFailed> FailedCommands
-        {
-            get
-            {
-                return results.OfType<CommandFailed>();
-            }
-        }
+        public IEnumerable<CommandFailed> FailedCommands => results.OfType<CommandFailed>();
 
         /// <summary>
         /// Gets a summary of the commands that were successfully applied when the scheduler was triggered.
         /// </summary>
-        public IEnumerable<CommandSucceeded> SuccessfulCommands
-        {
-            get
-            {
-                return results.OfType<CommandSucceeded>();
-            }
-        }
+        public IEnumerable<CommandSucceeded> SuccessfulCommands => results.OfType<CommandSucceeded>();
 
-        internal void Add(ScheduledCommandResult result)
-        {
-            results.Add(result);
-        }
+        internal void Add(ScheduledCommandResult result) => results.Add(result);
     }
 }

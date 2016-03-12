@@ -15,9 +15,7 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="bus">The bus.</param>
         /// <param name="db">The database.</param>
         /// <returns></returns>
-        public static IDisposable ReportErrorsToDatabase(this IEventBus bus, Func<DbContext> db)
-        {
-            return bus.Errors.Subscribe(e => ReadModelUpdate.ReportFailure(e, db));
-        }
+        public static IDisposable ReportErrorsToDatabase(this IEventBus bus, Func<DbContext> db) =>
+            bus.Errors.Subscribe(e => ReadModelUpdate.ReportFailure(e, db));
     }
 }

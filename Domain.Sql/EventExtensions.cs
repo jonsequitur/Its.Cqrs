@@ -47,38 +47,34 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="domainEvent">The domain event.</param>
         internal static StorableEvent ToStorableEvent<TAggregate>(this IEvent<TAggregate> domainEvent)
-            where TAggregate : IEventSourced
-        {
-            return new StorableEvent
-            {
-                Actor = domainEvent.Actor(),
-                StreamName = AggregateType<TAggregate>.EventStreamName,
-                SequenceNumber = domainEvent.SequenceNumber,
-                AggregateId = domainEvent.AggregateId,
-                Type = domainEvent.EventName(),
-                Body = JsonConvert.SerializeObject(domainEvent, Formatting.None, serializerSettings.Value),
-                Timestamp = domainEvent.Timestamp,
-                ETag = domainEvent.ETag
-            };
-        }
+            where TAggregate : IEventSourced =>
+                new StorableEvent
+                {
+                    Actor = domainEvent.Actor(),
+                    StreamName = AggregateType<TAggregate>.EventStreamName,
+                    SequenceNumber = domainEvent.SequenceNumber,
+                    AggregateId = domainEvent.AggregateId,
+                    Type = domainEvent.EventName(),
+                    Body = JsonConvert.SerializeObject(domainEvent, Formatting.None, serializerSettings.Value),
+                    Timestamp = domainEvent.Timestamp,
+                    ETag = domainEvent.ETag
+                };
 
         /// <summary>
         /// Creates a domain event from a <see cref="StorableEvent" />.
         /// </summary>
         /// <param name="storableEvent">The storable event.</param>
         /// <returns>A deserialized domain event.</returns>
-        public static IEvent ToDomainEvent(this StorableEvent storableEvent)
-        {
-            return Serializer.DeserializeEvent(
+        public static IEvent ToDomainEvent(this StorableEvent storableEvent) =>
+            Serializer.DeserializeEvent(
                 storableEvent.StreamName,
                 storableEvent.Type,
                 storableEvent.AggregateId,
                 storableEvent.SequenceNumber,
-                storableEvent.Timestamp, 
+                storableEvent.Timestamp,
                 storableEvent.Body,
                 storableEvent.Id,
                 serializerSettings.Value,
                 etag: storableEvent.ETag);
-        }
     }
 }

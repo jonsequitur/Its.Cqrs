@@ -15,15 +15,11 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     public static class ConfigurationExtensions
     {
-        public static ISchedulerClockRepository SchedulerClockRepository(this Configuration configuration)
-        {
-            return configuration.Container.Resolve<ISchedulerClockRepository>();
-        }
+        public static ISchedulerClockRepository SchedulerClockRepository(this Configuration configuration) =>
+            configuration.Container.Resolve<ISchedulerClockRepository>();
 
-        public static ISchedulerClockTrigger SchedulerClockTrigger(this Configuration configuration)
-        {
-            return configuration.Container.Resolve<ISchedulerClockTrigger>();
-        }
+        public static ISchedulerClockTrigger SchedulerClockTrigger(this Configuration configuration) =>
+            configuration.Container.Resolve<ISchedulerClockTrigger>();
 
         /// <summary>
         /// Configures the system to use a SQL-based event store.
@@ -72,13 +68,13 @@ namespace Microsoft.Its.Domain.Sql
             container
                 .Register(
                     c => new SchedulerClockTrigger(
-                        c.Resolve<CommandSchedulerDbContext>,
-                        async (serializedCommand, result, db) =>
-                        {
-                            await DeserializeAndDeliver(commandSchedulerResolver, serializedCommand, db);
+                             c.Resolve<CommandSchedulerDbContext>,
+                             async (serializedCommand, result, db) =>
+                             {
+                                 await DeserializeAndDeliver(commandSchedulerResolver, serializedCommand, db);
 
-                            result.Add(serializedCommand.Result);
-                        }))
+                                 result.Add(serializedCommand.Result);
+                             }))
                 .Register<ISchedulerClockTrigger>(c => c.Resolve<SchedulerClockTrigger>());
 
             return configuration;
@@ -99,7 +95,7 @@ namespace Microsoft.Its.Domain.Sql
 
             await db.SaveChangesAsync();
         }
-        
+
         public static async Task DeserializeAndDeliver(
             this Configuration configuration,
             ScheduledCommand serializedCommand,
@@ -109,23 +105,20 @@ namespace Microsoft.Its.Domain.Sql
             await DeserializeAndDeliver(resolver, serializedCommand, db);
         }
 
-        internal static void IsUsingSqlEventStore(this Configuration configuration, bool value)
-        {
+        internal static void IsUsingSqlEventStore(this Configuration configuration, bool value) =>
             configuration.Properties["IsUsingSqlEventStore"] = value;
-        }
 
-        internal static bool IsUsingSqlEventStore(this Configuration configuration)
-        {
-            return configuration.Properties
-                                .IfContains("IsUsingSqlEventStore")
-                                .And()
-                                .IfTypeIs<bool>()
-                                .ElseDefault();
-        }
+        internal static bool IsUsingSqlEventStore(this Configuration configuration) =>
+            configuration.Properties
+                         .IfContains("IsUsingSqlEventStore")
+                         .And()
+                         .IfTypeIs<bool>()
+                         .ElseDefault();
 
         internal static Func<PocketContainer, object> SqlEventSourcedRepositoryStrategy(Type type)
         {
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof (IEventSourcedRepository<>))
+            if (type.IsGenericType &&
+                type.GetGenericTypeDefinition() == typeof (IEventSourcedRepository<>))
             {
                 var aggregateType = type.GenericTypeArguments.Single();
                 var genericType = typeof (SqlEventSourcedRepository<>).MakeGenericType(aggregateType);
@@ -134,9 +127,8 @@ namespace Microsoft.Its.Domain.Sql
             return null;
         }
 
-        internal static PocketContainer RegisterDefaultClockName(this PocketContainer container)
-        {
-            return container.AddStrategy(t =>
+        internal static PocketContainer RegisterDefaultClockName(this PocketContainer container) =>
+            container.AddStrategy(t =>
             {
                 if (t == typeof (GetClockName))
                 {
@@ -145,6 +137,5 @@ namespace Microsoft.Its.Domain.Sql
 
                 return null;
             });
-        }
     }
 }

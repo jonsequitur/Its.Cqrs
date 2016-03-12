@@ -52,7 +52,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (context == null)
             {
-                throw new ArgumentNullException("context");
+                throw new ArgumentNullException(nameof(context));
             }
 
             if (bypassInitialization)
@@ -96,10 +96,7 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         protected virtual bool ShouldRebuildDatabase(
             TContext context, 
-            Version latestVersion)
-        {
-            return false;
-        }
+            Version latestVersion) => false;
 
         private static Version GetDatabaseVersion(TContext context)
         {

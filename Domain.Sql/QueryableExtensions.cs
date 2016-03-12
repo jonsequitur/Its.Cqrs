@@ -60,11 +60,9 @@ namespace Microsoft.Its.Domain.Sql
             "\"([a-fA-F0-9-\\{\\}]{36})\"", RegexOptions.CultureInvariant | RegexOptions.Compiled
             );
 
-        private static IEnumerable<Guid> ExtractGuids(this string eventBody)
-        {
-            return guidRegex.Matches(eventBody)
-                            .Cast<Match>()
-                            .Select(match => Guid.Parse(match.Groups[1].ToString()));
-        }
+        private static IEnumerable<Guid> ExtractGuids(this string eventBody) =>
+            guidRegex.Matches(eventBody)
+                     .Cast<Match>()
+                     .Select(match => Guid.Parse(match.Groups[1].ToString()));
     }
 }

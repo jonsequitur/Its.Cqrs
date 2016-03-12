@@ -16,7 +16,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (container == null)
             {
-                throw new ArgumentNullException("container");
+                throw new ArgumentNullException(nameof(container));
             }
 
             schedulerResolversByAggregateTypeName = new Dictionary<string, Func<dynamic>>();

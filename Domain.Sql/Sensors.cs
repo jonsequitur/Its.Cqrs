@@ -12,12 +12,10 @@ namespace Microsoft.Its.Domain.Sql
 {
     public static class Sensors
     {
-        private static ConcurrentDictionary<string, Func<DbContext>> _readModelDbContext;
+        private static ConcurrentDictionary<string, Func<DbContext>> readModelDbContext;
 
-        internal static ConcurrentDictionary<string, Func<DbContext>> ReadModelDbContexts
-        {
-            get { return _readModelDbContext ?? (_readModelDbContext = new ConcurrentDictionary<string, Func<DbContext>>()); }
-        }
+        internal static ConcurrentDictionary<string, Func<DbContext>> ReadModelDbContexts =>
+            readModelDbContext ?? (readModelDbContext = new ConcurrentDictionary<string, Func<DbContext>>());
 
         public static Func<EventStoreDbContext> GetEventStoreDbContext = () => new EventStoreDbContext();
 

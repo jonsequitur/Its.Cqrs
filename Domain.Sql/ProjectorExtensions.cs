@@ -68,11 +68,9 @@ namespace Microsoft.Its.Domain.Sql
             return unitOfWork;
         }
 
-        internal static DbContext CreateDbContext(object projector)
-        {
-            return projector.IfTypeIs<IEntityModelProjector>()
-                            .Then(emp => emp.CreateDbContext())
-                            .Else(() => new ReadModelDbContext());
-        }
+        internal static DbContext CreateDbContext(object projector) =>
+            projector.IfTypeIs<IEntityModelProjector>()
+                     .Then(emp => emp.CreateDbContext())
+                     .Else(() => new ReadModelDbContext());
     }
 }

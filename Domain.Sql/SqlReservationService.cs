@@ -30,15 +30,15 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             var now = Clock.Now();
@@ -108,15 +108,15 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             using (var db = CreateReservationServiceDbContext())
@@ -141,15 +141,15 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             using (var db = CreateReservationServiceDbContext())
@@ -174,11 +174,11 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             var now = Clock.Now();
@@ -242,15 +242,15 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             var now = Clock.Now();
@@ -320,15 +320,15 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             using (var db = CreateReservationServiceDbContext())
@@ -353,15 +353,15 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             using (var db = CreateReservationServiceDbContext())
@@ -386,11 +386,11 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             var now = Clock.Now();

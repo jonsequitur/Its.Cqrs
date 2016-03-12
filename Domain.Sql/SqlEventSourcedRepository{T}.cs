@@ -93,10 +93,7 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public async Task<TAggregate> GetLatest(Guid aggregateId)
-        {
-            return await Get(aggregateId);
-        }
+        public async Task<TAggregate> GetLatest(Guid aggregateId) => await Get(aggregateId);
 
         /// <summary>
         ///     Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
@@ -104,10 +101,7 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="version">The version at which to retrieve the aggregate.</param>
         /// <param name="aggregateId">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public async Task<TAggregate> GetVersion(Guid aggregateId, long version)
-        {
-            return await Get(aggregateId, version: version);
-        }
+        public async Task<TAggregate> GetVersion(Guid aggregateId, long version) => await Get(aggregateId, version: version);
 
         /// <summary>
         /// Finds and deserializes an aggregate the specified id, if any. If none exists, returns null.
@@ -117,10 +111,7 @@ namespace Microsoft.Its.Domain.Sql
         /// <returns>
         /// The deserialized aggregate, or null if none exists with the specified id.
         /// </returns>
-        public async Task<TAggregate> GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate)
-        {
-            return await Get(aggregateId, asOfDate: asOfDate);
-        }
+        public async Task<TAggregate> GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate) => await Get(aggregateId, asOfDate: asOfDate);
 
         /// <summary>
         /// Refreshes an aggregate with the latest events from the event stream.
@@ -157,7 +148,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (aggregate == null)
             {
-                throw new ArgumentNullException("aggregate");
+                throw new ArgumentNullException(nameof(aggregate));
             }
 
             var events = aggregate.PendingEvents
@@ -218,9 +209,8 @@ namespace Microsoft.Its.Domain.Sql
 
                     if (exception.IsConcurrencyException())
                     {
-                        var message = string.Format("There was a concurrency violation.\n  Existing:\n {0}\n  Attempted:\n{1}",
-                                                    existingEvents.Select(e => e.ToDomainEvent()).ToDiagnosticJson(),
-                                                    events.ToDiagnosticJson());
+                        var message =
+                            $"There was a concurrency violation.\n  Existing:\n {existingEvents.Select(e => e.ToDomainEvent()).ToDiagnosticJson()}\n  Attempted:\n{events.ToDiagnosticJson()}";
                         throw new ConcurrencyException(message, events, exception);
                     }
                     throw;
@@ -245,17 +235,11 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="id">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public async Task<TAggregate> Get(string id)
-        {
-            return await GetLatest(Guid.Parse(id));
-        }
+        async Task<TAggregate> IStore<TAggregate>.Get(string id) => await GetLatest(Guid.Parse(id));
 
         /// <summary>
         ///     Persists the state of the command target.
         /// </summary>
-        public async Task Put(TAggregate aggregate)
-        {
-            await Save(aggregate);
-        }
+        async Task IStore<TAggregate>.Put(TAggregate aggregate) => await Save(aggregate);
     }
 }

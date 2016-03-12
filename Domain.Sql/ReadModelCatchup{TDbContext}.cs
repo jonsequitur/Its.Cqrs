@@ -96,24 +96,12 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Gets the event bus used to publish events to the subscribed projectors.
         /// </summary>
-        public IEventBus EventBus
-        {
-            get
-            {
-                return bus;
-            }
-        }
+        public IEventBus EventBus => bus;
 
         /// <summary>
         /// Gets the event handlers that the catchup is running
         /// </summary>
-        public IEnumerable<object> EventHandlers
-        {
-            get
-            {
-                return projectors.ToArray();
-            }
-        }
+        public IEnumerable<object> EventHandlers => projectors.ToArray();
 
         /// <summary>
         /// Gets or sets the name of the catchup. 
@@ -124,13 +112,7 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Gets an observable sequence showing the catchup's progress.
         /// </summary>
-        public IObservable<ReadModelCatchupStatus> Progress
-        {
-            get
-            {
-                return progress;
-            }
-        }
+        public IObservable<ReadModelCatchupStatus> Progress => progress;
 
         /// <summary>
         /// Specifies the lowest id of the events to be caught up.
@@ -146,7 +128,7 @@ namespace Microsoft.Its.Domain.Sql
             // perform a re-entrancy check so that multiple catchups do not try to run concurrently
             if (Interlocked.CompareExchange(ref running, 1, 0) != 0)
             {
-                Debug.WriteLine(string.Format("Catchup {0}: ReadModelCatchup already in progress. Skipping.", Name), ToString());
+                Debug.WriteLine($"Catchup {Name}: ReadModelCatchup already in progress. Skipping.", ToString());
                 return ReadModelCatchupResult.CatchupAlreadyInProgress;
             }
 
@@ -179,7 +161,7 @@ namespace Microsoft.Its.Domain.Sql
                         return ReadModelCatchupResult.CatchupRanButNoNewEvents;
                     }
 
-                    Debug.WriteLine(string.Format("Catchup {0}: Beginning replay of {1} events", Name, query.ExpectedNumberOfEvents));
+                    Debug.WriteLine($"Catchup {Name}: Beginning replay of {query.ExpectedNumberOfEvents} events");
 
                     stopwatch.Start();
 
@@ -189,14 +171,13 @@ namespace Microsoft.Its.Domain.Sql
             catch (Exception exception)
             {
                 // TODO: (Run) this should probably throw
-                Debug.WriteLine(string.Format("Catchup {0}: Read model catchup failed after {1}ms at {2} events.\n{3}", Name, stopwatch.ElapsedMilliseconds, eventsProcessed,
-                                              exception));
+                Debug.WriteLine($"Catchup {Name}: Read model catchup failed after {stopwatch.ElapsedMilliseconds}ms at {eventsProcessed} events.\n{exception}");
             }
             finally
             {
                 // reset the re-entrancy flag
                 running = 0;
-                Debug.WriteLine(string.Format("Catchup {0}: Catchup batch done.", Name));
+                Debug.WriteLine($"Catchup {Name}: Catchup batch done.");
             }
 
             stopwatch.Stop();
@@ -278,10 +259,7 @@ namespace Microsoft.Its.Domain.Sql
                     }
                     else
                     {
-                        throw new SerializationException(string.Format(
-                            "Deserialization: Event type '{0}.{1}' not found",
-                            storedEvent.StreamName,
-                            storedEvent.Type));
+                        throw new SerializationException($"Deserialization: Event type '{storedEvent.StreamName}.{storedEvent.Type}' not found");
                     }
                 }
                 catch (Exception ex)
@@ -342,7 +320,7 @@ namespace Microsoft.Its.Domain.Sql
             }
             catch (Exception exception)
             {
-                Debug.WriteLine(string.Format("Catchup {0}: Exception while reporting status @ {1}: {2}", Name, status, exception));
+                Debug.WriteLine($"Catchup {Name}: Exception while reporting status @ {status}: {exception}");
             }
         }
 
@@ -424,7 +402,7 @@ namespace Microsoft.Its.Domain.Sql
                                     })
                                     .ToArray();
 
-            Debug.WriteLine(string.Format("Catchup {0}: Subscribing to event types: {1}", Name, matchEvents.Select(m => m.ToString()).ToJson()));
+            Debug.WriteLine($"Catchup {Name}: Subscribing to event types: {matchEvents.Select(m => m.ToString()).ToJson()}");
 
             using (var db = CreateReadModelDbContext())
             {
@@ -466,10 +444,7 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        public void Dispose()
-        {
-            disposables.Dispose();
-        }
+        public void Dispose() => disposables.Dispose();
 
         private void EnsureProjectorNamesAreDistinct()
         {
@@ -483,12 +458,10 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        private string[] GetProjectorNames()
-        {
-            return projectors
+        private string[] GetProjectorNames() =>
+            projectors
                 .Select(ReadModelInfo.NameForProjector)
                 .OrderBy(name => name)
                 .ToArray();
-        }
     }
 }
