@@ -42,7 +42,7 @@ namespace Microsoft.Its.Domain
         {
             if (@event == null)
             {
-                throw new ArgumentNullException("event");
+                throw new ArgumentNullException(nameof(@event));
             }
 
             var e = @event as Event;
@@ -60,9 +60,7 @@ namespace Microsoft.Its.Domain
             else if (@event.AggregateId != aggregateId)
             {
                 throw new ArgumentException(
-                    string.Format("Inconsistent aggregate ids. Previous events have aggregate id {0} but the one being added has aggregate id {1}.",
-                                  aggregateId,
-                                  @event.AggregateId));
+                    $"Inconsistent aggregate ids. Previous events have aggregate id {aggregateId} but the one being added has aggregate id {@event.AggregateId}.");
             }
 
             if (@event.SequenceNumber <= 0)
@@ -78,8 +76,7 @@ namespace Microsoft.Its.Domain
             }
             else if (events.Contains(@event))
             {
-                throw new ArgumentException(string.Format("Event with SequenceNumber {0} is already present in the sequence.",
-                                                          @event.SequenceNumber));
+                throw new ArgumentException($"Event with SequenceNumber {@event.SequenceNumber} is already present in the sequence.");
             }
 
             version = Math.Max(version, @event.SequenceNumber);
@@ -90,35 +87,17 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the count of events in the sequence.
         /// </summary>
-        public long Count
-        {
-            get
-            {
-                return events.Count;
-            }
-        }
+        public long Count => events.Count;
 
         /// <summary>
         /// Gets the id of the aggregate to which these events belong.
         /// </summary>
-        public Guid AggregateId
-        {
-            get
-            {
-                return aggregateId;
-            }
-        }
+        public Guid AggregateId => aggregateId;
 
         /// <summary>
         /// Gets the version the sequence is at, which is the SequenceNumber of the last event in the sequence.
         /// </summary>
-        public long Version
-        {
-            get
-            {
-                return version;
-            }
-        }
+        public long Version => version;
 
         /// <summary>
         /// Returns an enumerator that iterates through the collection.
@@ -127,10 +106,7 @@ namespace Microsoft.Its.Domain
         /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
         /// </returns>
         /// <filterpriority>1</filterpriority>
-        public IEnumerator<IEvent> GetEnumerator()
-        {
-            return events.OrderBy(e => e.SequenceNumber).GetEnumerator();
-        }
+        public IEnumerator<IEvent> GetEnumerator() => events.OrderBy(e => e.SequenceNumber).GetEnumerator();
 
         /// <summary>
         /// Returns an enumerator that iterates through a collection.
@@ -139,10 +115,7 @@ namespace Microsoft.Its.Domain
         /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
         /// </returns>
         /// <filterpriority>2</filterpriority>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <summary>
         /// Adds a number of events to the sequence.

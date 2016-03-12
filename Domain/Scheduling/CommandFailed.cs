@@ -19,23 +19,17 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets or sets the exception that caused the command to fail.
         /// </summary>
-        public Exception Exception { get; private set; }
+        public Exception Exception { get; }
 
         /// <summary>
         /// Cancels the scheduled command. Further delivery attempts will not be made.
         /// </summary>
-        public void Cancel()
-        {
-            IsCanceled = true;
-        }
+        public void Cancel() => IsCanceled = true;
 
         /// <summary>
         /// Retries the scheduled command after the specified amount of time.
         /// </summary>
-        public void Retry(TimeSpan after)
-        {
-            RetryAfter = after;
-        }
+        public void Retry(TimeSpan after) => RetryAfter = after;
 
         internal bool IsCanceled { get; private set; }
 
@@ -44,13 +38,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets or sets the number of previous attempts that have been made to deliver the scheduled command.
         /// </summary>
-        public int NumberOfPreviousAttempts
-        {
-            get
-            {
-                return ScheduledCommand.NumberOfPreviousAttempts;
-            }
-        }
+        public int NumberOfPreviousAttempts => ScheduledCommand.NumberOfPreviousAttempts;
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
@@ -58,21 +46,18 @@ namespace Microsoft.Its.Domain
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
-        public override string ToString()
-        {
-            return string.Format("Failed due to: {1} {0}",
-                                 (IsCanceled
-                                     ? " (and canceled)"
-                                     : " (will retry after " + RetryAfter + ")"), Exception.FindInterestingException().Message);
-        }
+        public override string ToString() =>
+            string.Format("Failed due to: {1} {0}",
+                          IsCanceled
+                              ? " (and canceled)"
+                              : $" (will retry after {RetryAfter})",
+                          Exception.FindInterestingException().Message);
 
         internal static CommandFailed Create<TCommand>(
             TCommand command,
             IScheduledCommand scheduledCommand,
             Exception exception)
-            where TCommand : class, ICommand
-        {
-            return new CommandFailed<TCommand>(command, scheduledCommand, exception);
-        }
+            where TCommand : class, ICommand =>
+                new CommandFailed<TCommand>(command, scheduledCommand, exception);
     }
 }

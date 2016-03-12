@@ -16,7 +16,7 @@ namespace Microsoft.Its.Domain
     /// <typeparam name="T">The type of the subject of the unit of work.</typeparam>
     public sealed class UnitOfWork<T> : IDisposable where T : class
     {
-        private static readonly string callContextPrefix = typeof (UnitOfWork<>).Assembly.GetName().Name + ".UnitOfWork:" + typeof (T);
+        private static readonly string callContextPrefix = $"{typeof (UnitOfWork<>).Assembly.GetName().Name}.UnitOfWork:{typeof (T)}";
 
         private readonly bool isOutermost;
         private bool canCommit;
@@ -106,13 +106,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Gets the subject of the current unit of work.
         /// </summary>
-        public T Subject
-        {
-            get
-            {
-                return Resource<T>();
-            }
-        }
+        public T Subject => Resource<T>();
 
         /// <summary>
         /// Reports an exception due to which the unit of work must be rejected.
@@ -122,7 +116,7 @@ namespace Microsoft.Its.Domain
         {
             if (exception == null)
             {
-                throw new ArgumentNullException("exception");
+                throw new ArgumentNullException(nameof(exception));
             }
             rejected = true;
             Exception = exception;
@@ -139,16 +133,14 @@ namespace Microsoft.Its.Domain
         /// </returns>
         /// <exception cref="System.ArgumentNullException">resource</exception>
         /// <exception cref="System.InvalidOperationException">Resources cannot be added to a disposed UnitOfWork.</exception>
-        public UnitOfWork<T> AddResource<TResource>(TResource resource, bool dispose = true)
-        {
-            return AddResource(typeof(TResource), resource, dispose);
-        }
+        public UnitOfWork<T> AddResource<TResource>(TResource resource, bool dispose = true) => 
+            AddResource(typeof(TResource), resource, dispose);
 
         internal UnitOfWork<T> AddResource(Type resourceType, object resource, bool dispose)
         {
             if (resource == null)
             {
-                throw new ArgumentNullException("resource");
+                throw new ArgumentNullException(nameof(resource));
             }
             if (disposed)
             {
@@ -216,13 +208,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Gets the ambient unit of work in progress, if any, in the current context.
         /// </summary>
-        public static UnitOfWork<T> Current
-        {
-            get
-            {
-                return CallContext.LogicalGetData(callContextPrefix) as UnitOfWork<T>;
-            }
-        }
+        public static UnitOfWork<T> Current => CallContext.LogicalGetData(callContextPrefix) as UnitOfWork<T>;
 
         /// <summary>
         ///     Completes the unit of work.
@@ -281,11 +267,7 @@ namespace Microsoft.Its.Domain
             {
                 rejected = true;
                 reject(this);
-                var handler = Rejected;
-                if (handler != null)
-                {
-                    handler(this, Subject);
-                }
+                Rejected?.Invoke(this, Subject);
             }
             else
             {
@@ -293,15 +275,9 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        private UnitOfWork<T> GetFromContext()
-        {
-            return CallContext.LogicalGetData(callContextPrefix) as UnitOfWork<T>;
-        }
+        private UnitOfWork<T> GetFromContext() => CallContext.LogicalGetData(callContextPrefix) as UnitOfWork<T>;
 
-        private void SetInContext(UnitOfWork<T> context)
-        {
-            CallContext.LogicalSetData(callContextPrefix, context);
-        }
+        private void SetInContext(UnitOfWork<T> context) => CallContext.LogicalSetData(callContextPrefix, context);
 
         /// <summary>
         /// Votes that the unit of work should be committed.
@@ -309,17 +285,14 @@ namespace Microsoft.Its.Domain
         /// <remarks>
         /// All participants in the unit of work must vote commit for it to actually be committed.
         /// </remarks>
-        public void VoteCommit()
-        {
-            canCommit = true;
-        }
+        public void VoteCommit() => canCommit = true;
 
         /// <summary>
         ///     Sets the unit of work for type <typeparamref name="T" /> to its default behavior.
         /// </summary>
         public static void ConfigureDefault()
         {
-            Create = (_, __) => { };
+            Create = delegate { };
 
             Action<UnitOfWork<T>> dispose = work => work.disposables.Dispose();
 

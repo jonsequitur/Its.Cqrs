@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Microsoft.Its.Domain.Sql</RootNamespace>
     <AssemblyName>Microsoft.Its.Domain.Sql</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
@@ -26,6 +26,7 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
     <DocumentationFile>bin\Debug\Microsoft.Its.Domain.Sql.xml</DocumentationFile>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -91,9 +92,7 @@
     <Compile Include="AppLock.cs" />
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
     <Compile Include="CommandScheduler\SqlEventStoreEventStoreETagChecker.cs" />
-    <Compile Include="CommandScheduler\CommandSchedulingEventHandler.cs" />
     <Compile Include="CommandScheduler\ETag.cs" />
-    <Compile Include="CommandScheduler\ICommandSchedulerDispatcher.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockRepository.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockTrigger.cs" />
     <Compile Include="CommandScheduler\SchedulerAdvancedResult.cs" />

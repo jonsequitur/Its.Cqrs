@@ -32,15 +32,15 @@ namespace Microsoft.Its.Domain.Authorization
         {
             if (resource == null)
             {
-                throw new ArgumentNullException("resource");
+                throw new ArgumentNullException(nameof(resource));
             }
             if (command == null)
             {
-                throw new ArgumentNullException("command");
+                throw new ArgumentNullException(nameof(command));
             }
             if (principal == null)
             {
-                throw new ArgumentNullException("principal");
+                throw new ArgumentNullException(nameof(principal));
             }
 
             var queryType = typeof (AuthorizationQuery<,,>)

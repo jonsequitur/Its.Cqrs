@@ -8,10 +8,8 @@ namespace Microsoft.Its.Domain.Sql
 {
     public class ReadModelInfoEntityModelConfiguration : IEntityModelConfiguration
     {
-        public void ConfigureModel(ConfigurationRegistrar configurations)
-        {
+        public void ConfigureModel(ConfigurationRegistrar configurations) =>
             configurations.Add(new ReadModelInfoEntityTypeConfiguration());
-        }
 
         public class ReadModelInfoEntityTypeConfiguration : EntityTypeConfiguration<ReadModelInfo>
         {

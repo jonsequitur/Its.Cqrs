@@ -54,7 +54,7 @@ namespace Microsoft.Its.Domain
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             this.value = value;
             this.stringComparison = stringComparison;
@@ -63,13 +63,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Gets the underlying <see cref="string" /> value of the instance.
         /// </summary>
-        public string Value
-        {
-            get
-            {
-                return value;
-            }
-        }
+        public string Value => value;
 
         /// <summary>
         ///     Performs an explicit conversion from <see cref="String{T}" /> to <see cref="System.String" />.
@@ -78,10 +72,7 @@ namespace Microsoft.Its.Domain
         /// <returns>
         ///     The result of the conversion.
         /// </returns>
-        public static explicit operator string(String<T> from)
-        {
-            return from.Value;
-        }
+        public static explicit operator string(String<T> from) => @from.Value;
 
         /// <summary>
         ///     Performs an implicit conversion from <see cref="System.String" /> to <see cref="String{T}" />.
@@ -90,10 +81,7 @@ namespace Microsoft.Its.Domain
         /// <returns>
         ///     The result of the conversion.
         /// </returns>
-        public static implicit operator String<T>(string from)
-        {
-            return create(from);
-        }
+        public static implicit operator String<T>(string from) => create(@from);
 
         /// <summary>
         ///     Determines whether the specified <see cref="System.Object" /> is equal to this instance.
@@ -104,20 +92,14 @@ namespace Microsoft.Its.Domain
         /// <returns>
         ///     <c>true</c> if the specified <see cref="System.Object" /> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
-        public override bool Equals(object obj)
-        {
-            return Equals(this, obj);
-        }
+        public override bool Equals(object obj) => Equals(this, obj);
 
         /// <summary>
         ///     Equalses the specified other.
         /// </summary>
         /// <param name="other">The other.</param>
         /// <returns></returns>
-        public bool Equals(String<T> other)
-        {
-            return Equals(this, other);
-        }
+        public bool Equals(String<T> other) => Equals(this, other);
 
         /// <summary>
         ///     Returns a hash code for this instance.
@@ -125,10 +107,7 @@ namespace Microsoft.Its.Domain
         /// <returns>
         ///     A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
         /// </returns>
-        public override int GetHashCode()
-        {
-            return Value.ToLowerInvariant().GetHashCode() ^ typeof (T).GetHashCode();
-        }
+        public override int GetHashCode() => Value.ToLowerInvariant().GetHashCode() ^ typeof (T).GetHashCode();
 
         /// <summary>
         ///     Returns a <see cref="System.String" /> that represents this instance.
@@ -136,10 +115,7 @@ namespace Microsoft.Its.Domain
         /// <returns>
         ///     A <see cref="System.String" /> that represents this instance.
         /// </returns>
-        public override string ToString()
-        {
-            return Value;
-        }
+        public override string ToString() => Value;
 
         /// <summary>
         ///     Implements the operator ==.
@@ -149,10 +125,7 @@ namespace Microsoft.Its.Domain
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static bool operator ==(String<T> left, object right)
-        {
-            return Equals(left, right);
-        }
+        public static bool operator ==(String<T> left, object right) => Equals(left, right);
 
         /// <summary>
         ///     Implements the operator !=.
@@ -162,10 +135,7 @@ namespace Microsoft.Its.Domain
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static bool operator !=(String<T> left, object right)
-        {
-            return !Equals(left, right);
-        }
+        public static bool operator !=(String<T> left, object right) => !Equals(left, right);
 
         /// <summary>
         ///     Equalses the specified left.

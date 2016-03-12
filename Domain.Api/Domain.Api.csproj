@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Microsoft.Its.Domain.Api</RootNamespace>
     <AssemblyName>Microsoft.Its.Domain.Api</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
@@ -26,6 +26,7 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Microsoft.Its.Domain.Api.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -96,7 +97,6 @@
     <Compile Include="DependencyResolverExtensions.cs" />
     <Compile Include="Documentation\CommandDocument.cs" />
     <Compile Include="DomainApiController.cs" />
-    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="GuidConstraint.cs" />
     <Compile Include="CommandValidationExceptionFilterAttribute.cs" />
     <Compile Include="Documentation\HelpController.cs" />
@@ -105,7 +105,6 @@
     <Compile Include="HttpConfigurationExtensions.cs" />
     <Compile Include="SerializationExceptionFilter.cs" />
     <Compile Include="Serialization\ServesJsonByDefaultAttribute.cs" />
-    <Compile Include="ValidationExtensions.cs" />
     <Compile Include="ValidationReportModel.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -16,13 +16,9 @@ namespace Microsoft.Its.Domain
             Clock = clock;
         }
 
-        public IClock Clock { get; private set; }
+        public IClock Clock { get; }
 
-        public override string ToString()
-        {
-            return "Scheduled" + Clock.IfNotNull()
-                                      .Then(c => " on clock " + c)
-                                      .ElseDefault();
-        }
+        public override string ToString() =>
+            $"Scheduled{Clock.IfNotNull().Then(c => " on clock " + c).ElseDefault()}";
     }
 }

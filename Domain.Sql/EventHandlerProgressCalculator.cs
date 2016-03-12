@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Transactions;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql
@@ -18,7 +17,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (createDbContext == null)
             {
-                throw new ArgumentNullException("createDbContext");
+                throw new ArgumentNullException(nameof(createDbContext));
             }
 
             int count;

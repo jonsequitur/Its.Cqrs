@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+
 #pragma warning disable 618
 
 namespace Microsoft.Its.Domain
@@ -18,56 +19,44 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets concrete types derived from from specified type.
         /// </summary>
-        public static IEnumerable<Type> ConcreteTypesDerivedFrom(Type type)
-        {
-            return AppDomainTypes()
+        public static IEnumerable<Type> ConcreteTypesDerivedFrom(Type type) =>
+            AppDomainTypes()
                 .Concrete()
                 .DerivedFrom(type);
-        }
 
-        public static IEnumerable<Type> DerivedFrom(this IEnumerable<Type> types, Type type)
-        {
-            return types.Where(type.IsAssignableFrom);
-        }
+        public static IEnumerable<Type> DerivedFrom(this IEnumerable<Type> types, Type type) =>
+            types.Where(type.IsAssignableFrom);
 
         /// <summary>
         /// Gets concrete types based on the specified generic type definition.
         /// </summary>
-        public static IEnumerable<Type> ConcreteTypesOfGenericInterfaces(params Type[] types)
-        {
-            return AppDomainTypes()
+        public static IEnumerable<Type> ConcreteTypesOfGenericInterfaces(params Type[] types) =>
+            AppDomainTypes()
                 .Concrete()
                 .Where(t => t.GetInterfaces().Any(i => i.IsGenericType && types.Contains(i.GetGenericTypeDefinition())));
-        }
 
         /// <summary>
         /// Gets concrete types whose full name matches the specified type name.
         /// </summary>
         /// <remarks>The comparison is case insensitive.</remarks>
-        public static IEnumerable<Type> ConcreteTypesNamed(string typeName)
-        {
-            return AppDomainTypes()
+        public static IEnumerable<Type> ConcreteTypesNamed(string typeName) =>
+            AppDomainTypes()
                 .Concrete()
                 .Where(t => t.FullName.Equals(typeName, StringComparison.OrdinalIgnoreCase));
-        }
 
         /// <summary>
         /// Gets the known event handler types for the events of all known aggregate types.
         /// </summary>
-        public static IEnumerable<Type> EventHandlerTypes()
-        {
-            return AggregateType.KnownTypes
-                                .SelectMany(t => t.KnownEventHandlerTypes())
-                                .Distinct();
-        }
+        public static IEnumerable<Type> EventHandlerTypes() =>
+            AggregateType.KnownTypes
+                         .SelectMany(t => t.KnownEventHandlerTypes())
+                         .Distinct();
 
         /// <summary>
         /// Gets the known consequenter types for the events of all known aggregate types.
         /// </summary>
-        public static IEnumerable<Type> Consequenters()
-        {
-            return EventHandlerTypes().Where(IsConsequenterType);
-        }
+        public static IEnumerable<Type> Consequenters() =>
+            EventHandlerTypes().Where(IsConsequenterType);
 
         /// <summary>
         /// Determines whether the specified type is an implementation of <see cref="IHaveConsequencesWhen{T}" />.
@@ -83,10 +72,8 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the known projector types for the events of all known aggregate types.
         /// </summary>
-        public static IEnumerable<Type> ProjectorTypes()
-        {
-            return EventHandlerTypes().Where(IsProjectorType);
-        }
+        public static IEnumerable<Type> ProjectorTypes() =>
+            EventHandlerTypes().Where(IsProjectorType);
 
         /// <summary>
         /// Determines whether the specified type is an implementation of <see cref="IUpdateProjectionWhen{T}" />.
@@ -94,8 +81,8 @@ namespace Microsoft.Its.Domain
         public static bool IsProjectorType(this Type type)
         {
             var interfaces = type.GetInterfaces();
-            var isEventHandler = (typeof(IEventHandler).IsAssignableFrom(type) ||
-                      interfaces.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IUpdateProjectionWhen<>)));
+            var isEventHandler = (typeof (IEventHandler).IsAssignableFrom(type) ||
+                                  interfaces.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IUpdateProjectionWhen<>)));
             bool isConsequentor = interfaces.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof (IHaveConsequencesWhen<>));
             return isEventHandler && !isConsequentor;
         }
@@ -103,17 +90,14 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets concrete types, e.g. types that can be instantiated, not interfaces, abstract types, or generic type definitions.
         /// </summary>
-        public static IEnumerable<Type> Concrete(this IEnumerable<Type> types)
-        {
-            return types
+        public static IEnumerable<Type> Concrete(this IEnumerable<Type> types) =>
+            types
                 .Where(t => !t.IsAbstract)
                 .Where(t => !t.IsInterface)
                 .Where(t => !t.IsGenericTypeDefinition);
-        }
 
-        public static IEnumerable<Type> AppDomainTypes()
-        {
-            return AppDomainAssemblies()
+        public static IEnumerable<Type> AppDomainTypes() =>
+            AppDomainAssemblies()
                 .Where(a => !a.IsDynamic)
                 .Where(a => !a.GlobalAssemblyCache)
                 .SelectMany(a =>
@@ -136,11 +120,8 @@ namespace Microsoft.Its.Domain
                     }
                     return Enumerable.Empty<Type>();
                 });
-        }
 
-        private static Assembly[] AppDomainAssemblies()
-        {
-            return AppDomain.CurrentDomain.GetAssemblies();
-        }
+        private static Assembly[] AppDomainAssemblies() =>
+            AppDomain.CurrentDomain.GetAssemblies();
     }
 }

@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Transactions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using log = Its.Log.Lite.Log;
@@ -54,7 +52,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             try
             {
-                    unitOfWork.Resource<DbContext>().SaveChanges();
+                unitOfWork.Resource<DbContext>().SaveChanges();
             }
             catch (Exception exception)
             {
@@ -71,7 +69,7 @@ namespace Microsoft.Its.Domain.Sql
             // add an EventHandlingError entry as well
             EventHandlingError sqlError = CreateEventHandlingError((dynamic) error);
 
-            log.Write(() => new {error.Exception, sqlError.SerializedEvent});
+            log.Write(() => new { error.Exception, sqlError.SerializedEvent });
 
             using (var db = createDbContext())
             {
@@ -94,7 +92,7 @@ namespace Microsoft.Its.Domain.Sql
                         dbSet.Add(readModelInfo);
                     }
 
-                    readModelInfo.Error = exceptionJson; 
+                    readModelInfo.Error = exceptionJson;
                     readModelInfo.FailedOnEventId = sqlError.OriginalId;
                 }
 
@@ -106,9 +104,8 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        private static EventHandlingError CreateEventHandlingError(Domain.EventHandlingError e)
-        {
-            return new EventHandlingError
+        private static EventHandlingError CreateEventHandlingError(Domain.EventHandlingError e) =>
+            new EventHandlingError
             {
                 Actor = e.Event.Actor(),
                 AggregateId = e.Event.AggregateId,
@@ -122,11 +119,9 @@ namespace Microsoft.Its.Domain.Sql
                                                  ignore: ex => true))
                               .Else(() => (long?) null)
             };
-        }
 
-        private static EventHandlingError CreateEventHandlingError(IEvent e)
-        {
-            return new EventHandlingError
+        private static EventHandlingError CreateEventHandlingError(IEvent e) =>
+            new EventHandlingError
             {
                 Actor = e.Actor(),
                 AggregateId = e.AggregateId,
@@ -136,11 +131,9 @@ namespace Microsoft.Its.Domain.Sql
                 EventTypeName = e.EventName(),
                 OriginalId = null
             };
-        }
 
-        private static EventHandlingError CreateEventHandlingError(EventHandlingDeserializationError e)
-        {
-            return new EventHandlingError
+        private static EventHandlingError CreateEventHandlingError(EventHandlingDeserializationError e) =>
+            new EventHandlingError
             {
                 Actor = e.Actor,
                 AggregateId = e.AggregateId,
@@ -151,11 +144,9 @@ namespace Microsoft.Its.Domain.Sql
                 OriginalId = e.Try(ee => ee.Metadata.AbsoluteSequenceNumber, ignore: ex => true)
                               .Else(() => (long?) null)
             };
-        }
 
-        private static EventHandlingError CreateEventHandlingError(StorableEvent e)
-        {
-            return new EventHandlingError
+        private static EventHandlingError CreateEventHandlingError(StorableEvent e) =>
+            new EventHandlingError
             {
                 Actor = e.Actor,
                 AggregateId = e.AggregateId,
@@ -165,6 +156,5 @@ namespace Microsoft.Its.Domain.Sql
                 EventTypeName = e.Type,
                 OriginalId = e.Id
             };
-        }
     }
 }

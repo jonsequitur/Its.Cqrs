@@ -20,15 +20,15 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             var now = Clock.Now();
@@ -38,7 +38,7 @@ namespace Microsoft.Its.Domain.Testing
             reservedValues.TryGetValue(key, out reservedValueInDictionary);
 
             // Make sure to create a new object. Don't use the object from Dictionary directly.
-            var reservedValue = reservedValueInDictionary == null ? null : reservedValueInDictionary.Clone();
+            var reservedValue = reservedValueInDictionary?.Clone();
 
             if (reservedValue == null)
             {
@@ -53,18 +53,21 @@ namespace Microsoft.Its.Domain.Testing
                 };
                 return reservedValues.TryAdd(key, reservedValue);
             }
-            else if (reservedValue.Expiration == null)
+
+            if (reservedValue.Expiration == null)
             {
                 return reservedValue.OwnerToken == ownerToken;
             }
-            else if (reservedValue.OwnerToken == ownerToken)
+
+            if (reservedValue.OwnerToken == ownerToken)
             {
                 // if it's the same, extend the lease
                 var newReservedValue = reservedValue.Clone();
                 newReservedValue.Expiration = expiration;
                 return reservedValues.TryUpdate(key, newReservedValue, reservedValue);
             }
-            else if (reservedValue.Expiration < now)
+
+            if (reservedValue.Expiration < now)
             {
                 // take ownership if the reserved value has expired
                 var newReservedValue = reservedValue.Clone();
@@ -80,15 +83,15 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             var reservedValueInDictionary = reservedValues.SingleOrDefault(kvp => 
@@ -113,15 +116,15 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             var key = Tuple.Create(value, scope);
@@ -144,11 +147,11 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             if (ownerToken == null)
             {
-                throw new ArgumentNullException("ownerToken");
+                throw new ArgumentNullException(nameof(ownerToken));
             }
 
             var now = Clock.Now();
@@ -211,11 +214,11 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
 
             var key = Tuple.Create(value, scope);

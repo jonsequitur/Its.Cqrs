@@ -46,8 +46,7 @@ namespace Microsoft.Its.Domain.Testing
             if (scenario.EventHandlingErrors.Any())
             {
               throw new AssertionException(
-                    "The following event handling errors occurred: " +
-                    string.Join("\n", scenario.EventHandlingErrors.Select(e => e.Exception.ToString())));
+                  $"The following event handling errors occurred: {string.Join("\n", scenario.EventHandlingErrors.Select(e => e.Exception.ToString()))}");
             }
 
             return scenario;

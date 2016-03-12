@@ -120,7 +120,7 @@ SELECT @result";
                 var values = new object[row.FieldCount];
                 row.GetValues(values);
                 Debug.WriteLine(string.Join(Environment.NewLine,
-                                            values.Select((v, i) => row.GetName(i) + ": " + v)));
+                                            values.Select((v, i) => $"{row.GetName(i)}: {v}")));
             }
 #endif
         }
@@ -131,21 +131,16 @@ SELECT @result";
         /// <value>
         ///   <c>true</c> if [is acquired]; otherwise, <c>false</c>.
         /// </value>
-        public bool IsAcquired
-        {
-            get
-            {
-                // status codes are:
-                // 0     The lock was successfully granted synchronously.
-                // 1     The lock was granted successfully after waiting for other incompatible locks to be released.
-                // -1    The lock request timed out.
-                // -2    The lock request was canceled.
-                // -3    The lock request was chosen as a deadlock victim.
-                // -999  Indicates a parameter validation or other call error.
-                // http://technet.microsoft.com/en-us/library/ms189823.aspx
-                return resultCode >= 0;
-            }
-        }
+        public bool IsAcquired =>
+            // status codes are:
+            // 0     The lock was successfully granted synchronously.
+            // 1     The lock was granted successfully after waiting for other incompatible locks to be released.
+            // -1    The lock request timed out.
+            // -2    The lock request was canceled.
+            // -3    The lock request was chosen as a deadlock victim.
+            // -999  Indicates a parameter validation or other call error.
+            // http://technet.microsoft.com/en-us/library/ms189823.aspx
+            resultCode >= 0;
 
         private void TryReleaseSqlAppLock()
         {

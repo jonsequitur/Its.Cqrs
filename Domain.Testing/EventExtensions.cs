@@ -20,9 +20,8 @@ namespace Microsoft.Its.Domain.Testing
             return events.Do(e => sequencesPerAggregate.GetOrAdd(e.AggregateId, id => new EventSequence(id)).Add(e));
         }
 
-        public static IStoredEvent ToStoredEvent(this IEvent e)
-        {
-            return new InMemoryStoredEvent
+        public static IStoredEvent ToStoredEvent(this IEvent e) =>
+            new InMemoryStoredEvent
             {
                 SequenceNumber = e.SequenceNumber,
                 AggregateId = e.AggregateId.ToString(),
@@ -32,11 +31,9 @@ namespace Microsoft.Its.Domain.Testing
                 ETag = e.ETag,
                 StreamName = e.EventStreamName()
             };
-        }
 
-        public static IStoredEvent ToStoredEvent(this StorableEvent e)
-        {
-            return new InMemoryStoredEvent
+        public static IStoredEvent ToStoredEvent(this StorableEvent e) =>
+            new InMemoryStoredEvent
             {
                 SequenceNumber = e.SequenceNumber,
                 AggregateId = e.AggregateId.ToString(),
@@ -46,7 +43,6 @@ namespace Microsoft.Its.Domain.Testing
                 ETag = e.ETag,
                 StreamName = e.StreamName
             };
-        }
 
         private static readonly Lazy<JsonSerializerSettings> serializerSettings = new Lazy<JsonSerializerSettings>(() =>
         {
@@ -60,19 +56,17 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="storedEvent">The storable event.</param>
         /// <returns>A deserialized domain event.</returns>
-        public static IEvent ToDomainEvent(this IStoredEvent storedEvent)
-        {
-            return Serializer.DeserializeEvent(
+        public static IEvent ToDomainEvent(this IStoredEvent storedEvent) =>
+            Serializer.DeserializeEvent(
                 aggregateName: storedEvent.StreamName,
                 eventName: storedEvent.Type,
                 aggregateId: Guid.Parse(storedEvent.AggregateId),
                 sequenceNumber: storedEvent.SequenceNumber,
-                etag: storedEvent.ETag, 
+                etag: storedEvent.ETag,
                 timestamp: storedEvent.Timestamp,
                 body: storedEvent.Body,
                 uniqueEventId: storedEvent.Timestamp.Ticks,
                 serializerSettings: serializerSettings.Value);
-        }
 
         /// <summary>
         /// Creates an aggregate from a sequence of stored events.
@@ -91,6 +85,5 @@ namespace Microsoft.Its.Domain.Testing
                             .Select(e => e.ToDomainEvent())
                             .Where(e => e != null));
         }
-
     }
 }

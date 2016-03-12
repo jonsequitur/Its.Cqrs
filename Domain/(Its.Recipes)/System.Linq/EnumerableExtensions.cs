@@ -11,25 +11,24 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace System.Linq
 {
 #if !RecipesProject
-    [System.Diagnostics.DebuggerStepThrough]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [DebuggerStepThrough]
+    [ExcludeFromCodeCoverage]
 #endif
-
     internal static partial class EnumerableExtensions
     {
-        internal static IEnumerable<T> Do<T>(this IEnumerable<T> items, Action<T> action)
-        {
-            return items.Select(item =>
+        internal static IEnumerable<T> Do<T>(this IEnumerable<T> items, Action<T> action) =>
+            items.Select(item =>
             {
                 action(item);
                 return item;
             });
-        }
 
         internal static void Run<TSource>(this IEnumerable<TSource> source)
         {
@@ -41,14 +40,7 @@ namespace System.Linq
             }
         }
 
-        internal static void ForEach<TSource>(this IEnumerable<TSource> source, Action<TSource> action)
-        {
-            if (source == null)
-            {
-                return;
-            }
-            source.Do(action).Run();
-        }
+        internal static void ForEach<TSource>(this IEnumerable<TSource> source, Action<TSource> action) => source?.Do(action).Run();
 
         internal static IEnumerable<T> FlattenDepthFirst<T>(this T startNode, Func<T, IEnumerable<T>> getNodes)
         {
@@ -74,9 +66,7 @@ namespace System.Linq
             return source.ThenBy(_ => random.Next());
         }
 
-        public static string ToDelimitedString(this IEnumerable<string> source, string separator)
-        {
-            return string.Join(separator, source.ToArray());
-        }
+        public static string ToDelimitedString(this IEnumerable<string> source, string separator) =>
+            string.Join(separator, source.ToArray());
     }
 }

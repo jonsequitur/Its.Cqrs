@@ -46,7 +46,7 @@ namespace Microsoft.Its.Domain
 
             if (table.Count != tableSize)
             {
-                throw new ArgumentException(string.Format("base64 is of the incorrect size. Expected {0} but was {1}.", tableSize, table.Count));
+                throw new ArgumentException($"base64 is of the incorrect size. Expected {tableSize} but was {table.Count}.");
             }
         }
 
@@ -68,12 +68,12 @@ namespace Microsoft.Its.Domain
         {
             if (capacity <= 0)
             {
-                throw new ArgumentOutOfRangeException("capacity", "capacity must greater than 0");
+                throw new ArgumentOutOfRangeException(nameof(capacity), "capacity must greater than 0");
             }
 
             if (probabilityOfFalsePositive < 0 || probabilityOfFalsePositive > 1)
             {
-                throw new ArgumentOutOfRangeException("probabilityOfFalsePositive", "probabilityOfFalsePositive must be between 0 and 1");
+                throw new ArgumentOutOfRangeException(nameof(probabilityOfFalsePositive), "probabilityOfFalsePositive must be between 0 and 1");
             }
 
             Capacity = capacity;
@@ -88,15 +88,11 @@ namespace Microsoft.Its.Domain
             numberOfTimesToHash = (int) Math.Round(ln2*tableSize/capacity);
         }
 
-        public string Base64 { get
-        {
-            return table.ToBase64String();
-        }}
+        public string Base64 => table.ToBase64String();
 
         public int Capacity { get; private set; }
         
         public double ProbabilityOfFalsePositive { get; private set; }
-
 
         /// <summary>
         /// Adds the specified value to the Bloom filter.
@@ -105,7 +101,7 @@ namespace Microsoft.Its.Domain
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             var firstHash = value.GetHashCode();
@@ -137,7 +133,7 @@ namespace Microsoft.Its.Domain
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             var firstHash = value.GetHashCode();
@@ -172,9 +168,6 @@ namespace Microsoft.Its.Domain
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
         /// <remarks>The value returned can be used to instantiate another <see cref="BloomFilter" />, with same content value.</remarks>
-        public override string ToString()
-        {
-            return Base64;
-        }
+        public override string ToString() => Base64;
     }
 }

@@ -16,13 +16,7 @@ namespace Microsoft.Its.Domain.Testing
 
         public EventHandler<IStoredEvent> BeforeSave;
 
-        public IEnumerable<IStoredEvent> Events
-        {
-            get
-            {
-                return events;
-            }
-        }
+        public IEnumerable<IStoredEvent> Events => events;
 
         public async Task Append(IStoredEvent[] @events)
         {
@@ -48,10 +42,8 @@ namespace Microsoft.Its.Domain.Testing
             });
         }
 
-        public void RemoveEvents(Guid aggregateId)
-        {
+        public void RemoveEvents(Guid aggregateId) => 
             events.RemoveWhere(e => e.AggregateId == aggregateId.ToString());
-        }
 
         private void ThrowConcurrencyException(IStoredEvent storedEvent)
         {
@@ -66,41 +58,26 @@ namespace Microsoft.Its.Domain.Testing
                 .ToDiagnosticJson();
 
             throw new ConcurrencyException(
-                string.Format(
-                    @"There was a concurrency violation.
+                $@"There was a concurrency violation.
 Existing:
-{0}
+{existing}
 Attempted:
-{1}",
-                    existing,
-                    attempted));
+{attempted}");
         }
 
-        public async Task<IEnumerable<IStoredEvent>> All(string id)
-        {
-            return await Task.Run(() => events.Where(e => e.AggregateId == id));
-        }
+        public async Task<IEnumerable<IStoredEvent>> All(string id) =>
+            await Task.Run(() => events.Where(e => e.AggregateId == id));
 
-        public async Task<IEnumerable<IStoredEvent>> AsOfDate(string id, DateTimeOffset date)
-        {
-            return await Task.Run(() => events.Where(e => e.AggregateId == id)
-                .Where(e => e.Timestamp <= date));
-        }
+        public async Task<IEnumerable<IStoredEvent>> AsOfDate(string id, DateTimeOffset date) =>
+            await Task.Run(() => events.Where(e => e.AggregateId == id)
+                                       .Where(e => e.Timestamp <= date));
 
-        public async Task<IEnumerable<IStoredEvent>> UpToVersion(string id, long version)
-        {
-            return await Task.Run(() => events.Where(e => e.AggregateId == id)
-                .Where(e => e.SequenceNumber <= version));
-        }
+        public async Task<IEnumerable<IStoredEvent>> UpToVersion(string id, long version) =>
+            await Task.Run(() => events.Where(e => e.AggregateId == id)
+                                       .Where(e => e.SequenceNumber <= version));
 
-        public IEnumerator<IStoredEvent> GetEnumerator()
-        {
-            return events.GetEnumerator();
-        }
+        public IEnumerator<IStoredEvent> GetEnumerator() => events.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

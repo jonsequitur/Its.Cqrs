@@ -12,15 +12,11 @@ namespace Microsoft.Its.Domain.EventHandling
         private readonly List<IEventHandler> eventHandlers = new List<IEventHandler>();
         private string name;
 
-        protected virtual void On<T>(Action<T> handle)
-        {
-            eventHandlers.Add(new DuckTypeProjector<T>(handle));
-        }
+        protected virtual void
+            On<T>(Action<T> handle) => eventHandlers.Add(new DuckTypeProjector<T>(handle));
 
-        protected virtual void On(string eventType, Action<dynamic> handle)
-        {
-            eventHandlers.Add(Projector.CreateDynamic(handle, eventType));
-        }
+        protected virtual void
+            On(string eventType, Action<dynamic> handle) => eventHandlers.Add(Projector.CreateDynamic(handle, eventType));
 
         public IEnumerable<IEventHandlerBinder> GetBinders()
         {
@@ -28,12 +24,6 @@ namespace Microsoft.Its.Domain.EventHandling
             return eventHandlerBinders;
         }
 
-        public virtual string Name
-        {
-            get
-            {
-                return name ?? (name = GetType().Name);
-            }
-        }
+        public virtual string Name => name ?? (name = GetType().Name);
     }
 }

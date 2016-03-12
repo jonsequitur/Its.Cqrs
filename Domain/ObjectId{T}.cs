@@ -28,7 +28,7 @@ namespace Microsoft.Its.Domain
         {
             if (Equals(value, default(T)))
             {
-                throw new ArgumentException(GetType() + ".Value cannot be set to " + default(T));
+                throw new ArgumentException($"{GetType()}.Value cannot be set to {default(T)}");
             }
             Value = value;
         }
@@ -36,7 +36,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the value of the object id.
         /// </summary>
-        public T Value { get; private set; }
+        public T Value { get; }
 
         protected bool Equals(ObjectId<T> other)
         {
@@ -67,9 +67,10 @@ namespace Microsoft.Its.Domain
                 return Equals(Value, (T) obj);
             }
 
-            if (obj is ObjectId<T>)
+            var objectId = obj as ObjectId<T>;
+            if (objectId != null)
             {
-                return Equals((ObjectId<T>) obj);
+                return Equals(objectId);
             }
 
             return false;
@@ -83,10 +84,7 @@ namespace Microsoft.Its.Domain
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static bool operator ==(ObjectId<T> left, object right)
-        {
-            return Equals(left, right);
-        }
+        public static bool operator ==(ObjectId<T> left, object right) => Equals(left, right);
 
         /// <summary>
         ///     Implements the operator !=.
@@ -96,10 +94,7 @@ namespace Microsoft.Its.Domain
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static bool operator !=(ObjectId<T> left, object right)
-        {
-            return !Equals(left, right);
-        }
+        public static bool operator !=(ObjectId<T> left, object right) => !Equals(left, right);
 
         /// <summary>
         /// Serves as a hash function for a particular type. 
@@ -108,10 +103,7 @@ namespace Microsoft.Its.Domain
         /// A hash code for the current <see cref="T:System.Object"/>.
         /// </returns>
         /// <filterpriority>2</filterpriority>
-        public override int GetHashCode()
-        {
-            return EqualityComparer<T>.Default.GetHashCode(Value);
-        }
+        public override int GetHashCode() => EqualityComparer<T>.Default.GetHashCode(Value);
 
         /// <summary>
         /// Returns a string that represents the current object.
@@ -120,9 +112,6 @@ namespace Microsoft.Its.Domain
         /// A string that represents the current object.
         /// </returns>
         /// <filterpriority>2</filterpriority>
-        public override string ToString()
-        {
-            return Value.ToString();
-        }
+        public override string ToString() => Value.ToString();
     }
 }

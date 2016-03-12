@@ -16,11 +16,11 @@ namespace Microsoft.Its.Domain
         {
             if (type == null)
             {
-                throw new ArgumentNullException("type");
+                throw new ArgumentNullException(nameof(type));
             }
             if (streamName == null)
             {
-                throw new ArgumentNullException("streamName");
+                throw new ArgumentNullException(nameof(streamName));
             }
 
             if (type == "IEvent" || type == "Event")
@@ -28,41 +28,23 @@ namespace Microsoft.Its.Domain
                 type = Wildcard;
             }
             this.type = type;
-            
+
             this.streamName = streamName;
         }
 
-        public string Type
-        {
-            get
-            {
-                return type;
-            }
-        }
+        public string Type => type;
 
-        public string StreamName
-        {
-            get
-            {
-                return streamName;
-            }
-        }
+        public string StreamName => streamName;
 
-        public bool Matches(IEvent @event)
-        {
-            return (streamName == "" || streamName == Wildcard || streamName.Equals(@event.EventStreamName())) &&
-                   (type == "" || type == Wildcard || type.Equals(@event.EventName()));
-        }
+        public bool Matches(IEvent @event) =>
+            (streamName == "" || streamName == Wildcard || streamName.Equals(@event.EventStreamName())) &&
+            (type == "" || type == Wildcard || type.Equals(@event.EventName()));
 
-        public override string ToString()
-        {
-            return string.Format("{0}.{1}", StreamName, Type);
-        }
+        public override string ToString() =>
+            $"{StreamName}.{Type}";
 
-        protected bool Equals(MatchEvent other)
-        {
-            return string.Equals(Type, other.Type) && string.Equals(StreamName, other.StreamName);
-        }
+        protected bool Equals(MatchEvent other) =>
+            string.Equals(Type, other.Type) && string.Equals(StreamName, other.StreamName);
 
         public override bool Equals(object obj)
         {
@@ -85,7 +67,7 @@ namespace Microsoft.Its.Domain
         {
             unchecked
             {
-                return ((Type != null ? Type.GetHashCode() : 0)*397) ^ (StreamName != null ? StreamName.GetHashCode() : 0);
+                return ((Type?.GetHashCode() ?? 0)*397) ^ (StreamName?.GetHashCode() ?? 0);
             }
         }
 

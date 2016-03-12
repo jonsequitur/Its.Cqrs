@@ -27,7 +27,6 @@ namespace Microsoft.Its.Domain.Api
     public abstract class DomainApiController<TAggregate> : ApiController
         where TAggregate : class, IEventSourced
     {
-        private readonly IEventSourcedRepository<TAggregate> repository;
         protected static readonly JsonSerializer Serializer = JsonSerializer.Create(Domain.Serialization.Serializer.Settings);
 
         /// <summary>
@@ -39,9 +38,9 @@ namespace Microsoft.Its.Domain.Api
         {
             if (repository == null)
             {
-                throw new ArgumentNullException("repository");
+                throw new ArgumentNullException(nameof(repository));
             }
-            this.repository = repository;
+            this.Repository = repository;
         }
 
         /// <summary>
@@ -63,7 +62,7 @@ namespace Microsoft.Its.Domain.Api
 
             await ApplyCommand(aggregate, commandName, command);
 
-            await repository.Save(aggregate);
+            await Repository.Save(aggregate);
 
             return Request.CreateResponse(aggregate.Version == existingVersion
                                               ? HttpStatusCode.NotModified
@@ -83,7 +82,7 @@ namespace Microsoft.Its.Domain.Api
 
             var aggregate = (TAggregate) ctor.Invoke(new[] { c });
 
-            await repository.Save(aggregate);
+            await Repository.Save(aggregate);
 
             return Request.CreateResponse(HttpStatusCode.Created);
         }
@@ -153,14 +152,14 @@ namespace Microsoft.Its.Domain.Api
                         {
                             throw new HttpResponseException(new HttpResponseMessage(HttpStatusCode.BadRequest)
                             {
-                                ReasonPhrase = string.Format("Unrecognized command {0}", property.Name)
+                                ReasonPhrase = $"Unrecognized command {property.Name}"
                             });
                         }
                     }
                 }
             }
 
-            await repository.Save(aggregate);
+            await Repository.Save(aggregate);
 
             return new HttpResponseMessage(HttpStatusCode.Accepted);
         }
@@ -228,7 +227,7 @@ namespace Microsoft.Its.Domain.Api
 #endif
         public async Task<TAggregate> GetAggregate(Guid id)
         {
-            var aggregate = await repository.GetLatest(id);
+            var aggregate = await Repository.GetLatest(id);
 
             if (aggregate == null)
             {
@@ -241,12 +240,6 @@ namespace Microsoft.Its.Domain.Api
         /// <summary>
         /// A repository for accessing aggregate instances.
         /// </summary>
-        protected IEventSourcedRepository<TAggregate> Repository
-        {
-            get
-            {
-                return repository;
-            }
-        }
+        protected IEventSourcedRepository<TAggregate> Repository { get; }
     }
 }

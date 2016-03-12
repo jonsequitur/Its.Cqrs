@@ -8,19 +8,11 @@ namespace Microsoft.Its.Domain
 {
     internal static class CommandHandler
     {
-        private static readonly Type[] knownTypes = Discover.ConcreteTypesOfGenericInterfaces(typeof(ICommandHandler<,>)).ToArray();
+        private static readonly Type[] knownTypes = Discover.ConcreteTypesOfGenericInterfaces(typeof (ICommandHandler<,>)).ToArray();
 
-        public static Type Type(Type aggregateType, Type commandType)
-        {
-            return typeof (ICommandHandler<,>).MakeGenericType(aggregateType, commandType);
-        }
+        public static Type Type(Type aggregateType, Type commandType) =>
+            typeof (ICommandHandler<,>).MakeGenericType(aggregateType, commandType);
 
-        public static Type[] KnownTypes
-        {
-            get
-            {
-                return knownTypes;
-            }
-        }
+        public static Type[] KnownTypes => knownTypes;
     }
 }

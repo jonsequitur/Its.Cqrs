@@ -78,7 +78,7 @@ namespace Microsoft.Its.Domain.Authorization
 
                     if (!commandAggregateTypes.Any(t => t.IsAssignableFrom(typeof (TResource))))
                     {
-                        throw new ArgumentException(string.Format("Command type {0} is not applicable to resource type {1}", typeof (TCommand), typeof (TResource)));
+                        throw new ArgumentException($"Command type {typeof (TCommand)} is not applicable to resource type {typeof (TResource)}");
                     }
                 }
             }
@@ -86,17 +86,16 @@ namespace Microsoft.Its.Domain.Authorization
             /// <summary>
             /// Denies authorization.
             /// </summary>
-            public static void IsDenied()
-            {
-                var tresource = typeof (TCommand)
-                    .GetInterface("ICommand`1")
-                    .GetGenericArguments()
-                    .Single();
+            public static void IsDenied() =>
                 typeof (AuthorizationFor<>.ToApply<>.ToA<>)
-                    .MakeGenericType(typeof (TPrincipal), typeof (TCommand), tresource)
+                    .MakeGenericType(typeof (TPrincipal),
+                                     typeof (TCommand),
+                                     typeof (TCommand)
+                                         .GetInterface("ICommand`1")
+                                         .GetGenericArguments()
+                                         .Single())
                     .Member()
                     .IsDenied();
-            }
         }
 
         /// <summary>

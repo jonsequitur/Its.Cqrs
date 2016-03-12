@@ -54,7 +54,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public string ETag { get; set; }
 
-        internal static readonly Type[] HandlerGenericTypeDefinitions = new[]
+        internal static readonly Type[] HandlerGenericTypeDefinitions =
         {
             typeof (IUpdateProjectionWhen<>),
             typeof (IHaveConsequencesWhen<>)
@@ -64,32 +64,21 @@ namespace Microsoft.Its.Domain
         /// Gets a dynamic metadata object that can be used to pass extensibility information along with the event.
         /// </summary>
         [JsonIgnore]
-        public dynamic Metadata
-        {
-            get
-            {
-                return metadata ?? (metadata = new ExpandoObject());
-            }
-        }
+        public dynamic Metadata => metadata ?? (metadata = new ExpandoObject());
 
         /// <summary>
         /// Returns the known concrete event types for the specified aggregate type.
         /// </summary>
         /// <param name="aggregateType">Type of the aggregate.</param>
-        public static IEnumerable<Type> KnownTypesForAggregateType(Type aggregateType)
-        {
-            return typeof (Event<>).MakeGenericType(aggregateType)
-                                   .Member()
-                                   .KnownTypes;
-        }
+        public static IEnumerable<Type> KnownTypesForAggregateType(Type aggregateType) =>
+            typeof (Event<>).MakeGenericType(aggregateType)
+                            .Member()
+                            .KnownTypes;
 
         /// <summary>
         /// Returns all known concrete event types.
         /// </summary>
-        public static IEnumerable<Type> KnownTypes()
-        {
-            return Discover.ConcreteTypesDerivedFrom(typeof(IEvent));
-        }
+        public static IEnumerable<Type> KnownTypes() => Discover.ConcreteTypesDerivedFrom(typeof (IEvent));
 
         internal static Type[] ConcreteTypesOf(Type eventType)
         {
@@ -107,12 +96,10 @@ namespace Microsoft.Its.Domain
                             .Distinct()
                             .ToArray();
             }
-            else
-            {
-                return types.Concat(AggregateType.KnownTypes.Select(t => typeof (CommandScheduled<>).MakeGenericType(t)).ToArray())
-                            .Distinct()
-                            .ToArray();
-            }
+
+            return types.Concat(AggregateType.KnownTypes.Select(t => typeof (CommandScheduled<>).MakeGenericType(t)).ToArray())
+                        .Distinct()
+                        .ToArray();
         }
     }
 }

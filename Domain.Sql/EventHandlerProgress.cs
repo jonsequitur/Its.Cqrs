@@ -28,6 +28,5 @@ namespace Microsoft.Its.Domain.Sql
         public long? FailedOnEventId { get; set; }
 
         public string Error { get; set; }
-
     }
 }

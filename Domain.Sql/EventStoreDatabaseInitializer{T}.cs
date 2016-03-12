@@ -35,9 +35,6 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         protected override bool ShouldRebuildDatabase(
             TContext context, 
-            Version latestVersion)
-        {
-            return false;
-        }
+            Version latestVersion) => false;
     }
 }

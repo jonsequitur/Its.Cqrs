@@ -130,7 +130,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             return Observable.Create<ReadModelCatchupStatus>(observer =>
             {
-                if (catchups == null || !catchups.Any())
+                if (!catchups?.Any() ?? true)
                 {
                     observer.OnCompleted();
                     return Disposable.Empty;

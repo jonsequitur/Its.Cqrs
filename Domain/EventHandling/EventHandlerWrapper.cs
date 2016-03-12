@@ -11,12 +11,11 @@ namespace Microsoft.Its.Domain
                                          IEventHandlerWrapper,
                                          INamedEventHandler
     {
-        private readonly object innerHandler;
         private readonly List<IEventHandlerBinder> binders = new List<IEventHandlerBinder>();
 
         public EventHandlerWrapper(object innerHandler)
         {
-            this.innerHandler = innerHandler;
+            this.InnerHandler = innerHandler;
             
             var compositeProjector = innerHandler as EventHandlerWrapper;
             if (compositeProjector != null)
@@ -37,28 +36,13 @@ namespace Microsoft.Its.Domain
             Name = EventHandler.FullName(innerHandler);
         }
 
-        public IEnumerable<IEventHandlerBinder> GetBinders()
-        {
-            return binders;
-        }
+        public IEnumerable<IEventHandlerBinder> GetBinders() => binders;
 
-        public void AddBinder(IEventHandlerBinder binder)
-        {
-            binders.Add(binder);
-        }
+        public void AddBinder(IEventHandlerBinder binder) => binders.Add(binder);
 
-        public void WrapAll(Handle<IEvent> first)
-        {
-            binders.ForEach(b => ((dynamic) b).Wrap(first));
-        }
+        public void WrapAll(Handle<IEvent> first) => binders.ForEach(b => ((dynamic) b).Wrap(first));
 
-        public object InnerHandler
-        {
-            get
-            {
-                return innerHandler;
-            }
-        }
+        public object InnerHandler { get; }
 
         public string Name { get; set; }
     }

@@ -43,27 +43,28 @@ namespace Microsoft.Its.Domain.Sql
             {
                 return false;
             }
-            return Equals((ReservedValue)obj);
+            return Equals((ReservedValue) obj);
         }
 
-        protected bool Equals(ReservedValue other)
-        {
-            return string.Equals(OwnerToken, other.OwnerToken) &&
-                   string.Equals(Value, other.Value) &&
-                   string.Equals(ConfirmationToken, other.ConfirmationToken) &&
-                   string.Equals(Scope, other.Scope) &&
-                   IsEqualTo(Expiration, other.Expiration);
-        }
+        protected bool Equals(ReservedValue other) =>
+            string.Equals(OwnerToken, other.OwnerToken) &&
+            string.Equals(Value, other.Value) &&
+            string.Equals(ConfirmationToken, other.ConfirmationToken) &&
+            string.Equals(Scope, other.Scope) &&
+            IsEqualTo(Expiration, other.Expiration);
 
         private static bool IsEqualTo<T>(Nullable<T> first, Nullable<T> second) where T : struct, IEquatable<T>
         {
             // if one is null, the other is not, then it's not equal
             if (first.HasValue != second.HasValue)
+            {
                 return false;
+            }
 
             // Both either null or not null, then they're equal
             if (first.HasValue == false)
-                return true;
+            {
+                return true;}
 
             return first.Value.Equals(second);
         }
@@ -73,11 +74,11 @@ namespace Microsoft.Its.Domain.Sql
             unchecked
             {
                 var hashCode = 0;
-                hashCode = (hashCode*397) ^ (OwnerToken != null ? OwnerToken.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ (Value != null ? Value.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ (ConfirmationToken != null ? ConfirmationToken.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ (Scope != null ? Scope.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ (Expiration.HasValue ? Expiration.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (OwnerToken?.GetHashCode() ?? 0);
+                hashCode = (hashCode*397) ^ (Value?.GetHashCode() ?? 0);
+                hashCode = (hashCode*397) ^ (ConfirmationToken?.GetHashCode() ?? 0);
+                hashCode = (hashCode*397) ^ (Scope?.GetHashCode() ?? 0);
+                hashCode = (hashCode*397) ^ (Expiration?.GetHashCode() ?? 0);
                 return hashCode;
             }
         }

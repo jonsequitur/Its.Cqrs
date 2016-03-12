@@ -22,11 +22,11 @@ namespace Microsoft.Its.Domain
         {
             if (store == null)
             {
-                throw new ArgumentNullException("store");
+                throw new ArgumentNullException(nameof(store));
             }
             if (etagChecker == null)
             {
-                throw new ArgumentNullException("etagChecker");
+                throw new ArgumentNullException(nameof(etagChecker));
             }
             this.store = store;
             this.etagChecker = etagChecker;

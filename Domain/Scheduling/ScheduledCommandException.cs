@@ -22,7 +22,7 @@ namespace Microsoft.Its.Domain
         {
             if (failure == null)
             {
-                throw new ArgumentNullException("failure");
+                throw new ArgumentNullException(nameof(failure));
             }
             Failure = failure;
         }

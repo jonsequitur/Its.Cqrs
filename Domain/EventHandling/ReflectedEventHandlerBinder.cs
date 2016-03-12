@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Reflection;
+
 #pragma warning disable 618
 
 namespace Microsoft.Its.Domain
@@ -17,13 +19,13 @@ namespace Microsoft.Its.Domain
             isConsequenter = HandlerInterface.GetGenericTypeDefinition() == typeof (IHaveConsequencesWhen<>);
         }
 
-        public Type HandlerInterface { get; private set; }
+        public Type HandlerInterface { get; }
 
-        public IObservable<IEvent> GetEventsObservableFromBus(IEventBus bus)
-        {
-            var events = bus.GetType().GetMethod("Events").MakeGenericMethod(EventType);
-            return (IObservable<IEvent>) events.Invoke(bus, null);
-        }
+        public IObservable<IEvent> GetEventsObservableFromBus(IEventBus bus) =>
+            (IObservable<IEvent>) bus.GetType()
+                                     .GetMethod("Events")
+                                     .MakeGenericMethod(EventType)
+                                     .Invoke(bus, null);
 
         public IDisposable SubscribeToBus(object handler, IEventBus bus)
         {
@@ -39,6 +41,6 @@ namespace Microsoft.Its.Domain
                                                    bus);
         }
 
-        public Type EventType { get; private set; }
+        public Type EventType { get; }
     }
 }

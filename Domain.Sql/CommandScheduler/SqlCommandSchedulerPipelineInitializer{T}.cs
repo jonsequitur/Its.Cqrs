@@ -18,19 +18,17 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             if (createDbContext == null)
             {
-                throw new ArgumentNullException("createDbContext");
+                throw new ArgumentNullException(nameof(createDbContext));
             }
             this.createDbContext = createDbContext;
             this.getClockName = getClockName;
         }
 
-        protected override void InitializeFor<TAggregate>(Configuration configuration)
-        {
+        protected override void InitializeFor<TAggregate>(Configuration configuration) =>
             configuration
                 .AddToCommandSchedulerPipeline<TAggregate>(
                     schedule: async (cmd, next) => await Schedule(cmd, next),
                     deliver: async (cmd, next) => await Deliver(cmd, next));
-        }
 
         private async Task Schedule<TAggregate>(
             IScheduledCommand<TAggregate> cmd,
@@ -46,7 +44,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         }
 
         private async Task Deliver<TAggregate>(
-            IScheduledCommand<TAggregate> cmd, 
+            IScheduledCommand<TAggregate> cmd,
             Func<IScheduledCommand<TAggregate>, Task> next)
             where TAggregate : class
         {
@@ -73,10 +71,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         private Task<string> GetClockName(
             IScheduledCommand scheduledCommand,
-            CommandSchedulerDbContext dbContext)
-        {
-            var clockName = getClockName()(scheduledCommand);
-            return Task.FromResult(clockName);
-        }
+            CommandSchedulerDbContext dbContext) =>
+                Task.FromResult(getClockName()(scheduledCommand));
     }
 }

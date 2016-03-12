@@ -41,7 +41,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
             var migrators = parentage.SelectMany(type =>
             {
-                var resourcePrefix = string.Format("{0}.Migrations.{1}-", type.Assembly.GetName().Name, type.Name);
+                var resourcePrefix = $"{type.Assembly.GetName().Name}.Migrations.{type.Name}-";
 
                 return type.Assembly
                            .GetManifestResourceNames()
@@ -87,7 +87,7 @@ FROM sys.tables;";
         {
             if (migrators == null)
             {
-                throw new ArgumentNullException("migrators");
+                throw new ArgumentNullException(nameof(migrators));
             }
 
             if (!migrators.Any())
@@ -222,9 +222,7 @@ WHERE rowNumber = 1")
                         { "@migrationVersion", migrator.MigrationVersion.ToString() },
                         {
                             "@log",
-                            string.Format("{0}\n\n{1}",
-                                          migrator.GetType().AssemblyQualifiedName,
-                                          result.Log).Trim()
+                            $"{migrator.GetType().AssemblyQualifiedName}\n\n{result.Log}".Trim()
                         }
                     });
             }

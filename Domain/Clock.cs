@@ -45,10 +45,7 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        public static void Reset()
-        {
-            Current = SystemClock.Instance;
-        }
+        public static void Reset() => Current = SystemClock.Instance;
 
         /// <summary>
         /// Gets or sets the current clock.
@@ -68,7 +65,7 @@ namespace Microsoft.Its.Domain
             {
                 if (value == null)
                 {
-                    throw new ArgumentNullException("value");
+                    throw new ArgumentNullException(nameof(value));
                 }
                 current = value;
             }
@@ -77,16 +74,13 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Creates an <see cref="IClock" /> instance that calls the provided delegate to return the current time.
         /// </summary>
-        public static IClock Create(Func<DateTimeOffset> now)
-        {
-            return new AnonymousClock(now);
-        }
+        public static IClock Create(Func<DateTimeOffset> now) => new AnonymousClock(now);
 
         internal static IClock Latest(params IClock[] clocks)
         {
             clocks = clocks.Where(c => c != null).ToArray();
 
-            if (clocks.Count() == 1)
+            if (clocks.Length == 1)
             {
                 return clocks.Single();
             }
@@ -101,7 +95,7 @@ namespace Microsoft.Its.Domain
         {
             clocks = clocks.Where(c => c != null).ToArray();
 
-            if (clocks.Count() == 1)
+            if (clocks.Length == 1)
             {
                 return clocks.Single();
             }

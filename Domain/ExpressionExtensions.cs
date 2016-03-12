@@ -12,7 +12,7 @@ namespace Microsoft.Its.Domain
         {
             if (expression == null)
             {
-                throw new ArgumentNullException("expression");
+                throw new ArgumentNullException(nameof(expression));
             }
 
             var memberExpression = expression.Body as MemberExpression;

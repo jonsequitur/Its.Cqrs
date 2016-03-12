@@ -17,26 +17,20 @@ namespace Microsoft.Its.Domain
         {
             if (handler == null)
             {
-                throw new ArgumentNullException("handler");
+                throw new ArgumentNullException(nameof(handler));
             }
             if (bus == null)
             {
-                throw new ArgumentNullException("bus");
+                throw new ArgumentNullException(nameof(bus));
             }
             this.bus = bus;
 
             Subscribe(handler);
         }
 
-        private void Subscribe(object handler)
-        {
-            EventHandler.GetBinders(handler)
-                        .ForEach(m => disposables.Add(m.SubscribeToBus(handler, bus)));
-        }
+        private void Subscribe(object handler) => EventHandler.GetBinders(handler)
+                                                              .ForEach(m => disposables.Add(m.SubscribeToBus(handler, bus)));
 
-        public void Dispose()
-        {
-            disposables.Dispose();
-        }
+        public void Dispose() => disposables.Dispose();
     }
 }

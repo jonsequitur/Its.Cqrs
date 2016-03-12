@@ -8,9 +8,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
     public class CommandSchedulerDatabaseInitializer : CreateAndMigrate<CommandSchedulerDbContext>
     {
-        protected override bool ShouldRebuildDatabase(CommandSchedulerDbContext context, Version latestVersion)
-        {
-            return false;
-        }
+        protected override bool ShouldRebuildDatabase(CommandSchedulerDbContext context, Version latestVersion) => false;
     }
 }

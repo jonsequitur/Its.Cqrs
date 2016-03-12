@@ -14,12 +14,12 @@ namespace Microsoft.Its.Domain
         {
             if (onEvent == null)
             {
-                throw new ArgumentNullException("onEvent");
+                throw new ArgumentNullException(nameof(onEvent));
             }
             this.onEvent = onEvent;
         }
 
-        public void UpdateProjection(TEvent @event)
+        void IUpdateProjectionWhen<TEvent>.UpdateProjection(TEvent @event)
         {
             onEvent(@event);
         }

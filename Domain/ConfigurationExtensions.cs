@@ -14,28 +14,22 @@ namespace Microsoft.Its.Domain
         /// Gets an <see cref="IEventSourcedRepository{TAggregate}" />.
         /// </summary>
         public static IEventSourcedRepository<TAggregate> Repository<TAggregate>(this Configuration configuration)
-            where TAggregate : class, IEventSourced
-        {
-            return configuration.Container.Resolve<IEventSourcedRepository<TAggregate>>();
-        }
+            where TAggregate : class, IEventSourced =>
+                configuration.Container.Resolve<IEventSourcedRepository<TAggregate>>();
 
         /// <summary>
         /// Gets an <see cref="IStore{TAggregate}" />.
         /// </summary>
         public static IStore<TTarget> Store<TTarget>(this Configuration configuration)
-            where TTarget : class
-        {
-            return configuration.Container.Resolve<IStore<TTarget>>();
-        }
+            where TTarget : class =>
+                configuration.Container.Resolve<IStore<TTarget>>();
 
         /// <summary>
         /// Gets an <see cref="ICommandScheduler{TAggregate}" />.
         /// </summary>
         public static ICommandScheduler<TAggregate> CommandScheduler<TAggregate>(this Configuration configuration)
-            where TAggregate : class
-        {
-            return configuration.Container.Resolve<ICommandScheduler<TAggregate>>();
-        }
+            where TAggregate : class =>
+                configuration.Container.Resolve<ICommandScheduler<TAggregate>>();
 
         /// <summary>
         /// Configures the domain to use the specified event bus.
@@ -134,16 +128,16 @@ namespace Microsoft.Its.Domain
                 onDelivered == null)
             {
                 onScheduling = cmd =>
-                               Trace.WriteLine("[Scheduling] @" + Clock.Now() + ": " + cmd);
+                               Trace.WriteLine($"[Scheduling] @{Clock.Now()}: {cmd}");
 
                 onScheduled = cmd =>
-                              Trace.WriteLine("[Scheduled] @" + Clock.Now() + ": " + cmd);
+                              Trace.WriteLine($"[Scheduled] @{Clock.Now()}: {cmd}");
 
                 onDelivering = cmd =>
-                               Trace.WriteLine("[Delivering] @" + Clock.Now() + ": " + cmd);
+                               Trace.WriteLine($"[Delivering] @{Clock.Now()}: {cmd}");
 
                 onDelivered = cmd =>
-                              Trace.WriteLine("[Delivered] @" + Clock.Now() + ": " + cmd);
+                              Trace.WriteLine($"[Delivered] @{Clock.Now()}: {cmd}");
             }
 
             traceInitializer.OnScheduling(onScheduling);
@@ -190,10 +184,8 @@ namespace Microsoft.Its.Domain
             return configuration;
         }
 
-        public static ISnapshotRepository SnapshotRepository(this Configuration configuration)
-        {
-            return configuration.Container.Resolve<ISnapshotRepository>();
-        }
+        public static ISnapshotRepository SnapshotRepository(this Configuration configuration) =>
+            configuration.Container.Resolve<ISnapshotRepository>();
 
         internal static Configuration IsUsingInMemoryCommandScheduling(this Configuration configuration, bool value)
         {
@@ -201,13 +193,11 @@ namespace Microsoft.Its.Domain
             return configuration;
         }
 
-        internal static bool IsUsingInMemoryCommandScheduling(this Configuration configuration)
-        {
-            return configuration.Properties
-                                .IfContains("IsUsingInMemoryCommandScheduling")
-                                .And()
-                                .IfTypeIs<bool>()
-                                .ElseDefault();
-        }
+        internal static bool IsUsingInMemoryCommandScheduling(this Configuration configuration) =>
+            configuration.Properties
+                         .IfContains("IsUsingInMemoryCommandScheduling")
+                         .And()
+                         .IfTypeIs<bool>()
+                         .ElseDefault();
     }
 }

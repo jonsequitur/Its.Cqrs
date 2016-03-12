@@ -94,9 +94,7 @@ namespace Microsoft.Its.Domain.Testing
 
         private static void TraceEvent(IEvent e)
         {
-            Trace.WriteLine(string.Format("{0}.{1}",
-                                          e.EventStreamName(),
-                                          e.EventName()));
+            Trace.WriteLine($"{e.EventStreamName()}.{e.EventName()}");
             Trace.WriteLine(
                 e.ToJson(Formatting.Indented)
                  .Split('\n')

@@ -84,12 +84,9 @@ namespace Microsoft.Its.Domain.Testing
         {
             var events = (await eventStream.UpToVersion(aggregateId.ToString(), version)).ToArray();
 
-            if (events.Any())
-            {
-                return events.CreateAggregate<TAggregate>();
-            }
-
-            return null;
+            return events.Any() ? 
+                events.CreateAggregate<TAggregate>() : 
+                null;
         }
 
         /// <summary>
@@ -104,12 +101,9 @@ namespace Microsoft.Its.Domain.Testing
         {
             var events = (await eventStream.AsOfDate(aggregateId.ToString(), asOfDate)).ToArray();
 
-            if (events.Any())
-            {
-                return events.CreateAggregate<TAggregate>();
-            }
-
-            return null;
+            return events.Any() ? 
+                events.CreateAggregate<TAggregate>() :
+                null;
         }
 
         /// <summary>
@@ -170,17 +164,11 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <param name="id">The id of the aggregate.</param>
         /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
-        public async Task<TAggregate> Get(string id)
-        {
-            return await GetLatest(Guid.Parse(id));
-        }
+        async Task<TAggregate> IStore<TAggregate>.Get(string id) => await GetLatest(Guid.Parse(id));
 
         /// <summary>
         ///     Persists the state of the command target.
         /// </summary>
-        public async Task Put(TAggregate aggregate)
-        {
-            await Save(aggregate);
-        }
+        async Task IStore<TAggregate>.Put(TAggregate aggregate) => await Save(aggregate);
     }
 }

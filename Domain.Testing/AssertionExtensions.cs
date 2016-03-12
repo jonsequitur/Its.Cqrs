@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (validationReport.HasFailures)
             {
-                var msg = string.Format("Expected validation report to be valid but it was not.{0}{0}{1}", Environment.NewLine, validationReport);
+                var msg = $"Expected validation report to be valid but it was not.\n\n{validationReport}";
                 throw new AssertionException(msg);
             }
         }
@@ -41,13 +41,13 @@ namespace Microsoft.Its.Domain.Testing
         {
             if (!validationReport.HasFailures)
             {
-                var msg = string.Format("Expected validation report to have failures but it did not.{0}{0}{1}", Environment.NewLine, validationReport);
+                var msg = $"Expected validation report to have failures but it did not.\n\n{validationReport}";
                 throw new AssertionException(msg);
             }
 
             if (validationReport.Failures.All(f => f.Message != withMessage))
             {
-                throw new AssertionException(string.Format("Expected validation report to have a failure with message \"{0}\" but it did not.\n\nFailures:\n\n{1}", withMessage, validationReport));
+                throw new AssertionException($"Expected validation report to have a failure with message \"{withMessage}\" but it did not.\n\nFailures:\n\n{validationReport}");
             }
         }
     }

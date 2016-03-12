@@ -31,9 +31,6 @@ namespace Microsoft.Its.Domain.Sql
 
         public long BatchTotalEvents { get; set; }
 
-        public static string NameForProjector(object projector)
-        {
-            return EventHandler.FullName(projector);
-        }
+        public static string NameForProjector(object projector) => EventHandler.FullName(projector);
     }
 }

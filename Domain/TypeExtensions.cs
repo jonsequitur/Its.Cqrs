@@ -10,19 +10,14 @@ namespace Microsoft.Its.Domain
 {
     internal static class TypeExtensions
     {
-        internal static IEnumerable<Type> ImplementedHandlerInterfaces(this Type handlerType)
-        {
-            return handlerType.GetInterfaces()
-                              .Where(i => i.IsGenericType)
-                              .Where(i => Event.HandlerGenericTypeDefinitions.Contains(i.GetGenericTypeDefinition()));
-        }
+        internal static IEnumerable<Type> ImplementedHandlerInterfaces(this Type handlerType) =>
+            handlerType.GetInterfaces()
+                       .Where(i => i.IsGenericType)
+                       .Where(i => Event.HandlerGenericTypeDefinitions.Contains(i.GetGenericTypeDefinition()));
 
-        public static IEnumerable<Type> KnownEventHandlerTypes(this Type forAggregateType)
-        {
-            var handlerTypes = (IEnumerable<Type>) (typeof (Event<>).MakeGenericType(forAggregateType)
-                                                                    .Member()
-                                                                    .KnownHandlerTypes);
-            return handlerTypes.Distinct();
-        }
+        public static IEnumerable<Type> KnownEventHandlerTypes(this Type forAggregateType) =>
+            ((IEnumerable<Type>) (typeof (Event<>).MakeGenericType(forAggregateType)
+                                                  .Member()
+                                                  .KnownHandlerTypes)).Distinct();
     }
 }

@@ -15,13 +15,7 @@ namespace Microsoft.Its.Domain.Serialization
         /// <value>
         /// <c>true</c> if this <see cref="T:Newtonsoft.Json.JsonConverter"/> can write JSON; otherwise, <c>false</c>.
         /// </value>
-        public override bool CanWrite
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public override bool CanWrite => false;
 
         /// <summary>
         /// Writes the JSON representation of the object.
@@ -61,10 +55,7 @@ namespace Microsoft.Its.Domain.Serialization
         /// <returns>
         /// <c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
         /// </returns>
-        public override bool CanConvert(Type objectType)
-        {
-            return Command.KnownTypes.Contains(objectType);
-        }
+        public override bool CanConvert(Type objectType) => Command.KnownTypes.Contains(objectType);
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="T:Newtonsoft.Json.JsonConverter"/> can read JSON.
@@ -72,12 +63,6 @@ namespace Microsoft.Its.Domain.Serialization
         /// <value>
         /// <c>true</c> if this <see cref="T:Newtonsoft.Json.JsonConverter"/> can read JSON; otherwise, <c>false</c>.
         /// </value>
-        public override bool CanRead
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool CanRead => true;
     }
 }

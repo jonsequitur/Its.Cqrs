@@ -57,7 +57,7 @@ namespace Microsoft.Its.Domain
         {
             if (aggregate == null)
             {
-                throw new ArgumentNullException("aggregate");
+                throw new ArgumentNullException(nameof(aggregate));
             }
 
             if (aggregate.SourceSnapshot != null)
@@ -78,10 +78,8 @@ namespace Microsoft.Its.Domain
         ///   <c>true</c> if the command can be applied; otherwise, <c>false</c>.
         /// </returns>
         public static bool IsValidTo<TAggregate>(this TAggregate aggregate, Command<TAggregate> command)
-            where TAggregate : class
-        {
-            return !command.RunAllValidations(aggregate, false).HasFailures;
-        }
+            where TAggregate : class =>
+                !command.RunAllValidations(aggregate, false).HasFailures;
 
         /// <summary>
         /// Creates a new instance of the aggregate in memory using its state as of the specified version.
@@ -124,7 +122,7 @@ namespace Microsoft.Its.Domain
         {
             if (events == null)
             {
-                throw new ArgumentNullException("events");
+                throw new ArgumentNullException(nameof(events));
             }
 
             if (aggregate.PendingEvents.Any())
@@ -182,7 +180,7 @@ namespace Microsoft.Its.Domain
         {
             if (aggregate == null)
             {
-                throw new ArgumentNullException("aggregate");
+                throw new ArgumentNullException(nameof(aggregate));
             }
 
             return Math.Max(
@@ -206,11 +204,11 @@ namespace Microsoft.Its.Domain
         {
             if (aggregate == null)
             {
-                throw new ArgumentNullException("aggregate");
+                throw new ArgumentNullException(nameof(aggregate));
             }
             if (snapshot == null)
             {
-                throw new ArgumentNullException("snapshot");
+                throw new ArgumentNullException(nameof(snapshot));
             }
 
             if (aggregate.PendingEvents.Any())
@@ -226,25 +224,23 @@ namespace Microsoft.Its.Domain
         }
 
         internal static BloomFilter CreateETagBloomFilter<TAggregate>(this TAggregate aggregate)
-            where TAggregate : class, IEventSourced
-        {
-            return aggregate.IfTypeIs<EventSourcedAggregate>()
-                            .Then(a =>
-                            {
-                                if (a.WasSourcedFromSnapshot)
-                                {
-                                    return a.SourceSnapshot.ETags;
-                                }
+            where TAggregate : class, IEventSourced =>
+                aggregate.IfTypeIs<EventSourcedAggregate>()
+                         .Then(a =>
+                         {
+                             if (a.WasSourcedFromSnapshot)
+                             {
+                                 return a.SourceSnapshot.ETags;
+                             }
 
-                                var bloomFilter = new BloomFilter();
-                                a.EventHistory
-                                 .Select(e => e.ETag)
-                                 .Where(etag => !string.IsNullOrWhiteSpace(etag))
-                                 .ForEach(bloomFilter.Add);
-                                return bloomFilter;
-                            })
-                            .ElseDefault();
-        }
+                             var bloomFilter = new BloomFilter();
+                             a.EventHistory
+                              .Select(e => e.ETag)
+                              .Where(etag => !string.IsNullOrWhiteSpace(etag))
+                              .ForEach(bloomFilter.Add);
+                             return bloomFilter;
+                         })
+                         .ElseDefault();
 
         /// <summary>
         /// Determines whether the specified ETag already exists in the aggregate's event stream.
@@ -257,7 +253,7 @@ namespace Microsoft.Its.Domain
         {
             if (aggregate == null)
             {
-                throw new ArgumentNullException("aggregate");
+                throw new ArgumentNullException(nameof(aggregate));
             }
             if (string.IsNullOrWhiteSpace(etag))
             {

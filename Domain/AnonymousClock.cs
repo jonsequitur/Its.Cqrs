@@ -16,7 +16,7 @@ namespace Microsoft.Its.Domain
         {
             if (now == null)
             {
-                throw new ArgumentNullException("now");
+                throw new ArgumentNullException(nameof(now));
             }
             this.now = now;
         }
@@ -33,7 +33,7 @@ namespace Microsoft.Its.Domain
             return string.Format("{0}: {2}{1}",
                                  GetType(),
                                  Name.IfNotNullOrEmptyOrWhitespace()
-                                     .Then(n => string.Format(" ({0})", n))
+                                     .Then(n => $" ({n})")
                                      .ElseDefault(),
                                  Now().ToString("O"));
         }

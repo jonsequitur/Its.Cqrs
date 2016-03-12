@@ -69,29 +69,11 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        public virtual IEnumerable<StorableEvent> Events
-        {
-            get
-            {
-                return events;
-            }
-        }
+        public virtual IEnumerable<StorableEvent> Events => events;
 
-        public long ExpectedNumberOfEvents
-        {
-            get
-            {
-                return expectedNumberOfEvents;
-            }
-        }
+        public long ExpectedNumberOfEvents => expectedNumberOfEvents;
 
-        public long StartAtId
-        {
-            get
-            {
-                return startAtId;
-            }
-        }
+        public long StartAtId => startAtId;
 
         private bool TryGetAppLock()
         {
@@ -149,14 +131,8 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        public void Dispose()
-        {
-            appLockDisposer.Dispose();
-        }
+        public void Dispose() => appLockDisposer.Dispose();
 
-        public override string ToString()
-        {
-            return new  { lockResourceName, startAtId, eventQuery }.ToString();
-        }
+        public override string ToString() => new  { lockResourceName, startAtId, eventQuery }.ToString();
     }
 }

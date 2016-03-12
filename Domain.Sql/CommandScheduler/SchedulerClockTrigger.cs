@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Data.Entity;
 using System.Data.Entity.Core;
@@ -18,11 +21,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             if (createCommandSchedulerDbContext == null)
             {
-                throw new ArgumentNullException("createCommandSchedulerDbContext");
+                throw new ArgumentNullException(nameof(createCommandSchedulerDbContext));
             }
             if (deliver == null)
             {
-                throw new ArgumentNullException("deliver");
+                throw new ArgumentNullException(nameof(deliver));
             }
             this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
             this.deliver = deliver;
@@ -67,11 +70,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
             if (clockName == null)
             {
-                throw new ArgumentNullException("clockName");
+                throw new ArgumentNullException(nameof(clockName));
             }
             if (to == null && @by == null)
             {
-                throw new ArgumentException("Either to or by must be specified.");
+                throw new ArgumentException($"Either {nameof(to)} or {nameof(by)} must be specified.");
             }
 
             using (var db = createCommandSchedulerDbContext())
@@ -80,18 +83,14 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
                 if (clock == null)
                 {
-                    throw new ObjectNotFoundException(string.Format("No clock named {0} was found.", clockName));
+                    throw new ObjectNotFoundException($"No clock named {clockName} was found.");
                 }
 
                 to = to ?? clock.UtcNow.Add(@by.Value);
 
                 if (to < clock.UtcNow)
                 {
-                    throw new InvalidOperationException(string.Format("A clock cannot be moved backward. ({0})", new
-                    {
-                        Clock = clock.ToJson(),
-                        RequestedTime = to
-                    }));
+                    throw new InvalidOperationException($"A clock cannot be moved backward. ({new { Clock = clock.ToJson(), RequestedTime = to }})");
                 }
 
                 var result = new SchedulerAdvancedResult(to.Value);
@@ -132,7 +131,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             // QUESTION: (Trigger) re: the remarks XML comment, would it be clearer to have two methods, e.g. something like TriggerAnyCommands and TriggerEligibleCommands?
             if (query == null)
             {
-                throw new ArgumentNullException("query");
+                throw new ArgumentNullException(nameof(query));
             }
 
             var result = new SchedulerAdvancedResult();
@@ -153,9 +152,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public async Task Trigger(
             ScheduledCommand scheduled,
             SchedulerAdvancedResult result,
-            CommandSchedulerDbContext db)
-        {
-            await deliver(scheduled, result, db);
-        }
+            CommandSchedulerDbContext db) =>
+                await deliver(scheduled, result, db);
     }
 }

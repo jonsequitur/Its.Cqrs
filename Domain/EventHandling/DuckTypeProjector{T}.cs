@@ -39,7 +39,7 @@ namespace Microsoft.Its.Domain
         {
             if (onEvent == null)
             {
-                throw new ArgumentNullException("onEvent");
+                throw new ArgumentNullException(nameof(onEvent));
             }
             this.onEvent = onEvent;
         }
@@ -79,34 +79,19 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        public IEnumerable<MatchEvent> IncludedEventTypes
-        {
-            get
+        public IEnumerable<MatchEvent> IncludedEventTypes =>
+            new[]
             {
-                return new[]
-                {
-                    new MatchEvent(typeof (T).Name,
-                                   streamName:
-                                       typeof (T).AggregateTypeForEventType()
-                                                 .IfNotNull()
-                                                 .Then(AggregateType.EventStreamName)
-                                                 .Else(() => "*"))
-                };
-            }
-        }
+                new MatchEvent(typeof (T).Name,
+                               typeof (T).AggregateTypeForEventType()
+                                         .IfNotNull()
+                                         .Then(AggregateType.EventStreamName)
+                                         .Else(() => "*"))
+            };
 
-        public IEnumerable<IEventHandlerBinder> GetBinders()
-        {
-            return new IEventHandlerBinder[] { this };
-        }
+        public IEnumerable<IEventHandlerBinder> GetBinders() => new IEventHandlerBinder[] { this };
 
-        public Type EventType
-        {
-            get
-            {
-                return typeof (IEvent);
-            }
-        }
+        public Type EventType => typeof (IEvent);
 
         public IDisposable SubscribeToBus(object handler, IEventBus bus)
         {

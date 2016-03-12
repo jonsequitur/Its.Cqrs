@@ -28,7 +28,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (version == null)
             {
-                throw new ArgumentNullException("version");
+                throw new ArgumentNullException(nameof(version));
             }
             this.version = version;
         }

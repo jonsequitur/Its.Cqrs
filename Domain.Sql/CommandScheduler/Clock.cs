@@ -17,17 +17,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         public DateTimeOffset UtcNow { get; set; }
 
-        public DateTimeOffset Now()
-        {
-            return UtcNow;
-        }
+        public DateTimeOffset Now() => UtcNow;
 
-        public override string ToString()
-        {
-            return string.Format("\"{0}\": {1}",
-                                 Name,
-                                 UtcNow.ToString("O"));
-        }
+        public override string ToString() => $"\"{Name}\": {UtcNow.ToString("O")}";
 
         public const string DefaultClockName = "default";
     }

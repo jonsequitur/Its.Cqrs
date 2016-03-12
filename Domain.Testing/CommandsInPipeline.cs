@@ -46,14 +46,8 @@ namespace Microsoft.Its.Domain.Testing
             }
         }
 
-        public IEnumerator<IScheduledCommand> GetEnumerator()
-        {
-            return commands.Keys.GetEnumerator();
-        }
+        public IEnumerator<IScheduledCommand> GetEnumerator() => commands.Keys.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

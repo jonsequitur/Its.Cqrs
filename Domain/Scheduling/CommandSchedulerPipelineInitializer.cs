@@ -16,24 +16,21 @@ namespace Microsoft.Its.Domain
             initializeFor = GetType().GetMethod("InitializeFor", BindingFlags.Instance | BindingFlags.NonPublic);
         }
 
-        public void Initialize(Configuration configuration)
-        {
-            configuration.Properties.GetOrAdd(GetKeyIndicatingInitialized(), _ =>
-            {
-                Command.KnownTargetTypes
-                       .ForEach(type =>
-                       {
-                           initializeFor.MakeGenericMethod(type)
-                                        .Invoke(this, new[] { configuration });
-                       });
-                return true;
-            });
-        }
+        public void Initialize(Configuration configuration) =>
+            configuration.Properties.GetOrAdd(
+                GetKeyIndicatingInitialized(),
+                _ =>
+                {
+                    Command.KnownTargetTypes
+                           .ForEach(type =>
+                           {
+                               initializeFor.MakeGenericMethod(type)
+                                            .Invoke(this, new[] { configuration });
+                           });
+                    return true;
+                });
 
-        protected internal virtual string GetKeyIndicatingInitialized()
-        {
-            return GetType().ToString();
-        }
+        protected internal virtual string GetKeyIndicatingInitialized() => GetType().ToString();
 
         protected abstract void InitializeFor<TAggregate>(Configuration configuration)
             where TAggregate : class;

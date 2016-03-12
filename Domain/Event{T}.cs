@@ -26,59 +26,47 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Gets all known event types (derived from <see cref="IEvent{T}" />) in the loaded assemblies.
         /// </summary>
-        public static Type[] KnownTypes
-        {
-            get
-            {
-                return knownTypes;
-            }
-        }
+        public new static Type[] KnownTypes => knownTypes;
 
         /// <summary>
         ///     Gets all known event handler types in the loaded assemblies.
         /// </summary>
-        public static Type[] KnownHandlerTypes
-        {
-            get
-            {
-                // TODO: (KnownHandlerTypes) cache?
-                return Discover.ConcreteTypesOfGenericInterfaces(HandlerGenericTypeDefinitions)
-                               .Where(t =>
-                               {
-                                   var handlerInterfaces = t.GetInterfaces()
-                                                            .Where(i => i.IsGenericType &&
-                                                                        HandlerGenericTypeDefinitions.Contains(i.GetGenericTypeDefinition()));
+        public static Type[] KnownHandlerTypes =>
+            Discover.ConcreteTypesOfGenericInterfaces(HandlerGenericTypeDefinitions)
+                    .Where(t =>
+                    {
+                        var handlerInterfaces = t.GetInterfaces()
+                                                 .Where(i => i.IsGenericType &&
+                                                             HandlerGenericTypeDefinitions.Contains(i.GetGenericTypeDefinition()));
 
-                                   return handlerInterfaces.Any(handlerInterface =>
-                                   {
-                                       var genericArg = handlerInterface.GetGenericArguments().Single();
+                        return handlerInterfaces.Any(handlerInterface =>
+                        {
+                            var genericArg = handlerInterface.GetGenericArguments().Single();
 
-                                       if (genericArg == typeof (IEvent))
-                                       {
-                                           // the handler handles IEvent
-                                           return true;
-                                       }
+                            if (genericArg == typeof (IEvent))
+                            {
+                                // the handler handles IEvent
+                                return true;
+                            }
 
-                                       if ((typeof (IEvent).IsAssignableFrom(genericArg) && !genericArg.IsGenericType))
-                                       {
-                                           // e.g. Event
-                                           return true;
-                                       }
+                            if ((typeof (IEvent).IsAssignableFrom(genericArg) && !genericArg.IsGenericType))
+                            {
+                                // e.g. Event
+                                return true;
+                            }
 
-                                       return genericArg.GetInterfaces()
-                                                        .Concat(new[] { genericArg })
-                                                        .Any(
-                                                            eventInterface =>
-                                                            eventInterface.IsGenericType &&
-                                                            eventInterface.GetGenericTypeDefinition() ==
-                                                            typeof (IEvent<>) &&
-                                                            eventInterface.GetGenericArguments()
-                                                                          .Single() == typeof (TAggregate));
-                                   });
-                               })
-                               .ToArray();
-            }
-        }
+                            return genericArg.GetInterfaces()
+                                             .Concat(new[] { genericArg })
+                                             .Any(
+                                                 eventInterface =>
+                                                 eventInterface.IsGenericType &&
+                                                 eventInterface.GetGenericTypeDefinition() ==
+                                                 typeof (IEvent<>) &&
+                                                 eventInterface.GetGenericArguments()
+                                                               .Single() == typeof (TAggregate));
+                        });
+                    })
+                    .ToArray();
 
         /// <summary>
         ///     Updates an aggregate to a new state.

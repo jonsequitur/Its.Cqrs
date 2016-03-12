@@ -34,15 +34,9 @@ namespace Microsoft.Its.Domain
 
         public Guid AggregateId { get; private set; }
 
-        public string ETag { get; private set; }
+        public string ETag { get; }
 
-        string IPrecondition.Scope
-        {
-            get
-            {
-                return scope;
-            }
-        }
+        string IPrecondition.Scope => scope;
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
@@ -52,9 +46,7 @@ namespace Microsoft.Its.Domain
         /// </returns>
         public override string ToString()
         {
-            return string.Format("{0}...{1}",
-                                 scope.Substring(0, Math.Min(scope.Length, 4)),
-                                 ETag);
+            return $"{scope.Substring(0, Math.Min(scope.Length, 4))}...{ETag}";
         }
     }
 }

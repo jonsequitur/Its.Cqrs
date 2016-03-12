@@ -36,13 +36,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the command that is currently being applied.
         /// </summary>
-        public ICommand Command
-        {
-            get
-            {
-                return commandStack.Peek().Command;
-            }
-        }
+        public ICommand Command => commandStack.Peek().Command;
 
         /// <summary>
         /// Establishes a command context.
@@ -91,7 +85,7 @@ namespace Microsoft.Its.Domain
         {
             if (forTargetToken == null)
             {
-                throw new ArgumentNullException("forTargetToken");
+                throw new ArgumentNullException(nameof(forTargetToken));
             }
 
             if (string.IsNullOrWhiteSpace(Command.ETag))
@@ -109,7 +103,7 @@ namespace Microsoft.Its.Domain
 
             var count = Interlocked.Increment(ref etagCount);
 
-            var unhashedEtag = string.Format("{0}:{1} ({2})", Command.ETag, "", count);
+            var unhashedEtag = $"{Command.ETag}:{""} ({count})";
 
             return unhashedEtag.ToETag();
         }
@@ -132,24 +126,13 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the current command context.
         /// </summary>
-        public static CommandContext Current
-        {
-            get
-            {
-                return CallContext.LogicalGetData(callContextKey)
-                                  .IfTypeIs<Guid>()
-                                  .Then(id => contexts.IfContains(id))
-                                  .ElseDefault();
-            }
-        }
+        public static CommandContext Current =>
+            CallContext.LogicalGetData(callContextKey)
+                       .IfTypeIs<Guid>()
+                       .Then(id => contexts.IfContains(id))
+                       .ElseDefault();
 
-        internal CommandStackFrame Root
-        {
-            get
-            {
-                return Current.commandStack.First();
-            }
-        }
+        internal CommandStackFrame Root => Current.commandStack.First();
 
         internal struct CommandStackFrame
         {

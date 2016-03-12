@@ -11,19 +11,10 @@ namespace Microsoft.Its.Domain.Testing
     {
         private readonly ConcurrentDictionary<T, byte> dictionary = new ConcurrentDictionary<T, byte>();
 
-        public void Add(T value)
-        {
-            dictionary.TryAdd(value, 0);
-        }
+        public void Add(T value) => dictionary.TryAdd(value, 0);
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            return dictionary.Keys.GetEnumerator();
-        }
+        public IEnumerator<T> GetEnumerator() => dictionary.Keys.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

@@ -33,29 +33,24 @@ namespace Microsoft.Its.Domain.Sql
             this DbContext context,
             Expression<Func<TProjection, object>> member,
             string schema = "dbo")
-            where TProjection : class
-        {
-            var tableName = context.TableNameFor<TProjection>();
-            return string.Format("CREATE UNIQUE INDEX IX_{0}_{1} ON {2}.{0} ({1})",
-                                 tableName,
-                                 member.MemberName(),
-                                 schema);
-        }
+            where TProjection : class =>
+                string.Format("CREATE UNIQUE INDEX IX_{0}_{1} ON {2}.{0} ({1})",
+                              context.TableNameFor<TProjection>(),
+                              member.MemberName(),
+                              schema);
 
         [Obsolete]
         public static void Unique<TProjection>(
             this DbContext context,
             Expression<Func<TProjection, object>> member1,
             Expression<Func<TProjection, object>> member2,
-            string schema = "dbo") where TProjection : class
-        {
-            context.Database.ExecuteSqlCommand(
-                string.Format("CREATE UNIQUE INDEX IX_{0}_{1}_{2} ON {3}.{0} ({1}, {2})",
-                              context.TableNameFor<TProjection>(),
-                              member1.MemberName(),
-                              member2.MemberName(),
-                              schema));
-        }
+            string schema = "dbo") where TProjection : class =>
+                context.Database.ExecuteSqlCommand(
+                    string.Format("CREATE UNIQUE INDEX IX_{0}_{1}_{2} ON {3}.{0} ({1}, {2})",
+                                  context.TableNameFor<TProjection>(),
+                                  member1.MemberName(),
+                                  member2.MemberName(),
+                                  schema));
 
         /// <summary>
         /// Seeds an event store using JSON-serialized events stored in a file.
@@ -145,8 +140,7 @@ namespace Microsoft.Its.Domain.Sql
             };
 
             var databaseName = context.Database.Connection.Database;
-            var dbCreationCmd = string.Format("CREATE DATABASE [{0}] (MAXSIZE={1}GB, EDITION='{2}', SERVICE_OBJECTIVE='{3}')",
-                                              databaseName, dbSizeInGB, edition, serviceObjective);
+            var dbCreationCmd = $"CREATE DATABASE [{databaseName}] (MAXSIZE={dbSizeInGB}GB, EDITION='{edition}', SERVICE_OBJECTIVE='{serviceObjective}')";
 
             // With Azure SQL db V12, database creation TSQL became a sync process. 
             // So we need a 10 minutes command timeout
@@ -156,12 +150,10 @@ namespace Microsoft.Its.Domain.Sql
 
         public static void CreateReadonlyUser(this DbContext context, DbReadonlyUser readonlyUser)
         {
-            var createUserCmd = string.Format("CREATE USER [{0}] FOR LOGIN [{1}]",
-                                              readonlyUser.UserName, readonlyUser.LoginName);
+            var createUserCmd = $"CREATE USER [{readonlyUser.UserName}] FOR LOGIN [{readonlyUser.LoginName}]";
             ExecuteNonQuery(context.Database.Connection.ConnectionString, createUserCmd);
 
-            var addRoleToUserCmd = string.Format("EXEC sp_addrolemember N'db_datareader', N'{0}'",
-                                                 readonlyUser.UserName);
+            var addRoleToUserCmd = $"EXEC sp_addrolemember N'db_datareader', N'{readonlyUser.UserName}'";
             ExecuteNonQuery(context.Database.Connection.ConnectionString, addRoleToUserCmd);
         }
 
@@ -202,11 +194,8 @@ namespace Microsoft.Its.Domain.Sql
         public static IEnumerable<IEnumerable<dynamic>> QueryDynamic(
             this DbContext context,
             string sql,
-            IDictionary<string, object> parameters = null)
-        {
-            var connection = context.OpenConnection();
-            return connection.QueryDynamic(sql, parameters).ToArray();
-        }
+            IDictionary<string, object> parameters = null) =>
+                context.OpenConnection().QueryDynamic(sql, parameters).ToArray();
 
         private static void ExecuteNonQuery(string connString, string commandText, int commandTimeout = 60)
         {
