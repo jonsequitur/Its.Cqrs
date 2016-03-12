@@ -14,14 +14,11 @@ namespace Microsoft.Its.Domain.Api
     {
         private readonly ValidationReport validationReport;
 
-        private readonly IList<Result> failures = new List<Result>();
-        private readonly IList<Result> successes = new List<Result>();
-
         public ValidationReportModel(ValidationReport validationReport)
         {
             if (validationReport == null)
             {
-                throw new ArgumentNullException("validationReport");
+                throw new ArgumentNullException(nameof(validationReport));
             }
             this.validationReport = validationReport;
 
@@ -32,42 +29,28 @@ namespace Microsoft.Its.Domain.Api
         {
             foreach (var failure in validationReport.Failures.Where(f => !string.IsNullOrEmpty(f.Message)))
             {
-                Add(failure, failures);
+                Add(failure, Failures);
             }
 
             foreach (var success in validationReport.Successes.Where(f => !string.IsNullOrEmpty(f.Message)))
             {
-                Add(success, successes);
+                Add(success, Successes);
             }
         }
 
-        private static void Add(RuleEvaluation failure, IList<Result> failures)
-        {
+        private static void Add(RuleEvaluation failure, IList<Result> failures) => 
             failures.Add(new Result
-            {
-                Message = failure.Message,
-                Mitigation = failure.Result<CommandReference>()
-                                    .IfNotNull()
-                                    .Then(r => r.ToString())
-                                    .ElseDefault()
-            });
-        }
-
-        public IList<Result> Successes
         {
-            get
-            {
-                return successes;
-            }
-        }
+            Message = failure.Message,
+            Mitigation = failure.Result<CommandReference>()
+                                .IfNotNull()
+                                .Then(r => r.ToString())
+                                .ElseDefault()
+        });
 
-        public IList<Result> Failures
-        {
-            get
-            {
-                return failures;
-            }
-        }
+        public IList<Result> Successes { get; } = new List<Result>();
+
+        public IList<Result> Failures { get; } = new List<Result>();
 
         public class Result
         {
@@ -75,6 +58,13 @@ namespace Microsoft.Its.Domain.Api
             public string Mitigation { get; set; }
         }
 
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>
+        /// A string that represents the current object.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
             return this.ToJson();

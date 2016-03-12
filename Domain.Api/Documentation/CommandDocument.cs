@@ -9,7 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using Microsoft.Its.Recipes;
-using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain.Api.Documentation
 {
@@ -22,7 +21,6 @@ namespace Microsoft.Its.Domain.Api.Documentation
         private static readonly ConcurrentDictionary<Type, XDocument> dotNetxmlDocumentation = new ConcurrentDictionary<Type, XDocument>();
 
         private readonly Type commandType;
-        private ValidationDocument validationRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CommandDocument"/> class.
@@ -33,7 +31,7 @@ namespace Microsoft.Its.Domain.Api.Documentation
         {
             if (commandType == null)
             {
-                throw new ArgumentNullException("commandType");
+                throw new ArgumentNullException(nameof(commandType));
             }
             this.commandType = commandType;
         }
@@ -41,13 +39,7 @@ namespace Microsoft.Its.Domain.Api.Documentation
         /// <summary>
         /// Gets the name of the command.
         /// </summary>
-        public string CommandName
-        {
-            get
-            {
-                return commandType.Name;
-            }
-        }
+        public string CommandName => commandType.Name;
 
         /// <summary>
         /// Gets the summary documentation for the command from the assembly's code documentation.
@@ -86,28 +78,6 @@ namespace Microsoft.Its.Domain.Api.Documentation
             }
         }
 
-        private dynamic ValdationRules
-        {
-            get
-            {
-        
-                if (validationRules != null)
-                {
-                    return validationRules;
-                }
-
-                // TODO: (ValdationRules) this doesn't work because some commands lack parameterless ctors
-                var o = ((dynamic) Activator.CreateInstance(commandType));
-
-                validationRules = JsonConvert.SerializeObject(o.CommandValidator, new JsonSerializerSettings
-                {
-                    ReferenceLoopHandling = ReferenceLoopHandling.Serialize
-                });
-
-                return validationRules;
-            }
-        }
-
         private XDocument DotNetXmlDocumentation
         {
             get
@@ -124,31 +94,15 @@ namespace Microsoft.Its.Domain.Api.Documentation
             }
         }
 
-        private string CommandSummary(string commandName)
-        {
-            var node = DotNetXmlDocumentation.Descendants("member")
-                             .FirstOrDefault(n => n.Attributes()
-                                                   .Any(a =>
-                                                        a.Name == "name" &&
-                                                        a.Value == string.Format("P:{0}.{1}", commandType.FullName.Replace("+", "."), commandName)));
+        private string CommandSummary(string commandName) =>
+            DotNetXmlDocumentation.Descendants("member")
+                                  .FirstOrDefault(n => n.Attributes()
+                                                        .Any(a =>
+                                                             a.Name == "name" &&
+                                                             a.Value == $"P:{commandType.FullName.Replace("+", ".")}.{commandName}")).IfNotNull()
+                                  .Then(n => n.Value.Trim())
+                                  .Else(() => "");
 
-            return node.IfNotNull()
-                       .Then(n => n.Value.Trim())
-                       .Else(() => "");
-        }
-
-        public static CommandDocument For(Type type)
-        {
-            return commandDocuments.GetOrAdd(type, t => new CommandDocument(t));
-        }
-    }
-
-    internal class ValidationDocument 
-    {
-        public ValidationDocument(Type commandType)
-        {
-
-
-        }
+        public static CommandDocument For(Type type) => commandDocuments.GetOrAdd(type, t => new CommandDocument(t));
     }
 }

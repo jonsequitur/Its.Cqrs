@@ -32,7 +32,7 @@ namespace Microsoft.Its.Domain.Api
                         return scope.GetService(concreteType) ?? Activator.CreateInstance(type);
                     }
                 }
-                throw new ArgumentException(string.Format("Could not find any instantiable types derived from {0}. Please register this type using the dependency resolver.", type));
+                throw new ArgumentException($"Could not find any instantiable types derived from {type}. Please register this type using the dependency resolver.");
             });
         }
     }

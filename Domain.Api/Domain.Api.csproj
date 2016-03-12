@@ -97,7 +97,6 @@
     <Compile Include="DependencyResolverExtensions.cs" />
     <Compile Include="Documentation\CommandDocument.cs" />
     <Compile Include="DomainApiController.cs" />
-    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="GuidConstraint.cs" />
     <Compile Include="CommandValidationExceptionFilterAttribute.cs" />
     <Compile Include="Documentation\HelpController.cs" />
@@ -106,7 +105,6 @@
     <Compile Include="HttpConfigurationExtensions.cs" />
     <Compile Include="SerializationExceptionFilter.cs" />
     <Compile Include="Serialization\ServesJsonByDefaultAttribute.cs" />
-    <Compile Include="ValidationExtensions.cs" />
     <Compile Include="ValidationReportModel.cs" />
   </ItemGroup>
   <ItemGroup>
