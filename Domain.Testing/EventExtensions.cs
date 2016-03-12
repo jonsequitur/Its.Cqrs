@@ -81,8 +81,6 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="events">The events.</param>
         public static TAggregate CreateAggregate<TAggregate>(this IEnumerable<IStoredEvent> events) where TAggregate : class, IEventSourced
         {
-            var streamName = AggregateType<TAggregate>.EventStreamName;
-
             var storedEvents = events as IStoredEvent[] ?? events.ToArray();
 
             var id = storedEvents.Select(e => e.AggregateId).Distinct().Single();
