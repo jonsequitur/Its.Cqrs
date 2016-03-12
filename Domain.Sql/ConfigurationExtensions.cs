@@ -3,7 +3,6 @@
 
 using System;
 using System.Linq;
-using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
@@ -135,35 +134,13 @@ namespace Microsoft.Its.Domain.Sql
             return null;
         }
 
-        internal static ICommandSchedulerDispatcher[] InitializeSchedulersPerAggregateType(
-            PocketContainer container,
-            GetClockName getClockName,
-            ISubject<ICommandSchedulerActivity> subject)
-        {
-            var binders = AggregateType.KnownTypes
-                                       .Select(aggregateType =>
-                                       {
-                                           var initializerType =
-                                               typeof (SchedulerInitializer<>).MakeGenericType(aggregateType);
-
-                                           dynamic initializer = container.Resolve(initializerType);
-
-                                           return (ICommandSchedulerDispatcher) initializer.InitializeScheduler(
-                                               subject,
-                                               container,
-                                               getClockName);
-                                       })
-                                       .ToArray();
-            return binders;
-        }
-
         internal static PocketContainer RegisterDefaultClockName(this PocketContainer container)
         {
             return container.AddStrategy(t =>
             {
                 if (t == typeof (GetClockName))
                 {
-                    return c => new GetClockName(e => CommandScheduler.SqlCommandScheduler.DefaultClockName);
+                    return c => new GetClockName(e => CommandScheduler.Clock.DefaultClockName);
                 }
 
                 return null;
