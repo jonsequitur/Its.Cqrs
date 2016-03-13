@@ -5,8 +5,8 @@ using System;
 using System.Reflection;
 
 // Don't edit this version.
-[assembly: AssemblyVersion("0.13.0.0")]
+[assembly: AssemblyVersion("0.14.0.0")]
 [assembly: CLSCompliant(true)]
 
 // Edit these for each release + update dependencies in .nuspec files
-[assembly: AssemblyInformationalVersion("0.13.14-beta")]
+[assembly: AssemblyInformationalVersion("0.14.0-beta")]
