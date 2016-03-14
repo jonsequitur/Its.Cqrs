@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Microsoft.Its.Domain.Sql.Migrations;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -15,16 +17,34 @@ namespace Microsoft.Its.Domain.Sql
     {
         private readonly SetDatabaseVersion<TDbContext> version;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReadModelDatabaseInitializer{TDbContext}"/> class.
+        /// </summary>
         public ReadModelDatabaseInitializer() : this(new SetDatabaseVersion<TDbContext>())
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReadModelDatabaseInitializer{TDbContext}"/> class.
+        /// </summary>
+        /// <param name="version">The database version for the current code. If this value is higher than the version found in the database, the database will be dropped and rebuilt.</param>
         public ReadModelDatabaseInitializer(Version version) : this(new SetDatabaseVersion<TDbContext>(version))
         {
         }
 
-        internal ReadModelDatabaseInitializer(SetDatabaseVersion<TDbContext> version) :
-            base(new IDbMigrator[] { version })
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventStoreDatabaseInitializer{TContext}"/> class.
+        /// </summary>
+        /// <param name="migrators">The migrations to apply during initialization.</param>
+        /// <param name="version">The database version for the current code. If this value is higher than the version found in the database, the database will be dropped and rebuilt.</param>
+        public ReadModelDatabaseInitializer(Version version, IDbMigrator[] migrators) : this(new SetDatabaseVersion<TDbContext>(version), migrators)
+        {
+        }
+
+        internal ReadModelDatabaseInitializer(SetDatabaseVersion<TDbContext> version, IDbMigrator[] migrators = null) :
+            base(migrators.OrEmpty()
+                          .Concat(new[] { version })
+                          .ToArray())
         {
             if (version == null)
             {
@@ -40,10 +60,10 @@ namespace Microsoft.Its.Domain.Sql
             TDbContext context,
             Version latestVersion)
         {
-             if (latestVersion < version.MigrationVersion)
-             {
+            if (latestVersion < version.MigrationVersion)
+            {
                 return true;
-             }
+            }
 
             if (!context.Database.CompatibleWithModel(false))
             {
