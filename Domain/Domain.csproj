@@ -81,8 +81,8 @@
     <Compile Include="%28Pocket%29\PocketContainer.cs" />
     <Compile Include="%28Pocket%29\PocketContainerOpenGenericStrategy.cs" />
     <Compile Include="%28Pocket%29\PocketContainerPrimitiveAvoidanceStrategy.cs" />
-    <Compile Include="..\AssemblyInfoVersion.cs">
-      <Link>Properties\AssemblyInfoVersion.cs</Link>
+    <Compile Include="..\AssemblyVersion.cs">
+      <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
     <Compile Include="AggregateType.cs" />
     <Compile Include="AggregateType{T}.cs" />

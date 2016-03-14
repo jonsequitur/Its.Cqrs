@@ -42,13 +42,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.Testing.Tests", "Dom
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{A9C8A1EC-6647-44BA-9A93-D9EDC39F6385}"
 	ProjectSection(SolutionItems) = preProject
-		AssemblyInfoVersion.cs = AssemblyInfoVersion.cs
+		AssemblyVersion.cs = AssemblyVersion.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{161ACB04-1D76-4173-A6FE-99D761CA47FC}"
 	ProjectSection(SolutionItems) = preProject
 		appveyor.yml = appveyor.yml
-		AssemblyInfoVersion.cs = AssemblyInfoVersion.cs
+		AssemblyVersion.cs = AssemblyVersion.cs
 		buildNuget.ps1 = buildNuget.ps1
 		nuget.config = nuget.config
 		README.md = README.md

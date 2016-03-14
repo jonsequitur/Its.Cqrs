@@ -89,8 +89,8 @@
     <Compile Include="%28Its.Recipes%29\System.Collections.Generic\DictionaryExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\System.Web.Http\HostIndependentHttpMethodConstraint.cs" />
     <Compile Include="%28Its.Recipes%29\System\UriStringExtensions.cs" />
-    <Compile Include="..\AssemblyInfoVersion.cs">
-      <Link>Properties\AssemblyInfoVersion.cs</Link>
+    <Compile Include="..\AssemblyVersion.cs">
+      <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
     <Compile Include="CommandAuthorizationExceptionFilterAttribute.cs" />
     <Compile Include="ConcurrencyExceptionFilter.cs" />

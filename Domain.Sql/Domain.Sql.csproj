@@ -86,8 +86,8 @@
     <Compile Include="%28Its.Recipes%29\DisposableExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\ItsLogLite.cs" />
     <Compile Include="%28Its.Recipes%29\System.Collections.Generic\DictionaryExtensions.cs" />
-    <Compile Include="..\AssemblyInfoVersion.cs">
-      <Link>Properties\AssemblyInfoVersion.cs</Link>
+    <Compile Include="..\AssemblyVersion.cs">
+      <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
     <Compile Include="AppLock.cs" />
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
