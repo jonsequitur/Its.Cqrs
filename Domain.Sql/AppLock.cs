@@ -34,6 +34,7 @@ namespace Microsoft.Its.Domain.Sql
         public static readonly ConcurrentDictionary<AppLock, AppLock> Active = new ConcurrentDictionary<AppLock, AppLock>();
         private readonly Stopwatch timeSpentInAppLockStopwatch = Stopwatch.StartNew();
 #endif
+        internal static bool WriteDebugOutput { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppLock" /> class.
@@ -65,10 +66,10 @@ SELECT @result";
             {
                 getAppLock.Parameters.Add(new SqlParameter("lockResource", lockResourceName));
                 getAppLock.CommandText = cmd;
-                
+
                 try
                 {
-                    Debug.WriteLine("Trying to acquire app lock '{0}' (#{1})", lockResourceName, GetHashCode());
+                    Debug.WriteLineIf(WriteDebugOutput, $"Trying to acquire app lock '{lockResourceName}' (#{GetHashCode()})");
 
                     result = (int)getAppLock.ExecuteScalar();
                 }
@@ -76,7 +77,7 @@ SELECT @result";
                 {
                     if (exception.Message.StartsWith("Timeout expired."))
                     {
-                        Debug.WriteLine("Timeout expired waiting for sp_getapplock. (#{0})", GetHashCode());
+                        Debug.WriteLineIf(WriteDebugOutput, $"Timeout expired waiting for sp_getapplock. (#{GetHashCode()})");
                         DebugWriteLocks();
                         return;
                     }
@@ -89,17 +90,11 @@ SELECT @result";
 
             if (result >= 0)
             {
-                Debug.WriteLine("Acquired app lock '{0}' with result {1} (#{2})",
-                                              lockResourceName,
-                                              result,
-                                              GetHashCode());
+                Debug.WriteLineIf(WriteDebugOutput, $"Acquired app lock '{lockResourceName}' with result {result} (#{GetHashCode()})");
             }
             else
             {
-                Debug.WriteLine("Failed to acquire app lock '{0}' with code {1} (#{2})",
-                                              lockResourceName,
-                                              result,
-                                              GetHashCode());
+                Debug.WriteLineIf(WriteDebugOutput, $"Failed to acquire app lock '{lockResourceName}' with code {result} (#{GetHashCode()})");
             }
 
             disposables = Disposable.Create(OnDispose);
@@ -112,14 +107,14 @@ SELECT @result";
         private void DebugWriteLocks()
         {
 #if DEBUG
-            Debug.WriteLine("Existing app locks:");
+            Debug.WriteLineIf(WriteDebugOutput,"Existing app locks:");
             var viewExistingLocks = connection.CreateCommand();
             viewExistingLocks.CommandText = @"SELECT TOP 1000 * FROM [sys].[dm_tran_locks] where resource_description != ''";
             foreach (DbDataRecord row in viewExistingLocks.ExecuteReader())
             {
                 var values = new object[row.FieldCount];
                 row.GetValues(values);
-                Debug.WriteLine(string.Join(Environment.NewLine,
+                Debug.WriteLineIf(WriteDebugOutput,string.Join(Environment.NewLine,
                                             values.Select((v, i) => $"{row.GetName(i)}: {v}")));
             }
 #endif
@@ -150,7 +145,7 @@ EXEC @result = sp_releaseapplock @Resource = @lockResource,
                                  @LockOwner = 'Session';
 SELECT @result";
 
-            Debug.WriteLine("Trying to release app lock '{0}' (#{1})", lockResourceName, GetHashCode());
+            Debug.WriteLineIf(WriteDebugOutput, $"Trying to release app lock '{lockResourceName}' (#{GetHashCode()})");
 
             try
             {
@@ -159,23 +154,23 @@ SELECT @result";
                     releaseAppLock.Parameters.Add(new SqlParameter("lockResource", lockResourceName));
                     releaseAppLock.CommandText = cmd;
                     var result = (int)releaseAppLock.ExecuteScalar();
-                    Debug.WriteLine("Releasing app lock '{0}' succeeded with result {1} (#{2})", lockResourceName, result, GetHashCode());
+                    Debug.WriteLineIf(WriteDebugOutput, $"Releasing app lock '{lockResourceName}' succeeded with result {result} (#{GetHashCode()})");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Exception occurred while releasing app lock. {0} (#{1})", ex, GetHashCode());
+                Debug.WriteLineIf(WriteDebugOutput,string.Format("Exception occurred while releasing app lock. {0} (#{1})", ex, GetHashCode()));
             }
         }
 
         private void OnDispose()
         {
 #if DEBUG
-            Debug.WriteLine("Disposing {0} AppLock after {1}ms for '{2}' (#{3})",
-                            IsAcquired ? "acquired" : "unacquired",
-                            timeSpentInAppLockStopwatch.Elapsed.TotalMilliseconds,
-                            lockResourceName,
-                            GetHashCode());
+            Debug.WriteLineIf(WriteDebugOutput, string.Format("Disposing {0} AppLock after {1}ms for '{2}' (#{3})",
+                                        IsAcquired ? "acquired" : "unacquired",
+                                        timeSpentInAppLockStopwatch.Elapsed.TotalMilliseconds,
+                                        lockResourceName,
+                                        GetHashCode()));
 
             AppLock @lock;
             Active.TryRemove(this, out @lock);
