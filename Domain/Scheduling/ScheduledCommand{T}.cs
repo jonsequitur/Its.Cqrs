@@ -88,6 +88,7 @@ namespace Microsoft.Its.Domain
         [JsonConverter(typeof (CommandConverter))]
         public ICommand<TTarget> Command { get; }
         
+        [JsonIgnore]
         public int NumberOfPreviousAttempts { get; set; }
 
         /// <summary>
@@ -143,8 +144,10 @@ namespace Microsoft.Its.Domain
         /// </returns>
         public override string ToString()
         {
-            return string.Format("{0}{1}{2}{3}",
+            return string.Format("{0} ({1} .. {2}) {3}{4}{5}",
                                  Command,
+                                 TargetId,
+                                 Command.ETag,
                                  DueTime.IfNotNull()
                                         .Then(due => " due " + due)
                                         .ElseDefault(),
