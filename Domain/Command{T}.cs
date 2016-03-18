@@ -24,7 +24,6 @@ namespace Microsoft.Its.Domain
         where TTarget : class
     {
         private static readonly ConcurrentDictionary<string, Type> knownTypesByName = new ConcurrentDictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
-        private static readonly ConcurrentDictionary<string, Type> handlerTypesByName = new ConcurrentDictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
         private static readonly Type[] knownTypes = Discover.ConcreteTypesDerivedFrom(typeof (ICommand<TTarget>)).ToArray();
 
@@ -148,31 +147,6 @@ namespace Microsoft.Its.Domain
             }
         }
 
-        private bool CommandHandlerIsRegistered()
-        {
-            return handlerTypesByName.GetOrAdd(CommandName, name =>
-            {
-                var handlerType = CommandHandler.Type(typeof (TTarget), GetType());
-                var handlerTypes = CommandHandler.KnownTypes.DerivedFrom(handlerType).ToArray();
-
-                var numberOfHandlerTypes = handlerTypes.Length;
-
-                if (numberOfHandlerTypes == 1)
-                {
-                    return handlerTypes.Single();
-                }
-
-                if (numberOfHandlerTypes > 1)
-                {
-                    throw new DomainConfigurationException(
-                        $"Multiple handler implementations were found for {handlerType.FullName}: {handlerTypes.Select(t => t.FullName).ToDelimitedString(", ")}. This might be a mistake. If not, you must register one explicitly using Configuration.UseDependency.");
-                }
-
-                return null;
-
-            }) != null;
-        }
-
         protected virtual void HandleCommandValidationFailure(TTarget target, ValidationReport validationReport)
         {
             var eventSourcedAggregate = target as EventSourcedAggregate;
@@ -193,9 +167,19 @@ namespace Microsoft.Its.Domain
         {
             get
             {
-                if (handler == null && CommandHandlerIsRegistered())
+                if (handler == null)
                 {
-                    handler = Configuration.Current.Container.Resolve(handlerTypesByName[CommandName]);
+                    try
+                    {
+                        handler = Configuration
+                            .Current
+                            .Container
+                            .Resolve(CommandHandler<TTarget>.ForCommandType(GetType()));
+                    }
+                    catch (DomainConfigurationException)
+                    {
+                        // swallow this exception, allowing fallback to other EnactCommand strategies
+                    }
                 }
 
                 return handler;
