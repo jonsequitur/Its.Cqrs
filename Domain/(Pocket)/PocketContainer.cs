@@ -113,7 +113,18 @@ namespace Pocket
             Func<PocketContainer, object> func;
             if (!resolvers.TryGetValue(type, out func))
             {
-                return resolveMethod.MakeGenericMethod(type).Invoke(this, null);
+                try
+                {
+                    return resolveMethod.MakeGenericMethod(type).Invoke(this, null);
+                }
+                catch (TargetInvocationException ex)
+                {
+                    if (ex.InnerException != null   )
+                    {
+                        throw ex.InnerException;
+                    }
+                    throw;
+                }
             }
             return func(this);
         }
