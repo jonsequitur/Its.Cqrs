@@ -184,6 +184,28 @@ namespace Microsoft.Its.Domain
             return configuration;
         }
 
+        /// <summary>
+        /// Registers a command handler for the specified command type.
+        /// </summary>
+        /// <typeparam name="TTarget">The type of the command target.</typeparam>
+        /// <typeparam name="TCommand">The type of the command.</typeparam>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="enactCommand">A delegate to enact the command when it has passed authorization and validation checks.</param>
+        /// <param name="handleScheduledCommandException">A delegate to handle errors that occur when a scheduled command is delivered.</param>
+        public static Configuration UseCommandHandler<TTarget, TCommand>(
+            this Configuration configuration,
+            EnactCommand<TTarget, TCommand> enactCommand,
+            HandleScheduledCommandException<TTarget, TCommand> handleScheduledCommandException = null)
+            where TCommand : class, ICommand<TTarget>
+        {
+            configuration.Container
+                         .Register<ICommandHandler<TTarget, TCommand>>(
+                             c =>
+                             new AnonymousCommandHandler<TTarget, TCommand>(enactCommand, handleScheduledCommandException));
+
+            return configuration;
+        }
+
         public static ISnapshotRepository SnapshotRepository(this Configuration configuration) =>
             configuration.Container.Resolve<ISnapshotRepository>();
 

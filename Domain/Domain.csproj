@@ -89,6 +89,7 @@
     <Compile Include="Annotate.cs" />
     <Compile Include="Annotated.cs" />
     <Compile Include="AnonymousClock.cs" />
+    <Compile Include="AnonymousCommandHandler{TTarget,TCommand}.cs" />
     <Compile Include="Authorization\AuthorizationExtensions.cs" />
     <Compile Include="Authorization\AuthorizationPolicy.cs" />
     <Compile Include="Authorization\AuthorizationQuery.cs" />
@@ -102,11 +103,13 @@
     <Compile Include="CommandContext.cs" />
     <Compile Include="CommandExtensions.cs" />
     <Compile Include="CommandHandler.cs" />
+    <Compile Include="CommandHandler{TTarget}.cs" />
     <Compile Include="CommandReference.cs" />
     <Compile Include="CommandSchedulerPipelineTraceInitializer.cs" />
     <Compile Include="ConfigurationContext.cs" />
     <Compile Include="ConfigurationExtensions.cs" />
     <Compile Include="DomainConfigurationException.cs" />
+    <Compile Include="EnactCommand{TTarget,TCommand}.cs" />
     <Compile Include="EventHandling\AnonymousConsequenter{TEvent}.cs" />
     <Compile Include="EventHandling\AnonymousProjector{TEvent}.cs" />
     <Compile Include="EventHandling\CompositeEventHandler.cs" />
@@ -128,6 +131,7 @@
     <Compile Include="EventNameAttribute.cs" />
     <Compile Include="EventMigrations.cs" />
     <Compile Include="Convert.cs" />
+    <Compile Include="HandleScheduledCommandException{TTarget,TCommand}.cs" />
     <Compile Include="Hash.cs" />
     <Compile Include="IClock.cs" />
     <Compile Include="EventHandling\Projector.cs" />
