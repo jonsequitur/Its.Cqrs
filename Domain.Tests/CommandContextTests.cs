@@ -252,7 +252,26 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task A_series_of_calls_to_NextETag_produces_the_same_sequence_given_the_same_initial_etag()
+        public void A_series_of_calls_to_NextETag_produces_a_different_etag_per_call()
+        {
+            var target = Any.Guid().ToString();
+            var command = new AddItem
+            {
+                ETag = Any.Word()
+            };
+
+            var sequence = new List<string>();
+
+            using (var ctx = CommandContext.Establish(command))
+            {
+                Enumerable.Range(1, 10).ForEach(_ => sequence.Add(ctx.NextETag(target)));
+            }
+
+            sequence.Distinct().Should().HaveCount(10);
+        }
+
+        [Test]
+        public void A_series_of_calls_to_NextETag_produces_the_same_sequence_given_the_same_initial_etag()
         {
             var target = Any.Guid().ToString();
             var command = new AddItem
@@ -274,6 +293,41 @@ namespace Microsoft.Its.Domain.Tests
             }
 
             sequence1.Should().Equal(sequence2);
+        }
+
+        [Test]
+        public void Nested_command_contexts_maintain_independent_etag_sequences()
+        {
+            // arrange
+            var target = Any.Guid().ToString();
+            var outerCommand = new AddItem
+            {
+                ETag = Any.Word()
+            };
+
+            var expectedSequence = new List<string>();
+            var sequence2 = new List<string>();
+
+            using (var outerCtx = CommandContext.Establish(outerCommand))
+            {
+                Enumerable.Range(1, 10).ForEach(_ => expectedSequence.Add(outerCtx.NextETag(target)));
+            }
+
+            // act
+            using (var outerCtx = CommandContext.Establish(outerCommand))
+            {
+                Enumerable.Range(1, 5).ForEach(_ => sequence2.Add(outerCtx.NextETag(target)));
+
+                using (var innerCtx = CommandContext.Establish(new AddItem()))
+                {
+                    Console.WriteLine(innerCtx.NextETag(Any.Word()));
+                }
+
+                Enumerable.Range(1, 5).ForEach(_ => sequence2.Add(outerCtx.NextETag(target)));
+            }
+
+            // assert
+            sequence2.Should().Equal(expectedSequence);
         }
     }
 }
