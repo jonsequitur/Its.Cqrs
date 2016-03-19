@@ -263,9 +263,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 }
             }
 
-            scheduledCommand.Result = new CommandScheduled(
-                scheduledCommand,
-                storedScheduledCommand.Clock);
+            scheduledCommand.Result = new CommandScheduled(scheduledCommand);
         }
     }
 }

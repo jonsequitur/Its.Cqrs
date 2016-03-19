@@ -11,14 +11,11 @@ namespace Microsoft.Its.Domain
     [DebuggerDisplay("{ToString()}")]
     public class CommandScheduled : ScheduledCommandResult
     {
-        public CommandScheduled(IScheduledCommand command, IClock clock = null) : base(command)
+        public CommandScheduled(IScheduledCommand command) : base(command)
         {
-            Clock = clock;
         }
 
-        public IClock Clock { get; }
-
         public override string ToString() =>
-            $"Scheduled{Clock.IfNotNull().Then(c => " on clock " + c).ElseDefault()}";
+            $"Scheduled{ScheduledCommand.Clock.IfNotNull().Then(c => " on clock " + c).ElseDefault()}";
     }
 }
