@@ -129,7 +129,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     AggregateType = Command.TargetNameFor(scheduledCommand.Command.GetType()),
                     SerializedCommand = scheduledCommand.ToJson(),
                     CreatedTime = domainTime,
-                    DueTime = scheduledCommand.DueTime,
+                    DueTime = scheduledCommand.DueTime ?? schedulerClock.Now(),
                     Clock = schedulerClock
                 };
 

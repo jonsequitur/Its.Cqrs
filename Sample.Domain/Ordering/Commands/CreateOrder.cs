@@ -10,7 +10,7 @@ using Its.Validation.Configuration;
 namespace Sample.Domain.Ordering.Commands
 {
     [DebuggerStepThrough]
-    public class CreateOrder : ConstructorCommand<Order>
+    public class CreateOrder : ConstructorCommand<Order>, ISpecifySchedulingBehavior
     {
         public CreateOrder(string customerName, string etag = null) : base(etag)
         {
@@ -30,5 +30,9 @@ namespace Sample.Domain.Ordering.Commands
                                .WithErrorMessage("You must provide a customer name");
             }
         }
+
+        public bool CanBeDeliveredDuringScheduling { get; set; } = true;
+
+        public bool RequiresDurableScheduling { get; set; } = true;
     }
 }

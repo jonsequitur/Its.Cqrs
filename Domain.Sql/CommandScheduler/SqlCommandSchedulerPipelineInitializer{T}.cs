@@ -48,10 +48,14 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             Func<IScheduledCommand<TAggregate>, Task> next)
             where TAggregate : class
         {
-            IClock clock = null;
+            IClock clock;
             if (cmd.DueTime != null)
             {
                 clock = Domain.Clock.Create(() => cmd.DueTime.Value);
+            }
+            else
+            {
+                clock = cmd.Clock;
             }
 
             using (CommandContext.Establish(cmd.Command, clock))

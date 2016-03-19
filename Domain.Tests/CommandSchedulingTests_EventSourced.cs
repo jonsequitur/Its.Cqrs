@@ -303,7 +303,7 @@ namespace Microsoft.Its.Domain.Tests
             var it = new MarcoPoloPlayerWhoIsIt()
                 .Apply(new MarcoPoloPlayerWhoIsIt.AddPlayer { PlayerId = Any.Guid() })
                 .Apply(new MarcoPoloPlayerWhoIsIt.AddPlayer { PlayerId = Any.Guid() });
-            Console.WriteLine("[Saving]");
+
             await configuration.Repository<MarcoPoloPlayerWhoIsIt>().Save(it);
 
             var sourceEtag = Any.Guid().ToString();
@@ -313,7 +313,6 @@ namespace Microsoft.Its.Domain.Tests
                 ETag = sourceEtag
             });
             var firstPassEtags = scheduled.Select(c => c.ETag).ToArray();
-            Console.WriteLine(new { firstPassEtags }.ToLogString());
 
             scheduled.Clear();
 
@@ -324,10 +323,7 @@ namespace Microsoft.Its.Domain.Tests
                 ETag = sourceEtag
             });
 
-            Console.WriteLine("about to advance clock for the second time");
-
             var secondPassEtags = scheduled.Select(c => c.ETag).ToArray();
-            Console.WriteLine(new { secondPassEtags }.ToLogString());
 
             secondPassEtags.Should()
                            .Equal(firstPassEtags);

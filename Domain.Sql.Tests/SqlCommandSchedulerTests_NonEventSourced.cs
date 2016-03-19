@@ -13,7 +13,6 @@ using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -160,6 +159,76 @@ namespace Microsoft.Its.Domain.Sql.Tests
             target = await store.Get(target.Id);
 
             target.CommandsEnacted.Should().HaveCount(1);
+        }
+
+        [Test]
+        public override async Task Immediately_scheduled_commands_triggered_by_a_scheduled_command_have_their_due_time_set_to_the_causative_command_clock()
+        {
+            // arrange
+            var deliveredTime = new DateTimeOffset();
+            var target = new CommandTarget(Any.CamelCaseName());
+            await store.Put(target);
+            var clockRepository = Configuration.Current.SchedulerClockRepository();
+            var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 01:00:00 AM");
+            clockRepository.CreateClock(clockName, schedulerClockTime);
+            Configuration.Current.UseCommandHandler<CommandTarget, TestCommand>(async (_, __) =>
+            {
+                if (__.ETag == "first")
+                {
+                    await Configuration.Current.CommandScheduler<CommandTarget>().Schedule(target.Id, new TestCommand
+                    {
+                          CanBeDeliveredDuringScheduling = true
+                    });
+                }
+                else
+                {
+                    deliveredTime = Clock.Now();
+                }
+            });
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand
+                                     {
+                                         CanBeDeliveredDuringScheduling = true,
+                                         ETag = "first"
+                                     },
+                                     dueTime: DateTimeOffset.Parse("2016-02-13 01:05:00 AM"));
+
+            await Configuration.Current
+                               .SchedulerClockTrigger()
+                               .AdvanceClock(clockName, by: 1.Hours());
+
+            // assert 
+            deliveredTime.Should().Be(DateTimeOffset.Parse("2016-02-13 01:05:00 AM"));
+        }
+
+        [Test]
+        public override async Task Scheduled_commands_with_no_due_time_set_the_correct_clock_time_when_delivery_is_deferred()
+        {
+            // arrange
+            var deliveredTime = new DateTimeOffset();
+            var target = new CommandTarget(Any.CamelCaseName());
+            await store.Put(target);
+            var clockRepository = Configuration.Current.SchedulerClockRepository();
+            var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 01:00:00 AM");
+            clockRepository.CreateClock(clockName, schedulerClockTime);
+            Configuration.Current.UseCommandHandler<CommandTarget,TestCommand>(async (_,__) => deliveredTime = Clock.Now());
+
+            // act
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand
+                                     {
+                                         CanBeDeliveredDuringScheduling = false
+                                     },
+                                     dueTime: null);
+
+            await Configuration.Current
+                               .SchedulerClockTrigger()
+                               .AdvanceClock(clockName, by: 1.Hours());
+
+            // assert 
+            deliveredTime.Should().Be(DateTimeOffset.Parse("2016-02-13 01:00:00 AM"));
         }
 
         [Test]
