@@ -250,9 +250,9 @@ namespace Microsoft.Its.Domain.ServiceBus
             private int NumberOfPreviousAttempts { get; set; }
 
             [JsonIgnore]
-            IClock IScheduledCommand.Clock { get; set; }
+            IClock IScheduledCommand.Clock { get; }
 
-            int IScheduledCommand.NumberOfPreviousAttempts => NumberOfPreviousAttempts;
+            int IScheduledCommand.NumberOfPreviousAttempts => this.NumberOfPreviousAttempts;
 
             public BrokeredMessage BrokeredMessage { get; internal set; }
         }

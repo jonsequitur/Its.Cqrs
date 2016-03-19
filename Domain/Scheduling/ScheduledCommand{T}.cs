@@ -17,6 +17,7 @@ namespace Microsoft.Its.Domain
         private static readonly bool targetIsEventSourced;
         internal static readonly Func<IScheduledCommand<TTarget>, Guid> TargetGuid;
         private ScheduledCommandResult result;
+        private IClock clock;
 
         static ScheduledCommand()
         {
@@ -86,7 +87,17 @@ namespace Microsoft.Its.Domain
         /// Gets the clock on which the command is scheduled.
         /// </summary>
         [JsonIgnore]
-        public IClock Clock { get; set; }
+        public IClock Clock
+        {
+            get
+            {
+                return clock ?? (clock = Domain.Clock.Current);
+            }
+            set
+            {
+                clock = value;
+            }
+        }
 
         /// <summary>
         /// Gets the command to be applied at a later time.

@@ -37,12 +37,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     domainTime,
                     schedulerClock);
 
-                TrySetSequenceNumber(
-                    scheduledCommand,
-                    storedScheduledCommand.SequenceNumber);
-
-                scheduledCommand.Clock = schedulerClock;
-
                 if (scheduledCommand.IsDue(storedScheduledCommand.Clock) &&
                     !scheduledCommand.Command.RequiresDurableScheduling())
                 {
@@ -58,18 +52,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                                                      scheduledCommand);
             }
 
-            return storedScheduledCommand;
-        }
+            scheduledCommand.IfTypeIs<ScheduledCommand<TAggregate>>()
+                            .ThenDo(c => c.SequenceNumber = storedScheduledCommand.SequenceNumber);
 
-        private static void TrySetSequenceNumber<TAggregate>(
-            IScheduledCommand<TAggregate> scheduledCommand,
-            long sequenceNumber) where TAggregate : class
-        {
-            var scheduledCommandT = scheduledCommand as ScheduledCommand<TAggregate>;
-            if (scheduledCommandT != null)
-            {
-                scheduledCommandT.SequenceNumber = sequenceNumber;
-            }
+            return storedScheduledCommand;
         }
 
         internal static async Task DeserializeAndDeliverScheduledCommand<TAggregate>(
@@ -277,7 +263,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 }
             }
 
-            scheduledCommand.Result = new CommandScheduled(scheduledCommand);
+            scheduledCommand.Result = new CommandScheduled(
+                scheduledCommand,
+                storedScheduledCommand.Clock);
         }
     }
 }

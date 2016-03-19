@@ -67,7 +67,9 @@ namespace Microsoft.Its.Domain.Testing
                 }
                 else if (command.Result == null)
                 {
-                    command.Result = new CommandScheduled(command);
+                    var clock = Clock.Current;
+
+                    command.Result = new CommandScheduled(command, clock);
 
                     VirtualClock.Schedule(
                         command,

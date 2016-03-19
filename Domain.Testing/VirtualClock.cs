@@ -91,7 +91,8 @@ namespace Microsoft.Its.Domain.Testing
             do
             {
                 var pendingCommands = commandsInPipeline
-                    .Where(c => c.Result is CommandScheduled)
+                    .Select(c => c.Result)
+                    .OfType<CommandScheduled>()
                     .ToArray();
 
                 if (pendingCommands.Any())
