@@ -27,7 +27,7 @@ namespace Microsoft.Its.Domain
             {
                 throw new ArgumentNullException(nameof(configuration));
             }
-            this.Configuration = configuration;
+            Configuration = configuration;
         }
 
         public static ConfigurationContext Establish(Configuration configuration)
