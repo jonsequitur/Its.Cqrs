@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -87,6 +86,19 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
+        public void When_a_scheduled_command_is_created_with_a_command_having_no_etag_then_a_command_etag_is_set()
+        {
+            var command = new AddItem
+            {
+                ETag = null
+            };
+
+            var scheduledCommand = CreateScheduledCommand(command, Any.Guid());
+
+            scheduledCommand.Command.ETag.Should().NotBeNullOrWhiteSpace();
+        }
+
+        [Test]
         public void A_ScheduledCommand_cannot_be_set_to_Scheduled_once_it_has_been_Delivered()
         {
             var command = CreateScheduledCommand(
@@ -117,23 +129,55 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task When_a_scheduled_command_is_created_with_a_command_having_no_etag_then_a_command_etag_is_set()
+        public void A_scheduled_command_is_due_if_its_due_time_is_equal_to_its_clock_time()
         {
-            var command = new AddItem
-            {
-                ETag = null
-            };
+            var dueTime = DateTimeOffset.Parse("2016-03-19 10:22:52 AM");
 
-            var scheduledCommand = CreateScheduledCommand(command, Any.Guid());
+            var command = CreateScheduledCommand(
+                new AddItem(),
+                Any.Guid(),
+                dueTime: dueTime,
+                clock: Clock.Create(() => dueTime));
 
-            scheduledCommand.Command.ETag.Should().NotBeNullOrWhiteSpace();
+            command.IsDue().Should().BeTrue();
+        }
+
+        [Test]
+        public void A_scheduled_command_is_not_due_if_its_due_time_is_later_then_its_clock_time()
+        {
+            var dueTime = DateTimeOffset.Parse("2016-03-19 10:22:52 AM");
+            var clockTime = DateTimeOffset.Parse("2016-02-19 10:22:52 AM");
+
+            var command = CreateScheduledCommand(
+                new AddItem(),
+                Any.Guid(),
+                dueTime: dueTime,
+                clock: Clock.Create(() => clockTime));
+
+            command.IsDue().Should().BeFalse();
+        }
+
+        [Test]
+        public void A_scheduled_command_is_due_if_its_due_time_is_earlier_than_its_clock_time()
+        {
+            var dueTime = DateTimeOffset.Parse("2016-03-19 10:22:52 AM");
+            var clockTime = DateTimeOffset.Parse("2016-03-19 11:22:52 AM");
+
+            var command = CreateScheduledCommand(
+                new AddItem(),
+                Any.Guid(),
+                dueTime: dueTime,
+                clock: Clock.Create(() => clockTime));
+
+            command.IsDue().Should().BeTrue();
         }
 
         protected abstract IScheduledCommand<T> CreateScheduledCommand<T>(
             ICommand<T> command,
             Guid aggregateId,
             DateTimeOffset? dueTime = null,
-            IPrecondition deliveryDependsOn = null)
+            IPrecondition deliveryDependsOn = null,
+            IClock clock = null)
             where T : class, IEventSourced;
     }
 }

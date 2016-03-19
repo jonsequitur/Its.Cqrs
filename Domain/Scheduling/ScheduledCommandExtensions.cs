@@ -19,6 +19,7 @@ namespace Microsoft.Its.Domain
             }
 
             clock = clock ??
+                    command.Clock ??
                     command.Result
                            .IfTypeIs<CommandScheduled>()
                            .Then(scheduled => scheduled.Clock)
