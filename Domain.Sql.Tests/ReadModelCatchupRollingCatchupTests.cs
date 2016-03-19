@@ -159,7 +159,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var writing = Task.Run(() => Enumerable.Range(1, numberOfEvents).ForEach(_ =>
             {
                 // add a little variation into the intervals at which new events are written
-                Thread.Sleep(Any.PositiveInt(1000));
+                Thread.Sleep(Any.PositiveInt(500));
                 Events.Write(1);
             }));
 
