@@ -36,6 +36,6 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the clock on which the command is scheduled.
         /// </summary>
-        IClock Clock { get; }
+        IClock Clock { get; set; }
     }
 }

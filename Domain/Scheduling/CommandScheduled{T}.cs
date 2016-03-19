@@ -22,7 +22,6 @@ namespace Microsoft.Its.Domain
     {
         private ScheduledCommandResult result;
         private ICommand<TAggregate> command;
-        private IClock clock;
 
         public CommandScheduled()
         {
@@ -91,17 +90,7 @@ namespace Microsoft.Its.Domain
         /// Gets the clock on which the command is scheduled.
         /// </summary>
         [JsonIgnore]
-        public IClock Clock
-        {
-            get
-            {
-                return clock ?? (clock = Domain.Clock.Current);
-            }
-            set
-            {
-                clock = value;
-            }
-        }
+        public IClock Clock { get; set; }
 
         /// <summary>
         /// Updates an aggregate to a new state.

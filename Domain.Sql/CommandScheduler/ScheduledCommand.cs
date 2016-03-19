@@ -58,6 +58,16 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                              .IfHas(d => d.DeliveryPrecondition)
                              .ElseDefault();
 
-        IClock IScheduledCommand.Clock => Clock;
+        IClock IScheduledCommand.Clock
+        {
+            get
+            {
+                return Clock;
+            }
+            set
+            {
+                Clock = (Clock) value;
+            }
+        }
     }
 }
