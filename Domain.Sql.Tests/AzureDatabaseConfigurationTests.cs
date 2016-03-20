@@ -35,9 +35,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(context);
 
                 var migrator = new AzureSqlDbMigrator(
-                    "S0",
-                    "10 GB",
-                    new Version("0.0.42.1"));
+                    serviceObjective: "S0",
+                    edition: "standard",
+                    maxSize: "500 MB",
+                    migrationVersion:  new Version("0.0.42.1"));
+
                 context.EnsureDatabaseIsUpToDate(migrator);
 
                 context.OpenConnection()

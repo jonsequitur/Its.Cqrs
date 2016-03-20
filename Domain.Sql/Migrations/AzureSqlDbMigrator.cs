@@ -11,55 +11,51 @@ namespace Microsoft.Its.Domain.Sql.Migrations
     {
         public AzureSqlDbMigrator(
             string serviceObjective, 
+            string edition,
             string maxSize, 
             Version migrationVersion)
         {
             if (serviceObjective == null)
             {
-                throw new ArgumentNullException("serviceObjective");
+                throw new ArgumentNullException(nameof(serviceObjective));
             }
             if (maxSize == null)
             {
-                throw new ArgumentNullException("maxSize");
+                throw new ArgumentNullException(nameof(maxSize));
             }
             if (migrationVersion == null)
             {
-                throw new ArgumentNullException("migrationVersion");
+                throw new ArgumentNullException(nameof(migrationVersion));
             }
 
             ServiceObjective = serviceObjective;
+            Edition = edition;
             MaxSize = maxSize;
             MigrationVersion = migrationVersion;
         }
 
-        public string ServiceObjective { get; private set; }
+        public string Edition { get; set; }
 
-        public string MaxSize { get; private set; }
+        public string MaxSize { get; }
 
-        public string MigrationScope
-        {
-            get
-            {
-                return "Service";
-            }
-        }
+        public string ServiceObjective { get; }
 
-        public Version MigrationVersion { get; private set; }
+        public string MigrationScope => "Service";
+
+        public Version MigrationVersion { get; }
 
         public MigrationResult Migrate(IDbConnection connection)
         {
             if (connection == null)
             {
-                throw new ArgumentNullException("connection");
+                throw new ArgumentNullException(nameof(connection));
             }
 
-            var sql = string.Format(@"
-alter database {0} 
-modify (MAXSIZE = {1}, 
-        SERVICE_OBJECTIVE = '{2}')",
-                                    connection.Database,
-                                    MaxSize,
-                                    ServiceObjective);
+            var sql = $@"
+alter database {connection.Database} 
+modify (MAXSIZE = {MaxSize},
+        EDITION = '{Edition}',
+        SERVICE_OBJECTIVE = '{ServiceObjective}')";
 
             connection.Execute(sql);
 
