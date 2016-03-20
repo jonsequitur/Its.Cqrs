@@ -537,6 +537,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             target.CommandsEnacted.Should().HaveCount(1);
         }
 
+        [Test]
         public override async Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
         {
               var commandScheduler = Configuration.Current.CommandScheduler<CommandTarget>();
@@ -553,7 +554,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var db = new CommandSchedulerDbContext())
             {
-                var command = db.ScheduledCommands.Single(c => c.AggregateId == failedTargetId.ToGuidV3());
+                var aggregateId = failedTargetId.ToGuidV3();
+
+                var command = db.ScheduledCommands.Single(c => c.AggregateId == aggregateId);
                 var commandBody = command.SerializedCommand.FromJsonTo<dynamic>();
                 commandBody.Command.CommandName = "not a command name";
                 command.SerializedCommand = commandBody.ToString();
@@ -571,6 +574,37 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var successfulAggregate = await store.Get(successfulTargetId);
             successfulAggregate.Should().NotBeNull();
+        }
+
+        [Test]
+        public override async Task When_a_clock_is_set_on_a_command_then_it_takes_precedence_over_GetClockName()
+        {
+            // arrange
+            var clockName = Any.CamelCaseName();
+            var targetId = Any.CamelCaseName();
+            var command = new CreateCommandTarget(targetId);
+            var scheduledCommand = new ScheduledCommand<CommandTarget>(
+                targetId: targetId,
+                command: command, 
+                dueTime: DateTimeOffset.Parse("2016-03-20 09:00:00 AM"))
+            {
+                Clock = new CommandScheduler.Clock
+                {
+                    Name = clockName,
+                    UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
+                }
+            };
+
+            // act
+            await scheduler.Schedule(scheduledCommand);
+
+            await Configuration.Current.SchedulerClockTrigger()
+                .AdvanceClock(clockName, by: 30.Days());
+
+            //assert 
+            var target = await store.Get(targetId);
+
+            target.Should().NotBeNull();
         }
     }
 }

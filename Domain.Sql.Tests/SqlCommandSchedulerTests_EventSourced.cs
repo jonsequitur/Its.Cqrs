@@ -24,7 +24,7 @@ using Sample.Domain.Ordering.Commands;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
-    public abstract class SqlCommandSchedulerTests_EventSourced : SqlCommandSchedulerTests
+    public class SqlCommandSchedulerTests_EventSourced : SqlCommandSchedulerTests
     {
         protected EventStoreDbTest eventStoreDbTest;
         private IEventSourcedRepository<CustomerAccount> accountRepository;
@@ -1425,6 +1425,50 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var repository = Configuration.Current.Repository<Order>();
             var successfulAggregate = await repository.GetLatest(successfulAggregateId);
             successfulAggregate.Should().NotBeNull();
+        }
+
+        [Test]
+        public override async Task When_a_clock_is_set_on_a_command_then_it_takes_precedence_over_GetClockName()
+        {
+            // arrange
+            var clockName = Any.CamelCaseName();
+            var create = new CreateOrder(Any.FullName())
+            {
+                AggregateId = Any.Guid()
+            };
+            
+            var scheduledCommand = new ScheduledCommand<Order>(
+                aggregateId: create.AggregateId,
+                command: create,
+                dueTime: DateTimeOffset.Parse("2016-03-20 09:00:00 AM"))
+            {
+                Clock = new CommandScheduler.Clock
+                {
+                    Name = clockName,
+                    UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
+                }
+            };
+
+            // act
+            var configuration = Configuration.Current;
+            await configuration.CommandScheduler<Order>().Schedule(scheduledCommand);
+
+            await configuration.SchedulerClockTrigger()
+                               .AdvanceClock(clockName,
+                                             by: 30.Days());
+
+            //assert 
+            var target = await configuration.Repository<Order>().GetLatest(create.AggregateId);
+
+            target.Should().NotBeNull();
+        }
+
+        protected override void Configure(Configuration configuration)
+        {
+            configuration
+                .UseDependency<GetClockName>(c => e => clockName)
+                .UseSqlStorageForScheduledCommands()
+                .TraceScheduledCommands();
         }
 
         protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)

@@ -26,18 +26,23 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 var domainTime = Domain.Clock.Now();
 
                 // get or create a clock to schedule the command on
-                var clockName = await clockNameForEvent(scheduledCommand, db);
-                var schedulerClock = await GetOrAddSchedulerClock(
-                    db,
-                    clockName,
-                    domainTime);
+                var clock = scheduledCommand.Clock as Clock;
+                if (clock == null)
+                {
+                    var clockName = await clockNameForEvent(scheduledCommand, db);
+
+                    clock = await GetOrAddSchedulerClock(
+                            db,
+                            clockName,
+                            domainTime);
+                }
 
                 storedScheduledCommand = CreateStoredScheduledCommand(
                     scheduledCommand,
                     domainTime,
-                    schedulerClock);
+                    clock);
 
-                if (scheduledCommand.IsDue(storedScheduledCommand.Clock) &&
+                if (scheduledCommand.IsDue() &&
                     !scheduledCommand.Command.RequiresDurableScheduling())
                 {
                     storedScheduledCommand.NonDurable = true;
@@ -45,7 +50,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 }
 
                 Debug.WriteLine(
-                    $"Storing command '{scheduledCommand.Command.CommandName}' ({scheduledCommand.TargetId}:{storedScheduledCommand.SequenceNumber}) on clock '{schedulerClock.Name}'");
+                    $"Storing command '{scheduledCommand.Command.CommandName}' ({scheduledCommand.TargetId}:{storedScheduledCommand.SequenceNumber}) on clock '{clock.Name}'");
 
                 await SaveScheduledCommandToDatabase(db,
                                                      storedScheduledCommand,
