@@ -19,6 +19,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public abstract Task Scheduled_commands_are_delivered_immediately_if_past_due_per_the_scheduler_clock();
 
+        public abstract Task Scheduled_commands_with_no_due_time_set_the_correct_clock_time_when_delivery_is_deferred();
+
         public abstract Task A_command_handler_can_request_retry_of_a_failed_command_as_soon_as_possible();
 
         public abstract Task A_command_handler_can_request_retry_of_a_failed_command_as_late_as_it_wants();
@@ -44,5 +46,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public abstract Task When_command_is_durable_but_immediate_delivery_succeeds_then_it_is_not_redelivered();
 
         public abstract Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied();
+        public abstract Task Immediately_scheduled_commands_triggered_by_a_scheduled_command_have_their_due_time_set_to_the_causative_command_clock();
     }
 }

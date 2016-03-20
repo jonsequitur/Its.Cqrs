@@ -142,31 +142,17 @@ namespace Microsoft.Its.Domain.Tests
 
     public class TestCommand : Command<CommandTarget>, ISpecifySchedulingBehavior
     {
-        private readonly bool isValid;
-
         public TestCommand(string etag = null, bool isValid = true) : base(etag)
         {
-            this.isValid = isValid;
+            IsValid = isValid;
 
             RequiresDurableScheduling = true;
             CanBeDeliveredDuringScheduling = true;
         }
 
-        public bool IsValid
-        {
-            get
-            {
-                return isValid;
-            }
-        }
+        public bool IsValid { get; }
 
-        public override IValidationRule CommandValidator
-        {
-            get
-            {
-                return Validate.That<TestCommand>(cmd => cmd.isValid);
-            }
-        }
+        public override IValidationRule CommandValidator => Validate.That<TestCommand>(cmd => cmd.IsValid);
 
         public bool CanBeDeliveredDuringScheduling { get; set; }
 
@@ -181,7 +167,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             if (targetIds == null)
             {
-                throw new ArgumentNullException("targetIds");
+                throw new ArgumentNullException(nameof(targetIds));
             }
             if (!targetIds.Any())
             {
@@ -191,7 +177,7 @@ namespace Microsoft.Its.Domain.Tests
             TargetIds = targetIds;
         }
 
-        public string[] TargetIds { get; private set; }
+        public string[] TargetIds { get; }
     }
 
     public class RequestReply : Command<CommandTarget>

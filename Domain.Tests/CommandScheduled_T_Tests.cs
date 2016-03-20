@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -14,19 +13,21 @@ namespace Microsoft.Its.Domain.Tests
             ICommand<T> command,
             Guid aggregateId,
             DateTimeOffset? dueTime = null,
-            IPrecondition deliveryDependsOn = null)
+            IPrecondition deliveryDependsOn = null,
+            IClock clock = null)
         {
             return new CommandScheduled<T>
             {
                 Command = command,
                 AggregateId = aggregateId,
                 DueTime = dueTime,
-                DeliveryPrecondition = deliveryDependsOn
+                DeliveryPrecondition = deliveryDependsOn,
+                Clock = clock
             };
         }
 
         [Test]
-        public async Task Event_ETag_cannot_be_the_same_as_the_command_etag()
+        public void Event_ETag_cannot_be_the_same_as_the_command_etag()
         {
             var etag1 = Any.Word().ToETag();
 

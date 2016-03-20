@@ -17,6 +17,7 @@ namespace Microsoft.Its.Domain
         private static readonly bool targetIsEventSourced;
         internal static readonly Func<IScheduledCommand<TTarget>, Guid> TargetGuid;
         private ScheduledCommandResult result;
+        private IClock clock;
 
         static ScheduledCommand()
         {
@@ -83,11 +84,31 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
+        /// Gets the clock on which the command is scheduled.
+        /// </summary>
+        [JsonIgnore]
+        public IClock Clock
+        {
+            get
+            {
+                return clock ?? (clock = Domain.Clock.Current);
+            }
+            set
+            {
+                clock = value;
+            }
+        }
+
+        /// <summary>
         /// Gets the command to be applied at a later time.
         /// </summary>
         [JsonConverter(typeof (CommandConverter))]
         public ICommand<TTarget> Command { get; }
-        
+
+        /// <summary>
+        /// Gets the number of times the scheduler has previously attempted to deliver the command.
+        /// </summary>
+        [JsonIgnore]
         public int NumberOfPreviousAttempts { get; set; }
 
         /// <summary>
@@ -95,6 +116,9 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public string TargetId { get; }
 
+        /// <summary>
+        /// Gets the aggregate identifier, if command target is event sourced.
+        /// </summary>
         public Guid? AggregateId =>
             targetIsEventSourced
                 ? (Guid?) Guid.Parse(TargetId)
@@ -111,7 +135,7 @@ namespace Microsoft.Its.Domain
         /// <remarks>
         /// If this to is null, the command should be delivered as soon as possible.
         /// </remarks>
-        public DateTimeOffset? DueTime { get; }
+        public DateTimeOffset? DueTime { get; set; }
 
         /// <summary>
         /// Indicates a precondition ETag for a specific aggregate. If no event on the target aggregate exists with this ETag, the command will fail, and the aggregate can decide whether to reschedule or ignore the command.
@@ -142,19 +166,18 @@ namespace Microsoft.Its.Domain
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
         public override string ToString()
-        {
-            return string.Format("{0}{1}{2}{3}",
-                                 Command,
-                                 DueTime.IfNotNull()
-                                        .Then(due => " due " + due)
-                                        .ElseDefault(),
-                                 DeliveryPrecondition.IfNotNull()
-                                                     .Then(p => ", depends on " + p)
-                                                     .ElseDefault(),
-                                 Result.IfNotNull()
-                                       .Then(r => ", " + r)
-                                       .ElseDefault());
-        }
-
+            => string.Format("{0} ({1} .. {2}) {3}{4}{5}",
+                             Command,
+                             TargetId,
+                             Command.ETag,
+                             DueTime.IfNotNull()
+                                    .Then(due => " due " + due)
+                                    .ElseDefault(),
+                             DeliveryPrecondition.IfNotNull()
+                                                 .Then(p => ", depends on " + p)
+                                                 .ElseDefault(),
+                             Result.IfNotNull()
+                                   .Then(r => ", " + r)
+                                   .ElseDefault());
     }
 }

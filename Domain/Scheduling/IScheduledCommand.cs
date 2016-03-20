@@ -23,11 +23,19 @@ namespace Microsoft.Its.Domain
         [JsonConverter(typeof (PreconditionConverter))]
         IPrecondition DeliveryPrecondition { get; }
 
+        /// <summary>
+        /// Gets or sets the result of the scheduled command after the command scheduler has attempted to schedule or deliver it.
+        /// </summary>
         ScheduledCommandResult Result { get; set; }
 
         /// <summary>
         /// Gets the number of times the scheduler has previously attempted to deliver the command.
         /// </summary>
         int NumberOfPreviousAttempts { get; }
+
+        /// <summary>
+        /// Gets the clock on which the command is scheduled.
+        /// </summary>
+        IClock Clock { get; }
     }
 }

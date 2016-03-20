@@ -22,6 +22,7 @@ namespace Microsoft.Its.Domain
     {
         private ScheduledCommandResult result;
         private ICommand<TAggregate> command;
+        private IClock clock;
 
         public CommandScheduled()
         {
@@ -48,6 +49,9 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        /// <summary>
+        /// Gets the id of the aggregate to which the command will be applied when delivered.
+        /// </summary>
         string IScheduledCommand<TAggregate>.TargetId => AggregateId.ToString();
 
         /// <summary>
@@ -63,8 +67,11 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public IPrecondition DeliveryPrecondition { get; set; }
 
+        /// <summary>
+        /// Gets or sets the result of the scheduled command after the command scheduler has attempted to schedule or deliver it.
+        /// </summary>
         [JsonIgnore]
-        public ScheduledCommandResult Result    
+        public ScheduledCommandResult Result
         {
             get
             {
@@ -79,6 +86,22 @@ namespace Microsoft.Its.Domain
 
         [JsonIgnore]
         public int NumberOfPreviousAttempts { get; set; }
+
+        /// <summary>
+        /// Gets the clock on which the command is scheduled.
+        /// </summary>
+        [JsonIgnore]
+        public IClock Clock
+        {
+            get
+            {
+                return clock ?? (clock = Domain.Clock.Current);
+            }
+            set
+            {
+                clock = value;
+            }
+        }
 
         /// <summary>
         /// Updates an aggregate to a new state.
@@ -98,8 +121,10 @@ namespace Microsoft.Its.Domain
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
         public override string ToString() =>
-            string.Format("{0}{1}{2}{3}",
+            string.Format("{0} ({1} .. {2}) {3}{4}{5}",
                           Command,
+                          AggregateId,
+                          Command.ETag,
                           DueTime.IfNotNull()
                                  .Then(due => " due " + due)
                                  .ElseDefault(),

@@ -23,12 +23,16 @@ namespace Microsoft.Its.Domain.Tests
             ICommand<T> command,
             Guid aggregateId,
             DateTimeOffset? dueTime = null,
-            IPrecondition deliveryDependsOn = null)
+            IPrecondition deliveryDependsOn = null,
+            IClock clock = null)
         {
             return new ScheduledCommand<T>(command,
                                            aggregateId,
                                            dueTime,
-                                           deliveryDependsOn);
+                                           deliveryDependsOn)
+            {
+                Clock = clock
+            };
         }
     }
 }

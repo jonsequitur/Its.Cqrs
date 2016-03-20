@@ -35,8 +35,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             var command = json.FromJsonTo<ScheduledCommand<TAggregate>>();
 
+            command.Clock = scheduled.Clock;
+            command.DueTime = scheduled.DueTime;
             command.SequenceNumber = scheduled.SequenceNumber;
-
             command.NumberOfPreviousAttempts = scheduled.Attempts;
 
             return command;

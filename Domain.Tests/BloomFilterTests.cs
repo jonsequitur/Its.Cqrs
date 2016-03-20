@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Log.Instrumentation;
-using Microsoft.Its.Domain.Serialization;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
