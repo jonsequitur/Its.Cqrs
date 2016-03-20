@@ -1463,16 +1463,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             target.Should().NotBeNull();
         }
 
-        protected override void Configure(Configuration configuration)
-        {
+        protected override void Configure(Configuration configuration) =>
             configuration
                 .UseDependency<GetClockName>(c => e => clockName)
                 .UseSqlStorageForScheduledCommands()
                 .TraceScheduledCommands();
-        }
 
-        protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)
-        {
+        protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId) =>
             ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () =>
             {
                 // quick, add a new event in order to trigger a concurrency exception at the moment the scheduler tries to apply the command
@@ -1483,12 +1480,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 return new EventStoreDbContext();
             };
-        }
 
-        protected void StopTriggeringConcurrencyExceptions()
-        {
-            ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () => new EventStoreDbContext();
-        }
+        protected void StopTriggeringConcurrencyExceptions() => ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () => new EventStoreDbContext();
 
         protected int GetScheduledCommandNumberOfAttempts(Guid aggregateId)
         {
@@ -1501,9 +1494,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
-        protected async Task SchedulerWorkComplete()
-        {
+        protected async Task SchedulerWorkComplete() =>
             await clockTrigger.Done(clockName);
-        }
     }
 }
