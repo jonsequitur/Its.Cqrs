@@ -187,7 +187,6 @@
     <Compile Include="AggregateExtensions.cs" />
     <Compile Include="ExpressionExtensions.cs" />
     <Compile Include="Properties\GlobalSuppressions.cs" />
-    <Compile Include="IAggregate.cs" />
     <Compile Include="ConstructorCommand{T}.cs" />
     <Compile Include="IHaveExtensibleMetada.cs" />
     <Compile Include="ICommand.cs" />

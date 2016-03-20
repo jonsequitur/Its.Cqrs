@@ -10,8 +10,16 @@ namespace Microsoft.Its.Domain
     /// <summary>
     ///     Represents an aggregate whose state can be persisted as a sequence of events.
     /// </summary>
-    public interface IEventSourced : IAggregateRoot
+    public interface IEventSourced
     {
+        /// <summary>
+        ///     Gets the globally unique id for this aggregate.
+        /// </summary>
+        Guid Id { get; }
+
+        /// <summary>
+        /// Gets the highest sequence number in the source event stream.
+        /// </summary>
         long Version { get; }
 
         /// <summary>
