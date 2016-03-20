@@ -51,8 +51,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         public static long Write(int howMany, 
-            Func<int, IEvent> createEvent = null, 
-            Func<EventStoreDbContext> createEventStore = null)
+            Func<int, IEvent> createEvent = null,
+                                 Func<EventStoreDbContext> createEventStore = null)
         {
             createEvent = createEvent ?? (i => new Order.ItemAdded
             {
@@ -64,8 +64,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             });
 
             Console.WriteLine("writing {0} events", howMany);
-
-            long lastEventId = 0;
 
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var eventStore = createEventStore.IfNotNull()
@@ -93,14 +91,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     var storableEvent = e.ToStorableEvent();
 
                     eventStore.Events.Add(storableEvent);
-                    eventStore.SaveChanges();
 
-                    lastEventId = storableEvent.Id;
-                    Console.WriteLine("wrote event " + lastEventId);
+                    Console.WriteLine("wrote event " + storableEvent);
                 });
-            }
 
-            return lastEventId;
+                eventStore.SaveChanges();
+
+                return eventStore.Events.Max(e => e.Id);
+            }
         }
     }
 }
