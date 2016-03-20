@@ -57,5 +57,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             SerializedCommand.FromJsonTo<JObject>()
                              .IfHas(d => d.DeliveryPrecondition)
                              .ElseDefault();
+
+        IClock IScheduledCommand.Clock => Clock;
     }
 }

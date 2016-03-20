@@ -27,7 +27,7 @@ namespace Sample.Domain
                                                 .Identity
                                                 .Name).Result)
                                        .WithErrorMessage(
-                                           (f, c) => string.Format("The user name {0} is taken. Please choose another.", c.UserName));
+                                           (f, c) => $"The user name {c.UserName} is taken. Please choose another.");
 
                 return new ValidationPlan<RequestUserName>
                        {
@@ -37,20 +37,8 @@ namespace Sample.Domain
             }
         }
 
-        public bool RequiresDurableScheduling
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public bool RequiresDurableScheduling => false;
 
-        public bool CanBeDeliveredDuringScheduling
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public bool CanBeDeliveredDuringScheduling => true;
     }
 }

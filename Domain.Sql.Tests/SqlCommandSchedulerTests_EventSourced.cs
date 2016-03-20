@@ -231,7 +231,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task Immediately_scheduled_commands_triggered_by_a_scheduled_command_have_their_due_time_set_to_the_causative_command_clock()
+        public override async Task Immediately_scheduled_commands_triggered_by_a_scheduled_command_have_their_due_time_set_to_the_causative_command_clock()
         {
             VirtualClock.Start();
 
@@ -268,6 +268,33 @@ namespace Microsoft.Its.Domain.Sql.Tests
                            .ThenDo(v => v.Should().BeCloseTo(dueTime, 10));
                 }
             }
+        }
+
+        [Test]
+        public override async Task Scheduled_commands_with_no_due_time_set_the_correct_clock_time_when_delivery_is_deferred()
+        {
+            // arrange
+            var deliveredTime = new DateTimeOffset();
+            var configuration = Configuration.Current;
+            var clockTrigger = configuration.SchedulerClockTrigger();
+            await clockTrigger.AdvanceClock(clockName, DateTimeOffset.Parse("2046-02-13 01:00:00 AM"));
+            configuration
+                .UseCommandHandler<Order, CreateOrder>(async (_, __) => deliveredTime = Clock.Now());
+
+            // act
+            await configuration.CommandScheduler<Order>()
+                               .Schedule(Any.Guid(),
+                                         new CreateOrder(Any.FullName())
+                                         {
+                                             CanBeDeliveredDuringScheduling = false
+                                         },
+                                         dueTime: null);
+
+            await clockTrigger
+                .AdvanceClock(clockName, by: 1.Hours());
+
+            // assert 
+            deliveredTime.Should().Be(DateTimeOffset.Parse("2046-02-13 01:00:00 AM"));
         }
 
         [Test]
@@ -985,8 +1012,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 db.ScheduledCommands
                   .Where(c => c.AggregateId == customer.Id)
                   .Should()
-                  .ContainSingle(c => c.AppliedTime == null &&
-                                      c.DueTime == null);
+                  .ContainSingle(c => c.AppliedTime == null);
             }
         }
 

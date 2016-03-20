@@ -2,10 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Serialization;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -22,6 +25,7 @@ namespace Microsoft.Its.Domain.Tests
         private string targetId;
         private InMemoryStore<CommandTarget> store;
         private ICommandScheduler<CommandTarget> scheduler;
+        private string clockName;
 
         [SetUp]
         public void SetUp()
@@ -31,6 +35,7 @@ namespace Microsoft.Its.Domain.Tests
                 VirtualClock.Start()
             };
 
+            clockName = Any.CamelCaseName();
             targetId = Any.Word();
             target = new CommandTarget(targetId);
             store = new InMemoryStore<CommandTarget>(
@@ -40,9 +45,13 @@ namespace Microsoft.Its.Domain.Tests
                 target
             };
 
+            CommandSchedulerDbContext.NameOrConnectionString =
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
+
             configuration = new Configuration()
                 .UseInMemoryCommandScheduling()
                 .UseDependency<IStore<CommandTarget>>(_ => store)
+                .UseDependency<GetClockName>(c => _ => clockName)
                 .TraceScheduledCommands();
 
             scheduler = configuration.CommandScheduler<CommandTarget>();
@@ -148,25 +157,59 @@ namespace Microsoft.Its.Domain.Tests
                 .OnlyHaveUniqueItems();
         }
 
-        [Ignore]
         [Test]
         public async Task Multiple_scheduled_commands_having_the_some_causative_command_etag_have_repeatable_and_unique_etags()
         {
-            var id = Any.Word();
-            await store.Put(new CommandTarget(id));
+            var senderId = Any.Word();
+            await store.Put(new CommandTarget(senderId));
 
-            var command = new SendRequests(new[] { Any.Word() })
+            var targetIds = new[] { Any.Word(), Any.Word(), Any.Word() };
+
+            var results = new ConcurrentBag<RequestReply>();
+
+            configuration.TraceScheduledCommands(
+                onScheduling: cmd =>
+                {
+                    var requestReply = ((dynamic) cmd).Command as RequestReply;
+                    if (requestReply != null)
+                    {
+                        results.Add(requestReply);
+                    }
+                });
+
+
+            var initialEtag = "initial".ToETag();
+
+            var firstCommand = new SendRequests(targetIds)
             {
-                ETag = "one".ToETag()
+                ETag = initialEtag
             };
 
-            var scheduled = new ScheduledCommand<CommandTarget>(
-                command, 
-                id);
+            var scheduledCommand = new ScheduledCommand<CommandTarget>(
+                firstCommand,
+                senderId);
 
-            await scheduler.Deliver(scheduled);
+            await scheduler.Deliver(scheduledCommand);
 
-            Assert.Fail("Test not written yet.");
+            var secondCommand = new SendRequests(targetIds)
+            {
+                ETag = initialEtag
+            };
+
+            scheduledCommand = new ScheduledCommand<CommandTarget>(
+                secondCommand,
+                senderId);
+
+            // redeliver
+            await scheduler.Deliver(scheduledCommand);
+
+            Console.WriteLine(results.ToJson());
+
+            results.Should().HaveCount(6);
+            results.Select(r => r.ETag)
+                   .Distinct()
+                   .Should()
+                   .HaveCount(3);
         }
     }
 }

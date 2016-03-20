@@ -25,6 +25,7 @@ namespace Microsoft.Its.Domain
         private readonly Stack<CommandStackFrame> commandStack = new Stack<CommandStackFrame>();
 
         private readonly Guid Id = Guid.NewGuid();
+        private readonly ConcurrentDictionary<ICommand, ETagSequence> etagSequences = new ConcurrentDictionary<ICommand, ETagSequence>();
 
         /// <summary>
         /// Prevents a default instance of the <see cref="CommandContext"/> class from being created.
@@ -79,8 +80,6 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public IClock Clock { get; set; }
 
-        private int etagCount = 0;
-
         public string NextETag(string forTargetToken)
         {
             if (forTargetToken == null)
@@ -101,11 +100,16 @@ namespace Microsoft.Its.Domain
                        });
             }
 
-            var count = Interlocked.Increment(ref etagCount);
+            var parentCommand = commandStack.Peek().Command;
+            var sequence = etagSequences.GetOrAdd(parentCommand,
+                                                      _ => new ETagSequence())
+                                            .NextETagSequenceNumber();
 
-            var unhashedEtag = $"{Command.ETag}:{""} ({count})";
+            var unhashedEtag = $"{Command.ETag}:{""} ({sequence})";
 
-            return unhashedEtag.ToETag();
+            var hashedEtag = unhashedEtag.ToETag();
+
+            return hashedEtag;
         }
 
         /// <summary>
@@ -138,6 +142,16 @@ namespace Microsoft.Its.Domain
         {
             public ICommand Command;
             public IClock Clock;
+        }
+
+        internal class ETagSequence
+        {
+            private int etagSequence;
+
+            public int NextETagSequenceNumber()
+            {
+                return Interlocked.Increment(ref etagSequence);
+            }
         }
     }
 }

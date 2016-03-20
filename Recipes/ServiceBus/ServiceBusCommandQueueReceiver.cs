@@ -242,26 +242,17 @@ namespace Microsoft.Its.Domain.ServiceBus
 
             public EventHasBeenRecordedPrecondition DeliveryPrecondition { get; set; }
 
-            IPrecondition IScheduledCommand.DeliveryPrecondition
-            {
-                get
-                {
-                    return DeliveryPrecondition;
-                }
-            }
+            IPrecondition IScheduledCommand.DeliveryPrecondition => DeliveryPrecondition;
 
             [JsonIgnore]
             public ScheduledCommandResult Result { get; set; }
 
             private int NumberOfPreviousAttempts { get; set; }
 
-            int IScheduledCommand.NumberOfPreviousAttempts
-            {
-                get
-                {
-                    return this.NumberOfPreviousAttempts;
-                }
-            }
+            [JsonIgnore]
+            IClock IScheduledCommand.Clock { get; }
+
+            int IScheduledCommand.NumberOfPreviousAttempts => this.NumberOfPreviousAttempts;
 
             public BrokeredMessage BrokeredMessage { get; internal set; }
         }
