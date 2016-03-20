@@ -44,22 +44,6 @@ namespace Microsoft.Its.Domain
         {
         }
 
-        [JsonConstructor]
-        internal ScheduledCommand(
-            ICommand<TTarget> command,
-            string targetId = null,
-            Guid? aggregateId = null,
-            DateTimeOffset? dueTime = null,
-            IPrecondition deliveryPrecondition = null) :
-                this(command,
-                     targetId
-                         .IfNotNull()
-                         .Else(() => aggregateId?.ToString()),
-                     dueTime,
-                     deliveryPrecondition)
-        {
-        }
-
         public ScheduledCommand(
             ICommand<TTarget> command,
             string targetId,
@@ -81,6 +65,22 @@ namespace Microsoft.Its.Domain
             DeliveryPrecondition = deliveryPrecondition;
 
             this.EnsureCommandHasETag();
+        }
+
+        [JsonConstructor]
+        private ScheduledCommand(
+            ICommand<TTarget> command,
+            string targetId = null,
+            Guid? aggregateId = null,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryPrecondition = null) :
+                this(command,
+                     targetId
+                         .IfNotNull()
+                         .Else(() => aggregateId?.ToString()),
+                     dueTime,
+                     deliveryPrecondition)
+        {
         }
 
         /// <summary>
