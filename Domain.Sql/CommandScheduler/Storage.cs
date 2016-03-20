@@ -31,10 +31,13 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 {
                     var clockName = await clockNameForEvent(scheduledCommand, db);
 
+                    var clockStartTime = scheduledCommand.Clock?.Now() ??
+                                         domainTime;
+
                     clock = await GetOrAddSchedulerClock(
-                            db,
-                            clockName,
-                            domainTime);
+                        db,
+                        clockName,
+                        clockStartTime);
                 }
 
                 storedScheduledCommand = CreateStoredScheduledCommand(
