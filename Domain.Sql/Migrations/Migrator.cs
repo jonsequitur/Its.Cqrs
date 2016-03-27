@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using System.Linq;
 using System.Transactions;
 using Microsoft.Its.Recipes;
@@ -18,7 +17,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
     /// </summary>
     public static class Migrator
     {
-        private static readonly string bootstrapResourceName = string.Format("{0}.Migrations.DbContext-0_0_0_0.sql", typeof (Migrator).Assembly.GetName().Name);
+        private static readonly string bootstrapResourceName = $"{typeof (Migrator).Assembly.GetName().Name}.Migrations.DbContext-0_0_0_0.sql";
 
         /// <summary>
         /// Creates database migrators from embedded resources found in the source assembly of <typeparamref name="TContext" />.
