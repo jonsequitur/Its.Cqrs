@@ -60,6 +60,11 @@ namespace Microsoft.Its.Domain.Sql
             TDbContext context,
             Version latestVersion)
         {
+            if (latestVersion == null)
+            {
+                return true;
+            }
+
             if (latestVersion < version.MigrationVersion)
             {
                 return true;

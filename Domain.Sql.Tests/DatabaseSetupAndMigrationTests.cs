@@ -15,7 +15,6 @@ using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using Sample.Domain.Projections;
 
 namespace Microsoft.Its.Domain.Sql.Tests
@@ -349,6 +348,41 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             Database.SetInitializer(new ReadModelDatabaseInitializer<MigrationsTestReadModels>(new Version("1.0")));
+
+            using (var db = new MigrationsTestReadModels(
+                typeof(OrderTallyEntityModelConfiguration)))
+            {
+                db.Database.Initialize(true);
+
+                db.Set<OrderTally>().Add(new OrderTally
+                {
+                    Count = 1,
+                    Status = Any.Word()
+                });
+
+                db.SaveChanges();
+
+                db.Set<OrderTally>().Count().Should().Be(1);
+            }
+
+            Database.SetInitializer(new ReadModelDatabaseInitializer<MigrationsTestReadModels>(new Version("1.1")));
+
+            using (var db = new MigrationsTestReadModels(
+                typeof(OrderTallyEntityModelConfiguration)))
+            {
+                // act
+                db.Database.Initialize(true);
+
+                // assert
+                db.Set<OrderTally>().Count().Should().Be(0);
+            }
+        }
+
+        [Test]
+        public void ReadModelDbContext_drops_the_database_and_recreates_it_when_the_prior_version_has_no_migrations()
+        {
+            // arrange
+            Database.SetInitializer(new DropCreateDatabaseAlways<MigrationsTestReadModels>());
 
             using (var db = new MigrationsTestReadModels(
                 typeof(OrderTallyEntityModelConfiguration)))
