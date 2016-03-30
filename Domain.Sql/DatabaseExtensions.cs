@@ -106,7 +106,15 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="context">The database context.</param>
         public static bool IsAzureDatabase(this DbContext context)
         {
-            return context.Database.Connection.ConnectionString.Contains("database.windows.net");
+            return context.Database.Connection.IsAzureDatabase();
+        }
+
+        /// <summary>
+        /// Determines whether the specified connection is configured to use an Azure SQL Database.
+        /// </summary>
+        public static bool IsAzureDatabase(this IDbConnection connection)
+        {
+            return connection.ConnectionString.Contains("database.windows.net");
         }
 
         /// <summary>

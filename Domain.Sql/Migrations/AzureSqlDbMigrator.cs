@@ -51,7 +51,17 @@ namespace Microsoft.Its.Domain.Sql.Migrations
                 throw new ArgumentNullException(nameof(connection));
             }
 
-            var sql = $@"
+            if (!connection.IsAzureDatabase())
+            {
+                return new MigrationResult
+                {
+                    MigrationWasApplied = true,
+                    Log = "Database is not an Azure SQL database so no action taken."
+                };
+            }
+
+            var sql =
+                $@"
 alter database {connection.Database} 
 modify (MAXSIZE = {MaxSize},
         EDITION = '{Edition}',

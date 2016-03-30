@@ -1,4 +1,5 @@
 using System;
+using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -9,8 +10,7 @@ using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
-    [Ignore("Integration tests")]
-    [TestFixture, Category("Integration tests")]
+    [TestFixture]
     public class AzureDatabaseConfigurationTests
     {
         [TestFixtureSetUp]
@@ -24,6 +24,36 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
+        public async Task When_used_with_a_non_Azure_SQL_database_then_AzureSqlDbMigrator_is_applied_but_does_nothing()
+        {
+            // arrange
+            Database.Delete(MigrationsTestReadModels.ConnectionString);
+
+            using (var context = new MigrationsTestReadModels())
+            {
+                new CreateAndMigrate<MigrationsTestReadModels>().InitializeDatabase(context);
+
+                var migrator = new AzureSqlDbMigrator(
+                    serviceObjective: "S0",
+                    edition: "standard",
+                    maxSize: "500 MB",
+                    migrationVersion: new Version("0.1.2.3"));
+
+                // act
+                context.EnsureDatabaseIsUpToDate(migrator);
+
+                // assert
+                var latestAppliedMigrationVersions = context.OpenConnection()
+                                                            .GetLatestAppliedMigrationVersions();
+
+                latestAppliedMigrationVersions
+                    .Should()
+                    .Contain(v => v.MigrationVersion.ToString() == "0.1.2.3");
+            }
+        }
+
+        [Test]
+        [Ignore("Integration tests"), Category("Integration tests")]
         public async Task AzureSqlDatabase_can_be_configured_using_a_migration()
         {
             var databaseSettings = Settings.Get<AzureSqlDatabaseSettings>();
@@ -38,14 +68,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     serviceObjective: "S0",
                     edition: "standard",
                     maxSize: "500 MB",
-                    migrationVersion:  new Version("0.0.42.1"));
+                    migrationVersion: new Version("0.0.42.1"));
 
                 context.EnsureDatabaseIsUpToDate(migrator);
 
                 context.OpenConnection()
-                       .GetAppliedMigrationVersions()
+                       .GetLatestAppliedMigrationVersions()
                        .Should()
-                       .Contain("0.0.42.1");
+                       .Contain(v => v.MigrationVersion.ToString() == "0.0.42.1");
             }
         }
     }
@@ -58,7 +88,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             if (connectionString == null)
             {
-                throw new ArgumentNullException("connectionString");
+                throw new ArgumentNullException(nameof(connectionString));
             }
             this.connectionString = connectionString;
         }

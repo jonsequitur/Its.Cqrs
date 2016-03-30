@@ -135,28 +135,6 @@ FROM sys.tables;";
             }
         }
 
-        internal static string[] GetAppliedMigrationVersions(this IDbConnection connection)
-        {
-            try
-            {
-                return connection
-                    .QueryDynamic(
-                        @"SELECT MigrationVersion from PocketMigrator.AppliedMigrations")
-                    .Single()
-                    .Select(x => (string) x.MigrationVersion)
-                    .ToArray();
-            }
-            catch (SqlException exception)
-            {
-                if (exception.Number == 208) // AppliedMigrations table is not present
-                {
-                    return new string[0];
-                }
-
-                throw;
-            }
-        }
-
         internal static AppliedMigration[] GetLatestAppliedMigrationVersions(this IDbConnection connection)
         {
             try

@@ -418,10 +418,29 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             using (var context = new TContext())
             {
-                return context.OpenConnection().GetAppliedMigrationVersions();
+                var connection = context.OpenConnection();
+
+                try
+                {
+                    return connection
+                        .QueryDynamic(
+                            @"SELECT MigrationVersion from PocketMigrator.AppliedMigrations")
+                        .Single()
+                        .Select(x => (string) x.MigrationVersion)
+                        .ToArray();
+                }
+                catch (SqlException exception)
+                {
+                    if (exception.Number == 208) // AppliedMigrations table is not present
+                    {
+                        return new string[0];
+                    }
+
+                    throw;
+                }
             }
         }
-
+        
         private void InitializeEventStore()
         {
             using (var context = new EventStoreDbContext())
