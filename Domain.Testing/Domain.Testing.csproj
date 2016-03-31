@@ -118,7 +118,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Microsoft.Its.Domain.Testing.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
