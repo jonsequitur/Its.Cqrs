@@ -153,7 +153,7 @@ namespace Microsoft.Its.Domain.Sql
             // With Azure SQL db V12, database creation TSQL became a sync process. 
             // So we need a 10 minutes command timeout
             ExecuteNonQuery(connstrBldr.ConnectionString, dbCreationCmd, commandTimeout: 600);
-            context.WaitUntilDatabaseIsCreated(forceInitialize: context is ReadModelDbContext);
+            context.WaitUntilDatabaseIsCreated(false);
         }
 
         public static void CreateReadonlyUser(this DbContext context, DbReadonlyUser readonlyUser)

@@ -123,12 +123,22 @@ namespace Microsoft.Its.Domain.Sql
                     bypassInitialization = true;
 
                     // create the initial schema
-                    var sql = ((IObjectContextAdapter)context)
+                    var sql = ((IObjectContextAdapter) context)
                         .ObjectContext
                         .CreateDatabaseScript();
 
-                    context.OpenConnection()
-                           .Execute(sql);
+                    try
+                    {
+                        context.OpenConnection()
+                               .Execute(sql);
+                    }
+                    catch (SqlException exception)
+                    {
+                        if (exception.Number != 2714) // object already exists
+                        {
+                            throw;
+                        }
+                    }
 
                     return true;
                 }

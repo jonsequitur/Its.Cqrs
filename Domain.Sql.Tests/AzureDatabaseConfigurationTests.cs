@@ -1,12 +1,12 @@
 using System;
 using System.Data.Entity;
 using System.Data.SqlClient;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Configuration;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using Sample.Domain.Projections;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_used_with_a_non_Azure_SQL_database_then_AzureSqlDbMigrator_is_applied_but_does_nothing()
+        public void When_used_with_a_non_Azure_SQL_database_then_AzureSqlDbMigrator_is_applied_but_does_nothing()
         {
             // arrange
             Database.Delete(MigrationsTestReadModels.ConnectionString);
@@ -54,15 +54,42 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         [Test]
         [Ignore("Integration tests"), Category("Integration tests")]
-        public async Task AzureSqlDatabase_can_be_configured_using_a_migration()
+        public void AzureSqlDatabase_EventStore_can_be_configured_using_a_migration()
         {
             var databaseSettings = Settings.Get<AzureSqlDatabaseSettings>();
-            databaseSettings.DatabaseName = "ItsCqrsMigrationsTest";
+            databaseSettings.DatabaseName = "ItsCqrsMigrationsTestEventStore";
             var connectionString = databaseSettings.BuildConnectionString();
 
             using (var context = new EventStoreDbContext(connectionString))
             {
                 new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(context);
+
+                var migrator = new AzureSqlDbMigrator(
+                    serviceObjective: "S0",
+                    edition: "standard",
+                    maxSize: "500 MB",
+                    migrationVersion: new Version("0.0.42.1"));
+
+                context.EnsureDatabaseIsUpToDate(migrator);
+
+                context.OpenConnection()
+                       .GetLatestAppliedMigrationVersions()
+                       .Should()
+                       .Contain(v => v.MigrationVersion.ToString() == "0.0.42.1");
+            }
+        }
+
+        [Test]
+        [Ignore("Integration tests"), Category("Integration tests")]
+        public void AzureSqlDatabase_ReadModel_can_be_configured_using_a_migration()
+        {
+            var databaseSettings = Settings.Get<AzureSqlDatabaseSettings>();
+            databaseSettings.DatabaseName = "ItsCqrsMigrationsTestReadModels";
+            var connectionString = databaseSettings.BuildConnectionString();
+
+            using (var context = new MigrationsTestReadModels(connectionString, typeof (OrderTallyEntityModelConfiguration)))
+            {
+                new ReadModelDatabaseInitializer<MigrationsTestReadModels>().InitializeDatabase(context);
 
                 var migrator = new AzureSqlDbMigrator(
                     serviceObjective: "S0",

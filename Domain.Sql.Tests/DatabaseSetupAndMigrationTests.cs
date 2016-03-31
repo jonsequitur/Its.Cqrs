@@ -493,7 +493,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             if (entityModelConfigurationTypes == null)
             {
-                throw new ArgumentNullException("entityModelConfigurationTypes");
+                throw new ArgumentNullException(nameof(entityModelConfigurationTypes));
+            }
+            this.entityModelConfigurationTypes = entityModelConfigurationTypes;
+        }
+
+        public MigrationsTestReadModels(string connectionString, params Type[] entityModelConfigurationTypes) : base(connectionString, BuildModel(entityModelConfigurationTypes))
+        {
+            if (entityModelConfigurationTypes == null)
+            {
+                throw new ArgumentNullException(nameof(entityModelConfigurationTypes));
             }
             this.entityModelConfigurationTypes = entityModelConfigurationTypes;
         }
@@ -511,7 +520,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             DbModel model = builder.Build(new SqlConnection(ConnectionString));
             return model.Compile();
-
         }
 
         protected override IEnumerable<Type> GetEntityModelConfigurationTypes()
