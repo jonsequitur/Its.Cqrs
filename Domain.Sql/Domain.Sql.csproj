@@ -171,6 +171,7 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="Domain.Sql.nuspec" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>

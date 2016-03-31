@@ -109,7 +109,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="Microsoft.Its.Domain.Api.nuspec" />
+    <None Include="Domain.Api.nuspec" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
