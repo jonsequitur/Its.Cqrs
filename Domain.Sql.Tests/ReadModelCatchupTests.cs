@@ -22,14 +22,9 @@ using Its.Log.Instrumentation;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
-    [TestFixture]
-    public  class ReadModelCatchupTests : ReadModelCatchupTest
-    {
-    }
-
     [Category("Catchups")]
     [TestFixture]
-    public abstract class ReadModelCatchupTest : EventStoreDbTest
+    public class ReadModelCatchupTest : EventStoreDbTest
     {
         private readonly TimeSpan MaxWaitTime = TimeSpan.FromSeconds(5);
 

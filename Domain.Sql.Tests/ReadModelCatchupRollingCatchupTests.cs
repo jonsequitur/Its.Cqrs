@@ -29,13 +29,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     [Category("Catchups")]
     [TestFixture]
-    public  class ReadModelRollingCatchupTests : RollingCatchupTest
-    {
-    }
-
-    [Category("Catchups")]
-    [TestFixture]
-    public abstract class RollingCatchupTest : EventStoreDbTest
+    public class RollingCatchupTest : EventStoreDbTest
     {
         [Test]
         public void Events_committed_to_the_event_store_are_caught_up_by_multiple_independent_read_model_stores()
