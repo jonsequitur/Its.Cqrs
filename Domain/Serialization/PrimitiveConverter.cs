@@ -40,7 +40,7 @@ namespace Microsoft.Its.Domain.Serialization
                                     .Single()
                                     .ParameterType;
 
-            var getValue = typeof (PrimitiveConverter).GetMethod("GetValue",BindingFlags.NonPublic | BindingFlags.Static)
+            var getValue = typeof (PrimitiveConverter).GetMethod("GetValue", BindingFlags.NonPublic | BindingFlags.Static)
                                                       .MakeGenericMethod(ctorParamType);
             var call = Expression.Call(getValue,jt);
             var invokeCtor = Expression.New(ctor,call);
@@ -51,8 +51,8 @@ namespace Microsoft.Its.Domain.Serialization
 
         private static T GetValue<T>(JToken jToken) =>
             jToken.Type == JTokenType.Object
-                ? jToken.Value<T>("Value")
-                : jToken.Value<T>();
+                ? jToken["Value"].ToObject<T>()
+                : jToken.ToObject<T>();
 
         public override bool CanConvert(Type objectType) => true;
     }

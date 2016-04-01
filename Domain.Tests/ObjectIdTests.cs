@@ -19,20 +19,20 @@ namespace Microsoft.Its.Domain.Tests
         {
             var obj = new Widget
             {
-                Id = 123
+                IdOfInt = 123
             };
 
             var json = obj.ToJson();
 
             var obj2 = json.FromJsonTo<Widget>();
 
-            obj2.Id.Value.Should().Be(123);
+            obj2.IdOfInt.Value.Should().Be(123);
         }
 
         [Test]
         public void Value_cannot_be_set_to_default()
         {
-            Assert.Throws<ArgumentException>(() => new WidgetId(0));
+            Assert.Throws<ArgumentException>(() => new ObjectIdOfInt(0));
             Assert.Throws<ArgumentException>(() => new GenericObjectId<Guid>(Guid.Empty));
         }
 
@@ -54,8 +54,8 @@ namespace Microsoft.Its.Domain.Tests
         public void Two_instances_of_type_derived_from_ObjectId_having_the_same_underlying_value_are_equal()
         {
             var id = Any.Int();
-            var id1 = new WidgetId(id);
-            var id2 = new WidgetId(id);
+            var id1 = new ObjectIdOfInt(id);
+            var id2 = new ObjectIdOfInt(id);
 
             (id1 == id2).Should().BeTrue();
             (id2 == id1).Should().BeTrue();
@@ -81,7 +81,7 @@ namespace Microsoft.Its.Domain.Tests
         public void An_instance_of_a_type_derived_from_ObjectId_is_equal_to_a_primitive_of_its_underlying_value()
         {
             var i = Any.Int();
-            var objectId = new WidgetId(i);
+            var objectId = new ObjectIdOfInt(i);
 
             (objectId == i).Should().BeTrue();
             // (i == objectId).Should().BeTrue();
@@ -117,7 +117,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void ObjectId_of_String_derived_classes_deserialize_from_JSON_primitives()
+        public void ObjectId_of_String_deserialize_from_a_JSON_primitive()
         {
             var json = "\"hello\"";
 
@@ -127,13 +127,45 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void ObjectId_of_String_derived_classes_deserialize_from_JSON_objects()
+        public void ObjectId_of_String_deserialize_from_a_JSON_object()
         {
             var json = "{\"Value\":\"hello\"}";
 
             var s = JsonConvert.DeserializeObject<GenericObjectId<string>>(json);
 
             s.Value.Should().Be("hello");
+        }
+
+        [Test]
+        public void ObjectId_of_Guid_serializes_to_a_JSON_primitive()
+        {
+            var guid = Any.Guid();
+
+            var json = JsonConvert.SerializeObject(new ObjectIdOfGuid(guid));
+
+            json.Should().Be("\"" + guid + "\"");
+        }
+
+        [Test]
+        public void ObjectId_of_Guid_deserialize_from_a_JSON_primitive()
+        {
+            var guid = Any.Guid();
+            var json = guid.ToJson();
+
+            var s = JsonConvert.DeserializeObject<ObjectIdOfGuid>(json);
+
+            s.Value.Should().Be(guid);
+        }
+
+        [Test]
+        public void ObjectId_of_Guid_deserializes_from_a_JSON_object()
+        {
+            var guid = Any.Guid();
+            var json = $"{{\"Value\":\"{guid}\"}}";
+
+            var s = JsonConvert.DeserializeObject<ObjectIdOfGuid>(json);
+
+            s.Value.Should().Be(guid);
         }
 
         [Test]
@@ -145,7 +177,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void ObjectId_of_int_derived_classes_deserialize_from_JSON_primitives()
+        public void ObjectId_of_int_deserialize_from_a_JSON_primitive()
         {
             var json = "1";
 
@@ -155,7 +187,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void ObjectId_of_int_derived_classes_deserialize_from_JSON_objects()
+        public void ObjectId_of_int_deserializes_from_a_JSON_object()
         {
             var json = "{\"Value\":1}";
 
@@ -163,7 +195,7 @@ namespace Microsoft.Its.Domain.Tests
 
             s.Value.Should().Be(1);
         }
-
+        
         [Test]
         public void ObjectId_of_int_correctly_serializes_to_null()
         {
@@ -173,19 +205,19 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void ObjectId_of_int_correctly_deserialized_from_null()
+        public void ObjectId_of_int_correctly_deserializes_from_null()
         {
             var json = "{\"Id\":null}";
 
             var s = JsonConvert.DeserializeObject<Widget>(json);
 
-            s.Id.Should().Be(null);
+            s.IdOfInt.Should().Be(null);
         }
     }
 
     public class Widget
     {
-        public WidgetId Id { get; set; }
+        public ObjectIdOfInt IdOfInt { get; set; }
     }
 
     public class GenericObjectId<T> : ObjectId<T>
@@ -195,15 +227,27 @@ namespace Microsoft.Its.Domain.Tests
         }
     }
 
-    public class WidgetId : ObjectId<int>
+    public class ObjectIdOfGuid : ObjectId<Guid>
     {
-        public WidgetId(int value) : base(value)
+        public ObjectIdOfGuid(Guid value) : base(value)
         {
         }
 
-        public static implicit operator WidgetId(int value)
+        public static implicit operator ObjectIdOfGuid(Guid value)
         {
-            return new WidgetId(value);
+            return new ObjectIdOfGuid(value);
+        }
+    }
+
+    public class ObjectIdOfInt : ObjectId<int>
+    {
+        public ObjectIdOfInt(int value) : base(value)
+        {
+        }
+
+        public static implicit operator ObjectIdOfInt(int value)
+        {
+            return new ObjectIdOfInt(value);
         }
     }
 }
