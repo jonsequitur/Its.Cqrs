@@ -234,7 +234,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Domain.nuspec" />
-    <None Include="Microsoft.Its.Domain.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
