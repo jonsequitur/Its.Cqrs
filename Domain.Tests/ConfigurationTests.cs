@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using Moq;
 using NUnit.Framework;
@@ -51,7 +52,7 @@ namespace Microsoft.Its.Domain.Tests
             container.Register(c => "hello");
 
             var configuration = new Configuration()
-                .UseSqlEventStore()
+                .UseInMemoryEventStore()
                 .UseDependency(resolve: resolve => (IEventBus) resolve(typeof (EventBusWithDependencies)))
                 .UseDependency<IEnumerable<string>>(_ => new[] { "hello" });
 

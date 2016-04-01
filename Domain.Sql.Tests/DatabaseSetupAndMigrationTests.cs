@@ -15,11 +15,13 @@ using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using System.Data.SqlClient;
+using NCrunch.Framework;
 using Sample.Domain.Projections;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
+    [ExclusivelyUses("ItsCqrsMigrationsTestCommandScheduler","ItsCqrsMigrationsTestEventStore","ItsCqrsMigrationsTestReadModels")]
     public class DatabaseSetupAndMigrationTests
     {
         private const string CommandSchedulerConnectionString =
