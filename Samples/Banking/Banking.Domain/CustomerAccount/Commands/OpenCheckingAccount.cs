@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using Microsoft.Its.Domain;
 
-namespace Sample.Banking.Domain
+namespace Test.Domain.Banking
 {
     public class OpenCheckingAccount : Command<CustomerAccount>
     {

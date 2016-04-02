@@ -4,8 +4,9 @@
 using System;
 using System.Linq;
 using Microsoft.Its.Domain;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public partial class Order
     {

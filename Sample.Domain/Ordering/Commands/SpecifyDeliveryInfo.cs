@@ -3,8 +3,9 @@
 
 using System;
 using Microsoft.Its.Domain;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain.Ordering.Commands
+namespace Test.Domain.Ordering
 {
     public class SpecifyShippingInfo : Command<Order>
     {

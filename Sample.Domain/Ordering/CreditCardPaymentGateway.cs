@@ -3,8 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public class CreditCardPaymentGateway : IPaymentService
     {

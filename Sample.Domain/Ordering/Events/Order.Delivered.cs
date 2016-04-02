@@ -3,7 +3,7 @@
 
 using Microsoft.Its.Domain;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public partial class Order
     {

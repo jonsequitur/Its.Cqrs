@@ -7,7 +7,7 @@ using Microsoft.Its.Domain;
 using Its.Validation;
 using Its.Validation.Configuration;
 
-namespace Sample.Domain.Ordering.Commands
+namespace Test.Domain.Ordering
 {
     [DebuggerStepThrough]
     public class CreateOrder : ConstructorCommand<Order>, ISpecifySchedulingBehavior

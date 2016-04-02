@@ -4,7 +4,7 @@
 using System;
 using System.Security.Principal;
 
-namespace Sample.Domain
+namespace Test.Domain.Ordering
 {
     public class CustomerServiceRepresentative : IPrincipal, IIdentity
     {

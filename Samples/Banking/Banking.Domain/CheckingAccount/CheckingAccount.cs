@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Its.Domain;
 
-namespace Sample.Banking.Domain
+namespace Test.Domain.Banking
 {
     public partial class CheckingAccount : EventSourcedAggregate<CheckingAccount>
     {

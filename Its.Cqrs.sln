@@ -15,11 +15,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.Sql", "Domain.Sql\Do
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.Sql.Tests", "Domain.Sql.Tests\Domain.Sql.Tests.csproj", "{8F59D318-8365-4240-B72E-9C69BF5AD748}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests - samples", "tests - samples", "{0C3BB7C4-4227-49CA-97A8-7D8A2B196A8A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests domains", "tests domains", "{0C3BB7C4-4227-49CA-97A8-7D8A2B196A8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Domain", "Sample.Domain\Sample.Domain.csproj", "{FEAF4C39-FA30-4718-B781-9BEC29E87D86}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Domain.Ordering", "Sample.Domain\Test.Domain.Ordering.csproj", "{FEAF4C39-FA30-4718-B781-9BEC29E87D86}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Domain.Api", "Sample.Domain.Api\Sample.Domain.Api.csproj", "{D561CDB3-2C8F-48F1-9F19-A0CD77F7C726}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Domain.Ordering.Api", "Sample.Domain.Api\Test.Domain.Ordering.Api.csproj", "{D561CDB3-2C8F-48F1-9F19-A0CD77F7C726}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.Api", "Domain.Api\Domain.Api.csproj", "{B9B510BA-35DF-4CAE-A620-83752749139E}"
 EndProject
@@ -54,9 +54,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Banking.Domain", "Samples\Banking\Banking.Domain\Banking.Domain.csproj", "{0388601C-B785-498D-92DE-5B8C376728C0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Domain.Banking", "Samples\Banking\Banking.Domain\Test.Domain.Banking.csproj", "{0388601C-B785-498D-92DE-5B8C376728C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Banking.Domain.Tests", "Samples\Banking\Banking.Domain.Tests\Banking.Domain.Tests.csproj", "{0896B13F-E931-4E6C-ADB1-19CEAD0AA612}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Domain.Banking.Tests", "Samples\Banking\Banking.Domain.Tests\Test.Domain.Banking.Tests.csproj", "{0896B13F-E931-4E6C-ADB1-19CEAD0AA612}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

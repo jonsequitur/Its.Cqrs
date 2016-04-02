@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Its.Domain;
 
-namespace Sample.Domain
+namespace Test.Domain.Ordering
 {
     public partial class CustomerAccount : EventSourcedAggregate<CustomerAccount>
     {

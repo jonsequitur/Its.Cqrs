@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Sample.Domain
+namespace Test.Domain.Ordering
 {
     public enum FulfillmentMethod
     {

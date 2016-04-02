@@ -13,9 +13,9 @@ using Its.Validation;
 using Its.Validation.Configuration;
 using Moq;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
-using Sample.Domain.Ordering.Commands;
+using Test.Domain.Ordering;
 using Microsoft.Its.Domain.Testing;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {

@@ -5,7 +5,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Its.Domain;
 
-namespace Sample.Domain
+namespace Test.Domain.Ordering
 {
     public class EmailAddress : String<EmailAddress>
     {

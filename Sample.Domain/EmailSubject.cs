@@ -4,7 +4,7 @@
 using System;
 using Microsoft.Its.Domain;
 
-namespace Sample.Domain
+namespace Test.Domain.Ordering
 {
     public class EmailSubject : String<EmailSubject>
     {

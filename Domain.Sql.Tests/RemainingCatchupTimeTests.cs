@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

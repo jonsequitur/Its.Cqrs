@@ -12,8 +12,8 @@ using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.Tests;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
-using Sample.Domain.Api.Controllers;
-using Sample.Domain.Ordering;
+using Test.Domain.Ordering;
+using Test.Ordering.Domain.Api.Controllers;
 
 namespace Microsoft.Its.Domain.Api.Tests
 {
@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Api.Tests
         [SetUp]
         public void SetUp()
         {
-            // this is a shim to make sure that the Sample.Domain.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
+            // this is a shim to make sure that the Test.Domain.Ordering.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
             var controller = new OrderApiController(new InMemoryEventSourcedRepository<Order>());
 
             TestSetUp.EnsureEventStoreIsInitialized();

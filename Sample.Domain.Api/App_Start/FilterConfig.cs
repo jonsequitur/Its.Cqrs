@@ -3,7 +3,7 @@
 
 using System.Web.Mvc;
 
-namespace Sample.Domain.Api
+namespace Test.Ordering.Domain.Api
 {
     public class FilterConfig
     {

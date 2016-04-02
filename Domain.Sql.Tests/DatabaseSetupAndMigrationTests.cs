@@ -16,7 +16,7 @@ using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using System.Data.SqlClient;
 using NCrunch.Framework;
-using Sample.Domain.Projections;
+using Test.Domain.Ordering.Projections;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

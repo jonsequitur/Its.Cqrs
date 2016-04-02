@@ -7,8 +7,10 @@ using Its.Validation;
 using Its.Validation.Configuration;
 using Microsoft.Its.Domain;
 using Newtonsoft.Json;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain.Ordering.Commands
+namespace Test.Domain.Ordering
 {
     public class ChargeCreditCard : Command<Order>
     {

@@ -10,8 +10,9 @@ using Microsoft.Its.Domain.EventHandling;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
-using Sample.Domain.Projections;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering.Projections;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

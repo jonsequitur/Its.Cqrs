@@ -3,7 +3,7 @@
 
 using Microsoft.Its.Domain;
 
-namespace Sample.Banking.Domain
+namespace Test.Domain.Banking
 {
     public partial class CheckingAccount
     {

@@ -5,14 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using Moq;
 using NUnit.Framework;
 using Pocket;
-using Sample.Domain.Ordering;
-using Sample.Domain.Ordering.Commands;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {

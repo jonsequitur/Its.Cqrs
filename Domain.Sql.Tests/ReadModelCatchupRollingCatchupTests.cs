@@ -21,8 +21,8 @@ using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using Microsoft.Reactive.Testing;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
-using Sample.Domain.Projections;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering.Projections;
 using Assert = NUnit.Framework.Assert;
 
 namespace Microsoft.Its.Domain.Sql.Tests

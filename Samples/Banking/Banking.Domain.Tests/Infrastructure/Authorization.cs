@@ -7,7 +7,7 @@ using System.Security.Principal;
 using System.Threading;
 using Microsoft.Its.Domain.Authorization;
 
-namespace Sample.Banking.Domain.Tests.Infrastructure
+namespace Test.Domain.Banking.Tests.Infrastructure
 {
     public static class Authorization
     {

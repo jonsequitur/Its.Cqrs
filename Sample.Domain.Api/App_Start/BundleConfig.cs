@@ -3,7 +3,7 @@
 
 using System.Web.Optimization;
 
-namespace Sample.Domain.Api
+namespace Test.Ordering.Domain.Api
 {
     public class BundleConfig
     {

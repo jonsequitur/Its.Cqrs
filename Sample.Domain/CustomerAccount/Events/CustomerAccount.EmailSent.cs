@@ -3,7 +3,7 @@
 
 using Microsoft.Its.Domain;
 
-namespace Sample.Domain
+namespace Test.Domain.Ordering
 {
     public abstract class EmailSent : Event<CustomerAccount>
     {

@@ -4,7 +4,7 @@
 using Its.Validation;
 using Its.Validation.Configuration;
 
-namespace Sample.Domain.Ordering.Commands
+namespace Test.Domain.Ordering
 {
     public static class ValidationExtensions
     {

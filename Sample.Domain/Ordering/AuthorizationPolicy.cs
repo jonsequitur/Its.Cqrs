@@ -2,9 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.Its.Domain.Authorization;
-using Sample.Domain.Ordering.Commands;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public static class AuthorizationPolicy
     {

@@ -2,8 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.Its.Domain;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain.Ordering.Commands
+namespace Test.Domain.Ordering
 {
     public class ConfirmPayment : Command<Order>
     {

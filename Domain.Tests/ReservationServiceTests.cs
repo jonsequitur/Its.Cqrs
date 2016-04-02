@@ -5,11 +5,10 @@ using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Sample.Domain;
-using Sample.Domain.Ordering;
 using System;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {

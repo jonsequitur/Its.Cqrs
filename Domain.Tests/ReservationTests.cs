@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Sample.Domain;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {

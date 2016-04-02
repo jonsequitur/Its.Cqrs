@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public interface ICreditCardInfo
     {

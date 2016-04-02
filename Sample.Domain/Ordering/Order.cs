@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Its.Domain;
-using Sample.Domain.Ordering.Commands;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public partial class Order : EventSourcedAggregate<Order>, IEventMigratingAggregate
     {
@@ -23,7 +23,7 @@ namespace Sample.Domain.Ordering
 
         public Order(Guid? id = null) : base(id)
         {
-            RecordEvent(new Created
+            RecordEvent(new Order.Created
             {
                 CustomerId = Guid.NewGuid(),
                 ETag = null

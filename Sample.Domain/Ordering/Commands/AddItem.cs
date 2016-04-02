@@ -4,10 +4,10 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using Microsoft.Its.Domain;
 using Its.Validation;
+using Microsoft.Its.Domain;
 
-namespace Sample.Domain.Ordering.Commands
+namespace Test.Domain.Ordering
 {
     /// <summary>
     ///     Adds a product item to the order.

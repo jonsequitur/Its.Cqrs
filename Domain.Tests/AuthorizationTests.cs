@@ -8,9 +8,7 @@ using System.Security.Principal;
 using FluentAssertions;
 using Microsoft.Its.Domain.Authorization;
 using NUnit.Framework;
-using Sample.Domain;
-using Sample.Domain.Ordering;
-using Sample.Domain.Ordering.Commands;
+using Test.Domain.Ordering;
 using AuthorizationPolicy = Microsoft.Its.Domain.Authorization.AuthorizationPolicy;
 
 namespace Microsoft.Its.Domain.Tests
@@ -49,7 +47,7 @@ namespace Microsoft.Its.Domain.Tests
 
             configure.ShouldThrow<ArgumentException>()
                 .And
-                .Message.Should().Be("Command type Sample.Domain.Ordering.Commands.Cancel is not applicable to resource type Sample.Domain.Customer");
+                .Message.Should().Be("Command type Test.Domain.Ordering.Cancel is not applicable to resource type Test.Domain.Ordering.Customer");
         }
 
         [Test]

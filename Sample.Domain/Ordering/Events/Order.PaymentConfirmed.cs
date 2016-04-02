@@ -2,8 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.Its.Domain;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public partial class Order
     {
