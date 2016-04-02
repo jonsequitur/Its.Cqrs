@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using FluentAssertions;
-using Its.Log.Instrumentation;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;

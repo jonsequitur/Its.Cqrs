@@ -14,7 +14,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the snapshot for the specified aggregate.
         /// </summary>
-        /// <remarks>By default, this gets the most recent snapshot (by version number) but older versions can be accessed by passing <see cref="maxVersion" /> or <see cref="maxTimestamp" />.</remarks>
+        /// <remarks>By default, this gets the most recent snapshot (by version number) but older versions can be accessed by passing maxVersion or maxTimestamp.</remarks>
         Task<ISnapshot> GetSnapshot(Guid aggregateId,
                             long? maxVersion = null,
                             DateTimeOffset? maxTimestamp = null);
