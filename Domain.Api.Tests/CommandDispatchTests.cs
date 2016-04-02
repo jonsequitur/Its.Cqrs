@@ -16,9 +16,8 @@ using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using Moq;
 using NUnit.Framework;
-using Sample.Domain.Api.Controllers;
-using Sample.Domain.Ordering;
-using Sample.Domain.Ordering.Commands;
+using Test.Domain.Ordering;
+using Test.Ordering.Domain.Api.Controllers;
 
 namespace Microsoft.Its.Domain.Api.Tests
 {
@@ -28,7 +27,7 @@ namespace Microsoft.Its.Domain.Api.Tests
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
-            // this is a shim to make sure that the Sample.Domain.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
+            // this is a shim to make sure that the Test.Domain.Ordering.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
             var controller = new OrderApiController(new InMemoryEventSourcedRepository<Order>());
 
             TestSetUp.EnsureEventStoreIsInitialized();

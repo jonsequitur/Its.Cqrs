@@ -4,7 +4,7 @@
 using System;
 using System.Linq;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public partial class CreditCardInfo :
         ICreditCardInfo,

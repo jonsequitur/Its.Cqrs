@@ -5,9 +5,9 @@ using System;
 using System.Linq;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Api;
-using Sample.Domain.Ordering;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain.Api.Controllers
+namespace Test.Ordering.Domain.Api.Controllers
 {
     public class OrderApiController : DomainApiController<Order>
     {

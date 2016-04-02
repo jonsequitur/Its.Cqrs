@@ -5,7 +5,7 @@ using Its.Validation;
 using Its.Validation.Configuration;
 using Microsoft.Its.Domain;
 
-namespace Sample.Banking.Domain
+namespace Test.Domain.Banking
 {
     public class WithdrawFunds : Command<CheckingAccount>
     {

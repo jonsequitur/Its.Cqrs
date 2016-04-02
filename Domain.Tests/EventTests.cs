@@ -4,8 +4,8 @@
 using System;
 using FluentAssertions;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
-using Sample.Domain.Ordering.Commands;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {

@@ -6,8 +6,7 @@ using System.Linq;
 using System.Transactions;
 using Microsoft.Its.Recipes;
 using Pocket;
-using Sample.Domain;
-using Sample.Domain.Ordering;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

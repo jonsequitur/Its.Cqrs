@@ -6,9 +6,8 @@ using System.Reflection;
 using System.Threading;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Sample.Domain;
-using Sample.Domain.Ordering;
-using Sample.Domain.Projections;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering.Projections;
 using Assert = NUnit.Framework.Assert;
 
 namespace Microsoft.Its.Domain.Sql.Tests

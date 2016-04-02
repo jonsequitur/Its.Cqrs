@@ -8,7 +8,7 @@ using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Newtonsoft.Json;
-using Sample.Domain;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Api.Tests
 {

@@ -3,7 +3,7 @@
 
 using Its.Log.Instrumentation;
 
-namespace Sample.Domain.Projections
+namespace Test.Domain.Ordering.Projections
 {
     public class OrderTally
     {

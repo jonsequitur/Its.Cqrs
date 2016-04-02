@@ -4,16 +4,13 @@
 using System;
 using System.Collections.Generic;
 using FluentAssertions;
-using Its.Log.Instrumentation;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Sample.Domain;
-using Sample.Domain.Ordering;
-using Sample.Domain.Ordering.Commands;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {

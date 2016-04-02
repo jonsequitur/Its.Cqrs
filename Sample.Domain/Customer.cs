@@ -4,7 +4,7 @@
 using System;
 using System.Security.Principal;
 
-namespace Sample.Domain
+namespace Test.Domain.Ordering
 {
     public class Customer : IPrincipal, IIdentity
     {
@@ -18,13 +18,7 @@ namespace Sample.Domain
             return string.Equals(role, "customer", StringComparison.OrdinalIgnoreCase);
         }
 
-        public IIdentity Identity
-        {
-            get
-            {
-                return this;
-            }
-        }
+        public IIdentity Identity => this;
 
         public string Name { get; set; }
         public string AuthenticationType { get; set; }

@@ -11,9 +11,7 @@ using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Sample.Domain;
-using Sample.Domain.Ordering;
-using Sample.Domain.Ordering.Commands;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {
@@ -253,7 +251,7 @@ namespace Microsoft.Its.Domain.Tests
                       .And
                       .Contain("Bob")
                       .And
-                      .Contain("Sample.Domain.Ordering.Order+CustomerInfoChanged");
+                      .Contain("Test.Domain.Ordering.Order+CustomerInfoChanged");
         }
 
         [Test]

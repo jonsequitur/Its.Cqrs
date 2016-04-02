@@ -5,8 +5,9 @@ using System;
 using System.Linq;
 using Microsoft.Its.Domain;
 using Its.Validation;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain.Ordering.Commands
+namespace Test.Domain.Ordering
 {
     public class Cancel : Command<Order>
     {

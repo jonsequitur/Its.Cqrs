@@ -6,10 +6,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain;
-using Sample.Domain.Ordering;
-using Sample.Domain.Ordering.Commands;
+using Test.Domain.Ordering;
 
-namespace Sample.Domain
+namespace Test.Domain.Ordering
 {
     public partial class CustomerAccount
     {

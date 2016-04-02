@@ -9,7 +9,8 @@ using FluentAssertions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Tests;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {

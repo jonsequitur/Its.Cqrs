@@ -6,7 +6,7 @@ using Its.Validation;
 using Its.Validation.Configuration;
 using Microsoft.Its.Domain;
 
-namespace Sample.Domain
+namespace Test.Domain.Ordering
 {
     public class RequestUserName : Command<CustomerAccount>, ISpecifySchedulingBehavior
     {

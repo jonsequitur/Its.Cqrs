@@ -6,11 +6,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Its.Log.Instrumentation;
-using Microsoft.Its.Domain;
 using Its.Validation;
-using Sample.Domain.Ordering.Commands;
+using Microsoft.Its.Domain;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public partial class Order
     {
@@ -66,7 +65,7 @@ namespace Sample.Domain.Ordering
             {
                 if (scheduler == null)
                 {
-                    throw new ArgumentNullException("scheduler");
+                    throw new ArgumentNullException(nameof(scheduler));
                 }
                 this.scheduler = scheduler;
             }
@@ -236,7 +235,7 @@ namespace Sample.Domain.Ordering
             {
                 if (paymentService == null)
                 {
-                    throw new ArgumentNullException("paymentService");
+                    throw new ArgumentNullException(nameof(paymentService));
                 }
                 this.paymentService = paymentService;
             }

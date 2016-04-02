@@ -11,8 +11,7 @@ using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
 using NCrunch.Framework;
 using NUnit.Framework;
-using Sample.Domain;
-using Sample.Domain.Ordering;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

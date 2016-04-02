@@ -13,12 +13,10 @@ using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Sample.Domain;
-using Sample.Domain.Ordering;
-using Sample.Domain.Ordering.Commands;
-using Sample.Domain.Projections;
 using Assert = NUnit.Framework.Assert;
 using Its.Log.Instrumentation;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering.Projections;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Sample.Domain.Api.ReadModels
+namespace Test.Ordering.Domain.Api.ReadModels
 {
     public class OrderHistoryItem
     {

@@ -3,7 +3,7 @@
 
 using System.Web.Mvc;
 
-namespace Sample.Domain.Api.Controllers
+namespace Test.Ordering.Domain.Api.Controllers
 {
     public class HomeController : Controller
     {

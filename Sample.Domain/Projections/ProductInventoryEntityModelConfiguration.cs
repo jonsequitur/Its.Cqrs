@@ -5,7 +5,7 @@ using System.Data.Entity.ModelConfiguration;
 using System.Data.Entity.ModelConfiguration.Configuration;
 using Microsoft.Its.Domain.Sql;
 
-namespace Sample.Domain.Projections
+namespace Test.Domain.Ordering.Projections
 {
     public class ProductInventoryEntityModelConfiguration :
         IEntityModelConfiguration

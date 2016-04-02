@@ -6,7 +6,7 @@ using Its.Configuration;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using Sample.Domain.Projections;
+using Test.Domain.Ordering.Projections;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

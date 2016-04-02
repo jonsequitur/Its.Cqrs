@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using Microsoft.Its.Domain;
-using Sample.Domain.Api.ReadModels;
-using Sample.Domain.Ordering;
+using Test.Domain.Ordering;
+using Test.Ordering.Domain.Api.ReadModels;
 
-namespace Sample.Domain.Api.EventHandlers
+namespace Test.Ordering.Domain.Api.EventHandlers
 {
     /// <summary>
     /// Updates the order history read model in response to various events.

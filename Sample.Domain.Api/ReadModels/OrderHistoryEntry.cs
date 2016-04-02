@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Sample.Domain.Api.ReadModels
+namespace Test.Ordering.Domain.Api.ReadModels
 {
     public class OrderHistoryEntry
     {

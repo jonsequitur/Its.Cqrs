@@ -4,7 +4,7 @@
 using Its.Validation;
 using Its.Validation.Configuration;
 
-namespace Sample.Domain.Ordering
+namespace Test.Domain.Ordering
 {
     public partial class CreditCardInfo
     {

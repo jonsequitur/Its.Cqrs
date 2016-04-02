@@ -9,7 +9,8 @@ using Its.Configuration;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Sample.Domain.Ordering;
+using Test.Domain.Ordering;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {

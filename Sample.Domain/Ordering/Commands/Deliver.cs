@@ -4,16 +4,10 @@
 using Microsoft.Its.Domain;
 using Its.Validation;
 
-namespace Sample.Domain.Ordering.Commands
+namespace Test.Domain.Ordering
 {
     public class Deliver : Command<Order>
     {
-        public override IValidationRule<Order> Validator
-        {
-            get
-            {
-                return Order.AlwaysValid;
-            }
-        }
+        public override IValidationRule<Order> Validator => Order.AlwaysValid;
     }
 }

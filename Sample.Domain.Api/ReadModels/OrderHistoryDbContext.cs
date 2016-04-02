@@ -2,9 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Data.Entity;
-using Microsoft.Its.Domain.Sql;
 
-namespace Sample.Domain.Api.ReadModels
+namespace Test.Ordering.Domain.Api.ReadModels
 {
     public class OrderHistoryDbContext : DbContext
     {

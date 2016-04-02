@@ -5,15 +5,15 @@ using System;
 using System.Linq;
 using Microsoft.Its.Domain;
 
-namespace Sample.Banking.Domain
+namespace Test.Domain.Banking
 {
     public partial class CustomerAccount
     {
-        public class CheckingAccountOpened : Event<CustomerAccount>
+        public class CheckingAccountOpened : Event<Banking.CustomerAccount>
         {
             public Guid CheckingAccountId { get; set; }
 
-            public override void Update(CustomerAccount aggregate)
+            public override void Update(Banking.CustomerAccount aggregate)
             {
                 aggregate.CheckingAccounts.Add(CheckingAccountId);
             }

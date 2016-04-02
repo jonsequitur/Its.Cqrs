@@ -6,7 +6,7 @@ using System.Linq;
 using System.Web.Mvc;
 using System.Web.Routing;
 
-namespace Sample.Domain.Api
+namespace Test.Ordering.Domain.Api
 {
     public class MvcRouteConfig
     {

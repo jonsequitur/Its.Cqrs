@@ -7,10 +7,9 @@ using Microsoft.Its.Domain;
 using Microsoft.Its.Recipes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NUnit.Framework;
-using Sample.Banking.Domain;
-using Sample.Banking.Domain.Tests.Infrastructure;
+using Test.Domain.Banking.Tests.Infrastructure;
 
-namespace Sample.Banking.Domain.Tests
+namespace Test.Domain.Banking.Tests
 {
     [TestClass, TestFixture]
     public class WithdrawalTests

@@ -158,9 +158,9 @@
       <Project>{02C62BEC-31F5-48D6-8627-A4DE4EF90C91}</Project>
       <Name>Recipes</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Sample.Domain\Sample.Domain.csproj">
+    <ProjectReference Include="..\Sample.Domain\Test.Domain.Ordering.csproj">
       <Project>{FEAF4C39-FA30-4718-B781-9BEC29E87D86}</Project>
-      <Name>Sample.Domain</Name>
+      <Name>Test.Domain.Ordering</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>
