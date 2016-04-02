@@ -11,10 +11,12 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using NCrunch.Framework;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
+    [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReservationService")]
     public class SqlReservationServiceTests : ReservationServiceTests
     {
         static SqlReservationServiceTests()

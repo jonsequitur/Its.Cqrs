@@ -17,6 +17,7 @@ using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
 using Moq;
+using NCrunch.Framework;
 using NUnit.Framework;
 using Sample.Domain;
 using Sample.Domain.Ordering;
@@ -24,6 +25,8 @@ using Sample.Domain.Ordering.Commands;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
+    [TestFixture]
+    [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReadModels", "ItsCqrsTestsCommandScheduler")]
     public class SqlCommandSchedulerTests_EventSourced : SqlCommandSchedulerTests
     {
         protected EventStoreDbTest eventStoreDbTest;
