@@ -169,18 +169,21 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void EventSourcedBase_can_be_rehydrated_from_an_empty_event_sequence_when_using_a_snapshot()
         {
-            Action ctorCall = () =>
-            {
-                new CustomerAccount(new CustomerAccountSnapshot
-                {
-                    AggregateId = Any.Guid(),
-                    EmailAddress = Any.Email(),
-                    Version = 12
-                }, new IEvent[0]);
-            };
+            // arrange
+            var emailAddress = Any.Email();
 
-            ctorCall.Invoking(c => c())
-                    .ShouldNotThrow<Exception>();
+            var customerAccount = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(emailAddress));
+            customerAccount.ConfirmSave();
+            var snapshot = customerAccount.CreateSnapshot();
+
+            //act
+            var fromSnapshot = new CustomerAccount(snapshot);
+
+            // assert
+            fromSnapshot.EmailAddress
+                        .Should()
+                        .Be(emailAddress);
         }
 
         [Test]
@@ -241,30 +244,38 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task When_instantiated_from_a_snapshot_the_aggregate_version_is_correct()
         {
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                EmailAddress = Any.Email(),
-                Version = 12
-            });
+            // arrange
+            var customerAccount = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(Any.Email()));
+            customerAccount.ConfirmSave();
+            var snapshot = customerAccount.CreateSnapshot();
+            snapshot.Version = 12;
 
-            customerAccount.Version.Should().Be(12);
+            // act
+            var accountFromSnapshot = new CustomerAccount(snapshot);
+
+            // assert
+            accountFromSnapshot.Version.Should().Be(12);
         }
 
         [Test]
         public async Task An_aggregate_instantiated_from_a_snapshot_adds_new_events_at_the_correct_sequence_number()
         {
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                EmailAddress = Any.Email(),
-                Version = 12
-            });
+            // arrange
+            var account = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(Any.Email()));
+            account.ConfirmSave();
+            var snapshot = account.CreateSnapshot();
 
-            customerAccount.Apply(new RequestNoSpam());
+            snapshot.Version = 12;
 
-            customerAccount.Version.Should().Be(13);
-            customerAccount.PendingEvents.Last().SequenceNumber.Should().Be(13);
+            // act
+            var accountFromSnapshot = new CustomerAccount(snapshot);
+            accountFromSnapshot.Apply(new RequestNoSpam());
+
+            // assert
+            accountFromSnapshot.Version.Should().Be(13);
+            accountFromSnapshot.PendingEvents.Last().SequenceNumber.Should().Be(13);
         }
 
         [Test]
@@ -300,37 +311,47 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task Attempting_to_re_source_an_aggregate_that_was_instantiated_using_a_snapshot_succeeds_if_the_specified_version_is_at_or_after_the_snapshot()
+        public void Attempting_to_re_source_an_aggregate_that_was_instantiated_using_a_snapshot_succeeds_if_the_specified_version_is_at_or_after_the_snapshot()
         {
+            // arrange
             var originalEmail = Any.Email();
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                Version = 10,
-                EmailAddress = originalEmail
-            });
 
-            customerAccount.Apply(new ChangeEmailAddress(Any.Email()));
+            var account = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(originalEmail));
+            
+            account.ConfirmSave();
 
-            var accountAtv10 = customerAccount.AsOfVersion(10);
+            var snapshot = account.CreateSnapshot();
+            snapshot.Version = 10;
+            account = new CustomerAccount(snapshot);
 
-            accountAtv10.Version.Should().Be(10);
-            accountAtv10.EmailAddress.Should().Be(originalEmail);
+            account.Apply(new ChangeEmailAddress(Any.Email()));
+
+            // act
+            var accountAtVersion10 = account.AsOfVersion(10);
+
+            // arrange
+            accountAtVersion10.Version.Should().Be(10);
+            accountAtVersion10.EmailAddress.Should().Be(originalEmail);
         }
 
         [Test]
-        public async Task Attempting_to_re_source_an_aggregate_that_was_instantiated_using_a_snapshot_throws_if_the_specified_version_is_prior_to_the_snapshot()
+        public void Attempting_to_re_source_an_aggregate_that_was_instantiated_using_a_snapshot_throws_if_the_specified_version_is_prior_to_the_snapshot()
         {
-            var originalEmail = Any.Email();
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                Version = 10,
-                EmailAddress = originalEmail
-            });
+            // arrange
+            var account = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(Any.Email()));
+            account.ConfirmSave();
+            var snapshot = account
+                .CreateSnapshot();
+            snapshot.Version = 10;
 
-            Action rollBack = () => customerAccount.AsOfVersion(9);
+            account = new CustomerAccount(snapshot);
 
+            // act
+            Action rollBack = () => account.AsOfVersion(9);
+
+            // assert
             rollBack.ShouldThrow<InvalidOperationException>()
                     .And
                     .Message
@@ -339,17 +360,40 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task Accessing_event_history_from_an_aggregate_instantiated_using_a_snapshot_throws()
+        public void An_aggregate_cannot_be_sourced_from_the_wrong_snapshot_type()
         {
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                Version = 10,
-                EmailAddress = Any.Email()
-            });
+            // arrange
+            var order = new Order(new CreateOrder(Any.FullName()));
+            order.ConfirmSave();
+            var snapshot = order.CreateSnapshot();
 
-            Action getEvents = () => customerAccount.Events();
+            // act
+            Action restoreToWrongType = () => new CustomerAccount(snapshot);
 
+            // assert
+            restoreToWrongType.ShouldThrow<ArgumentException>()
+                              .And
+                              .Message
+                              .Should()
+                              .Be("Snapshotted Order cannot be used to instantiate a CustomerAccount");
+        }
+
+        [Test]
+        public void Accessing_event_history_from_an_aggregate_instantiated_using_a_snapshot_throws()
+        {
+            // arrange
+            var account = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(Any.Email()));
+            account.ConfirmSave();
+            var snapshot = account
+                .CreateSnapshot();
+            snapshot.Version = 10;
+            account = new CustomerAccount(snapshot);
+
+            // act
+            Action getEvents = () => account.Events();
+
+            // assert
             getEvents.ShouldThrow<InvalidOperationException>()
                      .And
                      .Message

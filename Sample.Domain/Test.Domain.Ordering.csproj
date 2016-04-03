@@ -92,7 +92,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomerAccount\Commands\SendOrderConfirmationEmail.cs" />
-    <Compile Include="CustomerAccount\CustomerAccountSnapshot.cs" />
     <Compile Include="CustomerAccount\Events\CustomerAccount.Created.cs" />
     <Compile Include="CustomerAccount\Events\CustomerAccount.OrderCancelationConfirmationEmailSent.cs" />
     <Compile Include="CustomerAccount\Events\CustomerAccount.OrderShipConfirmationEmailSent.cs" />

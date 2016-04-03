@@ -12,7 +12,10 @@ namespace Test.Domain.Ordering
     {
         private readonly HashSet<EmailSubject> communicationsSent = new HashSet<EmailSubject>();
 
-        public CustomerAccount(Guid id, IEnumerable<IEvent> eventHistory) : base(id, eventHistory)
+        public CustomerAccount(
+            Guid id,
+            IEnumerable<IEvent> eventHistory) :
+                base(id, eventHistory)
         {
         }
 
@@ -20,13 +23,10 @@ namespace Test.Domain.Ordering
         {
         }
 
-        public CustomerAccount(CustomerAccountSnapshot snapshot, IEnumerable<IEvent> additionalEvents = null) : base(snapshot, additionalEvents)
+        public CustomerAccount(
+            ISnapshot snapshot,
+            IEnumerable<IEvent> additionalEvents = null) : base(snapshot, additionalEvents)
         {
-            EmailAddress = snapshot.EmailAddress;
-            UserName = snapshot.UserName;
-            NoSpam = snapshot.NoSpam;
-
-            BuildUpStateFromEventHistory();
         }
 
         public string UserName { get; private set; }
@@ -35,26 +35,6 @@ namespace Test.Domain.Ordering
 
         public bool NoSpam { get; private set; }
 
-        public HashSet<EmailSubject> CommunicationsSent
-        {
-            get
-            {
-                return communicationsSent;
-            }
-        }
-
-        public class CustomerAccountSnapshotCreator : ICreateSnapshot<CustomerAccount>
-        {
-            public ISnapshot CreateSnapshot(CustomerAccount aggregate)
-            {
-                return new CustomerAccountSnapshot
-                       {
-                           UserName = aggregate.UserName,
-                           EmailAddress = aggregate.EmailAddress,
-                           NoSpam = aggregate.NoSpam,
-                           CommunicationsSent = aggregate.CommunicationsSent.ToArray()
-                       };
-            }
-        }
+        public HashSet<EmailSubject> CommunicationsSent => communicationsSent;
     }
 }

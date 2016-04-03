@@ -49,5 +49,33 @@ namespace Microsoft.Its.Domain
                 return null;
             });
         }
+
+        public static PocketContainer DefaultToJsonSnapshots(this PocketContainer container)
+        {
+            return container.AddStrategy(type =>
+            {
+                if (type.IsInterface &&
+                    type.IsGenericType)
+                {
+                    if (type.GetGenericTypeDefinition() == typeof (ICreateSnapshot<>))
+                    {
+                        var snapshotCreatorType = typeof (JsonSnapshotter<>)
+                            .MakeGenericType(type.GetGenericArguments().Single());
+
+                        return c => c.Resolve(snapshotCreatorType);
+                    }
+
+                    if (type.GetGenericTypeDefinition() == typeof (IApplySnapshot<>))
+                    {
+                        var snapshotCreatorType = typeof (JsonSnapshotter<>)
+                            .MakeGenericType(type.GetGenericArguments().Single());
+
+                        return c => c.Resolve(snapshotCreatorType);
+                    }
+                }
+
+                return null;
+            });
+        }
     }
 }

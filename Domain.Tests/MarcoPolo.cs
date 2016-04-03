@@ -241,30 +241,6 @@ namespace Microsoft.Its.Domain.Tests
             }
         }
 
-        public class PlayerSnapshotCreator : ICreateSnapshot<MarcoPoloPlayerWhoIsNotIt>
-        {
-            public ISnapshot CreateSnapshot(MarcoPoloPlayerWhoIsNotIt aggregate)
-            {
-                var snapshot = new Snapshot
-                {
-                    Name = aggregate.Name
-                };
-                aggregate.InitializeSnapshot(snapshot);
-                return snapshot;
-            }
-        }
-
-        public class Snapshot : ISnapshot
-        {
-            public string Name { get; set; }
-
-            public Guid AggregateId { get; set; }
-            public long Version { get; set; }
-            public DateTimeOffset LastUpdated { get; set; }
-            public string AggregateTypeName { get; set; }
-            public BloomFilter ETags { get; set; }
-        }
-
         #region Events
 
         public class Created : Event<MarcoPoloPlayerWhoIsNotIt>

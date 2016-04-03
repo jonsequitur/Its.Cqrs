@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Linq;
 using Its.Validation;
 using Microsoft.Its.Recipes;
+using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
@@ -15,10 +16,14 @@ namespace Microsoft.Its.Domain
     /// </summary>
     public abstract class EventSourcedAggregate : IEventSourced
     {
-        private readonly Guid id;
+        [JsonIgnore]
         private readonly EventSequence eventHistory;
+
+        [JsonIgnore]
         private readonly EventSequence pendingEvents;
-        internal readonly ISnapshot SourceSnapshot;
+
+        [JsonIgnore]
+        internal readonly ISnapshot sourceSnapshot;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventSourcedAggregate"/> class.
@@ -26,9 +31,9 @@ namespace Microsoft.Its.Domain
         /// <param name="id">The id for the new aggregate. If this is not specified, a new <see cref="Guid" /> is created.</param>
         protected EventSourcedAggregate(Guid? id = null)
         {
-            this.id = id ?? Guid.NewGuid();
-            eventHistory = new EventSequence(this.id);
-            pendingEvents = new EventSequence(this.id);
+            Id = id ?? Guid.NewGuid();
+            eventHistory = new EventSequence(Id);
+            pendingEvents = new EventSequence(Id);
         }
 
         /// <summary>
@@ -61,12 +66,12 @@ namespace Microsoft.Its.Domain
         /// Initializes a new instance of the <see cref="EventSourcedAggregate{T}"/> class.
         /// </summary>
         /// <param name="snapshot">A snapshot of the aggregate's built-up state.</param>
-        /// <param name="eventHistory">The event history.</param>
-        protected internal EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null)
-            : this(snapshot.IfNotNull().Then(s => s.AggregateId).ElseThrow(() => new ArgumentNullException(nameof(snapshot))))
+        protected internal EventSourcedAggregate(ISnapshot snapshot)
+            : this(snapshot.IfNotNull()
+                           .Then(s => s.AggregateId)
+                           .ElseThrow(() => new ArgumentNullException(nameof(snapshot))))
         {
-            SourceSnapshot = snapshot;
-            InitializeEventHistory(eventHistory.OrEmpty());
+            sourceSnapshot = snapshot;
         }
 
         protected internal void InitializeEventHistory(IEnumerable<IEvent> sourceEvents)
@@ -78,7 +83,7 @@ namespace Microsoft.Its.Domain
 
             eventHistory.AddRange(sourceEvents);
 
-            var version = Math.Max(eventHistory.Version, SourceSnapshot?.Version ?? 0);
+            var version = Math.Max(eventHistory.Version, sourceSnapshot?.Version ?? 0);
 
             pendingEvents.SetVersion(version);
 
@@ -91,21 +96,25 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Gets the globally unique id for this aggregate.
         /// </summary>
-        public Guid Id => id;
+        [JsonIgnore]
+        public Guid Id { get; }
 
         /// <summary>
         /// Gets the version of the aggregate, which is equivalent to the sequence number of the last event.
         /// </summary>
+        [JsonIgnore]
         public long Version => this.Version();
 
         /// <summary>
         ///     Gets any events for this aggregate that have not yet been committed to the event store.
         /// </summary>
+        [JsonIgnore]
         public IEnumerable<IEvent> PendingEvents => pendingEvents;
 
         /// <summary>
         ///     Gets the complete event history for the aggregate.
         /// </summary>
+        [JsonIgnore]
         public IEnumerable<IEvent> EventHistory => eventHistory;
 
         /// <summary>
@@ -150,7 +159,7 @@ namespace Microsoft.Its.Domain
         {
             if (WasSourcedFromSnapshot)
             {
-                if (SourceSnapshot.ETags.MayContain(etag))
+                if (sourceSnapshot.ETags.MayContain(etag))
                 {
                     return ProbabilisticAnswer.Maybe;
                 } 
@@ -164,7 +173,7 @@ namespace Microsoft.Its.Domain
                 : ProbabilisticAnswer.No;
         }
 
-        internal bool WasSourcedFromSnapshot => SourceSnapshot != null;
+        internal bool WasSourcedFromSnapshot => sourceSnapshot != null;
 
         internal virtual void HandleCommandValidationFailure(ICommand command, ValidationReport validationReport)
         {
