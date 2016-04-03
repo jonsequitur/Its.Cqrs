@@ -243,7 +243,8 @@ namespace Microsoft.Its.Domain
                          .ElseDefault();
 
         public static ISnapshot CreateSnapshot<TAggregate>(
-            this TAggregate aggregate) where TAggregate : class, IEventSourced
+            this TAggregate aggregate)
+            where TAggregate : class, IEventSourced
         {
             var snapshotCreator = Configuration.Current.Container.Resolve<ICreateSnapshot<TAggregate>>();
 

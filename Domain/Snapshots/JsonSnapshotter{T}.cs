@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json;
@@ -22,7 +21,8 @@ namespace Microsoft.Its.Domain
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
             PreserveReferencesHandling = PreserveReferencesHandling.All,
             NullValueHandling = NullValueHandling.Ignore,
-            DefaultValueHandling = DefaultValueHandling.Ignore
+            DefaultValueHandling = DefaultValueHandling.Ignore,
+            TypeNameHandling = TypeNameHandling.All
         };
 
         public ISnapshot CreateSnapshot(T aggregate)
@@ -38,44 +38,36 @@ namespace Microsoft.Its.Domain
 
         public void ApplySnapshot(ISnapshot snapshot, T aggregate)
         {
-            JsonConvert.PopulateObject(snapshot.Body, aggregate, serializationSettings);
+            JsonConvert.PopulateObject(
+                snapshot.Body, 
+                aggregate, 
+                serializationSettings);
         }
 
         public class PrivateStateContractResolver : DefaultContractResolver
         {
-            protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
+            protected override IList<JsonProperty> CreateProperties(
+                Type type,
+                MemberSerialization memberSerialization)
             {
-                var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                                .Select(p => CreateProperty(p, memberSerialization))
-                                .Union(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                                           .Select(f => CreateProperty(f, memberSerialization)))
-                                .ToList();
+                var bindingFlags = BindingFlags.Public |
+                                   BindingFlags.NonPublic |
+                                   BindingFlags.Instance;
 
-                props.ForEach(p =>
-                {
-                    p.Writable = true;
-                    p.Readable = true;
-                });
+                var properties = type.GetProperties(bindingFlags);
+                var fields = type.GetFields(bindingFlags).Cast<MemberInfo>();
 
-                return props;
+                return properties
+                    .Concat(fields)
+                    .Select(p =>
+                            CreateProperty(p, memberSerialization))
+                    .Do(p =>
+                    {
+                        p.Writable = true;
+                        p.Readable = true;
+                    })
+                    .ToList();
             }
         }
-    }
-
-    internal interface IApplySnapshot<T> 
-         where T : class, IEventSourced
-    {
-        void ApplySnapshot(ISnapshot snapshot, T aggregate);
-    }
-
-    [DebuggerStepThrough]
-    internal class JsonSnapshot : ISnapshot
-    {
-        public Guid AggregateId { get; set; }
-        public long Version { get; set; }
-        public DateTimeOffset LastUpdated { get; set; }
-        public string AggregateTypeName { get; set; }
-        public BloomFilter ETags { get; set; }
-        public string Body { get; set; }
     }
 }
