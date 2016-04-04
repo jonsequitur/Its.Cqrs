@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -255,6 +256,50 @@ namespace Microsoft.Its.Domain.Tests
             accountAtVersion10.EmailAddress.Should().Be(originalEmail);
         }
 
+        [Test]
+        public void Aggregates_with_reference_cycles_can_be_snapshotted()
+        {
+            // arrange
+            var node1 = new Node();
+            var node2 = new Node();
+            node1.Next = node2;
+            node2.Next = node1;
+            var aggregate = new ReferenceCycleTestAggregate
+            {
+                Node = node1
+            };
+
+            // act
+            var snapshot = aggregate.CreateSnapshot();
+            var fromSnapshot = new ReferenceCycleTestAggregate(snapshot);
+
+            // assert
+            var firstNode = fromSnapshot.Node;
+            firstNode.Next.Next.Should().BeSameAs(firstNode);
+        }
+
+        public class ReferenceCycleTestAggregate : EventSourcedAggregate<ReferenceCycleTestAggregate>
+        {
+            public ReferenceCycleTestAggregate(Guid? id = null) : base(id)
+            {
+            }
+
+            public ReferenceCycleTestAggregate(Guid id, IEnumerable<IEvent> eventHistory) : base(id, eventHistory)
+            {
+            }
+
+            public ReferenceCycleTestAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null) : base(snapshot, eventHistory)
+            {
+            }
+
+            public Node Node { get; set; }
+        }
+
+        public class Node
+        {
+            public Node Next { get; set; }
+        }
+
         private class TestEventStoreETagChecker : IETagChecker
         {
             private readonly Func<bool> hasBeenApplied;
@@ -263,15 +308,13 @@ namespace Microsoft.Its.Domain.Tests
             {
                 if (hasBeenApplied == null)
                 {
-                    throw new ArgumentNullException("hasBeenApplied");
+                    throw new ArgumentNullException(nameof(hasBeenApplied));
                 }
                 this.hasBeenApplied = hasBeenApplied;
             }
 
-            public async Task<bool> HasBeenRecorded(string scope, string etag)
-            {
-                return hasBeenApplied();
-            }
+            public async Task<bool> HasBeenRecorded(string scope, string etag) =>
+                hasBeenApplied();
         }
     }
 }
