@@ -156,7 +156,7 @@ namespace Microsoft.Its.Domain.Sql
             }
             catch (AutomaticMigrationsDisabledException)
             {
-                return false;
+                return true;
             }
             finally
             {

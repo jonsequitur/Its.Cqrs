@@ -16,6 +16,11 @@ namespace Microsoft.Its.Domain.Sql
     {
         private static string nameOrConnectionString;
 
+        static ReadModelDbContext()
+        {
+            Database.SetInitializer(new ReadModelDatabaseInitializer<ReadModelDbContext>());
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ReadModelDbContext"/> class.
         /// </summary>
