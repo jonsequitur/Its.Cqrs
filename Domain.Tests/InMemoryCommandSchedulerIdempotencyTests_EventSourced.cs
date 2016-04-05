@@ -4,7 +4,6 @@
 using System;
 using Microsoft.Its.Domain.Testing;
 using Test.Domain.Ordering;
-using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {
