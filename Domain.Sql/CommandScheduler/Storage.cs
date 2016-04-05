@@ -6,6 +6,7 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Transactions;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 
@@ -233,8 +234,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 try
                 {
-                    await db.SaveChangesAsync();
-
+                    using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                    {
+                        await db.SaveChangesAsync();
+                        transaction.Complete();
+                    }
                     break;
                 }
                 catch (DbUpdateException exception)
