@@ -23,7 +23,6 @@ namespace Microsoft.Its.Domain.Testing.Tests
             Clock.Reset();
             CommandSchedulerDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
-            Database.SetInitializer(new CommandSchedulerDatabaseInitializer());
         }
 
         [Test]
