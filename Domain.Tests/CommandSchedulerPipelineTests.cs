@@ -203,14 +203,14 @@ namespace Microsoft.Its.Domain.Tests
             var commandsScheduled = new List<IScheduledCommand>();
             var commandsDelivered = new List<IScheduledCommand>();
             configuration.TraceScheduledCommands()
-                         .TraceScheduledCommands(onScheduled: async cmd => { commandsScheduled.Add(cmd); },
-                                                 onDelivered: async cmd => { },
-                                                 onScheduling: async cmd => { },
-                                                 onDelivering: async cmd => { })
-                         .TraceScheduledCommands(onDelivered: async cmd => { commandsDelivered.Add(cmd); },
-                                                 onScheduled: async cmd => { },
-                                                 onScheduling: async cmd => { },
-                                                 onDelivering: async cmd => { });
+                         .TraceScheduledCommands(onScheduled: cmd => { commandsScheduled.Add(cmd); },
+                                                 onDelivered: cmd => { },
+                                                 onScheduling: cmd => { },
+                                                 onDelivering: cmd => { })
+                         .TraceScheduledCommands(onDelivered: cmd => { commandsDelivered.Add(cmd); },
+                                                 onScheduled: cmd => { },
+                                                 onScheduling: cmd => { },
+                                                 onDelivering: cmd => { });
 
             var log = new List<string>();
             using (LogTraceOutputTo(log))
@@ -267,7 +267,7 @@ namespace Microsoft.Its.Domain.Tests
             {
                 if (onSchedule == null)
                 {
-                    throw new ArgumentNullException("onSchedule");
+                    throw new ArgumentNullException(nameof(onSchedule));
                 }
                 this.onSchedule = onSchedule;
             }
