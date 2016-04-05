@@ -10,7 +10,6 @@ using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
-using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
@@ -24,7 +23,6 @@ namespace Microsoft.Its.Domain.Testing.Tests
             Clock.Reset();
             CommandSchedulerDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
-            Database.SetInitializer(new CommandSchedulerDatabaseInitializer());
         }
 
         [Test]
