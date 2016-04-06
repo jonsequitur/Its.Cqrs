@@ -265,9 +265,14 @@ namespace Microsoft.Its.Domain
                 if (scheduledCommandOfT != null &&
                     scheduledCommandOfT.Handler != null)
                 {
+                    // re-retrieve the command target so that it's not in its an invalid state
+                    aggregate = await store.Get(scheduled.TargetId);
+
                     await scheduledCommandOfT.Handler
                                              .HandleScheduledCommandException((dynamic) aggregate,
                                                                               (dynamic) failure);
+
+                    await store.Put(aggregate);
                 }
 
                 if (exception is ConcurrencyException)
@@ -282,18 +287,6 @@ namespace Microsoft.Its.Domain
                     }
 
                     // on ConcurrencyException, we don't attempt to save, since it would only result in another ConcurrencyException.
-                }
-                else
-                {
-                    try
-                    {
-                        await store.Put(aggregate);
-                    }
-                    catch (Exception ex)
-                    {
-                        // TODO: (FailScheduledCommand) surface this more clearly
-                        Trace.Write(ex);
-                    }
                 }
             }
 
