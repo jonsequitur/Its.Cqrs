@@ -529,7 +529,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_a_scheduled_command_fails_then_the_error_is_recorded()
+        public async Task When_Save_fails_then_a_scheduled_command_error_is_recorded()
         {
             // arrange
             var order = CommandSchedulingTests_EventSourced.CreateOrder();
@@ -541,12 +541,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                          {
                              OnSave = async o =>
                              {
-                                 if (saveCount > 0)
+                                 saveCount++;
+
+                                 // throw on the second save attempt, which is when the clock is advanced delivering the scheduled command
+                                 if (saveCount == 2)
                                  {
                                      throw new Exception("oops!");
                                  }
                                  await innerRepository.Save(o);
-                                 saveCount++;
                              }
                          });
 
@@ -601,6 +603,26 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 .Count()
                 .Should()
                 .Be(eventCount + 1, "the scheduled command should only be applied once");
+        }
+        
+        [Test]
+        public async Task When_a_scheduled_command_fails_then_the_events_written_by_the_command_handler_are_not_saved_to_the_aggregate()
+        {
+            var aggregate = new CommandSchedulerTestAggregate();
+            var repository = Configuration.Current.Repository<CommandSchedulerTestAggregate>();
+
+            await repository.Save(aggregate);
+
+            var scheduler = Configuration.Current.CommandScheduler<CommandSchedulerTestAggregate>();
+
+            await
+                scheduler.Schedule(
+                    aggregate.Id,
+                    command: new CommandSchedulerTestAggregate.CommandThatRecordsCommandSucceededEventWithoutExplicitlySavingAndThenFails());
+
+            var latestAggregate = await repository.GetLatest(aggregate.Id);
+
+            latestAggregate.EventHistory.OfType<CommandSchedulerTestAggregate.CommandSucceeded>().Should().HaveCount(0);
         }
 
         [Test]

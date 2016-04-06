@@ -63,6 +63,14 @@ namespace Microsoft.Its.Domain.Tests
             }
         }
 
+        public class CommandThatRecordsCommandSucceededEventWithoutExplicitlySavingAndThenFails : Command<CommandSchedulerTestAggregate>
+        {
+            public override bool Authorize(CommandSchedulerTestAggregate aggregate)
+            {
+                return true;
+            }
+        }
+
         public class CommandSucceeded : Event<CommandSchedulerTestAggregate>
         {
             public Command Command { get; set; }
@@ -83,7 +91,8 @@ namespace Microsoft.Its.Domain.Tests
 
         public class CommandHandler :
             ICommandHandler<CommandSchedulerTestAggregate, Command>,
-            ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesAnotherCommandImmediately>, ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesTwoOtherCommandsImmediately>
+            ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesAnotherCommandImmediately>, ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesTwoOtherCommandsImmediately>,
+            ICommandHandler<CommandSchedulerTestAggregate, CommandThatRecordsCommandSucceededEventWithoutExplicitlySavingAndThenFails>
         {
             private readonly ICommandScheduler<CommandSchedulerTestAggregate> scheduler;
 
@@ -153,6 +162,19 @@ namespace Microsoft.Its.Domain.Tests
             public async Task HandleScheduledCommandException(
                 CommandSchedulerTestAggregate aggregate,
                 CommandFailed<CommandThatSchedulesTwoOtherCommandsImmediately> command)
+            {
+            }
+
+            public Task EnactCommand(CommandSchedulerTestAggregate aggregate, CommandThatRecordsCommandSucceededEventWithoutExplicitlySavingAndThenFails command)
+            {
+                aggregate.RecordEvent(new CommandSucceeded());
+
+                throw new Exception();
+            }
+
+            public async Task HandleScheduledCommandException(
+                CommandSchedulerTestAggregate aggregate,
+                CommandFailed<CommandThatRecordsCommandSucceededEventWithoutExplicitlySavingAndThenFails> command)
             {
             }
         }

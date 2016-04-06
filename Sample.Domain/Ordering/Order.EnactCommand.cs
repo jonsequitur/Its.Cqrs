@@ -192,8 +192,6 @@ namespace Test.Domain.Ordering
         {
             public async Task HandleScheduledCommandException(Order order, CommandFailed<Ship> command)
             {
-                Debug.WriteLine("OrderShipCommandHandler.HandleScheduledCommandException");
-
                 if (command.Exception is CommandValidationException)
                 {
                     if (order.IsCancelled)
@@ -210,8 +208,6 @@ namespace Test.Domain.Ordering
 
             public async Task EnactCommand(Order order, Ship command)
             {
-                   Debug.WriteLine("OrderShipCommandHandler.EnactCommand");
-
                 order.RecordEvent(new Shipped
                 {
                     ShipmentId = command.ShipmentId
