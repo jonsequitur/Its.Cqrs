@@ -29,7 +29,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Retries the scheduled command after the specified amount of time.
         /// </summary>
-        public void Retry(TimeSpan? after) => RetryAfter = after ?? DefaultRetryBackoffPeriod;
+        public void Retry(TimeSpan? after = null) => RetryAfter = after ?? DefaultRetryBackoffPeriod;
 
         internal bool IsCanceled { get; private set; }
 
