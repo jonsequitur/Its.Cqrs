@@ -606,7 +606,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
         
         [Test]
-        public async Task When_a_scheduled_command_fails_then_the_events_written_in_the_command_are_not_saved_to_the_aggregate()
+        public async Task When_a_scheduled_command_fails_then_the_events_written_by_the_command_handler_are_not_saved_to_the_aggregate()
         {
             var aggregate = new CommandSchedulerTestAggregate();
             var repository = Configuration.Current.Repository<CommandSchedulerTestAggregate>();
