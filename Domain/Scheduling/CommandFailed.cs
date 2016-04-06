@@ -29,7 +29,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Retries the scheduled command after the specified amount of time.
         /// </summary>
-        public void Retry(TimeSpan after) => RetryAfter = after;
+        public void Retry(TimeSpan? after) => RetryAfter = after ?? DefaultRetryBackoffPeriod;
 
         internal bool IsCanceled { get; private set; }
 
@@ -41,13 +41,20 @@ namespace Microsoft.Its.Domain
         public int NumberOfPreviousAttempts => ScheduledCommand.NumberOfPreviousAttempts;
 
         /// <summary>
+        /// Gets the default retry backoff period.
+        /// </summary>
+        public TimeSpan DefaultRetryBackoffPeriod =>
+             TimeSpan.FromMinutes(Math.Pow(NumberOfPreviousAttempts + 1, 2));
+        
+
+        /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
         /// </summary>
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
         public override string ToString() =>
-            string.Format("Failed due to: {1} {0}",
+            String.Format("Failed due to: {1} {0}",
                           IsCanceled
                               ? " (and canceled)"
                               : $" (will retry after {RetryAfter})",

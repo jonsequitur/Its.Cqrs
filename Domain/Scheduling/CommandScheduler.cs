@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Linq;
 using System.Reflection;
@@ -221,8 +220,7 @@ namespace Microsoft.Its.Domain
                     else
                     {
                         throw new PreconditionNotMetException(
-                            string.Format("No {0} was found with id {1} so the command could not be applied.",
-                                          typeof (TAggregate).Name, scheduled.TargetId));
+                            $"No {typeof (TAggregate).Name} was found with id {scheduled.TargetId} so the command could not be applied.");
                     }
                 }
                 else if (isConstructorCommand)
@@ -275,29 +273,34 @@ namespace Microsoft.Its.Domain
                     await store.Put(aggregate);
                 }
 
-                if (exception is ConcurrencyException)
+                if (exception is ConcurrencyException &&
+                    scheduled.Command is ConstructorCommand<TAggregate>)
                 {
-                    if (scheduled.Command is ConstructorCommand<TAggregate>)
-                    {
-                        // the aggregate has already been created, so this command will never succeed and is redundant.
-                        // this may result from redelivery of a constructor command.
-                        failure.Cancel();
-                        scheduled.Result = failure;
-                        return;
-                    }
-
-                    // on ConcurrencyException, we don't attempt to save, since it would only result in another ConcurrencyException.
+                    // the aggregate has already been created, so this command will never succeed and is redundant.
+                    // this may result from redelivery of a constructor command.
+                    failure.Cancel();
+                    scheduled.Result = failure;
+                    return;
                 }
             }
 
-            if (!failure.IsCanceled &&
-                failure.RetryAfter == null &&
-                failure.NumberOfPreviousAttempts < DefaultNumberOfRetriesOnException)
+            if (IsRetryableByDefault(failure) &&
+                CommandHandlerDidNotSpecifyRetry(failure))
             {
-                failure.Retry(TimeSpan.FromMinutes(Math.Pow(failure.NumberOfPreviousAttempts + 1, 2)));
+                failure.Retry();
             }
 
             scheduled.Result = failure;
+        }
+
+        private static bool CommandHandlerDidNotSpecifyRetry(CommandFailed failure)
+        {
+            return failure.RetryAfter == null;
+        }
+
+        private static bool IsRetryableByDefault(CommandFailed failure)
+        {
+            return !failure.IsCanceled && failure.NumberOfPreviousAttempts < DefaultNumberOfRetriesOnException;
         }
     }
 }
