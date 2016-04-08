@@ -119,6 +119,8 @@
     <Compile Include="ScenarioBuilderTests.cs" />
     <Compile Include="ScenarioBuilderWithInMemoryEventStoreTests.cs" />
     <Compile Include="ScenarioBuilderWithPipelinedSqlStorageTests.cs" />
+    <Compile Include="VirtualClockWithInMemoryCommandSchedulingTests.cs" />
+    <Compile Include="VirtualClockWithSqlCommandSchedulingTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

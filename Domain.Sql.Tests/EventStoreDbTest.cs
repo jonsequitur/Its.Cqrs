@@ -22,7 +22,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         private CompositeDisposable disposables;
         private bool classInitializeHasBeenCalled;
 
-        private static void SetConnectionStrings()
+        public static void SetConnectionStrings()
         {
             EventStoreDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";

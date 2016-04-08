@@ -25,6 +25,14 @@ namespace Microsoft.Its.Domain.Testing.Tests
         }
 
         [Test]
+        public void When_VirtualClock_Start_is_called_while_a_VirtualClock_is_already_in_use_it_throws()
+        {
+            VirtualClock.Start();
+            Action startAgain = () => VirtualClock.Start();
+            startAgain.ShouldThrow<InvalidOperationException>();
+        }
+
+        [Test]
         public void VirtualClock_Start_can_be_used_to_specify_a_virtual_time_that_Clock_Now_will_return()
         {
             var time = Any.DateTimeOffset();
