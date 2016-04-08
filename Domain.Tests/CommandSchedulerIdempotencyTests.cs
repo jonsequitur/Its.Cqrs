@@ -9,7 +9,6 @@ using FluentAssertions;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
-using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {
