@@ -3,9 +3,13 @@
 
 using System;
 using Microsoft.Its.Domain.Testing;
+using NCrunch.Framework;
+using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
+    [TestFixture]
+    [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReadModels", "ItsCqrsTestsCommandScheduler")]
     public class SqlCommandSchedulerIdempotencyTests_NonEventSourced : SqlCommandSchedulerIdempotencyTests
     {
         protected override void Configure(Configuration configuration, Action<IDisposable> onDispose)
