@@ -26,7 +26,8 @@ namespace Microsoft.Its.Domain.Testing
         private readonly Subject<DateTimeOffset> movements = new Subject<DateTimeOffset>();
         private readonly RxScheduler Scheduler;
         private readonly ConcurrentHashSet<IClock> schedulerClocks = new ConcurrentHashSet<IClock>();
-        private string caller;
+        private string creatorMemberName;
+        private string creatorFilePath;
 
         private VirtualClock(DateTimeOffset now)
         {
@@ -151,11 +152,15 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="now">The time to which the virtual clock is set.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException">You must dispose the current VirtualClock before starting another.</exception>
-        public static VirtualClock Start(DateTimeOffset? now = null, [CallerMemberName] string caller = null)
+        public static VirtualClock Start(
+            DateTimeOffset? now = null,
+            [CallerMemberName] string callerMemberName = null,
+            [CallerFilePath] string callerFilePath = null)
         {
-            if (Clock.Current is VirtualClock)
+            var clock = Clock.Current as VirtualClock;
+            if (clock != null)
             {
-                throw new InvalidOperationException($"You must dispose the current VirtualClock (created by {((VirtualClock) Clock.Current).caller}) before starting another.");
+                throw new InvalidOperationException($"You must dispose the current VirtualClock (created by {clock.creatorMemberName} [{clock.creatorFilePath}]) before starting another.");
             }
 
 
@@ -163,7 +168,8 @@ namespace Microsoft.Its.Domain.Testing
 
             var virtualClock = new VirtualClock(now ?? DateTimeOffset.Now)
             {
-                caller = caller
+                creatorMemberName = callerMemberName,
+                creatorFilePath = callerFilePath
             };
 
             Clock.Current = virtualClock;
