@@ -6,15 +6,18 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reactive.Disposables;
 using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.Tests;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using Moq;
+using NCrunch.Framework;
 using NUnit.Framework;
 using Test.Domain.Ordering;
 using Test.Ordering.Domain.Api.Controllers;
@@ -22,8 +25,11 @@ using Test.Ordering.Domain.Api.Controllers;
 namespace Microsoft.Its.Domain.Api.Tests
 {
     [TestFixture]
-    public class CommandDispatchTests
+    [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsCommandScheduler")]
+    public class CommandDispatchTests : EventStoreDbTest
     {
+        private CompositeDisposable disposables = new CompositeDisposable();
+
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
@@ -37,6 +43,17 @@ namespace Microsoft.Its.Domain.Api.Tests
         public void SetUp()
         {
             Command<Order>.AuthorizeDefault = (order, command) => true;
+
+            var configuration = new Configuration()
+                .UseSqlEventStore()
+                .UseSqlStorageForScheduledCommands();
+            disposables.Add(ConfigurationContext.Establish(configuration));
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            disposables.Dispose();
         }
 
         [Test]

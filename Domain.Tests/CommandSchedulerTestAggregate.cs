@@ -35,9 +35,11 @@ namespace Microsoft.Its.Domain.Tests
             }
         }
 
-        public class CommandThatSchedulesAnotherCommandImmediately : Command<CommandSchedulerTestAggregate>
+        public class CommandThatSchedulesAnotherCommand : Command<CommandSchedulerTestAggregate>
         {
             public Command NextCommand { get; set; }
+
+            public DateTimeOffset? NextCommandDueTime { get; set; }
 
             public Guid NextCommandAggregateId { get; set; }
 
@@ -91,7 +93,7 @@ namespace Microsoft.Its.Domain.Tests
 
         public class CommandHandler :
             ICommandHandler<CommandSchedulerTestAggregate, Command>,
-            ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesAnotherCommandImmediately>, ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesTwoOtherCommandsImmediately>,
+            ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesAnotherCommand>, ICommandHandler<CommandSchedulerTestAggregate, CommandThatSchedulesTwoOtherCommandsImmediately>,
             ICommandHandler<CommandSchedulerTestAggregate, CommandThatRecordsCommandSucceededEventWithoutExplicitlySavingAndThenFails>
         {
             private readonly ICommandScheduler<CommandSchedulerTestAggregate> scheduler;
@@ -127,17 +129,17 @@ namespace Microsoft.Its.Domain.Tests
 
             public async Task EnactCommand(
                 CommandSchedulerTestAggregate aggregate,
-                CommandThatSchedulesAnotherCommandImmediately command)
+                CommandThatSchedulesAnotherCommand command)
             {
                 await scheduler.Schedule(
                     command.NextCommandAggregateId,
                     command.NextCommand,
-                    Clock.Now());
+                    command.NextCommandDueTime);
             }
 
             public async Task HandleScheduledCommandException(
                 CommandSchedulerTestAggregate aggregate,
-                CommandFailed<CommandThatSchedulesAnotherCommandImmediately> command)
+                CommandFailed<CommandThatSchedulesAnotherCommand> command)
             {
                 aggregate.RecordEvent(new CommandFailed
                 {

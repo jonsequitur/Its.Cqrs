@@ -26,7 +26,8 @@ namespace Microsoft.Its.Domain.Testing
         private readonly Subject<DateTimeOffset> movements = new Subject<DateTimeOffset>();
         private readonly RxScheduler Scheduler;
         private readonly ConcurrentHashSet<IClock> schedulerClocks = new ConcurrentHashSet<IClock>();
-        private string caller;
+        private string creatorMemberName;
+        private string creatorFilePath;
 
         private VirtualClock(DateTimeOffset now)
         {
@@ -97,21 +98,25 @@ namespace Microsoft.Its.Domain.Testing
 
                 if (pendingCommands.Any())
                 {
-                    var sqlSchedulerClocks = pendingCommands
+                    var namesOfClocksWithPendingCommands = pendingCommands
                         .Select(s => s.Clock)
                         .OfType<Sql.CommandScheduler.Clock>()
+                        .Select(c => c.Name)
                         .Distinct()
                         .ToArray();
 
-                    if (sqlSchedulerClocks.Any())
+                    if (namesOfClocksWithPendingCommands.Any())
                     {
                         var clockTrigger = configuration.SchedulerClockTrigger();
 
-                        var appliedCommands = sqlSchedulerClocks
-                            .Select(c => clockTrigger.AdvanceClock(c.Name, Now()) 
-                                                     .TimeoutAfter(Scenario.DefaultTimeout())
-                                                     .Result)
-                            .SelectMany(result => result.SuccessfulCommands);
+                        var appliedCommands = namesOfClocksWithPendingCommands
+                            .Select(clockName => clockTrigger.AdvanceClock(clockName,
+                                                                           Now(),
+                                                                           q => q.Take(1))
+                                                             .TimeoutAfter(Scenario.DefaultTimeout())
+                                                             .Result)
+                            .SelectMany(result => result.SuccessfulCommands)
+                            .ToArray();
 
                         if (!appliedCommands.Any())
                         {
@@ -151,11 +156,15 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="now">The time to which the virtual clock is set.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException">You must dispose the current VirtualClock before starting another.</exception>
-        public static VirtualClock Start(DateTimeOffset? now = null, [CallerMemberName] string caller = null)
+        public static VirtualClock Start(
+            DateTimeOffset? now = null,
+            [CallerMemberName] string callerMemberName = null,
+            [CallerFilePath] string callerFilePath = null)
         {
-            if (Clock.Current is VirtualClock)
+            var clock = Clock.Current as VirtualClock;
+            if (clock != null)
             {
-                throw new InvalidOperationException($"You must dispose the current VirtualClock (created by {((VirtualClock) Clock.Current).caller}) before starting another.");
+                throw new InvalidOperationException($"You must dispose the current VirtualClock (created by {clock.creatorMemberName} [{clock.creatorFilePath}]) before starting another.");
             }
 
 
@@ -163,7 +172,8 @@ namespace Microsoft.Its.Domain.Testing
 
             var virtualClock = new VirtualClock(now ?? DateTimeOffset.Now)
             {
-                caller = caller
+                creatorMemberName = callerMemberName,
+                creatorFilePath = callerFilePath
             };
 
             Clock.Current = virtualClock;

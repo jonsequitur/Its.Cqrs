@@ -110,7 +110,8 @@
   <ItemGroup>
     <Compile Include="%28Its.Recipes%29\MaybeExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\TestInputGenerator.cs" />
-    <Compile Include="ClockTests.cs" />
+    <Compile Include="VirtualClockCommandSchedulingTests.cs" />
+    <Compile Include="VirtualClockTests.cs" />
     <Compile Include="InMemoryEventSourcedRepositoryMigrationTests.cs" />
     <Compile Include="InMemoryEventSourcedRepositoryTests.cs" />
     <Compile Include="InMemoryReservationServiceTests.cs" />
@@ -118,6 +119,8 @@
     <Compile Include="ScenarioBuilderTests.cs" />
     <Compile Include="ScenarioBuilderWithInMemoryEventStoreTests.cs" />
     <Compile Include="ScenarioBuilderWithPipelinedSqlStorageTests.cs" />
+    <Compile Include="VirtualClockWithInMemoryCommandSchedulingTests.cs" />
+    <Compile Include="VirtualClockWithSqlCommandSchedulingTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

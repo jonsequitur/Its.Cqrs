@@ -9,7 +9,6 @@ using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
-using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {
@@ -63,15 +62,16 @@ namespace Microsoft.Its.Domain.Tests
         {
             var actualNow = DateTimeOffset.Now;
             var virtualNow = DateTimeOffset.Parse("2000-01-01");
-            VirtualClock.Start(virtualNow);
+            using (VirtualClock.Start(virtualNow))
+            {
+                var order = await repository.GetLatest(aggregateId);
+                order.Apply(new Annotate<Order>("foo"));
+                repository.Save(order).Wait();
 
-            var order = await repository.GetLatest(aggregateId);
-            order.Apply(new Annotate<Order>("foo"));
-            repository.Save(order).Wait();
-
-            var @event = (await repository.GetLatest(aggregateId)).EventHistory.OfType<Annotated<Order>>().Single();
-            @event.Timestamp.Should().NotBe(Clock.Now());
-            @event.Timestamp.Should().BeOnOrAfter(actualNow);
+                var @event = (await repository.GetLatest(aggregateId)).EventHistory.OfType<Annotated<Order>>().Single();
+                @event.Timestamp.Should().NotBe(Clock.Now());
+                @event.Timestamp.Should().BeOnOrAfter(actualNow);
+            }
         }
     }
 }

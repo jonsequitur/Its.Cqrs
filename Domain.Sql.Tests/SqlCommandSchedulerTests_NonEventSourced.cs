@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
@@ -37,13 +38,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             eventStoreDbTest = new EventStoreDbTest();
             clockName = Any.CamelCaseName();
 
-            Clock.Reset();
+            VirtualClock.Start();
 
             disposables = new CompositeDisposable
             {
-                Disposable.Create(() => eventStoreDbTest.TearDown()),
-                Disposable.Create(Clock.Reset),
-                VirtualClock.Start()
+                Disposable.Create(() => eventStoreDbTest.TearDown())
             };
 
             var configuration = new Configuration();
@@ -56,6 +55,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [TearDown]
         public void TearDown()
         {
+            Clock.Reset();
             disposables.Dispose();
         }
 

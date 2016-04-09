@@ -25,24 +25,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsReservationService";
             EventStoreDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
-            Database.SetInitializer(new ReservationServiceDatabaseInitializer());
-            Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
-
-#if !DEBUG
-            new ReservationServiceDbContext().Database.Delete();
-#endif
-
-            using (var db = new ReservationServiceDbContext())
-            {
-                new ReservationServiceDatabaseInitializer().InitializeDatabase(db);
-            }
         }
 
         protected override void Configure(Configuration configuration, Action onSave = null)
         {
             configuration.UseSqlReservationService()
-                .UseSqlEventStore()
-                .UseEventBus(new FakeEventBus());
+                         .UseSqlEventStore()
+                         .UseEventBus(new FakeEventBus());
         }
 
         protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
