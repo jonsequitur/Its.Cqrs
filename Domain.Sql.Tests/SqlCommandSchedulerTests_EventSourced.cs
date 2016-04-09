@@ -249,7 +249,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await scheduler.Schedule(
                 aggregate.Id,
                 dueTime: dueTime,
-                command: new CommandSchedulerTestAggregate.CommandThatSchedulesAnotherCommandImmediately
+                command: new CommandSchedulerTestAggregate.CommandThatSchedulesAnotherCommand
                 {
                     NextCommandAggregateId = aggregate.Id,
                     NextCommand = new CommandSchedulerTestAggregate.Command

@@ -37,7 +37,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
         {
             return new Configuration()
                 .UseInMemoryCommandScheduling()
-                .UseInMemoryEventStore();
+                .UseInMemoryEventStore()
+                .TraceScheduledCommands();
         }
     }
 }

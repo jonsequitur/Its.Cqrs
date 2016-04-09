@@ -98,21 +98,25 @@ namespace Microsoft.Its.Domain.Testing
 
                 if (pendingCommands.Any())
                 {
-                    var sqlSchedulerClocks = pendingCommands
+                    var namesOfClocksWithPendingCommands = pendingCommands
                         .Select(s => s.Clock)
                         .OfType<Sql.CommandScheduler.Clock>()
+                        .Select(c => c.Name)
                         .Distinct()
                         .ToArray();
 
-                    if (sqlSchedulerClocks.Any())
+                    if (namesOfClocksWithPendingCommands.Any())
                     {
                         var clockTrigger = configuration.SchedulerClockTrigger();
 
-                        var appliedCommands = sqlSchedulerClocks
-                            .Select(c => clockTrigger.AdvanceClock(c.Name, Now()) 
-                                                     .TimeoutAfter(Scenario.DefaultTimeout())
-                                                     .Result)
-                            .SelectMany(result => result.SuccessfulCommands);
+                        var appliedCommands = namesOfClocksWithPendingCommands
+                            .Select(clockName => clockTrigger.AdvanceClock(clockName,
+                                                                           Now(),
+                                                                           q => q.Take(1))
+                                                             .TimeoutAfter(Scenario.DefaultTimeout())
+                                                             .Result)
+                            .SelectMany(result => result.SuccessfulCommands)
+                            .ToArray();
 
                         if (!appliedCommands.Any())
                         {
