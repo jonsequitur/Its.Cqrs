@@ -43,12 +43,5 @@ namespace Microsoft.Its.Domain
         /// </summary>
         /// <param name="aggregate">The aggregate to persist.</param>
         Task Save(TAggregate aggregate);
-
-        /// <summary>
-        /// Refreshes an aggregate with the latest events from the event stream.
-        /// </summary>
-        /// <param name="aggregate">The aggregate to refresh.</param>
-        /// <remarks>Events not present in the in-memory aggregate will not be re-fetched from the event store.</remarks>
-        Task Refresh(TAggregate aggregate);
     }
 }

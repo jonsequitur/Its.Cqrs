@@ -146,20 +146,6 @@ namespace Microsoft.Its.Domain.Testing
         }
 
         /// <summary>
-        /// Refreshes an aggregate with the latest events from the event stream.
-        /// </summary>
-        /// <param name="aggregate">The aggregate to refresh.</param>
-        /// <remarks>Events not present in the in-memory aggregate will not be re-fetched from the event store.</remarks>
-        public async Task Refresh(TAggregate aggregate)
-        {
-            var newEvents = (await eventStream.All(id: aggregate.Id.ToString()))
-                .Where(e => e.SequenceNumber > aggregate.Version)
-                .Select(e => e.ToDomainEvent());
-
-            aggregate.Update(newEvents);
-        }
-
-        /// <summary>
         ///     Gets a command target by the id.
         /// </summary>
         /// <param name="id">The id of the aggregate.</param>
