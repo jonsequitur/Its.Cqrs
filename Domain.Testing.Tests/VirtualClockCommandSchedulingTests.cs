@@ -119,17 +119,6 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 .ContainInOrder("first", "second", "third");
         }
 
-        [Test]
-        public async Task When_a_command_is_delivered_and_throws_during_clock_advance_then_other_commands_are_still_delivered()
-        {
-
-
-
-
-            // FIX (When_a_command_is_delivered_and_throws_during_clock_advance_then_other_commands_are_still_delivered) write test
-            Assert.Fail("Test not written yet.");
-        }
-
         protected abstract Configuration GetConfiguration();
     }
 }
