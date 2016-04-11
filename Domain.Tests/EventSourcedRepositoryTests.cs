@@ -304,96 +304,6 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task Refresh_can_be_used_to_update_an_aggregate_in_memory_with_the_latest_events_from_the_stream()
-        {
-            // arrange
-            var order = new Order()
-                .Apply(new ChangeCustomerInfo
-                {
-                    CustomerName = Any.FullName()
-                });
-
-            var repository = CreateRepository<Order>();
-            await repository.Save(order);
-
-            await repository.Save(
-                (await repository.GetLatest(order.Id))
-                          .Apply(new AddItem
-                          {
-                              Price = 1,
-                              ProductName = Any.Word()
-                          }).Apply(new AddItem
-                          {
-                              Price = 2,
-                              ProductName = Any.Word()
-                          }));
-
-            // act
-            await repository.Refresh(order);
-
-            // assert
-            order.Version().Should().Be(4);
-        }
-        
-        [Test]
-        public async Task After_Refresh_is_called_then_future_events_are_added_at_the_correct_sequence_number()
-        {
-            // arrange
-            var order = new Order()
-                .Apply(new ChangeCustomerInfo
-                {
-                    CustomerName = Any.FullName()
-                });
-
-            var repository = CreateRepository<Order>();
-            await repository.Save(order);
-
-            await repository.Save(
-                (await repository.GetLatest(order.Id))
-                          .Apply(new AddItem
-                          {
-                              Price = 1,
-                              ProductName = Any.Word()
-                          }).Apply(new AddItem
-                          {
-                              Price = 2,
-                              ProductName = Any.Word()
-                          }));
-            await repository.Refresh(order);
-
-            // act
-            order.Apply(new Cancel());
-
-            Console.WriteLine(order.Events().ToJson());
-
-            // assert
-            order.Version().Should().Be(5);
-            order.PendingEvents.Last().SequenceNumber.Should().Be(5);
-        }
-
-        [Test]
-        public void When_Refresh_is_called_on_an_aggregate_having_pending_events_it_throws()
-        {
-            var order = new Order()
-                .Apply(new ChangeCustomerInfo
-                {
-                    CustomerName = Any.FullName()
-                });
-
-            var repository = CreateRepository<Order>();
-
-            // act
-            Action refresh = () => repository.Refresh(order).Wait();
-
-            // assert
-            refresh.ShouldThrow<InvalidOperationException>()
-                   .And
-                   .Message
-                   .Should()
-                   .Contain("Aggregates having pending events cannot be updated.");
-        }
-
-        [Test]
         public async Task GetAggregate_can_be_used_within_a_consequenter_to_access_an_aggregate_without_having_to_re_source()
         {
             // arrange
@@ -430,7 +340,9 @@ namespace Microsoft.Its.Domain.Tests
                                                                                 });
             Order aggregate = null;
 #pragma warning disable 612
+#pragma warning disable 618
             var consquenter = Consequenter.Create<Order.Placed>(e => { aggregate = e.GetAggregate(); });
+#pragma warning restore 618
 #pragma warning restore 612
             var bus = Configuration.Current.EventBus as FakeEventBus;
             bus.Subscribe(consquenter);
@@ -454,7 +366,9 @@ namespace Microsoft.Its.Domain.Tests
             var repository = CreateRepository<Order>();
             await repository.Save(order);
             Order aggregate = null;
+#pragma warning disable 618
             var consquenter = Consequenter.Create<Order.Placed>(e =>
+#pragma warning restore 618
             {
 #pragma warning disable 612
                 aggregate = e.GetAggregate();
