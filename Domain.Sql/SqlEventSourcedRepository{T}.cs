@@ -210,7 +210,7 @@ namespace Microsoft.Its.Domain.Sql
                     if (exception.IsConcurrencyException())
                     {
                         var message =
-                            $"There was a concurrency violation.\n  Existing:\n {existingEvents.Select(e => e.ToDomainEvent()).ToDiagnosticJson()}\n  Attempted:\n{events.ToDiagnosticJson()}";
+                            $"There was a concurrency violation while saving a {typeof(TAggregate)}.\n  Existing:\n {existingEvents.Select(e => e.ToDomainEvent()).ToDiagnosticJson()}\n  Attempted:\n{events.ToDiagnosticJson()}";
                         throw new ConcurrencyException(message, events, exception);
                     }
                     throw;
