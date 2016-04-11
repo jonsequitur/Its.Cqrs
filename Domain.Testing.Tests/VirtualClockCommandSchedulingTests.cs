@@ -118,6 +118,36 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 .Should()
                 .ContainInOrder("first", "second", "third");
         }
+        
+        
+        [Test]
+        public async Task When_a_command_is_delivered_and_throws_during_clock_advance_then_other_commands_are_still_delivered()
+        {
+           // arrange
+            var target = new CommandTarget(Any.CamelCaseName())
+            {
+                OnEnactCommand = async (commandTarget, command) =>
+                {
+                    await Task.Yield();
+
+                    
+                }
+            };
+            var store = Configuration.Current.Store<CommandTarget>();
+            await store.Put(target);
+
+            // act
+            await Configuration.Current
+                .CommandScheduler<CommandTarget>()
+                .Schedule(target.Id,
+                                     new TestCommand(isValid: false),
+                                     Clock.Now().AddMinutes(2));
+
+            await 
+
+            // FIX (When_a_command_is_delivered_and_throws_during_clock_advance_then_other_commands_are_still_delivered) write test
+            Assert.Fail("Test not written yet.");
+        }
 
         protected abstract Configuration GetConfiguration();
     }
