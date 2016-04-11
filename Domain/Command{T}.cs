@@ -169,16 +169,19 @@ namespace Microsoft.Its.Domain
             {
                 if (handler == null)
                 {
+                    var commandHandlerType = CommandHandler<TTarget>.ForCommandType(GetType());
+
                     try
                     {
                         handler = Configuration
                             .Current
                             .Container
-                            .Resolve(CommandHandler<TTarget>.ForCommandType(GetType()));
+                            .Resolve(commandHandlerType);
                     }
-                    catch (DomainConfigurationException)
+                    catch (DomainConfigurationException exception)
                     {
                         // swallow this exception, allowing fallback to other EnactCommand strategies
+                        Trace.WriteLine($"Could not resolve a command handler of type {commandHandlerType}. This could be because no command handler of this type is implemented, or there was a problem instantiating one.\n{exception}");
                     }
                 }
 

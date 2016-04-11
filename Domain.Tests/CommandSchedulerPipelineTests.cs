@@ -219,7 +219,10 @@ namespace Microsoft.Its.Domain.Tests
                 await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
             }
 
-            log.Count.Should().Be(4);
+            log.Should().ContainSingle(e => e.Contains("[Scheduled]"));
+            log.Should().ContainSingle(e => e.Contains("[Scheduling]"));
+            log.Should().ContainSingle(e => e.Contains("[Delivered]"));
+            log.Should().ContainSingle(e => e.Contains("[Delivering]"));
             commandsScheduled.Count.Should().Be(1);
             commandsDelivered.Count.Should().Be(1);
         }
@@ -238,7 +241,10 @@ namespace Microsoft.Its.Domain.Tests
                 await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
             }
 
-            log.Count.Should().Be(4);
+            log.Should().ContainSingle(e => e.Contains("[Scheduled]"));
+            log.Should().ContainSingle(e => e.Contains("[Scheduling]"));
+            log.Should().ContainSingle(e => e.Contains("[Delivered]"));
+            log.Should().ContainSingle(e => e.Contains("[Delivering]"));
         }
 
         [Test]
