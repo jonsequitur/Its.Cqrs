@@ -115,7 +115,9 @@ namespace Microsoft.Its.Domain.Testing
                                                                            q => q.Take(1))
                                                              .TimeoutAfter(Scenario.DefaultTimeout())
                                                              .Result)
-                            .SelectMany(result => result.SuccessfulCommands)
+                            .SelectMany(result => result.SuccessfulCommands
+                                                        .Cast<ScheduledCommandResult>()
+                                                        .Concat(result.FailedCommands))
                             .ToArray();
 
                         if (!appliedCommands.Any())
