@@ -4,6 +4,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -45,7 +46,6 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public TimeSpan DefaultRetryBackoffPeriod =>
              TimeSpan.FromMinutes(Math.Pow(NumberOfPreviousAttempts + 1, 2));
-        
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
@@ -54,10 +54,12 @@ namespace Microsoft.Its.Domain
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
         public override string ToString() =>
-            String.Format("Failed due to: {1} {0}",
+            string.Format("Failed due to: {1} {0}",
                           IsCanceled
                               ? " (and canceled)"
-                              : $" (will retry after {RetryAfter})",
+                              : RetryAfter.IfNotNull()
+                                          .Then(r => $" (will retry after {r})")
+                                          .Else(() => " (won't retry)"),
                           Exception.FindInterestingException().Message);
 
         internal static CommandFailed Create<TCommand>(
