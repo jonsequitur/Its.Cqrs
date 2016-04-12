@@ -34,11 +34,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await OnSave(aggregate);
         }
 
-        public Task Refresh(TAggregate aggregate)
-        {
-            return innerRepository.Refresh(aggregate);
-        }
-
         public Func<TAggregate, Task> OnSave;
 
         public async Task<TAggregate> Get(string id)
