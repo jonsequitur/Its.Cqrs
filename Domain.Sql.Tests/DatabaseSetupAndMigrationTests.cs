@@ -120,7 +120,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 InitializeDatabase<MigrationsTestEventStore>(
                     new AnonymousMigrator(c =>
                     {
-                        c.Execute(string.Format(@"alter table [eventstore].[events] add {0} nvarchar(50) null", columnName));
+                        c.Execute($@"alter table [eventstore].[events] add {columnName} nvarchar(50) null");
                         throw new DataMisalignedException();
                     }, version));
             }
@@ -538,7 +538,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
 
             this.migrate = connection =>
@@ -557,24 +557,21 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             if (migrate == null)
             {
-                throw new ArgumentNullException("migrate");
+                throw new ArgumentNullException(nameof(migrate));
             }
             if (scope == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException(nameof(scope));
             }
             this.migrate = migrate;
             MigrationScope = scope;
             MigrationVersion = version;
         }
 
-        public string MigrationScope { get; private set; }
+        public string MigrationScope { get; }
 
-        public Version MigrationVersion { get; private set; }
+        public Version MigrationVersion { get; }
 
-        public MigrationResult Migrate(IDbConnection connection)
-        {
-            return migrate(connection);
-        }
+        public MigrationResult Migrate(IDbConnection connection) => migrate(connection);
     }
 }
