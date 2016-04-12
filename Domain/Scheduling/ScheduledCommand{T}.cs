@@ -174,10 +174,10 @@ namespace Microsoft.Its.Domain
                                     .Then(due => " due " + due)
                                     .ElseDefault(),
                              DeliveryPrecondition.IfNotNull()
-                                                 .Then(p => ", depends on " + p)
+                                                 .Then(p => $", depends on {p}")
                                                  .ElseDefault(),
                              Result.IfNotNull()
-                                   .Then(r => ", " + r)
+                                   .Then(r => $", {r}")
                                    .ElseDefault());
     }
 }
