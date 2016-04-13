@@ -3,7 +3,6 @@
 
 using Its.Validation;
 using Its.Validation.Configuration;
-using Test.Domain.Ordering;
 
 namespace Test.Domain.Ordering
 {

@@ -5,7 +5,6 @@ using System.Data.Entity;
 using Microsoft.Its.Domain.Tests;
 using NUnit.Framework;
 using Test.Domain.Ordering;
-using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

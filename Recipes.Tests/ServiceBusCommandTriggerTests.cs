@@ -21,7 +21,6 @@ using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
-using Test.Domain.Ordering;
 using Clock = Microsoft.Its.Domain.Clock;
 
 namespace Microsoft.Its.Cqrs.Recipes.Tests
