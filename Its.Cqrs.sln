@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{99442ACC-A914-4BDF-8DE5-D074FA0447F5}"
 EndProject
@@ -57,6 +57,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Domain.Banking", "Samples\Banking\Banking.Domain\Test.Domain.Banking.csproj", "{0388601C-B785-498D-92DE-5B8C376728C0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Domain.Banking.Tests", "Samples\Banking\Banking.Domain.Tests\Test.Domain.Banking.Tests.csproj", "{0896B13F-E931-4E6C-ADB1-19CEAD0AA612}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "databases", "databases", "{75561932-D550-43F0-AFCA-D25BF39A6DAC}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "CommandSchedulerDb", "CommandSchedulerDb\CommandSchedulerDb.sqlproj", "{D665ED47-517A-4D08-9B6C-AFB1F8D44CED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -120,6 +124,12 @@ Global
 		{0896B13F-E931-4E6C-ADB1-19CEAD0AA612}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0896B13F-E931-4E6C-ADB1-19CEAD0AA612}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0896B13F-E931-4E6C-ADB1-19CEAD0AA612}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D665ED47-517A-4D08-9B6C-AFB1F8D44CED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D665ED47-517A-4D08-9B6C-AFB1F8D44CED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D665ED47-517A-4D08-9B6C-AFB1F8D44CED}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{D665ED47-517A-4D08-9B6C-AFB1F8D44CED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D665ED47-517A-4D08-9B6C-AFB1F8D44CED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D665ED47-517A-4D08-9B6C-AFB1F8D44CED}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -140,6 +150,7 @@ Global
 		{A9C8A1EC-6647-44BA-9A93-D9EDC39F6385} = {0BF3A469-7636-402A-BD26-CAED0707384E}
 		{0388601C-B785-498D-92DE-5B8C376728C0} = {0C3BB7C4-4227-49CA-97A8-7D8A2B196A8A}
 		{0896B13F-E931-4E6C-ADB1-19CEAD0AA612} = {0C3BB7C4-4227-49CA-97A8-7D8A2B196A8A}
+		{D665ED47-517A-4D08-9B6C-AFB1F8D44CED} = {75561932-D550-43F0-AFCA-D25BF39A6DAC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		EnterpriseLibraryConfigurationToolBinariesPath = packages\Unity.2.1.505.2\lib\NET35
