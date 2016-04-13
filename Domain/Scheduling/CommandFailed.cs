@@ -32,7 +32,9 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public void Retry(TimeSpan? after = null) => RetryAfter = after ?? DefaultRetryBackoffPeriod;
 
-        internal bool IsCanceled { get; private set; }
+        public bool IsCanceled { get; private set; }
+
+        public bool WillBeRetried => RetryAfter != null;
 
         internal TimeSpan? RetryAfter { get; private set; }
 
