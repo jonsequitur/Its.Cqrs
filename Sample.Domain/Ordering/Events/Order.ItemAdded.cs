@@ -3,7 +3,6 @@
 
 using System.Linq;
 using Microsoft.Its.Domain;
-using Test.Domain.Ordering;
 
 namespace Test.Domain.Ordering
 {

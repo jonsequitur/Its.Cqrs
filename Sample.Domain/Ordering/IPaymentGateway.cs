@@ -3,7 +3,6 @@
 
 using System;
 using System.Threading.Tasks;
-using Test.Domain.Ordering;
 
 namespace Test.Domain.Ordering
 {
