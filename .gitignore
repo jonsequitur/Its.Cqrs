@@ -28,3 +28,4 @@ Blobs/
 NuGet/
 .vs/
 TestResults/
+*.dbmdl
