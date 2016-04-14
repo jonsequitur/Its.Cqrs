@@ -42,6 +42,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 .UseDependency<GetClockName>(_ => c => clockName)
                 .UseSqlStorageForScheduledCommands()
                 .UseSqlEventStore()
+                .UseInMemoryCommandTargetStore()
                 .TraceScheduledCommands();
         }
     }
