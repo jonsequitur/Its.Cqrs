@@ -14,8 +14,14 @@ using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
+    [TestFixture]
     public abstract class VirtualClockCommandSchedulingTests
     {
+        protected VirtualClockCommandSchedulingTests()
+        {
+            Command<CommandTarget>.AuthorizeDefault = (target, command) => true;
+        }
+
         [Test]
         public async Task Advancing_the_clock_blocks_until_triggered_commands_on_the_command_scheduler_are_completed()
         {
@@ -117,6 +123,48 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 .Select(c => c.Command.ETag)
                 .Should()
                 .ContainInOrder("first", "second", "third");
+        }
+
+        [Test]
+        public async Task When_a_command_is_delivered_and_throws_during_clock_advance_then_other_commands_are_still_delivered()
+        {
+            // arrange
+            var target = new CommandTarget(Any.CamelCaseName())
+            {
+                OnEnactCommand = async (commandTarget, command) =>
+                {
+                    await Task.Yield();
+
+                    if (command.ETag == "first")
+                    {
+                        throw new Exception("oops!");
+                    }
+                }
+            };
+            var store = Configuration.Current.Store<CommandTarget>();
+            await store.Put(target);
+            VirtualClock.Start();
+
+            // act
+            var scheduler = Configuration.Current.CommandScheduler<CommandTarget>();
+
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(etag: "first"),
+                                     Clock.Now().AddMinutes(1));
+
+            await scheduler.Schedule(target.Id,
+                                     new TestCommand(etag: "second"),
+                                     Clock.Now().AddMinutes(2));
+
+            VirtualClock.Current.AdvanceBy(1.Hours());
+
+            // assert
+            target = await store.Get(target.Id);
+
+            target.CommandsEnacted
+                  .Select(c => c.ETag)
+                  .Should()
+                  .Contain(etag => etag == "second");
         }
 
         protected abstract Configuration GetConfiguration();

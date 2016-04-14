@@ -102,7 +102,7 @@ namespace Microsoft.Its.Domain.Tests
             {
                 if (scheduler == null)
                 {
-                    throw new ArgumentNullException("scheduler");
+                    throw new ArgumentNullException(nameof(scheduler));
                 }
                 this.scheduler = scheduler;
             }
