@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using Microsoft.Its.Domain;
 using Its.Validation;
-using Test.Domain.Ordering;
 
 namespace Test.Domain.Ordering
 {

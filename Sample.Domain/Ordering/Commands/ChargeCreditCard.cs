@@ -7,8 +7,6 @@ using Its.Validation;
 using Its.Validation.Configuration;
 using Microsoft.Its.Domain;
 using Newtonsoft.Json;
-using Test.Domain.Ordering;
-using Test.Domain.Ordering;
 
 namespace Test.Domain.Ordering
 {

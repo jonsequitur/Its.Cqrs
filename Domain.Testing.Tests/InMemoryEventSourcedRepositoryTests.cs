@@ -10,7 +10,6 @@ using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Tests;
 using NUnit.Framework;
 using Test.Domain.Ordering;
-using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
