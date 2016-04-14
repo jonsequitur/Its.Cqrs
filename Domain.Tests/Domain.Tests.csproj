@@ -134,6 +134,7 @@
     <Compile Include="AuthorizationTests.cs" />
     <Compile Include="BloomFilterTests.cs" />
     <Compile Include="CommandContextTests.cs" />
+    <Compile Include="CommandFailedTests.cs" />
     <Compile Include="CommandScheduled_T_Tests.cs" />
     <Compile Include="CommandSchedulerIdempotencyTests.cs" />
     <Compile Include="CommandSchedulerPipelineTests.cs" />

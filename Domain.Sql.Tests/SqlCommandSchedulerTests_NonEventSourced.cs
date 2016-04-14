@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
@@ -237,7 +236,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var target = new CommandTarget(Any.CamelCaseName())
             {
-                OnHandleScheduledCommandError = (commandTarget, failed) =>
+                OnHandleScheduledCommandError = async (commandTarget, failed) =>
                                                 failed.Retry(after: 1.Milliseconds())
             };
             await store.Put(target);
@@ -261,7 +260,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var target = new CommandTarget(Any.CamelCaseName())
             {
-                OnHandleScheduledCommandError = (commandTarget, failed) =>
+                OnHandleScheduledCommandError = async (commandTarget, failed) =>
                                                 failed.Retry(after: 1.Hours())
             };
             await store.Put(target);
@@ -285,7 +284,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var target = new CommandTarget(Any.CamelCaseName())
             {
-                OnHandleScheduledCommandError = (commandTarget, failed) => failed.Cancel()
+                OnHandleScheduledCommandError = async (commandTarget, failed) => failed.Cancel()
             };
             await store.Put(target);
 
