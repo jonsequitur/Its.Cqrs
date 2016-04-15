@@ -60,9 +60,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Domain.Banking.Tests",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "databases", "databases", "{75561932-D550-43F0-AFCA-D25BF39A6DAC}"
 EndProject
-Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "CommandSchedulerDb", "CommandSchedulerDb\CommandSchedulerDb.sqlproj", "{D665ED47-517A-4D08-9B6C-AFB1F8D44CED}"
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "CommandSchedulerDb", "Databases\CommandSchedulerDb\CommandSchedulerDb.sqlproj", "{D665ED47-517A-4D08-9B6C-AFB1F8D44CED}"
 EndProject
-Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "EventStoreDb", "EventStoreDb\EventStoreDb.sqlproj", "{C5647C5B-424D-40A9-9257-464DFBF989BB}"
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "EventStoreDb", "Databases\EventStoreDb\EventStoreDb.sqlproj", "{C5647C5B-424D-40A9-9257-464DFBF989BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
