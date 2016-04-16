@@ -1459,17 +1459,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 AggregateId = Any.Guid()
             };
-            
+
+            var clock = new CommandScheduler.Clock
+            {
+                Name = clockName,
+                UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
+            };
+
+            using (var commandScheduler = new CommandSchedulerDbContext())
+            {
+                commandScheduler.Clocks.Add(clock);
+                commandScheduler.SaveChanges();
+            }
+
             var scheduledCommand = new ScheduledCommand<Order>(
                 aggregateId: create.AggregateId,
                 command: create,
                 dueTime: DateTimeOffset.Parse("2016-03-20 09:00:00 AM"))
             {
-                Clock = new CommandScheduler.Clock
-                {
-                    Name = clockName,
-                    UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
-                }
+                Clock = clock
             };
 
             // act
