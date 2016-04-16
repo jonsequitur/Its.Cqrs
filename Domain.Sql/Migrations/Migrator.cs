@@ -99,7 +99,6 @@ FROM sys.tables;";
                 return;
             }
 
-            using (var transaction = new TransactionScope())
             using (var appLock = new AppLock(context, "PocketMigrator", false))
             {
                 if (!appLock.IsAcquired)
@@ -122,7 +121,6 @@ FROM sys.tables;";
                                                         .Else(() => true))
                              .ForEach(migrator => ApplyMigration(migrator, connection));
 
-                    transaction.Complete();
                 }
                 catch (SqlException exception)
                 {
