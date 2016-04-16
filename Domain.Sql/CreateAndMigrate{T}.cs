@@ -60,12 +60,15 @@ namespace Microsoft.Its.Domain.Sql
                 return;
             }
 
+            // The password on the connection string will be lost as soon as the first query is executed on the context.
+            var connectionString = context.Database.Connection.ConnectionString;
+
             var databaseExists = context.Database.Exists();
 
             if (databaseExists)
             {
                 var databaseVersion = GetDatabaseVersion(context);
-         
+
                 if (ShouldRebuildDatabase(context, databaseVersion))
                 {
                     if (context.Database.Connection.State != ConnectionState.Closed)
@@ -79,7 +82,7 @@ namespace Microsoft.Its.Domain.Sql
 
             if (!databaseExists)
             {
-                var created = CreateDatabaseIfNotExists(context);
+                var created = CreateDatabaseIfNotExists(context, connectionString);
 
                 if (!created)
                 {
@@ -110,14 +113,14 @@ namespace Microsoft.Its.Domain.Sql
                           .ElseDefault();
         }
 
-        private bool CreateDatabaseIfNotExists(TContext context)
+        private bool CreateDatabaseIfNotExists(TContext context, string connectionString)
         {
             try
             {
                 if (context.IsAzureDatabase())
                 {
                     // create the database
-                    context.CreateAzureDatabase();
+                    context.CreateAzureDatabase(connectionString: connectionString);
 
                     // this triggers the initializer, which then throws because the schema hasn't been initialized, so we have to suspend initialization momentarily
                     bypassInitialization = true;
