@@ -582,16 +582,24 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var clockName = Any.CamelCaseName();
             var targetId = Any.CamelCaseName();
             var command = new CreateCommandTarget(targetId);
+            var clock = new CommandScheduler.Clock
+            {
+                Name = clockName,
+                UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
+            };
+
+            using (var commandScheduler = new CommandSchedulerDbContext())
+            {
+                commandScheduler.Clocks.Add(clock);
+                commandScheduler.SaveChanges();
+            }
+
             var scheduledCommand = new ScheduledCommand<CommandTarget>(
                 targetId: targetId,
-                command: command, 
+                command: command,
                 dueTime: DateTimeOffset.Parse("2016-03-20 09:00:00 AM"))
             {
-                Clock = new CommandScheduler.Clock
-                {
-                    Name = clockName,
-                    UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
-                }
+                Clock = clock
             };
 
             // act
