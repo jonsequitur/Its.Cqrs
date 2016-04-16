@@ -132,7 +132,7 @@ namespace Microsoft.Its.Domain.Sql
         /// | EDITION = { 'web' | 'business' | 'basic' | 'standard' | 'premium' }
         /// | SERVICE_OBJECTIVE = { 'shared' | 'basic' | 'S0' | 'S1' | 'S2' | 'P1' | 'P2' | 'P3' }
         /// </remarks>
-        public static void CreateAzureDatabase(
+        internal static void CreateAzureDatabase(
             this DbContext context, 
             int dbSizeInGB = 2, 
             string edition = "standard", 
