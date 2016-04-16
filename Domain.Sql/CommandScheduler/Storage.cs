@@ -234,11 +234,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 try
                 {
-                    using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-                    {
-                        await db.SaveChangesAsync();
-                        transaction.Complete();
-                    }
+                    await db.SaveChangesAsync();
                     break;
                 }
                 catch (DbUpdateException exception)
