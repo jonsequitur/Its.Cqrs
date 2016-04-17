@@ -46,7 +46,9 @@ namespace Microsoft.Its.Domain.Sql
             DbContext db,
             string lockResourceName,
             bool disposeDbContext = true)
-        {
+        {   
+            disposables = Disposable.Create(OnDispose);
+
             this.db = db;
             this.lockResourceName = lockResourceName;
             this.disposeDbContext = disposeDbContext;
@@ -96,8 +98,6 @@ SELECT @result";
             {
                 Debug.WriteLineIf(WriteDebugOutput, $"Failed to acquire app lock '{lockResourceName}' with code {result} (#{GetHashCode()})");
             }
-
-            disposables = Disposable.Create(OnDispose);
 
 #if DEBUG
             Active[this] = this;

@@ -7,7 +7,6 @@ using System.Data;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Transactions;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql.Migrations
