@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using FluentAssertions;
@@ -33,6 +32,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public void Init()
         {
             EventStoreDbContext.NameOrConnectionString = MigrationsTestEventStore.ConnectionString;
+            CommandSchedulerDbContext.NameOrConnectionString = CommandSchedulerConnectionString;
             Database.Delete(MigrationsTestEventStore.ConnectionString);
             Database.Delete(CommandSchedulerConnectionString);
             Database.Delete(MigrationsTestReadModels.ConnectionString);
@@ -120,7 +120,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 InitializeDatabase<MigrationsTestEventStore>(
                     new AnonymousMigrator(c =>
                     {
-                        c.Execute($@"alter table [eventstore].[events] add {columnName} nvarchar(50) null");
+                        c.Database.ExecuteSqlCommand($@"alter table [eventstore].[events] add {columnName} nvarchar(50) null");
                         throw new DataMisalignedException();
                     }, version));
             }
@@ -128,7 +128,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
             }
 
-            GetAppliedVersions<MigrationsTestEventStore>().Should().NotContain(s => s == version.ToString());
+            GetAppliedVersions<MigrationsTestEventStore>()
+                .Should()
+                .NotContain(s => s == version.ToString());
 
             using (var context = new MigrationsTestEventStore())
             {
@@ -163,11 +165,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             InitializeDatabase<MigrationsTestEventStore>(second, first);
 
-            calls.Should().ContainInOrder(new[]
-            {
-                "first",
-                "second"
-            });
+            calls.Should().ContainInOrder("first", "second");
         }
 
         [Test]
@@ -194,7 +192,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var migrator = new AnonymousMigrator(c =>
             {
-                c.Execute(string.Format(@"alter table [eventstore].[events] add {0} nvarchar(50) null", columnName));
+                c.Database.ExecuteSqlCommand($@"alter table [eventstore].[events] add {columnName} nvarchar(50) null");
                 barrier.SignalAndWait(10000);
             }, version);
 
@@ -415,6 +413,56 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
+        [Test]
+        public void ScriptBasedDbMigrator_applies_migrations_within_a_transaction()
+        {
+            //arrange
+            var scope = Any.CamelCaseName();
+            var etag = Any.CamelCaseName();
+
+            string sql = $@"INSERT [Scheduler].[ETag] 
+                                        ([Scope], 
+                                         [ETagValue],
+                                         [CreatedDomainTime],
+                                         [CreatedRealTime]) 
+                                 VALUES ('{scope}',
+                                         '{etag}',
+                                         '{Clock.Now()
+                }',
+                                         '{DateTimeOffset.UtcNow}')";
+
+            // migrator attempts to insert the same etag twice, which should trigger a unique constraint error
+            var migrator =
+                new ScriptBasedDbMigrator(sql + "\n" + sql, 
+                    scope: scope,
+                    migrationVersion: version);
+
+            // act
+            using (var db = new CommandSchedulerDbContext())
+            {
+                try
+                {
+                    db.EnsureDatabaseIsUpToDate(migrator);
+                }
+                catch (Exception exception) 
+                {
+                    Console.WriteLine(exception);
+                }
+            }
+
+            // assert
+            using (var db = new CommandSchedulerDbContext())
+            {
+                var etagsInserted = db.ETags
+                                      .Where(e => e.Scope == scope && e.ETagValue == etag).ToArray();
+                etagsInserted.Should().BeEmpty();
+            }
+
+            GetAppliedVersions<CommandSchedulerDbContext>()
+                .Should()
+                .NotContain(v => v == version.ToString());
+        }
+
         private static IEnumerable<string> GetAppliedVersions<TContext>()
             where TContext : DbContext, new()
         {
@@ -532,9 +580,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
     public class AnonymousMigrator : IDbMigrator
     {
-        private readonly Func<IDbConnection, MigrationResult> migrate;
+        private readonly Func<DbContext, MigrationResult> migrate;
 
-        public AnonymousMigrator(Action<IDbConnection> migrate, Version version, string scope = "Test")
+        public AnonymousMigrator(Action<DbContext> migrate, Version version, string scope = "Test")
         {
             if (scope == null)
             {
@@ -553,7 +601,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             MigrationScope = scope;
         }
 
-        public AnonymousMigrator(Func<IDbConnection, MigrationResult> migrate, Version version, string scope = "Test")
+        public AnonymousMigrator(Func<DbContext, MigrationResult> migrate, Version version, string scope = "Test")
         {
             if (migrate == null)
             {
@@ -572,6 +620,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public Version MigrationVersion { get; }
 
-        public MigrationResult Migrate(IDbConnection connection) => migrate(connection);
+        public MigrationResult Migrate(DbContext connection) => migrate(connection);
     }
 }

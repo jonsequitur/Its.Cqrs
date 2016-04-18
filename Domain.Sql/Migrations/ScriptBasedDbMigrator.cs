@@ -3,6 +3,7 @@
 
 using System;
 using System.Data;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -73,14 +74,18 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
         public Version MigrationVersion { get; }
 
-        public MigrationResult Migrate(IDbConnection connection)
+        public MigrationResult Migrate(DbContext context)
         {
-            using (var command = connection.CreateCommand())
+            var originalTimeout = context.Database.CommandTimeout;
+
+            try
             {
-                command.CommandType = CommandType.Text;
-                command.CommandText = SqlText;
-                command.CommandTimeout = 600;
-                command.ExecuteNonQuery();
+                context.Database.CommandTimeout = 600;
+                context.Database.ExecuteSqlCommand(SqlText);
+            }
+            finally
+            {
+                context.Database.CommandTimeout = originalTimeout;
             }
 
             return new MigrationResult
