@@ -81,7 +81,9 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             try
             {
                 context.Database.CommandTimeout = 600;
-                context.Database.ExecuteSqlCommand(SqlText);
+                context.Database.ExecuteSqlCommand(
+                    TransactionalBehavior.EnsureTransaction,
+                    SqlText);
             }
             finally
             {
