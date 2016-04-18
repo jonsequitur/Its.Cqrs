@@ -10,13 +10,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
     internal class SetUpDbConfiguration
     {
         [SetUp]
-        private void SetUp()
+        public void SetUp()
         {
             DbConfiguration.SetConfiguration(new TestDbConfiguration());
         }
 
         [TearDown]
-        private void TearDown()
+        public void TearDown()
         {
             Console.WriteLine("SetUpFixture.TearDown");
         }
