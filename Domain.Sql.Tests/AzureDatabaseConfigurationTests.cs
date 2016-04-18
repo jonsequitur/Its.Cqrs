@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using FluentAssertions;
 using Its.Configuration;
 using Microsoft.Its.Domain.Sql.Migrations;
+using NCrunch.Framework;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using Test.Domain.Ordering.Projections;
@@ -11,6 +12,7 @@ using Test.Domain.Ordering.Projections;
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
+    [ExclusivelyUses("ItsCqrsMigrationsTestEventStore", "ItsCqrsMigrationsTestReadModels")]
     public class AzureDatabaseConfigurationTests
     {
         [TestFixtureSetUp]
@@ -53,7 +55,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        [Ignore("Integration tests"), Category("Integration tests")]
+        [Ignore("Integration tests"), NUnit.Framework.Category("Integration tests")]
         public void AzureSqlDatabase_EventStore_can_be_configured_using_a_migration()
         {
             var databaseSettings = Settings.Get<AzureSqlDatabaseSettings>();
@@ -80,7 +82,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        [Ignore("Integration tests"), Category("Integration tests")]
+        [Ignore("Integration tests"), NUnit.Framework.Category("Integration tests")]
         public void AzureSqlDatabase_ReadModel_can_be_configured_using_a_migration()
         {
             var databaseSettings = Settings.Get<AzureSqlDatabaseSettings>();
