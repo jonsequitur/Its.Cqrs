@@ -27,7 +27,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public TestDbConfiguration()
         {
             SetExecutionStrategy("System.Data.SqlClient",
-                                 () => new SqlAzureExecutionStrategy());
+                                 () =>
+                                 {
+                                     if (!UseSqlAzureExecutionStrategy)
+                                     {
+                                         return new DefaultExecutionStrategy();
+                                     }
+
+                                     return new SqlAzureExecutionStrategy();
+                                 });
         }
 
         public static bool UseSqlAzureExecutionStrategy { get; set; }
