@@ -63,7 +63,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
             var sql =
                 $@"
-alter database {context.Database} 
+alter database {context.Database.Connection.Database} 
 modify (MAXSIZE = {MaxSize},
         EDITION = '{Edition}',
         SERVICE_OBJECTIVE = '{ServiceObjective}')";
