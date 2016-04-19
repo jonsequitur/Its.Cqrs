@@ -208,9 +208,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\CommandSchedulerDbContext-0_14_0.sql" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Migrations\EventStoreDbContext-0_14_11.sql" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

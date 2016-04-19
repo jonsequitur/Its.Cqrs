@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain.Sql
 
         public Version MigrationVersion { get; }
 
-        public MigrationResult Migrate(IDbConnection connection)
+        public MigrationResult Migrate(DbContext context)
         {
             return new MigrationResult
             {
