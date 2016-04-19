@@ -7,7 +7,6 @@ using System.Data;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Transactions;
 using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql.Migrations
@@ -99,7 +98,6 @@ FROM sys.tables;";
                 return;
             }
 
-            using (var transaction = new TransactionScope())
             using (var appLock = new AppLock(context, "PocketMigrator", false))
             {
                 if (!appLock.IsAcquired)
@@ -120,9 +118,8 @@ FROM sys.tables;";
                              .Where(m => appliedVersions.IfContains(m.MigrationScope)
                                                         .Then(a => m.MigrationVersion > a.MigrationVersion)
                                                         .Else(() => true))
-                             .ForEach(migrator => ApplyMigration(migrator, connection));
+                             .ForEach(migrator => ApplyMigration(migrator, context));
 
-                    transaction.Complete();
                 }
                 catch (SqlException exception)
                 {
@@ -176,13 +173,13 @@ WHERE rowNumber = 1")
             public Version MigrationVersion { get; set; }
         }
 
-        private static void ApplyMigration(IDbMigrator migrator, IDbConnection connection)
+        private static void ApplyMigration(IDbMigrator migrator, DbContext connection)
         {
             var result = migrator.Migrate(connection);
 
             if (result.MigrationWasApplied)
             {
-                connection.Execute(
+                connection.Database.ExecuteSqlCommand(
                     @"INSERT INTO PocketMigrator.AppliedMigrations
              (MigrationScope,
               MigrationVersion,
@@ -193,15 +190,9 @@ WHERE rowNumber = 1")
              @migrationVersion,
              @log,
              GetDate())",
-                    parameters: new Dictionary<string, object>
-                    {
-                        { "@migrationScope", migrator.MigrationScope },
-                        { "@migrationVersion", migrator.MigrationVersion.ToString() },
-                        {
-                            "@log",
-                            $"{migrator.GetType().AssemblyQualifiedName}\n\n{result.Log}".Trim()
-                        }
-                    });
+                    new SqlParameter("@migrationScope", migrator.MigrationScope),
+                    new SqlParameter("@migrationVersion", migrator.MigrationVersion.ToString()),
+                    new SqlParameter("@log", $"{migrator.GetType().AssemblyQualifiedName}\n\n{result.Log}".Trim()));
             }
         }
     }

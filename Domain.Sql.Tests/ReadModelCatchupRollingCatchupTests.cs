@@ -31,6 +31,18 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [TestFixture]
     public class RollingCatchupTest : EventStoreDbTest
     {
+        public override void SetUp()
+        {
+            TestDbConfiguration.UseSqlAzureExecutionStrategy = false;
+            base.SetUp();
+        }
+
+        public override void TearDown()
+        {
+            TestDbConfiguration.UseSqlAzureExecutionStrategy = true;
+            base.TearDown();
+        }
+
         [Test]
         public void Events_committed_to_the_event_store_are_caught_up_by_multiple_independent_read_model_stores()
         {
@@ -428,7 +440,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     catchup1StatusReports.Add(s);
                     Console.WriteLine("catchup1: " + s);
 
-                    // when we've processed one event, cancel this catchup
+                        // when we've processed one event, cancel this catchup
                     dbConnection1.Close();
                 });
                 catchup2.Progress.ForEachAsync(s =>
@@ -448,7 +460,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                                   });
 
                 var waitingOnEventId = HighestEventId + numberOfEventsToWrite;
-                Console.WriteLine(string.Format("waiting on event id {0} to be processed", waitingOnEventId));
+                Console.WriteLine($"waiting on event id {waitingOnEventId} to be processed");
                 catchup1.Progress.Merge(catchup2.Progress)
                         .FirstAsync(s => s.CurrentEventId == waitingOnEventId)
                         .Timeout(DefaultTimeout)

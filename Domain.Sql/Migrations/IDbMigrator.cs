@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Data;
+using System.Data.Entity;
 
 namespace Microsoft.Its.Domain.Sql.Migrations
 {
@@ -19,8 +19,8 @@ namespace Microsoft.Its.Domain.Sql.Migrations
         Version MigrationVersion { get; }
 
         /// <summary>
-        /// Migrates a database using the specified connection.
+        /// Migrates a database using the specified context.
         /// </summary>
-        MigrationResult Migrate(IDbConnection connection);
+        MigrationResult Migrate(DbContext context);
     }
 }
