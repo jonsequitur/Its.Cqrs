@@ -11,7 +11,6 @@ Post-Deployment Script Template
 */
 DECLARE @migrations TABLE
 (
-	[Sequence] [bigint] NOT NULL,
 	[MigrationScope] [nvarchar](25) NOT NULL,
 	[MigrationVersion] [nvarchar](25) NOT NULL,
 	[Log] [nvarchar](max) NULL
@@ -19,8 +18,8 @@ DECLARE @migrations TABLE
 
 SET NOCOUNT ON;
 
-INSERT @migrations ([Sequence], [MigrationScope], [MigrationVersion], [Log]) 
-VALUES (1, N'DbContext', N'0.0.0.0', N'Microsoft.Its.Domain.Sql.Migrations.ScriptBasedDbMigrator, Microsoft.Its.Domain.Sql, Version=0.14.0.0, Culture=neutral, PublicKeyToken=null
+INSERT @migrations ([MigrationScope], [MigrationVersion], [Log]) 
+VALUES (N'DbContext', N'0.0.0.0', N'Microsoft.Its.Domain.Sql.Migrations.ScriptBasedDbMigrator, Microsoft.Its.Domain.Sql, Version=0.14.0.0, Culture=neutral, PublicKeyToken=null
 
 IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = ''PocketMigrator'')) 
 BEGIN
@@ -44,8 +43,8 @@ BEGIN
     ) ON [PRIMARY]
 END')
 
-INSERT @migrations ([Sequence], [MigrationScope], [MigrationVersion], [Log]) 
-VALUES (2, N'CommandSchedulerDbContext', N'0.13.8', N'Microsoft.Its.Domain.Sql.Migrations.ScriptBasedDbMigrator, Microsoft.Its.Domain.Sql, Version=0.14.0.0, Culture=neutral, PublicKeyToken=null
+INSERT @migrations ([MigrationScope], [MigrationVersion], [Log]) 
+VALUES (N'CommandSchedulerDbContext', N'0.13.8', N'Microsoft.Its.Domain.Sql.Migrations.ScriptBasedDbMigrator, Microsoft.Its.Domain.Sql, Version=0.14.0.0, Culture=neutral, PublicKeyToken=null
 
 IF NOT EXISTS (SELECT Id FROM [Scheduler].[Clock] 
 			   WHERE Name LIKE ''default'')
@@ -56,8 +55,8 @@ IF NOT EXISTS (SELECT Id FROM [Scheduler].[Clock]
 	(''default'', GetDate(), GetDate())
   END')
 
-INSERT @migrations ([Sequence], [MigrationScope], [MigrationVersion], [Log]) 
-VALUES (3, N'CommandSchedulerDbContext', N'0.14.0', N'Microsoft.Its.Domain.Sql.Migrations.ScriptBasedDbMigrator, Microsoft.Its.Domain.Sql, Version=0.14.0.0, Culture=neutral, PublicKeyToken=null
+INSERT @migrations ([MigrationScope], [MigrationVersion], [Log]) 
+VALUES (N'CommandSchedulerDbContext', N'0.14.0', N'Microsoft.Its.Domain.Sql.Migrations.ScriptBasedDbMigrator, Microsoft.Its.Domain.Sql, Version=0.14.0.0, Culture=neutral, PublicKeyToken=null
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE object_id = OBJECT_ID(''Scheduler.ETag''))
 BEGIN
@@ -80,8 +79,8 @@ BEGIN
     )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 END')
 
-INSERT @migrations ([Sequence], [MigrationScope], [MigrationVersion], [Log]) 
-VALUES (4, N'CommandSchedulerDbContext', N'0.14.11', N'Microsoft.Its.Domain.Sql.Migrations.ScriptBasedDbMigrator, Microsoft.Its.Domain.Sql, Version=0.14.0.0, Culture=neutral, PublicKeyToken=null
+INSERT @migrations ([MigrationScope], [MigrationVersion], [Log]) 
+VALUES (N'CommandSchedulerDbContext', N'0.14.11', N'Microsoft.Its.Domain.Sql.Migrations.ScriptBasedDbMigrator, Microsoft.Its.Domain.Sql, Version=0.14.0.0, Culture=neutral, PublicKeyToken=null
 
 IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name=''IX_Scope_and_ETag'' AND object_id = OBJECT_ID(''Scheduler.ETag''))
 BEGIN
@@ -90,46 +89,14 @@ BEGIN
     	[Scope] ASC,
     	[ETagValue] ASC
     )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-END
-
-IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name=''IX_Temp'' AND object_id = OBJECT_ID(''Scheduler.ScheduledCommand''))
-BEGIN
-	CREATE UNIQUE NONCLUSTERED INDEX [IX_Temp] on [Scheduler].[ScheduledCommand]
-	(
-	[AggregateId] ASC,
-	[SequenceNumber] ASC
-	)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-
-	ALTER TABLE [Scheduler].[Error] DROP CONSTRAINT [FK_Scheduler.Error_Scheduler.ScheduledCommand_ScheduledCommand_AggregateId_ScheduledCommand_SequenceNumber]
-
-	ALTER TABLE [Scheduler].[ScheduledCommand] DROP CONSTRAINT [PK_Scheduler.ScheduledCommand]
-
-	ALTER TABLE [Scheduler].[ScheduledCommand] ADD  CONSTRAINT [PK_Scheduler.ScheduledCommand] PRIMARY KEY NONCLUSTERED 
-	(
-	[AggregateId] ASC,
-	[SequenceNumber] ASC
-	)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-
-	DROP INDEX [IX_Temp] on [Scheduler].[ScheduledCommand]
-	
-	CREATE CLUSTERED INDEX [IX_AppliedTime_Clock_Id_FinalAttemptTime_DueTime] ON 
-	[Scheduler].[ScheduledCommand] 
-		([AppliedTime], 
-		 [Clock_Id], 
-		 [FinalAttemptTime], 
-		 [DueTime]) 
-	WITH (ONLINE = OFF)
 END')
 
 
 --------------------
 
-SET IDENTITY_INSERT [PocketMigrator].[AppliedMigrations] ON 
 merge [PocketMigrator].[AppliedMigrations] as target
 using @migrations as source
 on (target.[MigrationScope] = source.[MigrationScope] and target.[MigrationVersion] = source.[MigrationVersion])
 when not matched then
-   insert ([Sequence], [MigrationScope], [MigrationVersion], [Log], [AppliedDate])
-   values (source.[Sequence], source.[MigrationScope], source.[MigrationVersion], source.[Log], getdate());
-
-SET IDENTITY_INSERT [PocketMigrator].[AppliedMigrations] OFF
+   insert ([MigrationScope], [MigrationVersion], [Log], [AppliedDate])
+   values (source.[MigrationScope], source.[MigrationVersion], source.[Log], getdate());

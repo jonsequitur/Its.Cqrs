@@ -15,8 +15,8 @@
 
 
 GO
-CREATE CLUSTERED INDEX [IX_AppliedTime_Clock_Id_FinalAttemptTime_DueTime]
-    ON [Scheduler].[ScheduledCommand]([AppliedTime] ASC, [Clock_Id] ASC, [FinalAttemptTime] ASC, [DueTime] ASC);
+CREATE CLUSTERED INDEX [IX_AggregateId_DueTime_Clock_Id_AppliedTime_FinalAttemptTime]
+    ON [Scheduler].[ScheduledCommand]([AggregateId] ASC, [DueTime] ASC, [Clock_Id] ASC, [AppliedTime] ASC, [FinalAttemptTime] ASC);
 
 
 GO
