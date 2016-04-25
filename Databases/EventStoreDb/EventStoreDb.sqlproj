@@ -4,16 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <Name>CommandSchedulerDb</Name>
+    <Name>EventStoreDb</Name>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectVersion>4.1</ProjectVersion>
-    <ProjectGuid>{d665ed47-517a-4d08-9b6c-afb1f8d44ced}</ProjectGuid>
-    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql120DatabaseSchemaProvider</DSP>
+    <ProjectGuid>{c5647c5b-424d-40a9-9257-464dfbf989bb}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.SqlAzureDatabaseSchemaProvider</DSP>
     <OutputType>Database</OutputType>
     <RootPath>
     </RootPath>
-    <RootNamespace>CommandSchedulerDb</RootNamespace>
-    <AssemblyName>CommandSchedulerDb</AssemblyName>
+    <RootNamespace>EventStoreDb</RootNamespace>
+    <AssemblyName>EventStoreDb</AssemblyName>
     <ModelCollation>1033,CI</ModelCollation>
     <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
     <DeployToDatabase>True</DeployToDatabase>
@@ -59,25 +59,19 @@
   <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
   <ItemGroup>
     <Folder Include="Properties" />
-    <Folder Include="Scheduler\" />
-    <Folder Include="Scheduler\Tables\" />
-    <Folder Include="Events\" />
-    <Folder Include="Events\Tables\" />
+    <Folder Include="EventStore\" />
+    <Folder Include="EventStore\Tables\" />
     <Folder Include="PocketMigrator\" />
     <Folder Include="PocketMigrator\Tables\" />
     <Folder Include="Security\" />
   </ItemGroup>
   <ItemGroup>
-    <Build Include="Scheduler\Tables\Clock.sql" />
-    <Build Include="Scheduler\Tables\ClockMapping.sql" />
-    <Build Include="Scheduler\Tables\ScheduledCommand.sql" />
-    <Build Include="Scheduler\Tables\Error.sql" />
-    <Build Include="Events\Tables\ReadModelInfo.sql" />
-    <Build Include="Events\Tables\EventHandlingErrors.sql" />
+    <Build Include="EventStore\Tables\Events.sql" />
     <Build Include="PocketMigrator\Tables\AppliedMigrations.sql" />
-    <Build Include="Scheduler\Tables\ETag.sql" />
-    <Build Include="Security\Events.sql" />
+    <Build Include="Security\EventStore.sql" />
     <Build Include="Security\PocketMigrator.sql" />
-    <Build Include="Security\Scheduler.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <PostDeploy Include="Script.PostDeploymentAppliedMigrations.sql" />
   </ItemGroup>
 </Project>
