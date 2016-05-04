@@ -8,6 +8,7 @@ namespace Microsoft.Its.Domain
     /// <summary>
     /// Reserves values in order to help enforce unique values within the system.
     /// </summary>
+    [Obsolete("Please use IReservationService instead.")]
     public interface ISynchronousReservationService
     {
         /// <summary>
