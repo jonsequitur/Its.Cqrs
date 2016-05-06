@@ -1,9 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
+using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -21,12 +24,34 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void ToStorableEvent_uses_EventStreamName_property_if_present_on_non_domain_event_classes()
         {
-             var e = new Delivered 
-             {
-                 EventStreamName = Any.Word()
-             };
+            var e = new Delivered
+            {
+                EventStreamName = Any.Word()
+            };
 
             e.ToStorableEvent().StreamName.Should().Be(e.EventStreamName);
+        }
+
+        [Test]
+        public void ToStorableEvent_throws_when_event_is_null()
+        {
+            Event e = null;
+
+            Action toStorableEvent = () => e.ToStorableEvent();
+
+            toStorableEvent.ShouldThrow<ArgumentNullException>();
+        }
+
+        [Test]
+        public void ToStorableEvent_does_not_throw_when_actor_is_null()
+        {
+            Event e = new Annotated<CustomerAccount>("hi");
+
+            e.SetActor((string) null);
+
+            Action toStorableEvent = () => e.ToStorableEvent();
+
+            toStorableEvent.ShouldNotThrow();
         }
     }
 }

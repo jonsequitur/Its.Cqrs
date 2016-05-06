@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain
                              .IfTypeIs<IDictionary<string, object>>()
                              .Then(dict =>
                                    dict.IfContains("Actor")
-                                       .Then(a => a.ToString())))
+                                       .Then(a => a?.ToString())))
              .Else(() => null);
 
         public static void SetActor(

@@ -23,6 +23,11 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="domainEvent">The domain event.</param>
         public static StorableEvent ToStorableEvent(this IEvent domainEvent)
         {
+            if (domainEvent == null)
+            {
+                throw new ArgumentNullException(nameof(domainEvent));
+            }
+
             string eventStreamName = null;
             var aggregateType = domainEvent.AggregateType();
             eventStreamName = aggregateType != null
