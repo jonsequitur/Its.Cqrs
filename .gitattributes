@@ -1,0 +1,7 @@
+* text=auto
+*.cs diff=csharp
+*.sql diff
+*.xml diff
+*.csproj -text merge=union 
+*.dbproj -text merge=union 
+*.sln -text merge=union 
