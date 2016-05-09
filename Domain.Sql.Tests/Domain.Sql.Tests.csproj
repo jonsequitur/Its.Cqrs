@@ -198,11 +198,7 @@
       <Project>{99442ACC-A914-4BDF-8DE5-D074FA0447F5}</Project>
       <Name>Domain</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Sample.Domain.Api\Test.Domain.Ordering.Api.csproj">
-      <Project>{D561CDB3-2C8F-48F1-9F19-A0CD77F7C726}</Project>
-      <Name>Test.Domain.Ordering.Api</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Sample.Domain\Test.Domain.Ordering.csproj">
+    <ProjectReference Include="..\Test domains\Ordering.Domain\Test.Domain.Ordering.csproj">
       <Project>{FEAF4C39-FA30-4718-B781-9BEC29E87D86}</Project>
       <Name>Test.Domain.Ordering</Name>
     </ProjectReference>

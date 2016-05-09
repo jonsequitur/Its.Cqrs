@@ -201,7 +201,11 @@
       <Project>{99442acc-a914-4bdf-8de5-d074fa0447f5}</Project>
       <Name>Domain</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Sample.Domain\Test.Domain.Ordering.csproj">
+    <ProjectReference Include="..\Test domains\Banking.Domain\Test.Domain.Banking.csproj">
+      <Project>{0388601C-B785-498D-92DE-5B8C376728C0}</Project>
+      <Name>Test.Domain.Banking</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Test domains\Ordering.Domain\Test.Domain.Ordering.csproj">
       <Project>{FEAF4C39-FA30-4718-B781-9BEC29E87D86}</Project>
       <Name>Test.Domain.Ordering</Name>
     </ProjectReference>
