@@ -5,19 +5,17 @@ using System;
 using FluentAssertions;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Recipes;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NUnit.Framework;
-using Test.Domain.Banking;
 using Test.Domain.Banking.Tests.Infrastructure;
 
-namespace Sample.Banking.Domain.Tests
+namespace Test.Domain.Banking.Tests
 {
-    [TestClass, TestFixture]
+    [TestFixture]
     public class AccountClosingTests
     {
         private CheckingAccount account;
 
-        [SetUp, TestInitialize]
+        [SetUp]
         public void SetUp()
         {
             account = new CheckingAccount(Guid.NewGuid(), new[]
