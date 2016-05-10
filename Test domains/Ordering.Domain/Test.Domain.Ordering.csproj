@@ -54,10 +54,6 @@
       <HintPath>..\..\packages\Its.Validation.1.4.3\lib\net45\Its.Validation.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Its.Log, Version=2.7.0.0, Culture=neutral, PublicKeyToken=76490b1978d4e7b6, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Microsoft.Its.Log.2.7.1-beta\lib\net40\Microsoft.Its.Log.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
