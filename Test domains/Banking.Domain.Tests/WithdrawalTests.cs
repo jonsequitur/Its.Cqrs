@@ -29,7 +29,7 @@ namespace Test.Domain.Banking.Tests
                     Amount = Any.PositiveInt(100)
                 }
             });
-
+            
             Authorization.AuthorizeAllCommands();
         }
 
