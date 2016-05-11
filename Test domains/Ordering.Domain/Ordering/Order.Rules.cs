@@ -24,14 +24,10 @@ namespace Test.Domain.Ordering
             Validate.That<Order>(o => o.IsShipped)
                     .WithErrorMessage((evaluation, order) => "The order has not yet been shipped.");
 
-        public static IValidationRule<Order> BalanceIsAtLeast(decimal amount)
-        {
-            return Validate.That<Order>(order => order.Balance >= amount)
-                           .WithErrorMessage((evaluation, order) =>
-                                             string.Format("The amount paid ({0}) cannot exceed the order balance ({1})",
-                                                           amount,
-                                                           order.Balance));
-        }
+        public static IValidationRule<Order> BalanceIsAtLeast(decimal amount) =>
+            Validate.That<Order>(order => order.Balance >= amount)
+                    .WithErrorMessage((evaluation, order) =>
+                                      $"The amount paid ({amount}) cannot exceed the order balance ({order.Balance})");
 
         public static readonly IValidationRule<Order> FulfillmentInfoIsProvided =
             Validate.That<Order>(o => !string.IsNullOrWhiteSpace(o.CustomerName))
