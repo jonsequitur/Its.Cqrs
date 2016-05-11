@@ -114,32 +114,6 @@ namespace Microsoft.Its.Domain.Sql
         public async Task<TAggregate> GetAsOfDate(Guid aggregateId, DateTimeOffset asOfDate) => await Get(aggregateId, asOfDate: asOfDate);
 
         /// <summary>
-        /// Refreshes an aggregate with the latest events from the event stream.
-        /// </summary>
-        /// <param name="aggregate">The aggregate to refresh.</param>
-        /// <remarks>Events not present in the in-memory aggregate will not be re-fetched from the event store.</remarks>
-        public async Task Refresh(TAggregate aggregate)
-        {
-            IEvent[] events;
-
-            using (var context = GetEventStoreContext())
-            {
-                var streamName = AggregateType<TAggregate>.EventStreamName;
-
-                var storedEvents = await context.Events
-                                                .Where(e => e.StreamName == streamName)
-                                                .Where(e => e.AggregateId == aggregate.Id)
-                                                .Where(e => e.SequenceNumber > aggregate.Version)
-                                                .ToArrayAsync();
-                events = storedEvents
-                    .Select(e => e.ToDomainEvent())
-                    .ToArray();
-            }
-
-            aggregate.Update(events);
-        }
-
-        /// <summary>
         ///     Persists the state of the specified aggregate by adding new events to the event store.
         /// </summary>
         /// <param name="aggregate">The aggregate to persist.</param>
@@ -210,7 +184,7 @@ namespace Microsoft.Its.Domain.Sql
                     if (exception.IsConcurrencyException())
                     {
                         var message =
-                            $"There was a concurrency violation.\n  Existing:\n {existingEvents.Select(e => e.ToDomainEvent()).ToDiagnosticJson()}\n  Attempted:\n{events.ToDiagnosticJson()}";
+                            $"There was a concurrency violation while saving a {typeof(TAggregate)}.\n  Existing:\n {existingEvents.Select(e => e.ToDomainEvent()).ToDiagnosticJson()}\n  Attempted:\n{events.ToDiagnosticJson()}";
                         throw new ConcurrencyException(message, events, exception);
                     }
                     throw;

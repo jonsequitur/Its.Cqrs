@@ -124,6 +124,7 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="dbSizeInGB">Size of database in GB</param>
         /// <param name="edition">Edition of database</param>
         /// <param name="serviceObjective">Service objective of database</param>
+        /// <param name="connectionString">Optional connection string to use instead of taking it off of <paramref name="context"/></param>
         /// <exception cref="System.ArgumentException">Not Azure database based on ConnectionString</exception>
         /// <remarks>
         /// See https://msdn.microsoft.com/en-us/library/dn268335.aspx for more info.
@@ -131,18 +132,19 @@ namespace Microsoft.Its.Domain.Sql
         /// | EDITION = { 'web' | 'business' | 'basic' | 'standard' | 'premium' }
         /// | SERVICE_OBJECTIVE = { 'shared' | 'basic' | 'S0' | 'S1' | 'S2' | 'P1' | 'P2' | 'P3' }
         /// </remarks>
-        public static void CreateAzureDatabase(
+        internal static void CreateAzureDatabase(
             this DbContext context, 
             int dbSizeInGB = 2, 
             string edition = "standard", 
-            string serviceObjective = "S0")
+            string serviceObjective = "S0",
+            string connectionString = null)
         {
             if (!context.IsAzureDatabase())
             {
                 throw new ArgumentException("Not Azure database based on ConnectionString");
             }
 
-            var connstrBldr = new SqlConnectionStringBuilder(context.Database.Connection.ConnectionString)
+            var connstrBldr = new SqlConnectionStringBuilder(connectionString ?? context.Database.Connection.ConnectionString)
             {
                 InitialCatalog = "master"
             };

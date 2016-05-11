@@ -268,11 +268,11 @@ namespace Microsoft.Its.Domain.Tests
                 await player.ApplyAsync(joinGame).AndSave();
             }
 
-            await repo.Refresh(it);
+            it =  await repo.GetLatest(it.Id);
 
             await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.SayMarco()).AndSave();
 
-            await repo.Refresh(it);
+            it =  await repo.GetLatest(it.Id);
 
             it.Events()
               .OfType<MarcoPoloPlayerWhoIsIt.HeardPolo>()
@@ -336,7 +336,7 @@ namespace Microsoft.Its.Domain.Tests
 
             VirtualClock.Current.AdvanceBy(TimeSpan.FromMinutes(1));
 
-            await configuration.Repository<MarcoPoloPlayerWhoIsIt>().Refresh(it);
+            it = await configuration.Repository<MarcoPoloPlayerWhoIsIt>().GetLatest(it.Id);
 
             it.Events()
               .OfType<MarcoPoloPlayerWhoIsIt.SaidMarco>()

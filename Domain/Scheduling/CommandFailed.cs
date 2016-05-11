@@ -4,6 +4,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -29,9 +30,11 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Retries the scheduled command after the specified amount of time.
         /// </summary>
-        public void Retry(TimeSpan after) => RetryAfter = after;
+        public void Retry(TimeSpan? after = null) => RetryAfter = after ?? DefaultRetryBackoffPeriod;
 
-        internal bool IsCanceled { get; private set; }
+        public bool IsCanceled { get; private set; }
+
+        public bool WillBeRetried => RetryAfter != null;
 
         internal TimeSpan? RetryAfter { get; private set; }
 
@@ -39,6 +42,12 @@ namespace Microsoft.Its.Domain
         /// Gets or sets the number of previous attempts that have been made to deliver the scheduled command.
         /// </summary>
         public int NumberOfPreviousAttempts => ScheduledCommand.NumberOfPreviousAttempts;
+
+        /// <summary>
+        /// Gets the default retry backoff period.
+        /// </summary>
+        public TimeSpan DefaultRetryBackoffPeriod =>
+             TimeSpan.FromMinutes(Math.Pow(NumberOfPreviousAttempts + 1, 2));
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
@@ -50,7 +59,9 @@ namespace Microsoft.Its.Domain
             string.Format("Failed due to: {1} {0}",
                           IsCanceled
                               ? " (and canceled)"
-                              : $" (will retry after {RetryAfter})",
+                              : RetryAfter.IfNotNull()
+                                          .Then(r => $" (will retry after {r})")
+                                          .Else(() => " (won't retry)"),
                           Exception.FindInterestingException().Message);
 
         internal static CommandFailed Create<TCommand>(

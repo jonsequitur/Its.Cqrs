@@ -3,7 +3,7 @@
 
 using System;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
@@ -58,6 +58,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 await SaveScheduledCommandToDatabase(db,
                                                      storedScheduledCommand,
                                                      scheduledCommand);
+     
             }
 
             scheduledCommand.IfTypeIs<ScheduledCommand<TAggregate>>()
@@ -220,24 +221,22 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             ScheduledCommand storedScheduledCommand,
             IScheduledCommand<TAggregate> scheduledCommand)
         {
-            db.ScheduledCommands.Add(storedScheduledCommand);
-            db.ETags.Add(new ETag
+            var etag = new ETag
             {
                 Scope = scheduledCommand.TargetId,
                 ETagValue = scheduledCommand.Command.ETag,
                 CreatedDomainTime = Domain.Clock.Now(),
                 CreatedRealTime = DateTimeOffset.UtcNow
-            });
+            };
 
             while (true)
             {
                 try
                 {
-                    await db.SaveChangesAsync();
-
+                    await InsertScheduledCommandAndETag(db, storedScheduledCommand, etag);
                     break;
                 }
-                catch (DbUpdateException exception)
+                catch (Exception exception)
                 {
                     if (!exception.IsConcurrencyException())
                     {
@@ -274,6 +273,71 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             scheduledCommand.Result = new CommandScheduled(
                 scheduledCommand,
                 storedScheduledCommand.Clock);
+        }
+
+        private static async Task InsertScheduledCommandAndETag(CommandSchedulerDbContext db, ScheduledCommand storedScheduledCommand, ETag etag)
+        {
+            var sql = @"
+INSERT [Scheduler].[ScheduledCommand] 
+(
+    [AggregateId], 
+    [SequenceNumber], 
+    [AggregateType], 
+    [CreatedTime], 
+    [DueTime], 
+    [SerializedCommand], 
+    [Attempts], 
+    [Clock_Id]
+)
+VALUES 
+(
+    @aggregateId,
+    @sequenceNumber,
+    @aggregateType,
+    @createdTime,
+    @dueTime,
+    @serializedCommand,
+    @attempts,
+    @clock_Id
+)
+
+INSERT [Scheduler].[ETag]
+(
+    [Scope], 
+    [ETagValue], 
+    [CreatedDomainTime], 
+    [CreatedRealTime]
+)
+VALUES 
+(
+    @scope,
+    @eTagValue,
+    @createdDomainTime,
+    @createdRealTime
+)";
+
+            var parameters = new[]
+            {
+                // ScheduledCommand
+                new SqlParameter("@aggregateId", storedScheduledCommand.AggregateId),
+                new SqlParameter("@sequenceNumber", storedScheduledCommand.SequenceNumber),
+                new SqlParameter("@aggregateType", storedScheduledCommand.AggregateType),
+                new SqlParameter("@createdTime", storedScheduledCommand.CreatedTime),
+                new SqlParameter("@dueTime", storedScheduledCommand.DueTime),
+                new SqlParameter("@serializedCommand", storedScheduledCommand.SerializedCommand),
+                new SqlParameter("@attempts", storedScheduledCommand.Attempts),
+                new SqlParameter("@clock_Id", storedScheduledCommand.Clock.Id),
+                // ETag
+                new SqlParameter("@scope", etag.Scope),
+                new SqlParameter("@eTagValue", etag.ETagValue),
+                new SqlParameter("@createdDomainTime", etag.CreatedDomainTime),
+                new SqlParameter("@createdRealTime", etag.CreatedRealTime)
+            };
+
+            await db.Database.ExecuteSqlCommandAsync(
+                TransactionalBehavior.EnsureTransaction,
+                sql,
+                parameters);
         }
     }
 }

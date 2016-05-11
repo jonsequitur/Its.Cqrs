@@ -9,7 +9,9 @@ using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
+using Test.Domain.Banking;
 using Test.Domain.Ordering;
+using CustomerAccount = Test.Domain.Ordering.CustomerAccount;
 
 namespace Microsoft.Its.Domain.Tests
 {

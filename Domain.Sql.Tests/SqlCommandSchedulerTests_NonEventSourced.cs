@@ -37,13 +37,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             eventStoreDbTest = new EventStoreDbTest();
             clockName = Any.CamelCaseName();
 
-            Clock.Reset();
+            VirtualClock.Start();
 
             disposables = new CompositeDisposable
             {
-                Disposable.Create(() => eventStoreDbTest.TearDown()),
-                Disposable.Create(Clock.Reset),
-                VirtualClock.Start()
+                Disposable.Create(() => eventStoreDbTest.TearDown())
             };
 
             var configuration = new Configuration();
@@ -56,6 +54,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [TearDown]
         public void TearDown()
         {
+            Clock.Reset();
             disposables.Dispose();
         }
 
@@ -237,7 +236,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var target = new CommandTarget(Any.CamelCaseName())
             {
-                OnHandleScheduledCommandError = (commandTarget, failed) =>
+                OnHandleScheduledCommandError = async (commandTarget, failed) =>
                                                 failed.Retry(after: 1.Milliseconds())
             };
             await store.Put(target);
@@ -261,7 +260,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var target = new CommandTarget(Any.CamelCaseName())
             {
-                OnHandleScheduledCommandError = (commandTarget, failed) =>
+                OnHandleScheduledCommandError = async (commandTarget, failed) =>
                                                 failed.Retry(after: 1.Hours())
             };
             await store.Put(target);
@@ -285,7 +284,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var target = new CommandTarget(Any.CamelCaseName())
             {
-                OnHandleScheduledCommandError = (commandTarget, failed) => failed.Cancel()
+                OnHandleScheduledCommandError = async (commandTarget, failed) => failed.Cancel()
             };
             await store.Put(target);
 
@@ -583,16 +582,24 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var clockName = Any.CamelCaseName();
             var targetId = Any.CamelCaseName();
             var command = new CreateCommandTarget(targetId);
+            var clock = new CommandScheduler.Clock
+            {
+                Name = clockName,
+                UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
+            };
+
+            using (var commandScheduler = new CommandSchedulerDbContext())
+            {
+                commandScheduler.Clocks.Add(clock);
+                commandScheduler.SaveChanges();
+            }
+
             var scheduledCommand = new ScheduledCommand<CommandTarget>(
                 targetId: targetId,
-                command: command, 
+                command: command,
                 dueTime: DateTimeOffset.Parse("2016-03-20 09:00:00 AM"))
             {
-                Clock = new CommandScheduler.Clock
-                {
-                    Name = clockName,
-                    UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
-                }
+                Clock = clock
             };
 
             // act

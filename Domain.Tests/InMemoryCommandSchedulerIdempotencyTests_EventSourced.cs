@@ -3,11 +3,12 @@
 
 using System;
 using Microsoft.Its.Domain.Testing;
-using Test.Domain.Ordering;
+using NUnit.Framework;
 using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {
+    [TestFixture]
     public class InMemoryCommandSchedulerIdempotencyTests_EventSourced : CommandSchedulerIdempotencyTests
     {
         protected override void Configure(

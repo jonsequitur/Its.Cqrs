@@ -11,7 +11,6 @@ using Moq;
 using NUnit.Framework;
 using Pocket;
 using Test.Domain.Ordering;
-using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Tests
 {

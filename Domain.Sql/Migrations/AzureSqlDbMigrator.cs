@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Data.Entity;
 
 namespace Microsoft.Its.Domain.Sql.Migrations
 {
@@ -44,14 +45,14 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
         public Version MigrationVersion { get; }
 
-        public MigrationResult Migrate(IDbConnection connection)
+        public MigrationResult Migrate(DbContext context)
         {
-            if (connection == null)
+            if (context == null)
             {
-                throw new ArgumentNullException(nameof(connection));
+                throw new ArgumentNullException(nameof(context));
             }
 
-            if (!connection.IsAzureDatabase())
+            if (!context.IsAzureDatabase())
             {
                 return new MigrationResult
                 {
@@ -62,12 +63,12 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
             var sql =
                 $@"
-alter database {connection.Database} 
+alter database {context.Database.Connection.Database} 
 modify (MAXSIZE = {MaxSize},
         EDITION = '{Edition}',
         SERVICE_OBJECTIVE = '{ServiceObjective}')";
 
-            connection.Execute(sql);
+            context.Database.ExecuteSqlCommand(sql);
 
             return new MigrationResult
             {

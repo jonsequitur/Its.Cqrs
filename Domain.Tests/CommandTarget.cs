@@ -13,11 +13,8 @@ namespace Microsoft.Its.Domain.Tests
 {
     public class CommandTarget
     {
-        private readonly ConcurrentBag<ICommand<CommandTarget>> commandsEnacted = new ConcurrentBag<ICommand<CommandTarget>>();
-        private readonly ConcurrentBag<CommandFailed> commandsFailed = new ConcurrentBag<CommandFailed>();
-
-        public Action<CommandTarget, CommandFailed<TestCommand>> OnHandleScheduledCommandError;
-        public Action<CommandTarget, TestCommand> OnEnactCommand;
+        public Func<CommandTarget, CommandFailed<TestCommand>, Task> OnHandleScheduledCommandError;
+        public Func<CommandTarget, TestCommand, Task> OnEnactCommand;
 
         public CommandTarget(string id)
         {
@@ -35,23 +32,11 @@ namespace Microsoft.Its.Domain.Tests
                        .Else(() => Any.Word());
         }
 
-        public string Id { get; private set; }
+        public string Id { get; }
 
-        public ConcurrentBag<ICommand<CommandTarget>> CommandsEnacted
-        {
-            get
-            {
-                return commandsEnacted;
-            }
-        }
+        public ConcurrentBag<ICommand<CommandTarget>> CommandsEnacted { get; } = new ConcurrentBag<ICommand<CommandTarget>>();
 
-        public ConcurrentBag<CommandFailed> CommandsFailed
-        {
-            get
-            {
-                return commandsFailed;
-            }
-        }
+        public ConcurrentBag<CommandFailed> CommandsFailed { get; } = new ConcurrentBag<CommandFailed>();
     }
 
     public class CommandTargetCommandHandler :
@@ -66,7 +51,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             if (scheduler == null)
             {
-                throw new ArgumentNullException("scheduler");
+                throw new ArgumentNullException(nameof(scheduler));
             }
             this.scheduler = scheduler;
         }
@@ -75,9 +60,10 @@ namespace Microsoft.Its.Domain.Tests
         {
             target.CommandsEnacted.Add(command);
 
-            target.OnEnactCommand
-                  .IfNotNull()
-                  .ThenDo(enact => enact(target, command));
+            if (target.OnEnactCommand != null)
+            {
+                await target.OnEnactCommand(target, command);
+            }
         }
 
         public async Task HandleScheduledCommandException(CommandTarget target, CommandFailed<TestCommand> failed)
@@ -137,7 +123,7 @@ namespace Microsoft.Its.Domain.Tests
             Id = id;
         }
 
-        public string Id { get; private set; }
+        public string Id { get; }
     }
 
     public class TestCommand : Command<CommandTarget>, ISpecifySchedulingBehavior

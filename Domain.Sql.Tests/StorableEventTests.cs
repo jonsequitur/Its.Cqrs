@@ -6,13 +6,14 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.Its.Recipes;
+using NCrunch.Framework;
 using NUnit.Framework;
-using Test.Domain.Ordering;
 using Test.Domain.Ordering;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
+    [ExclusivelyUses("ItsCqrsTestsEventStore")]
     public class StorableEventTests : EventStoreDbTest
     {
         [Test]
