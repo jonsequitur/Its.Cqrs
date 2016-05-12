@@ -7,7 +7,6 @@ using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
-using System.Threading.Tasks;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -118,7 +117,7 @@ namespace Microsoft.Its.Domain.Tests
                     Guid.NewGuid(),
                     new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" },
                     new Order.CustomerInfoChanged { SequenceNumber = 2, CustomerName = "joe" },
-                    new Order.Cancelled { SequenceNumber = 1, Reason = "just 'cause..."}
+                    new Order.Cancelled { SequenceNumber = 1, Reason = "just 'cause..." }
                     );
             };
 
@@ -156,7 +155,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void EventSourcedBase_cannot_be_rehydrated_from_an_empty_event_sequence()
+        public void EventSourcedAggregate_cannot_be_rehydrated_from_an_empty_event_sequence()
         {
             Action ctorCall = () => { new Order(Guid.NewGuid(), new IEvent[0]); };
 
@@ -164,23 +163,6 @@ namespace Microsoft.Its.Domain.Tests
                     .ShouldThrow<ArgumentException>()
                     .And
                     .Message.Should().Contain("Event history is empty");
-        }
-
-        [Test]
-        public void EventSourcedBase_can_be_rehydrated_from_an_empty_event_sequence_when_using_a_snapshot()
-        {
-            Action ctorCall = () =>
-            {
-                new CustomerAccount(new CustomerAccountSnapshot
-                {
-                    AggregateId = Any.Guid(),
-                    EmailAddress = Any.Email(),
-                    Version = 12
-                }, new IEvent[0]);
-            };
-
-            ctorCall.Invoking(c => c())
-                    .ShouldNotThrow<Exception>();
         }
 
         [Test]
@@ -239,35 +221,6 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task When_instantiated_from_a_snapshot_the_aggregate_version_is_correct()
-        {
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                EmailAddress = Any.Email(),
-                Version = 12
-            });
-
-            customerAccount.Version.Should().Be(12);
-        }
-
-        [Test]
-        public async Task An_aggregate_instantiated_from_a_snapshot_adds_new_events_at_the_correct_sequence_number()
-        {
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                EmailAddress = Any.Email(),
-                Version = 12
-            });
-
-            customerAccount.Apply(new RequestNoSpam());
-
-            customerAccount.Version.Should().Be(13);
-            customerAccount.PendingEvents.Last().SequenceNumber.Should().Be(13);
-        }
-
-        [Test]
         public void Id_cannot_be_empty_guid()
         {
             Action create = () => new Order(Guid.Empty);
@@ -299,156 +252,18 @@ namespace Microsoft.Its.Domain.Tests
             orderAtOlderVersion.CustomerName.Should().Be(originalName);
         }
 
-        [Test]
-        public async Task Attempting_to_re_source_an_aggregate_that_was_instantiated_using_a_snapshot_succeeds_if_the_specified_version_is_at_or_after_the_snapshot()
-        {
-            var originalEmail = Any.Email();
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                Version = 10,
-                EmailAddress = originalEmail
-            });
-
-            customerAccount.Apply(new ChangeEmailAddress(Any.Email()));
-
-            var accountAtv10 = customerAccount.AsOfVersion(10);
-
-            accountAtv10.Version.Should().Be(10);
-            accountAtv10.EmailAddress.Should().Be(originalEmail);
-        }
-
-        [Test]
-        public async Task Attempting_to_re_source_an_aggregate_that_was_instantiated_using_a_snapshot_throws_if_the_specified_version_is_prior_to_the_snapshot()
-        {
-            var originalEmail = Any.Email();
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                Version = 10,
-                EmailAddress = originalEmail
-            });
-
-            Action rollBack = () => customerAccount.AsOfVersion(9);
-
-            rollBack.ShouldThrow<InvalidOperationException>()
-                    .And
-                    .Message
-                    .Should()
-                    .Contain("Snapshot version is later than specified version.");
-        }
-
-        [Test]
-        public async Task Accessing_event_history_from_an_aggregate_instantiated_using_a_snapshot_throws()
-        {
-            var customerAccount = new CustomerAccount(new CustomerAccountSnapshot
-            {
-                AggregateId = Any.Guid(),
-                Version = 10,
-                EmailAddress = Any.Email()
-            });
-
-            Action getEvents = () => customerAccount.Events();
-
-            getEvents.ShouldThrow<InvalidOperationException>()
-                     .And
-                     .Message
-                     .Should()
-                     .Contain("Aggregate was sourced from a snapshot, so event history is unavailable.");
-        }
-
-        [Test]
-        public async Task Snapshots_include_etags_for_events_that_have_been_persisted_to_the_event_store()
-        {
-            var etag = Guid.NewGuid().ToString().ToETag();
-
-            var configuration = Configuration.Current;
-            var addPlayer = new MarcoPoloPlayerWhoIsNotIt.JoinGame
-            {
-                IdOfPlayerWhoIsIt = Any.Guid(),
-                ETag = etag
-            };
-
-            var player = await new MarcoPoloPlayerWhoIsNotIt()
-                .ApplyAsync(addPlayer);
-            await configuration.Repository<MarcoPoloPlayerWhoIsNotIt>().Save(player);
-
-            await configuration.SnapshotRepository().SaveSnapshot(player);
-
-            var snapshot = await configuration.SnapshotRepository()
-                                              .GetSnapshot(player.Id);
-
-            snapshot.ETags
-                    .MayContain(etag)
-                    .Should()
-                    .BeTrue();
-        }
-
-        [Test]
-        public async Task When_sourced_from_a_snapshot_and_applying_a_command_that_is_already_in_the_bloom_filter_then_a_precondition_check_is_used_to_rule_out_false_positives()
-        {
-            var verifierWasCalled = false;
-
-            var preconditionVerifier = new TestEventStoreETagChecker(() =>
-            {
-                verifierWasCalled = true;
-                return true;
-            });
-
-            var configuration = Configuration.Current;
-
-            configuration.UseDependency<IETagChecker>(_ => preconditionVerifier);
-
-            var etag = Guid.NewGuid().ToString().ToETag();
-
-            var addPlayer = new MarcoPoloPlayerWhoIsNotIt.JoinGame
-            {
-                IdOfPlayerWhoIsIt = Any.Guid(),
-                ETag = etag
-            };
-
-            var player = await new MarcoPoloPlayerWhoIsNotIt()
-                .ApplyAsync(addPlayer);
-            await configuration.Repository<MarcoPoloPlayerWhoIsNotIt>().Save(player);
-
-            // don't call player.ConfirmSave
-
-            await configuration.SnapshotRepository()
-                               .SaveSnapshot(player);
-
-            var snapshot = await configuration.SnapshotRepository().GetSnapshot(player.Id);
-
-            player = new MarcoPoloPlayerWhoIsNotIt(snapshot);
-
-            player.HasETag(etag).Should().BeTrue();
-            verifierWasCalled.Should().BeTrue();
-        }
-
-        private class TestEventStoreETagChecker : IETagChecker
-        {
-            private readonly Func<bool> hasBeenApplied;
-
-            public TestEventStoreETagChecker(Func<bool> hasBeenApplied)
-            {
-                if (hasBeenApplied == null)
-                {
-                    throw new ArgumentNullException("hasBeenApplied");
-                }
-                this.hasBeenApplied = hasBeenApplied;
-            }
-
-            public async Task<bool> HasBeenRecorded(string scope, string etag)
-            {
-                return hasBeenApplied();
-            }
-        }
-
         [Category("Performance")]
         [Test]
         public void When_calling_ctor_of_an_aggregate_with_a_large_number_of_source_events_in_non_incrementing_order_then_the_operation_completes_quickly()
         {
-            var count = 1000000;
-            var largeListOfEvents = Enumerable.Range(1, count).Select(i => new PerfTestAggregate.SimpleEvent { SequenceNumber = i }).ToList();
+            var count = 100000;
+            var largeListOfEvents = Enumerable.Range(1, count)
+                                              .Select(i => new PerfTestAggregate.SimpleEvent
+                                              {
+                                                  SequenceNumber = i
+                                              })
+                                              .ToList();
+
             Shuffle(largeListOfEvents, new Random(42));
 
             var sw = Stopwatch.StartNew();
@@ -458,8 +273,8 @@ namespace Microsoft.Its.Domain.Tests
             Console.WriteLine("Elapsed: {0}ms", sw.ElapsedMilliseconds);
             t.Version.Should().Be(count);
             t.NumberOfUpdatesExecuted.Should().Be(count);
-            sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(20));
-    }
+            sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2));
+        }
 
         private static void Shuffle<T>(IList<T> list, Random randomNumberGenerator)
         {
@@ -467,7 +282,7 @@ namespace Microsoft.Its.Domain.Tests
             while (n > 1)
             {
                 n--;
-                int k = randomNumberGenerator.Next(n + 1);
+                var k = randomNumberGenerator.Next(n + 1);
                 T value = list[k];
                 list[k] = list[n];
                 list[n] = value;

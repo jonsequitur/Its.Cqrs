@@ -51,8 +51,8 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Its.Validation.1.4.3\lib\net45\Its.Validation.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -85,7 +85,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomerAccount\Commands\SendOrderConfirmationEmail.cs" />
-    <Compile Include="CustomerAccount\CustomerAccountSnapshot.cs" />
     <Compile Include="CustomerAccount\Events\CustomerAccount.Created.cs" />
     <Compile Include="CustomerAccount\Events\CustomerAccount.OrderCancelationConfirmationEmailSent.cs" />
     <Compile Include="CustomerAccount\Events\CustomerAccount.OrderShipConfirmationEmailSent.cs" />

@@ -46,6 +46,7 @@ namespace Microsoft.Its.Domain
             container.AvoidConstructorsWithPrimitiveTypes()
                      .IfOnlyOneImplementationUseIt()
                      .UseImmediateCommandScheduling()
+                     .DefaultToJsonSnapshots()
                      .AddStoreStrategy()
                      .RegisterSingle<IReservationService>(c => new NoReservations())
                      .RegisterSingle<IEventBus>(c => new InProcessEventBus())

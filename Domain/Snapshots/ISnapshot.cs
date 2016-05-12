@@ -15,5 +15,6 @@ namespace Microsoft.Its.Domain
         DateTimeOffset LastUpdated { get; set; }
         string AggregateTypeName { get; set; }
         BloomFilter ETags { get; set; }
+        string Body {get; set; }
     }
 }

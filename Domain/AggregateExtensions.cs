@@ -60,7 +60,7 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException(nameof(aggregate));
             }
 
-            if (aggregate.SourceSnapshot != null)
+            if (aggregate.sourceSnapshot != null)
             {
                 throw new InvalidOperationException("Aggregate was sourced from a snapshot, so event history is unavailable.");
             }
@@ -86,7 +86,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public static TAggregate AsOfVersion<TAggregate>(this TAggregate aggregate, long version) where TAggregate : EventSourcedAggregate
         {
-            var snapshot = aggregate.SourceSnapshot;
+            var snapshot = aggregate.sourceSnapshot;
 
             var eventsAsOfVersion = aggregate.EventHistory
                                              .Concat(aggregate.PendingEvents)
@@ -199,7 +199,7 @@ namespace Microsoft.Its.Domain
         /// or
         /// snapshot
         /// </exception>
-        public static void InitializeSnapshot<TAggregate>(this TAggregate aggregate, ISnapshot snapshot)
+        internal static void InitializeSnapshot<TAggregate>(this TAggregate aggregate, ISnapshot snapshot)
             where TAggregate : class, IEventSourced
         {
             if (aggregate == null)
@@ -230,7 +230,7 @@ namespace Microsoft.Its.Domain
                          {
                              if (a.WasSourcedFromSnapshot)
                              {
-                                 return a.SourceSnapshot.ETags;
+                                 return a.sourceSnapshot.ETags;
                              }
 
                              var bloomFilter = new BloomFilter();
@@ -241,6 +241,19 @@ namespace Microsoft.Its.Domain
                              return bloomFilter;
                          })
                          .ElseDefault();
+
+        public static ISnapshot CreateSnapshot<TAggregate>(
+            this TAggregate aggregate)
+            where TAggregate : class, IEventSourced
+        {
+            var snapshotCreator = Configuration.Current.Container.Resolve<ICreateSnapshot<TAggregate>>();
+
+            var snapshot = snapshotCreator.CreateSnapshot(aggregate);
+
+            aggregate.InitializeSnapshot(snapshot);
+
+            return snapshot;
+        }
 
         /// <summary>
         /// Determines whether the specified ETag already exists in the aggregate's event stream.
