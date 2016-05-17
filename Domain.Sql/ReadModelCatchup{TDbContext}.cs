@@ -171,7 +171,7 @@ namespace Microsoft.Its.Domain.Sql
             catch (Exception exception)
             {
                 // TODO: (Run) this should probably throw
-                Debug.WriteLine($"Catchup {Name}: Read model catchup failed after {stopwatch.ElapsedMilliseconds}ms at {eventsProcessed} events.\n{exception}");
+                Trace.WriteLine($"Catchup {Name}: Read model catchup failed after {stopwatch.ElapsedMilliseconds}ms at {eventsProcessed} events.\n{exception}");
             }
             finally
             {
