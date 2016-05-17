@@ -29,3 +29,4 @@ NuGet/
 .vs/
 TestResults/
 *.dbmdl
+*.htm

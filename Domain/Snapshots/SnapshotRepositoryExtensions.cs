@@ -14,15 +14,7 @@ namespace Microsoft.Its.Domain
         public static async Task SaveSnapshot<TAggregate>(
             this ISnapshotRepository repository,
             TAggregate aggregate)
-            where TAggregate : class, IEventSourced
-        {
-            var snapshotCreator = Configuration.Current.Container.Resolve<ICreateSnapshot<TAggregate>>();
-
-            var snapshot = snapshotCreator.CreateSnapshot(aggregate);
-
-            aggregate.InitializeSnapshot(snapshot);
-
-            await repository.SaveSnapshot(snapshot);
-        }
+            where TAggregate : class, IEventSourced =>
+                await repository.SaveSnapshot(aggregate.CreateSnapshot());
     }
 }

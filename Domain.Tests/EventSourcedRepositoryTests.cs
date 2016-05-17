@@ -383,37 +383,28 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task GetLatest_can_return_an_aggregate_built_from_a_snapshot_projection()
+        public async Task GetLatest_can_return_an_aggregate_built_from_a_snapshot()
         {
             // arrange
             var snapshotRepository = new InMemorySnapshotRepository();
             Configuration.Current.UseDependency<ISnapshotRepository>(_ => snapshotRepository);
 
-            var etags = new[] { Any.Word(), Any.Word() };
-            var bloomFilter = new BloomFilter();
-            etags.ForEach(bloomFilter.Add);
-            
-            var snapshot = new CustomerAccountSnapshot
-                           {
-                               AggregateId = Any.Guid(),
-                               Version = 123,
-                               AggregateTypeName = AggregateType<CustomerAccount>.EventStreamName,
-                               EmailAddress = Any.Email(),
-                               NoSpam = true,
-                               UserName = Any.FullName(),
-                               ETags = bloomFilter
-                           };
-            await snapshotRepository.SaveSnapshot(snapshot);
+            var original = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(Any.Email()))
+                .Apply(new RequestNoSpam());
+            var repository = CreateRepository<CustomerAccount>();
+            await repository.Save(original);
+            await snapshotRepository.SaveSnapshot(original);
 
             // act
-            var account = await CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
+            var fromSnapshot = await repository.GetLatest(original.Id);
 
             // assert
-            account.Id.Should().Be(snapshot.AggregateId);
-            account.Version.Should().Be(snapshot.Version);
-            account.EmailAddress.Should().Be(snapshot.EmailAddress);
-            account.UserName.Should().Be(snapshot.UserName);
-            account.NoSpam.Should().Be(snapshot.NoSpam);
+            fromSnapshot.Id.Should().Be(original.Id);
+            fromSnapshot.Version.Should().Be(fromSnapshot.Version);
+            fromSnapshot.EmailAddress.Should().Be(fromSnapshot.EmailAddress);
+            fromSnapshot.UserName.Should().Be(fromSnapshot.UserName);
+            fromSnapshot.NoSpam.Should().Be(fromSnapshot.NoSpam);
         }
 
         [Test]
@@ -423,24 +414,20 @@ namespace Microsoft.Its.Domain.Tests
             var snapshotRepository = new InMemorySnapshotRepository();
             Configuration.Current.UseDependency<ISnapshotRepository>(_ => snapshotRepository);
 
-            var snapshot = new CustomerAccountSnapshot
-                           {
-                               AggregateId = Any.Guid(),
-                               Version = 123,
-                               AggregateTypeName = AggregateType<CustomerAccount>.EventStreamName,
-                               EmailAddress = Any.Email(),
-                               NoSpam = true,
-                               UserName = Any.FullName(),
-                               ETags = new BloomFilter()
-                           };
-            await snapshotRepository.SaveSnapshot(snapshot);
+            var customerAccount = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(Any.Email()));
+            var repository = CreateRepository<CustomerAccount>();
+            await repository.Save(customerAccount);
+            var snapshottedVersion = customerAccount.Version;
+
+            await snapshotRepository.SaveSnapshot(customerAccount);
 
             // act
-            var account = await CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
+            var account = await repository.GetLatest(customerAccount.Id);
             account.Apply(new RequestSpam());
 
             // assert
-            account.Version.Should().Be(124);
+            account.Version.Should().Be(snapshottedVersion+ 1);
         }
 
         [Test]
@@ -450,30 +437,25 @@ namespace Microsoft.Its.Domain.Tests
             var snapshotRepository = new InMemorySnapshotRepository();
             Configuration.Current.UseDependency<ISnapshotRepository>(_ => snapshotRepository);
 
-            var snapshot = new CustomerAccountSnapshot
-                           {
-                               AggregateId = Any.Guid(),
-                               Version = 122,
-                               AggregateTypeName = AggregateType<CustomerAccount>.EventStreamName,
-                               EmailAddress = Any.Email(),
-                               NoSpam = true,
-                               UserName = Any.FullName(),
-                               ETags = new BloomFilter()
-                           };
+            var account = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(Any.Email()))
+                .Apply(new RequestSpam());
+            var originalVersion = account.Version;
+            var repository = CreateRepository<CustomerAccount>();
+            await repository.Save(account);
+            await snapshotRepository.SaveSnapshot(account);
 
-            await snapshotRepository.SaveSnapshot(snapshot);
             await SaveEventsDirectly(new CustomerAccount.RequestedSpam
             {
-                AggregateId = snapshot.AggregateId,
-                SequenceNumber = snapshot.Version + 1
+                AggregateId = account.Id,
+                SequenceNumber = originalVersion + 1
             }.ToStoredEvent());
 
             // act
-            var account = await CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
-            account.Apply(new RequestSpam());
+            account = await repository.GetLatest(account.Id);
 
             // assert
-            account.Version.Should().Be(124);
+            account.Version.Should().Be(originalVersion + 1);
         }
         
         [Test]
@@ -483,17 +465,19 @@ namespace Microsoft.Its.Domain.Tests
             var snapshotRepository = new InMemorySnapshotRepository();
             Configuration.Current.UseDependency<ISnapshotRepository>(_ => snapshotRepository);
 
-            var snapshot = new CustomerAccountSnapshot
-                           {
-                               AggregateId = Any.Guid(),
-                               Version = 123,
-                               AggregateTypeName = AggregateType<CustomerAccount>.EventStreamName,
-                               EmailAddress = Any.Email(),
-                               NoSpam = true,
-                               UserName = Any.FullName(),
-                               ETags = new BloomFilter()
-                           };
+            var customerAccount = new CustomerAccount()
+                .Apply(new ChangeEmailAddress(Any.Email()));
+
+            var repository = CreateRepository<CustomerAccount>();
+
+            await repository.Save(customerAccount);
+
+            var snapshot = customerAccount.CreateSnapshot();
+
+            Console.WriteLine(snapshot.Body);
+
             await snapshotRepository.SaveSnapshot(snapshot);
+
             await SaveEventsDirectly(new CustomerAccount.RequestedSpam
                                {
                                    AggregateId = snapshot.AggregateId,
@@ -501,7 +485,7 @@ namespace Microsoft.Its.Domain.Tests
                                }.ToStoredEvent());
 
             // act
-            var account = await CreateRepository<CustomerAccount>().GetLatest(snapshot.AggregateId);
+            var account = await repository.GetLatest(snapshot.AggregateId);
 
             // assert
             account.Version.Should().Be(124);

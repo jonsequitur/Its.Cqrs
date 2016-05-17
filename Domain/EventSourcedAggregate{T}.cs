@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Its.Recipes;
+using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
@@ -37,7 +39,7 @@ namespace Microsoft.Its.Domain
         /// <param name="eventHistory">The event history.</param>
         protected EventSourcedAggregate(Guid id, IEnumerable<IEvent> eventHistory) : base(id, eventHistory)
         {
-           BuildUpStateFromEventHistory();
+            BuildUpStateFromEventHistory();
         }
 
         /// <summary>
@@ -46,8 +48,20 @@ namespace Microsoft.Its.Domain
         /// <param name="snapshot">A snapshot of the aggregate's built-up state.</param>
         /// <param name="eventHistory">The event history.</param>
         /// <remarks>After building up its internal state from the snapshot, the constructor that calls into this constructor should call <see cref="BuildUpStateFromEventHistory" />.</remarks>
-        protected EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null) : base(snapshot, eventHistory)
+        protected EventSourcedAggregate(ISnapshot snapshot, IEnumerable<IEvent> eventHistory = null) : base(snapshot)
         {
+            if (snapshot.AggregateTypeName != AggregateType<T>.EventStreamName)
+            {
+                throw new ArgumentException($"Snapshotted {snapshot.AggregateTypeName} cannot be used to instantiate a {AggregateType<T>.EventStreamName}");
+            }
+
+            var snapshotter = Configuration.Current
+                                           .Container
+                                           .Resolve<IApplySnapshot<T>>();
+
+            snapshotter.ApplySnapshot(snapshot, (T) this);
+
+            InitializeEventHistory(eventHistory.OrEmpty());
         }
 
         protected void BuildUpStateFromEventHistory()
