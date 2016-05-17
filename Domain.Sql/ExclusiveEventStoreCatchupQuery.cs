@@ -36,7 +36,7 @@ namespace Microsoft.Its.Domain.Sql
             if (TryGetAppLock())
             {
                 startAtId = getStartAtId();
-                IQueryable<StorableEvent> eventQuery = dbContext.Events;
+                IQueryable<StorableEvent> eventQuery = dbContext.Events.AsNoTracking();
 
                 matchEvents = matchEvents ?? new[] { new MatchEvent() };
 
