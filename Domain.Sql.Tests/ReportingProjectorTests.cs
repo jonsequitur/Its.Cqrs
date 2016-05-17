@@ -6,7 +6,6 @@ using System.Reactive.Linq;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Its.Domain.EventHandling;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;

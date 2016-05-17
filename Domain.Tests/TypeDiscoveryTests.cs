@@ -4,7 +4,6 @@
 using System;
 using System.Linq;
 using FluentAssertions;
-using Microsoft.Its.Domain.EventHandling;
 using NUnit.Framework;
 using Test.Domain.Ordering;
 

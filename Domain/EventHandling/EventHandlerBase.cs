@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Its.Domain.EventHandling
+namespace Microsoft.Its.Domain
 {
     public abstract class EventHandlerBase : IEventHandler, INamedEventHandler
     {
