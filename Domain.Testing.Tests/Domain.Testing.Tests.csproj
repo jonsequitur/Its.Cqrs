@@ -59,7 +59,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Its.Validation, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Its.Validation.1.4.3\lib\net45\Its.Validation.dll</HintPath>
+      <HintPath>..\packages\Its.Validation.1.4.4\lib\net45\Its.Validation.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
