@@ -50,8 +50,8 @@ namespace Microsoft.Its.Domain.Sql
                 var expiration = now + (lease ?? TimeSpan.FromMinutes(1));
 
                 // see if there is a pre-existing lease by the same actor
-                var reservedValue = reservedValues.SingleOrDefault(r => r.Scope == scope &&
-                                                                        r.Value == value);
+                var reservedValue = await reservedValues.SingleOrDefaultAsync(r => r.Scope == scope &&
+                                                                                   r.Value == value);
 
                 if (reservedValue == null)
                 {
@@ -236,6 +236,30 @@ namespace Microsoft.Its.Domain.Sql
                 } while (valueToReserve != null); //retry on concurrency exception
             }
             return null;
+        }
+
+        /// <summary>
+        /// Retrieve single reserved value from Reservation Service
+        /// </summary>
+        /// <param name="value">The reserved value.</param>
+        /// <param name="scope">The scope in which the reserved value must be unique.</param>
+        /// <returns>The ReservedValue object</returns>
+        public async Task<ReservedValue> GetReservedValue(string value, string scope)
+        {
+            if (value == null)
+            {
+                throw new ArgumentNullException(nameof(value));
+            }
+            if (scope == null)
+            {
+                throw new ArgumentNullException(nameof(scope));
+            }
+
+            using (var db = new ReservationServiceDbContext())
+            {
+                return await db.Set<ReservedValue>()
+                    .SingleOrDefaultAsync(v => v.Scope == scope && v.Value == value);
+            }
         }
 
         bool ISynchronousReservationService.Reserve(string value, string scope, string ownerToken, TimeSpan? lease)

@@ -12,7 +12,9 @@ namespace Microsoft.Its.Domain.Testing
     /// <summary>
     /// An in-memory reservation service 
     /// </summary>
-    public class InMemoryReservationService : IReservationService, IReservationQuery
+#pragma warning disable 618
+    public class InMemoryReservationService : IReservationService, ISynchronousReservationService
+#pragma warning restore 618
     {
         private readonly ConcurrentDictionary<Tuple<string, string>, ReservedValue> reservedValues = new ConcurrentDictionary<Tuple<string, string>, ReservedValue>();
 
@@ -78,7 +80,7 @@ namespace Microsoft.Its.Domain.Testing
 
             return false;
         }
-
+        
         public async Task<bool> Confirm(string value, string scope, string ownerToken)
         {
             if (value == null)
@@ -225,6 +227,36 @@ namespace Microsoft.Its.Domain.Testing
             ReservedValue reservedValue;
             reservedValues.TryGetValue(key, out reservedValue);
             return reservedValue;
+        }
+
+        bool ISynchronousReservationService.Reserve(string value, string scope, string ownerToken, TimeSpan? lease)
+        {
+            return Task.Run(() => Reserve(value,
+                                          scope,
+                                          ownerToken,
+                                          lease)).Result;
+        }
+
+        bool ISynchronousReservationService.Confirm(string value, string scope, string ownerToken)
+        {
+            return Task.Run(() => Confirm(value,
+                                          scope,
+                                          ownerToken)).Result;
+        }
+
+        bool ISynchronousReservationService.Cancel(string value, string scope, string ownerToken)
+        {
+            return Task.Run(() => Cancel(value,
+                                         scope,
+                                         ownerToken)).Result;
+        }
+
+        string ISynchronousReservationService.ReserveAny(string scope, string ownerToken, TimeSpan? lease, string confirmationToken)
+        {
+            return Task.Run(() => ReserveAny(scope,
+                                             ownerToken,
+                                             lease,
+                                             confirmationToken)).Result;
         }
     }
 }

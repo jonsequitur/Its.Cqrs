@@ -138,6 +138,7 @@
     <Compile Include="EventStoreDbTest.cs" />
     <Compile Include="DynamicEventTests.cs" />
     <Compile Include="EventExtensionsTests.cs" />
+    <Compile Include="ExceptionExtensionsTests.cs" />
     <Compile Include="FakeEventSourcedRepository{T}.cs" />
     <Compile Include="OtherEventStoreDbContext.cs" />
     <Compile Include="QueryableExtensionsTests.cs" />
@@ -164,7 +165,6 @@
     <Compile Include="StorableEventTests.cs" />
     <Compile Include="SqlReservationServiceTests.cs" />
     <Compile Include="Events.cs" />
-    <Compile Include="SynchronousSqlReservationServiceTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Domain.Tests\.config\Events.json">

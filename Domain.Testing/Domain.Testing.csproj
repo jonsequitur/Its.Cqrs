@@ -96,9 +96,7 @@
     <Compile Include="InMemoryCommandSchedulerPipelineInitializer{T}.cs" />
     <Compile Include="InMemoryReservationService.cs" />
     <Compile Include="InMemoryStore{T}.cs" />
-    <Compile Include="IReservationQuery.cs" />
     <Compile Include="IStoredEvent.cs" />
-    <Compile Include="SqlReservationQuery.cs" />
     <Compile Include="TaskExtensions.cs" />
     <Compile Include="TestConfigurationExtensions.cs" />
     <Compile Include="EventExtensions.cs" />

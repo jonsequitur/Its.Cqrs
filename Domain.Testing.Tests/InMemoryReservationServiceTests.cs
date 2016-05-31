@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Tests;
 using NUnit.Framework;
 
@@ -12,23 +14,18 @@ namespace Microsoft.Its.Domain.Testing.Tests
     {
         private InMemoryEventStream eventStream;
 
-        protected override void Configure(Configuration configuration, Action onSave = null)
+        protected override void Configure(Configuration configuration)
         {
             configuration.UseInMemoryReservationService()
-                .UseInMemoryEventStore()
-                .UseEventBus(new FakeEventBus())
-                .UseDependency(_ => eventStream);
+                         .UseInMemoryEventStore()
+                         .UseEventBus(new FakeEventBus())
+                         .UseDependency(_ => eventStream);
         }
 
-        protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
-            Action onSave = null)
+        protected override async Task<ReservedValue> GetReservedValue(string value, string promoCode)
         {
-            if (onSave != null)
-            {
-                eventStream.BeforeSave += (sender, @event) => onSave();
-            }
-
-            return Configuration.Current.Repository<TAggregate>();
+            var reservationService = (InMemoryReservationService) Configuration.Current.ReservationService;
+            return await reservationService.GetReservedValue(value, promoCode);
         }
     }
 }
