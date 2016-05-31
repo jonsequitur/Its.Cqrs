@@ -1,17 +1,17 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
+using System.Collections.Generic;
 using FluentAssertions;
+using System.Linq;
+using System.Reactive.Disposables;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
-using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Data.Entity;
-using System.Linq;
-using System.Threading.Tasks;
 using NCrunch.Framework;
+using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -27,28 +27,38 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
         }
 
-        protected override void Configure(Configuration configuration, Action onSave = null)
+        protected override void Configure(Configuration configuration)
         {
-            configuration.UseSqlReservationService()
-                         .UseSqlEventStore()
+            configuration.UseSqlEventStore()
                          .UseEventBus(new FakeEventBus());
+
+            var reservationService = new SqlReservationService
+            {
+                CreateReservationServiceDbContext = () => new TestReservationServiceDbContext()
+            };
+            configuration.ReservationService = reservationService;
+            configuration.RegisterForDisposal(Disposable.Create(() => onSave = null));
         }
 
-        protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
-            Action onSave = null)
+        protected override async Task<ReservedValue> GetReservedValue(string value, string promoCode)
         {
-            var repository = Configuration.Current.Repository<TAggregate>() as SqlEventSourcedRepository<TAggregate>;
+            var reservationService = (SqlReservationService) Configuration.Current.ReservationService;
+            return await reservationService.GetReservedValue(value, promoCode);
+        }
 
-            if (onSave != null)
+        private class TestReservationServiceDbContext : ReservationServiceDbContext
+        {
+            public override int SaveChanges()
             {
-                repository.GetEventStoreContext = () =>
-                {
-                    onSave();
-                    return new EventStoreDbContext();
-                };
+                onSave?.Invoke();
+                return base.SaveChanges();
             }
 
-            return repository;
+            public override Task<int> SaveChangesAsync()
+            {
+                onSave?.Invoke();
+                return base.SaveChangesAsync();
+            }
         }
 
         [Test]

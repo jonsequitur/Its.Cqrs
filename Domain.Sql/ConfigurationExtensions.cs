@@ -44,6 +44,12 @@ namespace Microsoft.Its.Domain.Sql
             return configuration;
         }
 
+        public static Configuration UseSqlReservationService(this Configuration configuration)
+        {
+            configuration.Container.Register<IReservationService>(c => new SqlReservationService());
+            return configuration;
+        }
+
         public static Configuration UseSqlStorageForScheduledCommands(
             this Configuration configuration)
         {

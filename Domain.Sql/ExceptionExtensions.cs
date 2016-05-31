@@ -11,7 +11,8 @@ namespace Microsoft.Its.Domain.Sql
     {
         public static bool IsConcurrencyException(this Exception exception) =>
             (exception is DataException ||
-             exception is SqlException) &&
+             exception is SqlException ||
+             exception.InnerException.IsConcurrencyException()) &&
             exception.ToString().Contains("Cannot insert duplicate key");
 
         public static bool IsUniquenessConstraint(this Exception exception) =>
