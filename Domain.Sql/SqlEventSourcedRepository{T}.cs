@@ -72,16 +72,19 @@ namespace Microsoft.Its.Domain.Sql
                     events = events.Where(e => e.UtcTime <= d);
                 }
 
-                var storableEventsList = await events.ToListAsync();
-                var domainEventsList = storableEventsList.Select(e => e.ToDomainEvent()).ToList();
+                var domainEvents = (await events
+                                                  .AsNoTracking()
+                                                  .ToListAsync())
+                    .Select(e => e.ToDomainEvent())
+                                                  .ToList();
 
                 if (snapshot != null)
                 {
-                    aggregate = AggregateType<TAggregate>.FromSnapshot(snapshot, domainEventsList);
+                    aggregate = AggregateType<TAggregate>.FromSnapshot(snapshot, domainEvents);
                 }
-                else if (domainEventsList.Count > 0)
+                else if (domainEvents.Count > 0)
                 {
-                    aggregate = AggregateType<TAggregate>.FromEventHistory(id, domainEventsList);
+                    aggregate = AggregateType<TAggregate>.FromEventHistory(id, domainEvents);
                 }
             }
 
