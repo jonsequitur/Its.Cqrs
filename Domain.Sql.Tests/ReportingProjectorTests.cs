@@ -73,6 +73,44 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
+        public async Task A_dynamic_projector_can_access_the_metadata_of_known_event_types_dynamically()
+        {
+            var lastEventId = Events.Write(1, _ => new Order.CustomerInfoChanged());
+
+            Order.CustomerInfoChanged receivedEvent = null;
+
+            var projector = Projector.CreateDynamic(e => receivedEvent = e);
+
+            using (var catchup = CreateReadModelCatchup(projector))
+            {
+                await catchup.Run();
+            }
+
+            long absoluteSequenceNumber = receivedEvent.Metadata.AbsoluteSequenceNumber;
+
+            absoluteSequenceNumber.Should().Be(lastEventId);
+        }
+
+        [Test]
+        public async Task A_DuckTypeProjector_can_access_the_metadata_of_known_event_types_dynamically()
+        {
+            var lastEventId = Events.Write(1, _ => new Order.CustomerInfoChanged());
+
+            Order.CustomerInfoChanged receivedEvent = null;
+
+            var projector = Projector.CreateFor<Order.CustomerInfoChanged>(e => receivedEvent = e);
+
+            using (var catchup = CreateReadModelCatchup(projector))
+            {
+                await catchup.Run();
+            }
+
+            long absoluteSequenceNumber = receivedEvent.Metadata.AbsoluteSequenceNumber;
+
+            absoluteSequenceNumber.Should().Be(lastEventId);
+        }
+
+        [Test]
         public async Task A_dynamic_projector_receives_known_event_types_as_their_actual_type()
         {
             IEvent receivedEvent = null;
@@ -114,6 +152,70 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             total.Should().Be(55);
+        }
+
+        [Test]
+        public async Task A_dynamic_projector_can_access_the_metadata_of_unknown_event_types_dynamically()
+        {
+            StorableEvent storableEvent = null;
+
+            using (var db = new EventStoreDbContext())
+            {
+                storableEvent = new StorableEvent
+                {
+                    AggregateId = Guid.NewGuid(),
+                    StreamName = Any.CamelCaseName(),
+                    Type = Any.CamelCaseName(),
+                    Body = new { }.ToJson()
+                };
+                db.Events.Add(storableEvent);
+                await db.SaveChangesAsync();
+            }
+
+            IEvent receivedEvent = null;
+
+            var projector = Projector.CreateDynamic(e => receivedEvent = e);
+
+            using (var catchup = CreateReadModelCatchup(projector))
+            {
+                await catchup.Run();
+            }
+
+            long absoluteSequenceNumber = ((IHaveExtensibleMetada) receivedEvent).Metadata.AbsoluteSequenceNumber;
+
+            absoluteSequenceNumber.Should().Be(storableEvent.Id);
+        }
+
+        [Test]
+        public async Task A_DuckTypeProjector_can_access_the_metadata_of_unknown_event_types_dynamically()
+        {
+            StorableEvent storableEvent = null;
+
+            using (var db = new EventStoreDbContext())
+            {
+                storableEvent = new StorableEvent
+                {
+                    AggregateId = Guid.NewGuid(),
+                    StreamName = Any.CamelCaseName(),
+                    Type = Any.CamelCaseName(),
+                    Body = new { }.ToJson()
+                };
+                db.Events.Add(storableEvent);
+                await db.SaveChangesAsync();
+            }
+
+            IEvent receivedEvent = null;
+
+            var projector = Projector.CreateFor<dynamic>(e => receivedEvent = e);
+
+            using (var catchup = CreateReadModelCatchup(projector))
+            {
+                await catchup.Run();
+            }
+
+            long absoluteSequenceNumber = ((IHaveExtensibleMetada) receivedEvent).Metadata.AbsoluteSequenceNumber;
+
+            absoluteSequenceNumber.Should().Be(storableEvent.Id);
         }
 
         [Test]

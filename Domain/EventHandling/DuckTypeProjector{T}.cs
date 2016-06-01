@@ -46,22 +46,29 @@ namespace Microsoft.Its.Domain
 
         public void UpdateProjection(IEvent @event)
         {
-            var json = @event.ToJson();
-            
-            dynamic duckTypedEvent;
-            
-            if (typeof(T).IsAbstract)
+            if (@event is T)
             {
-                duckTypedEvent = new DynamicEvent(json.FromJsonTo<dynamic>());
+                onEvent((T) @event);
             }
             else
             {
-                duckTypedEvent = json.FromJsonTo<T>();
-            }
-            
-            TrySetStreamNameFrom(@event.GetType(), duckTypedEvent, @event.EventStreamName());
+                var json = @event.ToJson();
 
-            onEvent(duckTypedEvent);
+                dynamic duckTypedEvent;
+
+                if (typeof (T).IsAbstract)
+                {
+                    duckTypedEvent = new DynamicEvent(json.FromJsonTo<dynamic>());
+                }
+                else
+                {
+                    duckTypedEvent = json.FromJsonTo<T>();
+                }
+
+                TrySetStreamNameFrom(@event.GetType(), duckTypedEvent, @event.EventStreamName());
+
+                onEvent(duckTypedEvent);
+            }
         }
 
         private void TrySetStreamNameFrom(Type eventType, dynamic duckTypedEvent, string eventStreamName)

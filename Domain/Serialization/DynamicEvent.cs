@@ -2,12 +2,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Dynamic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Its.Domain.Serialization
 {
-    internal class DynamicEvent : JObject, IEvent
+    internal class DynamicEvent : JObject, IEvent, IHaveExtensibleMetada
     {
+        private dynamic metadata;
+
         public DynamicEvent(JObject other) : base(other)
         {
         }
@@ -89,5 +93,11 @@ namespace Microsoft.Its.Domain.Serialization
                 base["ETag"] = value;
             }
         }
+
+        /// <summary>
+        /// Gets a dynamic metadata object that can be used to pass extensibility information along with the event.
+        /// </summary>
+        [JsonIgnore]
+        public dynamic Metadata => metadata ?? (metadata = new ExpandoObject());
     }
 }

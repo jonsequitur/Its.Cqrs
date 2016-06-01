@@ -78,7 +78,7 @@ namespace Microsoft.Its.Domain.Tests
             var sequenceNumber = Any.PositiveInt();
             var details = Any.Paragraph(10);
             var dateTimeOffset = Any.DateTimeOffset();
-            var uniqueEventId = Any.Long();
+            var uniqueEventId = Any.PositiveInt();
             var eTag = Any.Word().ToETag();
 
             var deserialized = Serializer.DeserializeEvent(
