@@ -81,7 +81,6 @@ namespace Microsoft.Its.Domain.Api.Tests
             // example:
             //"[{"validator":"required","message":"An offer title is required","params":{},"valid":false}]"
 
-            // TODO: (testName) write test
             Assert.Fail("Test not written yet.");
         }
     }
