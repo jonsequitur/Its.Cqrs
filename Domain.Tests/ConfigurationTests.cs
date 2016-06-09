@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
+using System.Threading;
 using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
@@ -37,7 +39,8 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void New_Configuration_instances_do_not_use_the_InProcessEventBus_Instance()
         {
-            new Configuration().EventBus.Should()
+            new Configuration().EventBus
+                               .Should()
                                .NotBeNull()
                                .And
                                .NotBeSameAs(InProcessEventBus.Instance);
@@ -119,6 +122,80 @@ namespace Microsoft.Its.Domain.Tests
             configuration.ReservationService.GetType().Name.Should().Be("NoReservations");
         }
 
+        [Test]
+        public void RegisterForDisposal_can_be_used_to_specify_objects_that_should_be_disposed_when_the_Configuration_is_disposed()
+        {
+            var disposable = new BooleanDisposable();
+
+            var configuration = new Configuration();
+
+            configuration.RegisterForDisposal(disposable);
+
+            disposable.IsDisposed.Should().BeFalse();
+
+            configuration.Dispose();
+
+            disposable.IsDisposed.Should().BeTrue();
+        }
+
+        [Test]
+        public void Background_work_does_not_run_immediately_on_schedule()
+        {
+            var configuration = new Configuration();
+
+            var started = false;
+
+            configuration.QueueBackgroundWork(c => { started = true; });
+
+            started.Should().BeFalse();
+        }
+
+        [Test]
+        public void Background_work_cannot_not_be_started_more_than_once()
+        {
+            var configuration = new Configuration();
+
+            var startCount = 0;
+
+            configuration.QueueBackgroundWork(c => Interlocked.Increment(ref startCount));
+
+            configuration.StartBackgroundWork();
+            configuration.StartBackgroundWork();
+
+            startCount.Should().Be(1);
+        }
+
+        [Test]
+        public void Background_work_starts_when_StartBackgroundWork_is_called()
+        {
+            var configuration = new Configuration();
+
+            var started = false;
+
+            configuration.QueueBackgroundWork(c => { started = true; });
+
+            configuration.StartBackgroundWork();
+
+            started.Should().BeTrue();
+        }
+
+        [Test]
+        public void Background_tasks_that_return_disposables_have_their_disposables_disposed_with_the_Configuration()
+        {
+            var configuration = new Configuration();
+            var disposable = new BooleanDisposable();
+
+            configuration.QueueBackgroundWork(c => disposable);
+
+            configuration.StartBackgroundWork();
+
+            disposable.IsDisposed.Should().BeFalse();
+
+            configuration.Dispose();
+
+            disposable.IsDisposed.Should().BeTrue();
+        }
+
         public class EventBusWithDependencies : InProcessEventBus
         {
             private readonly IEnumerable<string> stringValues;
@@ -127,19 +204,13 @@ namespace Microsoft.Its.Domain.Tests
             {
                 if (stringValues == null)
                 {
-                    throw new ArgumentNullException("stringValues");
+                    throw new ArgumentNullException(nameof(stringValues));
                 }
               
                 this.stringValues = stringValues;
             }
 
-            public IEnumerable<string> StringValues
-            {
-                get
-                {
-                    return stringValues;
-                }
-            }
+            public IEnumerable<string> StringValues => stringValues;
         }
     }
 }

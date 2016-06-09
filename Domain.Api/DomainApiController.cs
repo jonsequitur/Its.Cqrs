@@ -28,20 +28,7 @@ namespace Microsoft.Its.Domain.Api
         where TAggregate : class, IEventSourced
     {
         protected static readonly JsonSerializer Serializer = JsonSerializer.Create(Domain.Serialization.Serializer.Settings);
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DomainApiController{TAggregate}" /> class.
-        /// </summary>
-        /// <param name="repository">The repository.</param>
-        /// <exception cref="System.ArgumentNullException">repository</exception>
-        protected DomainApiController(IEventSourcedRepository<TAggregate> repository)
-        {
-            if (repository == null)
-            {
-                throw new ArgumentNullException(nameof(repository));
-            }
-            this.Repository = repository;
-        }
+        private IEventSourcedRepository<TAggregate> repository;
 
         /// <summary>
         ///     Sends a command to the aggregate having id <paramref name="id" />.
@@ -57,7 +44,7 @@ namespace Microsoft.Its.Domain.Api
             [FromBody] JObject command)
         {
             var aggregate = await GetAggregate(id);
-            
+
             var existingVersion = aggregate.Version;
 
             await ApplyCommand(aggregate, commandName, command);
@@ -240,6 +227,7 @@ namespace Microsoft.Its.Domain.Api
         /// <summary>
         /// A repository for accessing aggregate instances.
         /// </summary>
-        protected IEventSourcedRepository<TAggregate> Repository { get; }
+        protected IEventSourcedRepository<TAggregate> Repository =>
+            repository ?? (repository = Domain.Configuration.Current.Repository<TAggregate>());
     }
 }

@@ -5,8 +5,6 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Web.Http;
-using Microsoft.Its.Domain.Sql;
-using Pocket;
 
 namespace Microsoft.Its.Domain.Api.Tests.Infrastructure
 {
@@ -15,18 +13,15 @@ namespace Microsoft.Its.Domain.Api.Tests.Infrastructure
     {
         private static HttpServer server;
         public readonly HttpConfiguration HttpConfiguration;
-        internal readonly PocketContainer Container = new PocketContainer();
 
         public TestApi()
         {
             HttpConfiguration = new HttpConfiguration
             {
                 IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always
-            }.ResolveDependenciesUsing(Container);
+            };
 
             HttpConfiguration.MapRoutesFor<T>();
-
-            Container.Register<IEventSourcedRepository<T>>(c => new SqlEventSourcedRepository<T>());
         }
 
         public HttpClient GetClient()

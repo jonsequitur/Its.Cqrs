@@ -154,6 +154,7 @@
     <Compile Include="ReportingProjectorTests.cs" />
     <Compile Include="ReadModelCatchupRollingCatchupTests.cs" />
     <Compile Include="SetUpDbConfiguration.cs" />
+    <Compile Include="SqlCommandSchedulerDatabaseCleanupTests.cs" />
     <Compile Include="SqlCommandSchedulerIdempotencyTests.cs" />
     <Compile Include="SqlCommandSchedulerIdempotencyTests_EventSourced.cs" />
     <Compile Include="SqlCommandSchedulerIdempotencyTests_NonEventSourced.cs" />
@@ -165,6 +166,7 @@
     <Compile Include="StorableEventTests.cs" />
     <Compile Include="SqlReservationServiceTests.cs" />
     <Compile Include="Events.cs" />
+    <Compile Include="TestDatabases.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Domain.Tests\.config\Events.json">

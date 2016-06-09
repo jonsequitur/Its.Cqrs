@@ -54,8 +54,11 @@ namespace Microsoft.Its.Domain.Tests
         {
             var order = new Order(
                 Guid.NewGuid(),
-                new Order.CustomerInfoChanged { CustomerName = "joe" },
-                new Order.Cancelled());
+                new IEvent<Order>[]
+                {
+                    new Order.CustomerInfoChanged { CustomerName = "joe" },
+                    new Order.Cancelled()
+                });
 
             order.CustomerName.Should().Be("joe");
             order.IsCancelled.Should().Be(true);
@@ -66,8 +69,11 @@ namespace Microsoft.Its.Domain.Tests
         {
             var order = new Order(
                 Guid.NewGuid(),
-                new Order.CustomerInfoChanged { CustomerName = "bob" },
-                new Order.CustomerInfoChanged { CustomerName = "alice" });
+                new[]
+                {
+                    new Order.CustomerInfoChanged { CustomerName = "bob" },
+                    new Order.CustomerInfoChanged { CustomerName = "alice" }
+                });
 
             order.CustomerName.Should().Be("alice");
         }
@@ -79,9 +85,11 @@ namespace Microsoft.Its.Domain.Tests
             {
                 new Order(
                     Guid.NewGuid(),
-                    new Order.CustomerInfoChanged { AggregateId = Guid.NewGuid(), CustomerName = "joe" },
-                    new Order.CustomerInfoChanged { AggregateId = Guid.NewGuid(), CustomerName = "hilda" }
-                    );
+                    new[]
+                    {
+                        new Order.CustomerInfoChanged { AggregateId = Guid.NewGuid(), CustomerName = "joe" },
+                        new Order.CustomerInfoChanged { AggregateId = Guid.NewGuid(), CustomerName = "hilda" }
+                    });
             };
 
             ctorCall.Invoking(c => c())
@@ -97,9 +105,11 @@ namespace Microsoft.Its.Domain.Tests
             {
                 new Order(
                     Guid.NewGuid(),
-                    new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" },
-                    new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" }
-                    );
+                    new[]
+                    {
+                        new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" },
+                        new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" }
+                    });
             };
 
             ctorCall.Invoking(c => c())
@@ -115,9 +125,12 @@ namespace Microsoft.Its.Domain.Tests
             {
                 new Order(
                     Guid.NewGuid(),
-                    new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" },
-                    new Order.CustomerInfoChanged { SequenceNumber = 2, CustomerName = "joe" },
-                    new Order.Cancelled { SequenceNumber = 1, Reason = "just 'cause..." }
+                    new IEvent<Order>[]
+                    {
+                        new Order.CustomerInfoChanged { SequenceNumber = 1, CustomerName = "joe" },
+                        new Order.CustomerInfoChanged { SequenceNumber = 2, CustomerName = "joe" },
+                        new Order.Cancelled { SequenceNumber = 1, Reason = "just 'cause..." }
+                    }
                     );
             };
 
@@ -144,7 +157,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var order = new Order(
                 Guid.NewGuid(),
-                new Order.Fulfilled());
+               new []  { new Order.Fulfilled() });
 
             order.IsCancelled.Should().Be(false);
 
@@ -170,11 +183,13 @@ namespace Microsoft.Its.Domain.Tests
         {
             var id = Guid.NewGuid();
             var order = new Order(id,
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 1, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
-                );
+                                  new[]
+                                  {
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 1, ProductName = "foo", Price = 1 },
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
+                                  });
 
             order.Items.Single().Quantity.Should().Be(4);
         }
@@ -185,11 +200,13 @@ namespace Microsoft.Its.Domain.Tests
             // arrange
             var id = Guid.NewGuid();
             var order = new Order(id,
-                                  new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
-                );
+                                  new IEvent<Order>[]
+                                  {
+                                      new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
+                                  });
 
             // act
             order.Apply(new Cancel());
@@ -205,11 +222,13 @@ namespace Microsoft.Its.Domain.Tests
             // arrange
             var id = Guid.NewGuid();
             var order = new Order(id,
-                                  new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
-                                  new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
-                );
+                                  new IEvent<Order>[]
+                                  {
+                                      new Order.Created { AggregateId = id, SequenceNumber = 1, CustomerId = Any.Guid() },
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 4, ProductName = "foo", Price = 1 },
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 8, ProductName = "foo", Price = 1 },
+                                      new Order.ItemAdded { AggregateId = id, SequenceNumber = 103, ProductName = "foo", Price = 1 }
+                                  });
 
             // act
             order.Apply(new Cancel());
@@ -221,14 +240,22 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public void Id_cannot_be_empty_guid()
+        public void Id_cannot_be_empty_guid_when_using_event_history_constructor()
         {
-            Action create = () => new Order(Guid.Empty);
+            Action create = () => new Order(Guid.Empty, new[] { new Order.CustomerInfoChanged() });
 
             create.Invoking(c => c())
                   .ShouldThrow<ArgumentException>()
                   .And
                   .Message.Should().Contain("id cannot be Guid.Empty");
+        }
+
+        [Test]
+        public void When_null_guid_is_passed_to_constructor_without_event_history_then_a_guid_is_chosen()
+        {
+            var order =  new Order((Guid?)null);
+
+            order.Id.Should().NotBeEmpty();
         }
 
         [Test]

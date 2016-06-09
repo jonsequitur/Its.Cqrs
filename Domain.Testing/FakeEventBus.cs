@@ -16,7 +16,6 @@ namespace Microsoft.Its.Domain.Testing
     /// </summary>
     public class FakeEventBus : InProcessEventBus
     {
-        // TODO: (FakeEventBus) rename this
         private readonly List<IEvent> publishedEvents = new List<IEvent>();
         private readonly List<Type> subscribedEventTypes = new List<Type>();
 

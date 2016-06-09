@@ -32,6 +32,64 @@ namespace Microsoft.Its.Domain
                 configuration.Container.Resolve<ICommandScheduler<TAggregate>>();
 
         /// <summary>
+        /// Queues background work that will be started when StartBackgroundWork is called.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="onStart">A delegate that starts the background work.</param>
+        public static Configuration QueueBackgroundWork(
+            this Configuration configuration,
+            Action<Configuration> onStart)
+        {
+            var queue = GetBackgroundWorkQueue(configuration);
+
+            queue.Enqueue(new BackgroundWork(onStart));
+
+            return configuration;
+        }
+
+        /// <summary>
+        /// Queues background work that will be started when <see cref="StartBackgroundWork" /> is called.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="onStart">A delegate that starts the background work and returns a disposable to be disposed along with the <see cref="Configuration" />.</param>
+        public static Configuration QueueBackgroundWork(
+            this Configuration configuration,
+            Func<Configuration, IDisposable> onStart)
+        {
+            var queue = GetBackgroundWorkQueue(configuration);
+
+            queue.Enqueue(new BackgroundWork(onStart));
+
+            return configuration;
+        }
+
+        private static BackgroundWorkQueue GetBackgroundWorkQueue(Configuration configuration)
+        {
+            if (!configuration.Container.Any(reg => reg.Key == typeof (BackgroundWorkQueue)))
+            {
+                configuration.Container.RegisterSingle(c => new BackgroundWorkQueue());
+            }
+
+            var queue = configuration.Container.Resolve<BackgroundWorkQueue>();
+            return queue;
+        }
+
+        /// <summary>
+        /// Starts all queued background work.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        public static void StartBackgroundWork(this Configuration configuration)
+        {
+            var queue = configuration.Container.Resolve<BackgroundWorkQueue>();
+
+            BackgroundWork work;
+            while (queue.TryDequeue(out work))
+            {
+                work.Start(configuration);
+            }
+        }
+
+        /// <summary>
         /// Configures the domain to use the specified event bus.
         /// </summary>
         public static Configuration UseEventBus(

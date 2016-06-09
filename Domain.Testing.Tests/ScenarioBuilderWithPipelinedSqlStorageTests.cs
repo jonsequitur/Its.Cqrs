@@ -4,7 +4,6 @@
 using System;
 using System.Reactive.Disposables;
 using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Sql.Tests;
 using NUnit.Framework;
 
@@ -24,18 +23,11 @@ namespace Microsoft.Its.Domain.Testing.Tests
             RegisterForDisposal(Disposable.Create(() => eventStoreDbTest.TearDown()));
         }
 
-        public override bool UsesSqlStorage
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool UsesSqlStorage => true;
 
         protected override ScenarioBuilder CreateScenarioBuilder()
         {
-            CommandSchedulerDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
+            TestDatabases.SetConnectionStrings();
 
             var scenarioBuilder = new ScenarioBuilder();
 

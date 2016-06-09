@@ -178,10 +178,9 @@ namespace Microsoft.Its.Domain
                             .Container
                             .Resolve(commandHandlerType);
                     }
-                    catch (DomainConfigurationException exception)
+                    catch (DomainConfigurationException)
                     {
                         // swallow this exception, allowing fallback to other EnactCommand strategies
-                        Trace.WriteLine($"Could not resolve a command handler of type {commandHandlerType}. This could be because no command handler of this type is implemented, or there was a problem instantiating one. If you implemented the EnactCommand method directly on your aggregate, you can ignore this warning.\n{exception}");
                     }
                 }
 

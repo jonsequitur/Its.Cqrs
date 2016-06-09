@@ -5,8 +5,6 @@ using System;
 using System.Data.Entity;
 using System.Linq;
 using System.Reactive.Disposables;
-using System.Threading.Tasks;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
 using NCrunch.Framework;
@@ -22,26 +20,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
         private CompositeDisposable disposables;
         private bool classInitializeHasBeenCalled;
 
-        public static void SetConnectionStrings()
-        {
-            EventStoreDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
-            ReadModelDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsReadModels";
-            CommandSchedulerDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
-        }
-
-        static EventStoreDbTest()
-        {
-            TaskScheduler.UnobservedTaskException += (sender, args) => Console.WriteLine("Unobserved exception: " + args.Exception);
-        }
-
         public EventStoreDbTest()
         {
             Logging.Configure();
 
-            SetConnectionStrings();
+            TestDatabases.SetConnectionStrings();
 
             Command<Order>.AuthorizeDefault = (order, command) => true;
             Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
