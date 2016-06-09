@@ -1,25 +1,20 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Its.Domain.Sql;
+using System;
 
 namespace Microsoft.Its.Domain.Api.Tests.Infrastructure
 {
     public static class AggregateExtensions
     {
-        public static async Task SaveToEventStore<TAggregate>(this TAggregate aggregate) where TAggregate : EventSourcedAggregate
+        public static TAggregate SavedToEventStore<TAggregate>(this TAggregate aggregate)
+            where TAggregate : EventSourcedAggregate<TAggregate>
         {
-            using (var db = new EventStoreDbContext())
-            {
-                foreach (var e in aggregate.EventHistory.OfType<IEvent<TAggregate>>())
-                {
-                    var storableEvent = e.ToStorableEvent();
-                    db.Events.Add(storableEvent);
-                }
-                await db.SaveChangesAsync();
-            }
+            var repository = Configuration.Current.Repository<TAggregate>();
+
+            repository.Save(aggregate).Wait();
+
+            return aggregate;
         }
     }
 }

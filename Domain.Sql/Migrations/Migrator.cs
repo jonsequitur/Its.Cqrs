@@ -78,7 +78,7 @@ FROM sys.tables;";
         /// <param name="context">The database context specifying which database the migrations are to be applied to.</param>
         /// <param name="migrators">The migrators to apply.</param>
         /// <exception cref="System.ArgumentNullException">migrators</exception>
-        public static void EnsureDatabaseIsUpToDate<TContext>(
+        public static IEnumerable<MigrationResult> EnsureDatabaseIsUpToDate<TContext>(
             this TContext context,
             params IDbMigrator[] migrators)
             where TContext : DbContext
@@ -88,48 +88,44 @@ FROM sys.tables;";
                 throw new ArgumentNullException(nameof(migrators));
             }
 
-            if (!migrators.Any())
+            if (!migrators.Any() || !context.CurrentUserHasWritePermissions())
             {
-                return;
+                return Enumerable.Empty<MigrationResult>();
             }
 
-            if (!context.CurrentUserHasWritePermissions())
-            {
-                return;
-            }
+            var results = new List<MigrationResult>();
 
             using (var appLock = new AppLock(context, "PocketMigrator", false))
             {
-                if (!appLock.IsAcquired)
+                if (appLock.IsAcquired)
                 {
-                    return;
-                }
-
-                try
-                {
-                    // don't dispose this connection, since it's managed by the DbContext
-                    var connection = context.OpenConnection();
-
-                    var appliedVersions = connection.GetLatestAppliedMigrationVersions()
-                                                    .ToDictionary(v => v.MigrationScope,
-                                                                  v => v);
-
-                    migrators.OrderBy(m => m.MigrationVersion)
-                             .Where(m => appliedVersions.IfContains(m.MigrationScope)
-                                                        .Then(a => m.MigrationVersion > a.MigrationVersion)
-                                                        .Else(() => true))
-                             .ForEach(migrator => ApplyMigration(migrator, context));
-
-                }
-                catch (SqlException exception)
-                {
-                    if (exception.Number != 1205)
+                    try
                     {
-                        // Transaction was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.
-                        throw;
+                        // don't dispose this connection, since it's managed by the DbContext
+                        var connection = context.OpenConnection();
+
+                        var appliedVersions = connection.GetLatestAppliedMigrationVersions()
+                                                        .ToDictionary(v => v.MigrationScope,
+                                                                      v => v);
+
+                        migrators.OrderBy(m => m.MigrationVersion)
+                                 .Where(m => appliedVersions.IfContains(m.MigrationScope)
+                                                            .Then(a => m.MigrationVersion > a.MigrationVersion)
+                                                            .Else(() => true))
+                                 .ForEach(migrator => results.Add(ApplyMigration(migrator, context)));
+                    }
+                    catch (SqlException exception)
+                    {
+                        if (exception.Number != 1205)
+                        {
+                            // Transaction was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.
+                            throw;
+                        }
                     }
                 }
             }
+
+            return results.Where(result => result.MigrationWasApplied);
         }
 
         internal static AppliedMigration[] GetLatestAppliedMigrationVersions(this IDbConnection connection)
@@ -173,7 +169,7 @@ WHERE rowNumber = 1")
             public Version MigrationVersion { get; set; }
         }
 
-        private static void ApplyMigration(IDbMigrator migrator, DbContext connection)
+        private static MigrationResult ApplyMigration(IDbMigrator migrator, DbContext connection)
         {
             var result = migrator.Migrate(connection);
 
@@ -194,6 +190,8 @@ WHERE rowNumber = 1")
                     new SqlParameter("@migrationVersion", migrator.MigrationVersion.ToString()),
                     new SqlParameter("@log", $"{migrator.GetType().AssemblyQualifiedName}\n\n{result.Log}".Trim()));
             }
+
+            return result;
         }
     }
 }

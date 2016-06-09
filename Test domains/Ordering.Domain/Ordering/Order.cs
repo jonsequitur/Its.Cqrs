@@ -16,13 +16,9 @@ namespace Test.Domain.Ordering
         {
         }
 
-        public Order(Guid id, params IEvent[] eventHistory) : base(id, eventHistory)
-        {
-        }
-
         public Order(Guid? id = null) : base(id)
         {
-            RecordEvent(new Order.Created
+            RecordEvent(new Created
             {
                 CustomerId = Guid.NewGuid(),
                 ETag = null

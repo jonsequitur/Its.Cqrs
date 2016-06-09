@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Its.Domain.Api;
+using System.Collections.Concurrent;
 
-namespace Test.Domain.Ordering.Domain.Api.Controllers
+namespace Microsoft.Its.Domain
 {
-    public class OrderApiController : DomainApiController<Order>
+    internal class BackgroundWorkQueue : ConcurrentQueue<BackgroundWork>
     {
     }
 }

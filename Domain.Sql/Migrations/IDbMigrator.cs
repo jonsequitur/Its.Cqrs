@@ -11,6 +11,10 @@ namespace Microsoft.Its.Domain.Sql.Migrations
     /// </summary>
     public interface IDbMigrator
     {
+        /// <summary>
+        /// Gets the scope within of the migration.
+        /// </summary>
+        /// <remarks>Migrations within one scope are independent of migrations within another scope. Migriation versions are not compared across scopes.</remarks>
         string MigrationScope { get; }
 
         /// <summary>

@@ -45,9 +45,6 @@ namespace Microsoft.Its.Domain.Tests
                 target
             };
 
-            CommandSchedulerDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsCommandScheduler";
-
             configuration = new Configuration()
                 .UseInMemoryCommandScheduling()
                 .UseDependency<IStore<CommandTarget>>(_ => store)

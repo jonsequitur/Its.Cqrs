@@ -77,6 +77,7 @@
     <Compile Include="%28Its.Recipes%29\System.Linq\EnumerableExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\System.Dynamic\TypeExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\System.Linq.Expressions\MappingExpression.cs" />
+    <Compile Include="%28Its.Recipes%29\System\DateTimeOffsetExtensions.cs" />
     <Compile Include="%28Pocket%29\PocketContainer.Clone.cs" />
     <Compile Include="%28Pocket%29\PocketContainer.cs" />
     <Compile Include="%28Pocket%29\PocketContainerOpenGenericStrategy.cs" />
@@ -96,6 +97,8 @@
     <Compile Include="Authorization\AuthorizationFor.cs" />
     <Compile Include="Authorization\AuthorizationQuery{TResource,TCommand,TPrincipal}.cs" />
     <Compile Include="Authorization\IAuthorizationQuery{TResource,TCommand,TPrincipal}.cs" />
+    <Compile Include="BackgroundWork.cs" />
+    <Compile Include="BackgroundWorkQueue.cs" />
     <Compile Include="BloomFilter.cs" />
     <Compile Include="Clock.cs" />
     <Compile Include="Command.cs" />

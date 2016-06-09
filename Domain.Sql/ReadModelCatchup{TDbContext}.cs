@@ -16,7 +16,6 @@ using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Unit = System.Reactive.Unit;
-using log = Its.Log.Lite.Log;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -341,7 +340,7 @@ namespace Microsoft.Its.Domain.Sql
             var existingReadModelInfosCount = readModelInfos.Length;
             long startAtId = 0;
 
-            if (GetProjectorNames().Count() == existingReadModelInfosCount)
+            if (GetProjectorNames().Length == existingReadModelInfosCount)
             {
                 // if all of the read models have been previously updated, we don't have to start at event 0
                 startAtId = readModelInfos.Min(i => i.CurrentAsOfEventId) + 1;
@@ -449,7 +448,7 @@ namespace Microsoft.Its.Domain.Sql
         private void EnsureProjectorNamesAreDistinct()
         {
             var names = GetProjectorNames();
-            if (names.Distinct().Count() != names.Count())
+            if (names.Distinct().Count() != names.Length)
             {
                 throw new ArgumentException("Duplicate read model names:\n" +
                                             names.Where(n => names.Count(nn => nn == n) > 1)

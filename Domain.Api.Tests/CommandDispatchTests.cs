@@ -12,31 +12,27 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
 using Microsoft.Its.Domain.Serialization;
-using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.Domain.Sql.Tests;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using Moq;
 using NCrunch.Framework;
 using NUnit.Framework;
 using Test.Domain.Ordering;
-using Test.Ordering.Domain.Api.Controllers;
+using Test.Domain.Ordering.Domain.Api.Controllers;
 
 namespace Microsoft.Its.Domain.Api.Tests
 {
     [TestFixture]
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsCommandScheduler")]
-    public class CommandDispatchTests : EventStoreDbTest
+    public class CommandDispatchTests 
     {
-        private CompositeDisposable disposables = new CompositeDisposable();
+        private CompositeDisposable disposables;
 
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
             // this is a shim to make sure that the Test.Domain.Ordering.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
-            var controller = new OrderApiController(new InMemoryEventSourcedRepository<Order>());
-
-            TestSetUp.EnsureEventStoreIsInitialized();
+            var controller = new OrderApiController();
         }
 
         [SetUp]
@@ -44,9 +40,11 @@ namespace Microsoft.Its.Domain.Api.Tests
         {
             Command<Order>.AuthorizeDefault = (order, command) => true;
 
+            disposables = new CompositeDisposable();
+
             var configuration = new Configuration()
-                .UseSqlEventStore()
-                .UseSqlStorageForScheduledCommands();
+                .UseInMemoryEventStore()
+                .UseInMemoryCommandScheduling();
             disposables.Add(ConfigurationContext.Establish(configuration));
         }
 
@@ -59,9 +57,10 @@ namespace Microsoft.Its.Domain.Api.Tests
         [Test]
         public async Task Posting_command_JSON_applies_a_command_with_the_specified_name_to_an_aggregate_with_the_specified_id()
         {
-            var order = new Order(Guid.NewGuid(),
-                                  new Order.CustomerInfoChanged { CustomerName = "Joe" });
-            await order.SaveToEventStore();
+            var order = new Order(Guid.NewGuid())
+                .Apply(new ChangeCustomerInfo { CustomerName = "Joe" })
+                .SavedToEventStore();
+
             var json = new AddItem
             {
                 Quantity = 5,
@@ -69,7 +68,7 @@ namespace Microsoft.Its.Domain.Api.Tests
                 ProductName = "Bag o' Treats"
             }.ToJson();
 
-            var request = new HttpRequestMessage(HttpMethod.Post, string.Format("http://contoso.com/orders/{0}/additem", order.Id))
+            var request = new HttpRequestMessage(HttpMethod.Post, $"http://contoso.com/orders/{order.Id}/additem")
             {
                 Content = new StringContent(json, Encoding.UTF8, "application/json")
             };
@@ -81,7 +80,7 @@ namespace Microsoft.Its.Domain.Api.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-            var updatedOrder = await new SqlEventSourcedRepository<Order>().GetLatest(order.Id);
+            var updatedOrder = await Configuration.Current.Repository<Order>().GetLatest(order.Id);
 
             updatedOrder.Items.Single().Quantity.Should().Be(5);
         }
@@ -89,10 +88,11 @@ namespace Microsoft.Its.Domain.Api.Tests
         [Test]
         public async Task Posting_an_invalid_command_does_not_affect_the_aggregate_state()
         {
-            var order = new Order(Guid.NewGuid(),
-                                  new Order.CustomerInfoChanged { CustomerName = "Joe" },
-                                  new Order.Fulfilled());
-            await order.SaveToEventStore();
+            var order = new Order(Guid.NewGuid())
+                .Apply(new ChangeCustomerInfo { CustomerName = "Joe" })
+                .Apply(new Deliver())
+                .SavedToEventStore();
+
             var json = new AddItem
             {
                 Quantity = 5,
@@ -100,7 +100,7 @@ namespace Microsoft.Its.Domain.Api.Tests
                 ProductName = "Bag o' Treats"
             }.ToJson();
 
-            var request = new HttpRequestMessage(HttpMethod.Post, string.Format("http://contoso.com/orders/{0}/additem", order.Id))
+            var request = new HttpRequestMessage(HttpMethod.Post, $"http://contoso.com/orders/{order.Id}/additem")
             {
                 Content = new StringContent(json, Encoding.UTF8, "application/json")
             };
@@ -112,9 +112,9 @@ namespace Microsoft.Its.Domain.Api.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-            var updatedOrder = await new SqlEventSourcedRepository<Order>().GetLatest(order.Id);
+            var updatedOrder = await Configuration.Current.Repository<Order>().GetLatest(order.Id);
 
-            updatedOrder.Items.Count().Should().Be(0);
+            updatedOrder.Items.Count.Should().Be(0);
         }
 
         [Test]
@@ -130,7 +130,7 @@ namespace Microsoft.Its.Domain.Api.Tests
         [Test]
         public void Posting_command_JSON_to_a_nonexistent_aggregate_returns_404_Not_found()
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, string.Format("http://contoso.com/orders/{0}/cancel", Guid.NewGuid()))
+            var request = new HttpRequestMessage(HttpMethod.Post, $"http://contoso.com/orders/{Guid.NewGuid()}/cancel")
             {
                 Content = new StringContent(new Cancel().ToJson(), Encoding.UTF8, "application/json")
             };
@@ -145,13 +145,13 @@ namespace Microsoft.Its.Domain.Api.Tests
         [Test]
         public async Task Posting_unauthorized_command_JSON_returns_403_Forbidden()
         {
-            var order = new Order(Guid.NewGuid(),
-                                  new Order.CustomerInfoChanged { CustomerName = "Joe" },
-                                  new Order.Fulfilled());
-            await order.SaveToEventStore();
+            var order = new Order(Guid.NewGuid())
+                .Apply(new ChangeCustomerInfo { CustomerName = "Joe" })
+                .Apply(new Deliver())
+                .SavedToEventStore();
 
             Command<Order>.AuthorizeDefault = (o, command) => false;
-            var request = new HttpRequestMessage(HttpMethod.Post, string.Format("http://contoso.com/orders/{0}/cancel", order.Id))
+            var request = new HttpRequestMessage(HttpMethod.Post, $"http://contoso.com/orders/{order.Id}/cancel")
             {
                 Content = new StringContent(new Cancel().ToJson(), Encoding.UTF8, "application/json")
             };
@@ -166,7 +166,9 @@ namespace Microsoft.Its.Domain.Api.Tests
         [Test]
         public async Task Posting_a_command_that_causes_a_concurrency_error_returns_409_Conflict()
         {
-            var order = new Order(Guid.NewGuid(), new Order.CustomerInfoChanged { CustomerName = "Joe" });
+            var order = new Order(Guid.NewGuid())
+                .Apply(new ChangeCustomerInfo { CustomerName = "Joe" })
+                .SavedToEventStore();
 
             var testApi = new TestApi<Order>();
             var repository = new Mock<IEventSourcedRepository<Order>>();
@@ -174,11 +176,11 @@ namespace Microsoft.Its.Domain.Api.Tests
                       .Returns(Task.FromResult(order));
             repository.Setup(r => r.Save(It.IsAny<Order>()))
                       .Throws(new ConcurrencyException("oops!", new IEvent[0], new Exception("inner oops")));
-            testApi.Container.Register(c => repository.Object);
+            Configuration.Current.UseDependency(c => repository.Object);
 
             var client = testApi.GetClient();
 
-            var response = await client.PostAsJsonAsync(string.Format("http://contoso.com/orders/{0}/additem", order.Id), new { Price = 3m, ProductName = Any.Word() });
+            var response = await client.PostAsJsonAsync($"http://contoso.com/orders/{order.Id}/additem", new { Price = 3m, ProductName = Any.Word() });
 
             response.ShouldFailWith(HttpStatusCode.Conflict);
         }
@@ -191,7 +193,7 @@ namespace Microsoft.Its.Domain.Api.Tests
             var orderId = Any.Guid();
 
             var response = await testApi.GetClient()
-                                        .PostAsJsonAsync(string.Format("http://contoso.com/orders/createorder/{0}", orderId), new CreateOrder(Any.FullName()));
+                                        .PostAsJsonAsync($"http://contoso.com/orders/createorder/{orderId}", new CreateOrder(Any.FullName()));
 
             response.ShouldSucceed(HttpStatusCode.Created);
         }
@@ -204,11 +206,11 @@ namespace Microsoft.Its.Domain.Api.Tests
 
             var orderId = Any.Guid();
             await testApi.GetClient()
-                         .PostAsJsonAsync(string.Format("http://contoso.com/orders/createorder/{0}", orderId), new CreateOrder(Any.FullName()));
+                         .PostAsJsonAsync($"http://contoso.com/orders/createorder/{orderId}", new CreateOrder(Any.FullName()));
 
             // act
             var response = await testApi.GetClient()
-                                        .PostAsJsonAsync(string.Format("http://contoso.com/orders/createorder/{0}", orderId), new CreateOrder(Any.FullName()));
+                                        .PostAsJsonAsync($"http://contoso.com/orders/createorder/{orderId}", new CreateOrder(Any.FullName()));
 
             // assert
             response.ShouldFailWith(HttpStatusCode.Conflict);
@@ -217,9 +219,10 @@ namespace Microsoft.Its.Domain.Api.Tests
         [Test]
         public async Task An_ETag_header_is_applied_to_the_command()
         {
-            var order = new Order(Guid.NewGuid(),
-                                  new Order.CustomerInfoChanged { CustomerName = "Joe" });
-            await order.SaveToEventStore();
+            var order = new Order(Guid.NewGuid())
+                .Apply(new ChangeCustomerInfo { CustomerName = "Joe" })
+                .SavedToEventStore();
+
             var json = new AddItem
             {
                 Quantity = 5,
@@ -231,9 +234,9 @@ namespace Microsoft.Its.Domain.Api.Tests
 
             Func<HttpRequestMessage> createRequest = () =>
             {
-                var request = new HttpRequestMessage(HttpMethod.Post, string.Format("http://contoso.com/orders/{0}/additem", order.Id))
+                var request = new HttpRequestMessage(HttpMethod.Post, $"http://contoso.com/orders/{order.Id}/additem")
                 {
-                    Content = new StringContent(json, Encoding.UTF8, "application/json"),
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
                 request.Headers.IfNoneMatch.Add(etag);
                 return request;
@@ -250,7 +253,7 @@ namespace Microsoft.Its.Domain.Api.Tests
             response1.ShouldSucceed(HttpStatusCode.OK);
             response2.ShouldFailWith(HttpStatusCode.NotModified);
 
-            var updatedOrder = await new SqlEventSourcedRepository<Order>().GetLatest(order.Id);
+            var updatedOrder = await Configuration.Current.Repository<Order>().GetLatest(order.Id);
             updatedOrder.Items.Single().Quantity.Should().Be(5);
         }
     }

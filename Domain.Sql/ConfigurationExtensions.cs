@@ -50,12 +50,20 @@ namespace Microsoft.Its.Domain.Sql
             return configuration;
         }
 
+        /// <summary>
+        /// Configures the use of a SQL-backed command scheduler. 
+        /// </summary>
         public static Configuration UseSqlStorageForScheduledCommands(
-            this Configuration configuration)
+            this Configuration configuration,
+            Action<SqlCommandSchedulerConfiguration> configure = null)
         {
             configuration.IsUsingInMemoryCommandScheduling(false);
-
+            
             var container = configuration.Container;
+
+            var commandSchedulerConfiguration = new SqlCommandSchedulerConfiguration(configuration);
+            configure?.Invoke(commandSchedulerConfiguration);
+            container.Register(c => configuration);
 
             container.RegisterDefaultClockName()
                      .Register<ISchedulerClockRepository>(

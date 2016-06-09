@@ -17,7 +17,7 @@ namespace Test.Domain.Ordering
             get
             {
                 var productIsInStock = Validate.That<OrderItem>(item => Inventory.IsAvailable(item.ProductName))
-                                               .WithErrorMessage((e, item) => string.Format("Product '{0}' is out of stock.", item.ProductName));
+                                               .WithErrorMessage((e, item) => $"Product '{item.ProductName}' is out of stock.");
 
                 return new ValidationPlan<Order>
                 {

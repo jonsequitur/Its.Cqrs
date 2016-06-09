@@ -2,16 +2,15 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Threading.Tasks;
+using System.Reactive.Disposables;
 using FluentAssertions;
 using Microsoft.Its.Domain.Api.Serialization;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
 using Microsoft.Its.Domain.Testing;
-using Microsoft.Its.Domain.Tests.Infrastructure;
 using NUnit.Framework;
 using Newtonsoft.Json.Linq;
 using Test.Domain.Ordering;
-using Test.Ordering.Domain.Api.Controllers;
+using Test.Domain.Ordering.Domain.Api.Controllers;
 using Assert = NUnit.Framework.Assert;
 
 namespace Microsoft.Its.Domain.Api.Tests
@@ -19,31 +18,42 @@ namespace Microsoft.Its.Domain.Api.Tests
     [TestFixture]
     public class ValidationTests
     {
+        private CompositeDisposable disposables;
+
         [SetUp]
         public void SetUp()
         {
-             // this is a shim to make sure that the Test.Domain.Ordering.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
-            var controller = new OrderApiController(new InMemoryEventSourcedRepository<Order>());
+            // this is a shim to make sure that the Test.Domain.Ordering.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
+            var controller = new OrderApiController();
 
-            TestSetUp.EnsureEventStoreIsInitialized();
-            Logging.Configure();
+            disposables = new CompositeDisposable();
+
             Command<Order>.AuthorizeDefault = (order, command) => true;
+
+            var configuration = new Configuration()
+                .UseInMemoryEventStore()
+                .UseInMemoryCommandScheduling();
+            disposables.Add(ConfigurationContext.Establish(configuration));
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            disposables.Dispose();
         }
 
         [Test]
-        public async Task Command_properties_can_be_validated()
+        public void Command_properties_can_be_validated()
         {
-            var order = new Order(
-                Guid.NewGuid(),
-                new Order.Fulfilled());
-            await order.SaveToEventStore();
-
-            Console.WriteLine(order.Id);
+           var order = new Order(Guid.NewGuid())
+                .Apply(new ChangeCustomerInfo { CustomerName = "Joe" })
+                .Apply(new Deliver())
+                .SavedToEventStore();
 
             var httpClient = new TestApi<Order>().GetClient();
 
             var result = httpClient.PostAsync(
-                string.Format("http://contoso.com/orders/{0}/additem/validate", order.Id),
+                $"http://contoso.com/orders/{order.Id}/additem/validate",
                 new JsonContent(new AddItem
                 {
                     Price = 1m,

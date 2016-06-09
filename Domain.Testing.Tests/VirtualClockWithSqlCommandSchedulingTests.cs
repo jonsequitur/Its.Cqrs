@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             disposables = new CompositeDisposable();
 
             Command<Order>.AuthorizeDefault = (order, command) => true;
-            EventStoreDbTest.SetConnectionStrings();
+            TestDatabases.SetConnectionStrings();
             configuration = GetConfiguration();
             disposables.Add(ConfigurationContext.Establish(configuration));
         }
