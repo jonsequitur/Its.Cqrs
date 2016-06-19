@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Recipes;
-using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {

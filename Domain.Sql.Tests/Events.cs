@@ -7,6 +7,7 @@ using System.Transactions;
 using Microsoft.Its.Recipes;
 using Pocket;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -49,9 +50,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             return events.RandomSequence(1).Select(e => e()).Single();
         }
 
-        public static long Write(int howMany, 
+        public static long Write(
+            int howMany,
             Func<int, IEvent> createEvent = null,
-                                 Func<EventStoreDbContext> createEventStore = null)
+            Func<EventStoreDbContext> createEventStore = null)
         {
             createEvent = createEvent ?? (i => new Order.ItemAdded
             {
@@ -62,12 +64,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Quantity = 1
             });
 
-            Console.WriteLine("writing {0} events", howMany);
-
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var eventStore = createEventStore.IfNotNull()
                                                     .Then(c => c())
-                                                    .Else(() => new EventStoreDbContext()))
+                                                    .Else(() => EventStoreDbContext()))
             {
                 Enumerable.Range(1, howMany).ForEach(i =>
                 {
@@ -90,8 +90,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     var storableEvent = e.ToStorableEvent();
 
                     eventStore.Events.Add(storableEvent);
-
-                    Console.WriteLine("wrote event " + storableEvent);
                 });
 
                 eventStore.SaveChanges();

@@ -49,6 +49,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Configure(configuration);
 
             disposables.Add(ConfigurationContext.Establish(configuration));
+            disposables.Add(configuration);
         }
 
         [TearDown]
@@ -63,9 +64,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
             disposables = new CompositeDisposable();
             clockName = Any.CamelCaseName();
 
-            configuration.UseSqlStorageForScheduledCommands()
-                         .UseInMemoryCommandTargetStore()
+            configuration.UseInMemoryCommandTargetStore()
                          .TraceScheduledCommands()
+                         .UseSqlEventStore(c =>
+                                           c.UseConnectionString(TestDatabases.EventStore.ConnectionString))
+                         .UseSqlStorageForScheduledCommands(c =>
+                                                            c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
                          .UseDependency<GetClockName>(_ => command => clockName);
 
             scheduler = configuration.CommandScheduler<CommandTarget>();
@@ -313,7 +317,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                      new TestCommand(),
                                      Clock.Now().AddDays(2));
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var aggregateId = target.Id.ToGuidV3();
                 var command = db.ScheduledCommands
@@ -342,7 +346,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                      new TestCommand(isValid: false),
                                      Clock.Now().AddDays(2));
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var aggregateId = target.Id.ToGuidV3();
                 var command = db.ScheduledCommands
@@ -372,7 +376,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                      new TestCommand(isValid: false));
 
             //assert 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var aggregateId = target.Id.ToGuidV3();
                 var error = db.Errors.Single(e => e.ScheduledCommand.AggregateId == aggregateId);
@@ -470,7 +474,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                      deliveryDependsOn: precondition);
         
             // assert
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var aggregateId = targetId.ToGuidV3();
                 var command = db.ScheduledCommands.Single(c => c.AggregateId == aggregateId);
@@ -551,7 +555,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                             new CreateCommandTarget(successfulTargetId),
                                             Clock.Now().AddHours(1.5));
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var aggregateId = failedTargetId.ToGuidV3();
 
@@ -588,7 +592,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
             };
 
-            using (var commandScheduler = new CommandSchedulerDbContext())
+            using (var commandScheduler = Configuration.Current.CommandSchedulerDbContext())
             {
                 commandScheduler.Clocks.Add(clock);
                 commandScheduler.SaveChanges();

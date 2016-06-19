@@ -15,7 +15,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             if (seedFromConnectionString == null)
             {
-                throw new ArgumentNullException("seedFromConnectionString");
+                throw new ArgumentNullException(nameof(seedFromConnectionString));
             }
             this.seedFromConnectionString = seedFromConnectionString;
         }

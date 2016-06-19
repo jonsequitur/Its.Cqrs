@@ -23,9 +23,9 @@ namespace Microsoft.Its.Domain.Testing.Tests
             disposables = new CompositeDisposable();
 
             Command<Order>.AuthorizeDefault = (order, command) => true;
-            TestDatabases.SetConnectionStrings();
             configuration = GetConfiguration();
             disposables.Add(ConfigurationContext.Establish(configuration));
+            disposables.Add(configuration);
         }
 
         [TearDown]
@@ -40,8 +40,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var clockName = Any.CamelCaseName();
             return new Configuration()
                 .UseDependency<GetClockName>(_ => c => clockName)
-                .UseSqlStorageForScheduledCommands()
-                .UseSqlEventStore()
+                .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
+                .UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString))
                 .UseInMemoryCommandTargetStore()
                 .TraceScheduledCommands();
         }

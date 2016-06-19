@@ -26,12 +26,14 @@ namespace Microsoft.Its.Domain.Tests
         private ConcurrentBag<IScheduledCommand> commandsScheduled;
         private ScheduleCommand schedule;
 
-        protected abstract void Configure(Configuration configuration, Action<IDisposable> onDispose);
+        protected abstract void Configure(Configuration configuration);
 
         [SetUp]
         public void SetUp()
         {
             Clock.Reset();
+
+            Command<Order>.AuthorizeDefault = (order, command) => true;
 
             disposables = new CompositeDisposable
             {
@@ -51,7 +53,7 @@ namespace Microsoft.Its.Domain.Tests
                     onDelivering: _ => { },
                     onDelivered: c => commandsDelivered.Add(c));
 
-            Configure(configuration, d => disposables.Add(d));
+            Configure(configuration);
 
             disposables.Add(ConfigurationContext.Establish(configuration));
         }

@@ -3,10 +3,9 @@
 
 using System;
 using System.Data.Entity;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Sql.Migrations;
 
-namespace Microsoft.Its.Domain.Sql
+namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
     /// <summary>
     /// Deletes successfully delivered scheduled commands from SQL storage in order to keep database size from growing endlessly. 
@@ -25,7 +24,7 @@ namespace Microsoft.Its.Domain.Sql
                 throw new ArgumentException($"{nameof(frequencyInDays)} must be greater than zero.");
             }
 
-            var now = Clock.Now();
+            var now = Domain.Clock.Now();
 
             cutoffDate = now.Subtract(completedCommandsOlderThan);
 

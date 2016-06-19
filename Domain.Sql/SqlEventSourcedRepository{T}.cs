@@ -205,7 +205,7 @@ namespace Microsoft.Its.Domain.Sql
             await bus.PublishAsync(events);
         }
 
-        public Func<EventStoreDbContext> GetEventStoreContext = () => new EventStoreDbContext();
+        public Func<EventStoreDbContext> GetEventStoreContext = () => Configuration.Current.EventStoreDbContext();
 
         /// <summary>
         ///     Gets a command target by the id.

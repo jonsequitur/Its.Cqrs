@@ -17,7 +17,7 @@ namespace Microsoft.Its.Domain.Sql
         internal static ConcurrentDictionary<string, Func<DbContext>> ReadModelDbContexts =>
             readModelDbContext ?? (readModelDbContext = new ConcurrentDictionary<string, Func<DbContext>>());
 
-        public static Func<EventStoreDbContext> GetEventStoreDbContext = () => new EventStoreDbContext();
+        public static Func<EventStoreDbContext> GetEventStoreDbContext = () => Configuration.Current.EventStoreDbContext();
 
         [Export("DiagnosticSensor")]
         public static async Task<dynamic> CatchupStatus()

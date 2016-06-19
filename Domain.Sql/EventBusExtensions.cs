@@ -13,9 +13,9 @@ namespace Microsoft.Its.Domain.Sql
         /// Reports event handling errors via the specified database.
         /// </summary>
         /// <param name="bus">The bus.</param>
-        /// <param name="db">The database.</param>
+        /// <param name="createDbContext">The database.</param>
         /// <returns></returns>
-        public static IDisposable ReportErrorsToDatabase(this IEventBus bus, Func<DbContext> db) =>
-            bus.Errors.Subscribe(e => ReadModelUpdate.ReportFailure(e, db));
+        public static IDisposable ReportErrorsToDatabase(this IEventBus bus, Func<DbContext> createDbContext) =>
+            bus.Errors.Subscribe(e => ReadModelUpdate.ReportFailure(e, createDbContext));
     }
 }

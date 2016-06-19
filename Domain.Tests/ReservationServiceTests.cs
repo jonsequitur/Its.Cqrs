@@ -115,29 +115,10 @@ namespace Microsoft.Its.Domain.Tests
             var scope = Any.CamelCaseName();
             var barrier = new Barrier(2);
             onSave = () => barrier.SignalAndWait(2000);
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
             
             var attempt1 = Task.Run(async () => await reservationService.Reserve(username, scope, "owner-token1"));
             var attempt2 = Task.Run(async () => await reservationService.Reserve(username, scope, "owner-token2"));
-
-            await Task.WhenAll(attempt1, attempt2);
-
-            attempt1.Result.Should().Be(!attempt2.Result);
-        }
-
-        [Test]
-        public async Task Only_one_of_multiple_concurrent_attempts_to_reserve_the_same_value_can_succeed_when_using_SynchronousReservationService()
-        {
-            var username = Any.CamelCaseName();
-            var scope = Any.CamelCaseName();
-            var barrier = new Barrier(2);
-            onSave = () => barrier.SignalAndWait(2000);
-#pragma warning disable 618
-            var reservationService = (ISynchronousReservationService) Configuration.Current.ReservationService;
-#pragma warning restore 618
-
-            var attempt1 = Task.Run(() => reservationService.Reserve(username, scope, "owner-token1"));
-            var attempt2 = Task.Run(() => reservationService.Reserve(username, scope, "owner-token2"));
 
             await Task.WhenAll(attempt1, attempt2);
 
@@ -151,7 +132,7 @@ namespace Microsoft.Its.Domain.Tests
             var value = Any.FullName();
             var ownerToken = Any.Guid().ToString();
             var scope = "default-scope";
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
             await reservationService.Reserve(value, scope, ownerToken);
             await reservationService.Confirm(value, scope, ownerToken);
 
@@ -169,7 +150,7 @@ namespace Microsoft.Its.Domain.Tests
             var username = Any.Email();
             var ownerToken = Any.Email();
             var scope = "default-scope";
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
             await reservationService.Reserve(username, scope, ownerToken);
             await reservationService.Confirm(username, scope, ownerToken);
 
@@ -187,7 +168,7 @@ namespace Microsoft.Its.Domain.Tests
             var value = Any.FullName();
             var ownerToken = Any.Guid().ToString();
             var scope = "default-scope";
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
             await reservationService.Reserve(value, scope, ownerToken, TimeSpan.FromMinutes(5));
 
             // act
@@ -201,7 +182,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task When_Confirm_is_called_for_a_nonexistent_reservation_then_it_returns_false()
         {
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
 
             var value = await reservationService.Confirm(Any.CamelCaseName(), Any.CamelCaseName(), Any.CamelCaseName());
 
@@ -215,7 +196,7 @@ namespace Microsoft.Its.Domain.Tests
             var value = Any.FullName();
             var ownerToken = Any.Guid().ToString();
             var scope = "default-scope";
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
             await reservationService.Reserve(value, scope, ownerToken, TimeSpan.FromMinutes(5));
 
             // act
@@ -238,7 +219,7 @@ namespace Microsoft.Its.Domain.Tests
             var value = Any.FullName();
             var ownerToken = Any.Guid().ToString();
             var scope = "default-scope";
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
             await reservationService.Reserve(value, scope, ownerToken, TimeSpan.FromMinutes(5));
 
             // act
@@ -252,7 +233,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task If_a_fixed_quantity_of_resource_had_been_depleted_then_reservations_cant_be_made()
         {
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
 
             // given a fixed quantity of some resource where the resource has been used
             var ownerToken = Any.Guid().ToString();
@@ -284,7 +265,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task Confirmation_token_cant_be_used_twice_by_different_owners_for_the_same_resource()
         {
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
 
             // given a fixed quantity of some resource where the resource has been used
             var word = Any.Word();
@@ -313,7 +294,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task When_confirmation_token_is_used_twice_for_the_same_unconfirmed_reservation_then_ReserveAny_extends_the_lease()
         {
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
 
             // given a fixed quantity of some resource where the resource has been used
             //todo:(this needs to be done via an interface rather then just calling reserve multiple times)
@@ -347,7 +328,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task When_ReserveAny_is_called_for_a_scope_that_has_no_entries_at_all_then_it_returns_false()
         {
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
 
             var value = await reservationService.ReserveAny(Any.CamelCaseName(), Any.CamelCaseName(), TimeSpan.FromMinutes(1));
 
@@ -360,7 +341,7 @@ namespace Microsoft.Its.Domain.Tests
             // arrange
             var username = Any.CamelCaseName(5);
             var scope = "UserName";
-            await Configuration.Current.ReservationService.Reserve(username, scope, Any.CamelCaseName(), TimeSpan.FromMinutes(30));
+            await Configuration.Current.ReservationService().Reserve(username, scope, Any.CamelCaseName(), TimeSpan.FromMinutes(30));
 
             // act
             VirtualClock.Current.AdvanceBy(TimeSpan.FromMinutes(32));
@@ -384,7 +365,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task Reservations_can_be_placed_for_one_of_a_fixed_quantity_of_a_resource()
         {
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
 
             // given a fixed quantity of some resource, e.g. promo codes:
             var ownerToken = "ownerToken-" + Any.Guid();
@@ -412,7 +393,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task The_value_returned_by_the_reservation_service_can_be_used_for_confirmation()
         {
-            var reservationService = Configuration.Current.ReservationService;
+            var reservationService = Configuration.Current.ReservationService();
 
             // given a fixed quantity of some resource, e.g. promo codes:
             var ownerToken = "owner-token-" + Any.Email();
@@ -471,7 +452,7 @@ namespace Microsoft.Its.Domain.Tests
     {
         public void HaveConsequences(CustomerAccount.UserNameAcquired @event)
         {
-            Configuration.Current.ReservationService.Confirm(
+            Configuration.Current.ReservationService().Confirm(
                 @event.UserName,
                 "UserName",
                 @event.UserName).Wait();

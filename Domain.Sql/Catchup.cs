@@ -25,7 +25,7 @@ namespace Microsoft.Its.Domain.Sql
             this ReadModelCatchup<TDbContext> readModelCatchup,
             TimeSpan? interval = null,
             IScheduler scheduler = null)
-            where TDbContext : DbContext, new()
+            where TDbContext : DbContext
         {
             interval = interval ?? TimeSpan.FromSeconds(5);
             scheduler = scheduler ?? Scheduler.Default;
@@ -41,7 +41,7 @@ namespace Microsoft.Its.Domain.Sql
         public static ReadModelCatchup<TDbContext> PollEventStore<TDbContext>(
             this ReadModelCatchup<TDbContext> readModelCatchup,
             IObservable<Unit> timer)
-            where TDbContext : DbContext, new()
+            where TDbContext : DbContext
         {
             // produce a series of pings every time a) the timer elapses or b) a poll was just completed and there are still additional events to be processed
             // timer:                     o--------o--------o--------o--------o--------o--------o
@@ -89,7 +89,7 @@ namespace Microsoft.Its.Domain.Sql
         public static IObservable<ReadModelCatchupStatus> SingleBatchAsync<TDbContext>(
             this ReadModelCatchup<TDbContext> catchup,
             IScheduler scheduler = null)
-            where TDbContext : DbContext, new()
+            where TDbContext : DbContext
         {
             scheduler = scheduler ?? Scheduler.Default;
 

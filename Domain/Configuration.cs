@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -49,7 +48,7 @@ namespace Microsoft.Its.Domain
                      .UseImmediateCommandScheduling()
                      .DefaultToJsonSnapshots()
                      .AddStoreStrategy()
-                     .RegisterSingle<IReservationService>(c => new NoReservations())
+                     .RegisterSingle<IReservationService>(c => NoReservations.Instance)
                      .RegisterSingle<IEventBus>(c => new InProcessEventBus())
                      .Register<ISnapshotRepository>(c => new NoSnapshots())
                      .Register<IETagChecker>(c => new NoEventStoreETagVerifications())
@@ -65,23 +64,7 @@ namespace Microsoft.Its.Domain
                                 .IfNotNull()
                                 .Then(context => context.Configuration)
                                 .Else(() => global);
-
-        /// <summary>
-        /// Gets or sets the reservation service, if configured.
-        /// </summary>
-        public IReservationService ReservationService
-        {
-            get
-            {
-                return container.Resolve<IReservationService>() ?? NoReservations.Instance;
-            }
-            set
-            {
-                var reservationService = value ?? NoReservations.Instance;
-                container.RegisterSingle(c => reservationService);
-            }
-        }
-
+        
         /// <summary>
         /// Gets the event bus.
         /// </summary>

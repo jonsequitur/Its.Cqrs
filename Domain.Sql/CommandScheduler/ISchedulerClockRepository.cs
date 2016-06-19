@@ -2,6 +2,9 @@ using System;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+    /// <summary>
+    /// Provides operations for working with command scheduler clocks.
+    /// </summary>
     public interface ISchedulerClockRepository
     {
         /// <summary>

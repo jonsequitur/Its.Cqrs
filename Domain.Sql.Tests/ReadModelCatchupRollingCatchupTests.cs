@@ -24,6 +24,7 @@ using NUnit.Framework;
 using Test.Domain.Ordering;
 using Test.Domain.Ordering.Projections;
 using Assert = NUnit.Framework.Assert;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -34,7 +35,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override void SetUp()
         {
             TestDbConfiguration.UseSqlAzureExecutionStrategy = false;
+
             base.SetUp();
+
+            var configuration = new Configuration()
+                .UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString));
+
+            disposables.Add(ConfigurationContext.Establish(configuration));
+            disposables.Add(configuration);
         }
 
         public override void TearDown()
@@ -70,9 +78,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     {
                         var thread = new Thread(() =>
                         {
-                            Console.WriteLine("starting thread (" + Thread.CurrentThread.ManagedThreadId + ")");
+                            Console.WriteLine($"starting thread ({Thread.CurrentThread.ManagedThreadId})");
                             start();
-                            Console.WriteLine("ended thread (" + Thread.CurrentThread.ManagedThreadId + ")");
+                            Console.WriteLine($"ended thread ({Thread.CurrentThread.ManagedThreadId})");
                         });
                         thread.Name = name;
                         thread.Start();
@@ -85,8 +93,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     Quantity = 1,
                     AggregateId = Any.Guid()
                 });
-
-                // TODO: (Events_committed_to_the_event_store_are_caught_up_by_multiple_independent_read_model_stores) is this leading to intermittent test failures by leaving a dangling app lock?
+               
                 startThread("catchup1", () =>
                 {
                     catchup1.Run().TimeoutAfter(DefaultTimeout).Wait();
@@ -141,7 +148,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void Rolling_catchup_can_be_run_based_on_event_store_polling()
+        public async Task Rolling_catchup_can_be_run_based_on_event_store_polling()
         {
             var numberOfEvents = 50;
             Console.WriteLine("writing " + numberOfEvents + " starting at " + HighestEventId);
@@ -169,8 +176,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Events.Write(1);
             }));
 
-            writing.Wait();
-            reading.Wait();
+            await Task.WhenAll(writing, reading);
 
             using (var db = new ReadModels1DbContext())
             {
@@ -268,12 +274,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var catchup = CreateReadModelCatchup<ReadModels1DbContext>(projector);
 
             DbConnection dbConnection = new SqlConnection();
-            catchup.CreateEventStoreDbContext = () =>
+            Configuration.Current.UseDependency(_ => 
             {
-                var context = new EventStoreDbContext();
-                dbConnection = ((IObjectContextAdapter) context).ObjectContext.Connection;
-                return context;
-            };
+                dbConnection = ((IObjectContextAdapter) EventStoreDbContext()).ObjectContext.Connection;
+                return EventStoreDbContext();
+            });
 
             using (catchup)
             {
@@ -422,17 +427,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var projector2 = new Projector<IEvent>(() => new ReadModels1DbContext());
             var catchup1StatusReports = new List<ReadModelCatchupStatus>();
             var catchup2StatusReports = new List<ReadModelCatchupStatus>();
+       
+            DbConnection dbConnection1 = null;
 
-            var catchup1 = CreateReadModelCatchup<ReadModels1DbContext>(projector1);
-            DbConnection dbConnection1 = new SqlConnection();
-            catchup1.CreateEventStoreDbContext = () =>
+            using (var catchup1 = CreateReadModelCatchup<ReadModels1DbContext>(() =>
             {
-                var context = new EventStoreDbContext();
-                dbConnection1 = ((IObjectContextAdapter) context).ObjectContext.Connection;
-                return context;
-            };
-
-            using (catchup1)
+                var eventStoreDbContext = EventStoreDbContext();
+                dbConnection1 = ((IObjectContextAdapter) eventStoreDbContext).ObjectContext.Connection;
+                return eventStoreDbContext;
+            }, projector1))
             using (var catchup2 = CreateReadModelCatchup<ReadModels1DbContext>(projector2))
             {
                 catchup1.Progress.ForEachAsync(s =>
@@ -440,7 +443,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     catchup1StatusReports.Add(s);
                     Console.WriteLine("catchup1: " + s);
 
-                        // when we've processed one event, cancel this catchup
+                    // when we've processed one event, cancel this catchup
                     dbConnection1.Close();
                 });
                 catchup2.Progress.ForEachAsync(s =>
@@ -461,7 +464,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 var waitingOnEventId = HighestEventId + numberOfEventsToWrite;
                 Console.WriteLine($"waiting on event id {waitingOnEventId} to be processed");
-                catchup1.Progress.Merge(catchup2.Progress)
+                catchup1.Progress
+                        .Merge(catchup2.Progress)
                         .FirstAsync(s => s.CurrentEventId == waitingOnEventId)
                         .Timeout(DefaultTimeout)
                         .Wait();
@@ -629,7 +633,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (catchup1.PollEventStore())
             using (catchup2.PollEventStore())
             {
-                await CatchupWrapper.SingleBatchAsync(catchup1, catchup2);
+                await Catchup.SingleBatchAsync(catchup1, catchup2);
             }
 
             projector1Count.Should().Be(15);

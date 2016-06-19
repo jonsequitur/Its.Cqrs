@@ -111,7 +111,7 @@ namespace Microsoft.Its.Domain.Tests
 
             var configuration = new Configuration().UseDependency(_ => mock);
 
-            configuration.ReservationService.Should().BeSameAs(mock);
+            configuration.ReservationService().Should().BeSameAs(mock);
         }
 
         [Test]
@@ -119,7 +119,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var configuration = new Configuration().UseDependency<IReservationService>(_ => null);
 
-            configuration.ReservationService.GetType().Name.Should().Be("NoReservations");
+            configuration.ReservationService().GetType().Name.Should().Be("NoReservations");
         }
 
         [Test]

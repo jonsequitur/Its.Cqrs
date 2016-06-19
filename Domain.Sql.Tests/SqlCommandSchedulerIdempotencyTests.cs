@@ -13,17 +13,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
         protected EventStoreDbTest eventStoreDbTest;
         protected string clockName;
 
-        protected override void Configure(
-            Configuration configuration,
-            Action<IDisposable> onDispose)
+        protected override void Configure(Configuration configuration)
         {
-            eventStoreDbTest = new EventStoreDbTest();
             clockName = Any.CamelCaseName();
 
             configuration
                 .UseDependency<GetClockName>(c => e => clockName)
-                .UseSqlEventStore()
-                .UseSqlStorageForScheduledCommands();
+                .UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString))
+                .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString));
         }
     }
 }

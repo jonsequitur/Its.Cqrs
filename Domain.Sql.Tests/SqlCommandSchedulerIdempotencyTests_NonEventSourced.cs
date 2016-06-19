@@ -12,9 +12,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReadModels", "ItsCqrsTestsCommandScheduler")]
     public class SqlCommandSchedulerIdempotencyTests_NonEventSourced : SqlCommandSchedulerIdempotencyTests
     {
-        protected override void Configure(Configuration configuration, Action<IDisposable> onDispose)
+        protected override void Configure(Configuration configuration)
         {
-            base.Configure(configuration, onDispose);
+            base.Configure(configuration);
 
             configuration.UseInMemoryCommandTargetStore();
         }

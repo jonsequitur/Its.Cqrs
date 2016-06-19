@@ -90,9 +90,9 @@
       <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
     <Compile Include="AppLock.cs" />
-    <Compile Include="CommandSchedulerCleanupMigration.cs" />
+    <Compile Include="CommandScheduler\CommandSchedulerCleanupMigration.cs" />
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
-    <Compile Include="CommandScheduler\SqlEventStoreEventStoreETagChecker.cs" />
+    <Compile Include="SqlEventStoreEventStoreETagChecker.cs" />
     <Compile Include="CommandScheduler\ETag.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockRepository.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockTrigger.cs" />
@@ -109,6 +109,7 @@
     <Compile Include="DbReadonlyUser.cs" />
     <Compile Include="EventHandlerProgress.cs" />
     <Compile Include="EventHandlerProgressCalculator.cs" />
+    <Compile Include="EventStoreConfiguration.cs" />
     <Compile Include="EventStoreDatabaseInitializer{T}.cs" />
     <Compile Include="Migrations\AzureSqlDbMigrator.cs" />
     <Compile Include="Migrations\IDbMigrator.cs" />
@@ -129,6 +130,7 @@
     <Compile Include="Migrations\MigrationResult.cs" />
     <Compile Include="Migrations\Migrator.cs" />
     <Compile Include="ReadModelCatchupResult.cs" />
+    <Compile Include="ReservationServiceConfiguration.cs" />
     <Compile Include="ReservationServiceDatabaseInitializer.cs" />
     <Compile Include="ConfigurationExtensions.cs" />
     <Compile Include="EventBusExtensions.cs" />
@@ -159,11 +161,11 @@
     <Compile Include="ReservedValue.cs" />
     <Compile Include="CommandScheduler\ScheduledCommand.cs" />
     <Compile Include="CommandScheduler\SqlCommandSchedulerPipelineInitializer{T}.cs" />
-    <Compile Include="CommandSchedulerResolver.cs" />
+    <Compile Include="CommandScheduler\CommandSchedulerResolver.cs" />
     <Compile Include="Migrations\ScriptBasedDbMigrator.cs" />
     <Compile Include="Sensors.cs" />
     <Compile Include="SetDatabaseVersion{T}.cs" />
-    <Compile Include="SqlCommandSchedulerConfiguration.cs" />
+    <Compile Include="CommandScheduler\CommandSchedulerConfiguration.cs" />
     <Compile Include="SqlReservationService.cs" />
     <Compile Include="StorableEvent.cs" />
     <Compile Include="SqlEventSourcedRepository{T}.cs" />

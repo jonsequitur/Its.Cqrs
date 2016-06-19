@@ -10,9 +10,7 @@ namespace Microsoft.Its.Domain.Tests
     [TestFixture]
     public class InMemoryCommandSchedulerIdempotencyTests_NonEventSourced : CommandSchedulerIdempotencyTests
     {
-        protected override void Configure(
-            Configuration configuration,
-            Action<IDisposable> onDispose)
+        protected override void Configure(Configuration configuration)
         {
             Command<CommandTarget>.AuthorizeDefault = (account, command) => true;
 

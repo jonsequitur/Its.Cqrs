@@ -10,21 +10,14 @@ namespace Microsoft.Its.Domain.Sql
     /// <summary>
     ///     A reservation service backed by a SQL store.
     /// </summary>
-    public class SqlReservationService : IReservationService, ISynchronousReservationService
+    public class SqlReservationService : IReservationService
     {
-        public Func<DbContext> CreateReservationServiceDbContext = () => new ReservationServiceDbContext();
+        private readonly Func<ReservationServiceDbContext> createReservationServiceDbContext;
 
-        internal Func<DbSet<ReservedValue>, string, DateTimeOffset, Task<ReservedValue>> GetValueToReserve =
-            async (reservedValues, scope, now) =>
-            await reservedValues.FirstOrDefaultAsync(r => r.Scope == scope
-                                                          && r.Expiration < now
-                                                          && r.Expiration != null);
-
-        internal Func<DbSet<ReservedValue>, string, DateTimeOffset, ReservedValue> GetValueToReserveSynchronous =
-            (reservedValues, scope, now) =>
-            reservedValues.FirstOrDefault(r => r.Scope == scope
-                                                    && r.Expiration < now
-                                                    && r.Expiration != null);
+        public SqlReservationService(Func<ReservationServiceDbContext> createReservationServiceDbContext)
+        {
+            this.createReservationServiceDbContext = createReservationServiceDbContext;
+        }
 
         public async Task<bool> Reserve(string value, string scope, string ownerToken, TimeSpan? lease = null)
         {
@@ -43,7 +36,7 @@ namespace Microsoft.Its.Domain.Sql
 
             var now = Clock.Now();
 
-            using (var db = CreateReservationServiceDbContext())
+            using (var db = createReservationServiceDbContext())
             {
                 var reservedValues = db.Set<ReservedValue>();
 
@@ -57,13 +50,13 @@ namespace Microsoft.Its.Domain.Sql
                 {
                     // if not, create a new ticket
                     reservedValue = new ReservedValue
-                                    {
-                                        OwnerToken = ownerToken,
-                                        Scope = scope,
-                                        Value = value,
-                                        Expiration = expiration,
-                                        ConfirmationToken = value
-                                    };
+                    {
+                        OwnerToken = ownerToken,
+                        Scope = scope,
+                        Value = value,
+                        Expiration = expiration,
+                        ConfirmationToken = value
+                    };
                     reservedValues.Add(reservedValue);
                 }
                 else if (reservedValue.Expiration == null)
@@ -119,9 +112,9 @@ namespace Microsoft.Its.Domain.Sql
                 throw new ArgumentNullException(nameof(ownerToken));
             }
 
-            using (var db = CreateReservationServiceDbContext())
+            using (var db = createReservationServiceDbContext())
             {
-                var reservedValue = await db.Set<ReservedValue>()
+                var reservedValue = await db.ReservedValues
                                             .SingleOrDefaultAsync(v => v.Scope == scope &&
                                                                        v.ConfirmationToken == value &&
                                                                        v.OwnerToken == ownerToken);
@@ -152,9 +145,9 @@ namespace Microsoft.Its.Domain.Sql
                 throw new ArgumentNullException(nameof(ownerToken));
             }
 
-            using (var db = CreateReservationServiceDbContext())
+            using (var db = createReservationServiceDbContext())
             {
-                var reservedValues = db.Set<ReservedValue>();
+                var reservedValues = db.ReservedValues;
 
                 var reservedValue = await reservedValues
                                               .SingleOrDefaultAsync(v => v.Scope == scope && v.Value == value && v.OwnerToken == ownerToken);
@@ -183,9 +176,9 @@ namespace Microsoft.Its.Domain.Sql
 
             var now = Clock.Now();
 
-            using (var db = CreateReservationServiceDbContext())
+            using (var db = createReservationServiceDbContext())
             {
-                var reservedValues = db.Set<ReservedValue>();
+                var reservedValues = db.ReservedValues;
                 var expiration = now + (lease ?? TimeSpan.FromMinutes(1));
 
                 ReservedValue valueToReserve;
@@ -197,7 +190,11 @@ namespace Microsoft.Its.Domain.Sql
 
                     if (valueToReserve == null)
                     {
-                        valueToReserve = await GetValueToReserve(reservedValues, scope, now);
+                        valueToReserve =
+                            await reservedValues.FirstOrDefaultAsync(
+                                r => r.Scope == scope
+                                     && r.Expiration < now
+                                     && r.Expiration != null);
                     }
 
                     if (valueToReserve == null)
@@ -255,41 +252,11 @@ namespace Microsoft.Its.Domain.Sql
                 throw new ArgumentNullException(nameof(scope));
             }
 
-            using (var db = new ReservationServiceDbContext())
+            using (var db = createReservationServiceDbContext())
             {
-                return await db.Set<ReservedValue>()
-                    .SingleOrDefaultAsync(v => v.Scope == scope && v.Value == value);
+                return await db.ReservedValues
+                               .SingleOrDefaultAsync(v => v.Scope == scope && v.Value == value);
             }
-        }
-
-        bool ISynchronousReservationService.Reserve(string value, string scope, string ownerToken, TimeSpan? lease)
-        {
-            return Task.Run(() => Reserve(value,
-                                          scope,
-                                          ownerToken,
-                                          lease)).Result;
-        }
-
-        bool ISynchronousReservationService.Confirm(string value, string scope, string ownerToken)
-        {
-            return Task.Run(() => Confirm(value,
-                                          scope,
-                                          ownerToken)).Result;
-        }
-
-        bool ISynchronousReservationService.Cancel(string value, string scope, string ownerToken)
-        {
-            return Task.Run(() => Cancel(value,
-                                         scope,
-                                         ownerToken)).Result;
-        }
-
-        string ISynchronousReservationService.ReserveAny(string scope, string ownerToken, TimeSpan? lease, string confirmationToken)
-        {
-            return Task.Run(() => ReserveAny(scope,
-                                             ownerToken,
-                                             lease,
-                                             confirmationToken)).Result;
         }
     }
 }

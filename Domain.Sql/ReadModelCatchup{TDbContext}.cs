@@ -24,29 +24,14 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     /// <typeparam name="TDbContext">The type of the database context where read models are to be updated.</typeparam>
     public class ReadModelCatchup<TDbContext> : IDisposable
-        where TDbContext : DbContext, new()
+        where TDbContext : DbContext
     {
         private readonly List<object> projectors;
         private readonly CompositeDisposable disposables;
         private MatchEvent[] matchEvents;
 
-        /// <summary>
-        /// Provides a method for specifying how <see cref="DbContext" /> instances are created for use by instances of <see cref="ReadModelCatchup{TDbContext}" />. 
-        /// </summary>
-        public Func<DbContext> CreateReadModelDbContext = () => new TDbContext();
-
-        /// <summary>
-        /// Provides a method for specifying how the EventStoreDbContext instances are created for use by instance of <see cref="ReadModelCatchup{TBdContext}" />
-        /// </summary>
-        public Func<EventStoreDbContext> CreateEventStoreDbContext = () => new EventStoreDbContext();
-
-        internal async Task<EventStoreDbContext> CreateOpenEventStoreDbContext()
-        {
-            var context = CreateEventStoreDbContext();
-            var dbConnection = ((IObjectContextAdapter) context).ObjectContext.Connection;
-            await dbConnection.OpenAsync();
-            return context;
-        }
+        private readonly Func<DbContext> createReadModelDbContext;
+        private readonly Func<EventStoreDbContext> createEventStoreDbContext;
 
         private readonly CancellationDisposable cancellationDisposable;
         private readonly InProcessEventBus bus;
@@ -55,6 +40,7 @@ namespace Microsoft.Its.Domain.Sql
         private List<ReadModelInfo> unsubscribedReadModelInfos;
         private List<ReadModelInfo> subscribedReadModelInfos;
         private string lockResourceName;
+        private readonly long startAtEventId;
 
         /// <summary>
         /// Initializes the <see cref="ReadModelCatchup{TDbContext}"/> class.
@@ -65,17 +51,37 @@ namespace Microsoft.Its.Domain.Sql
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReadModelCatchup{TDbContext}"/> class.
+        /// Initializes a new instance of the <see cref="ReadModelCatchup{TDbContext}" /> class.
         /// </summary>
+        /// <param name="readModelDbContext">A delegate to create read model database contexts on demand.</param>
+        /// <param name="eventStoreDbContext">A delegate to create event store database contexts on demand.</param>
+        /// <param name="startAtEventId">The event id that the catchup should start from.</param>
         /// <param name="projectors">The projectors to be updated as new events are added to the event store.</param>
         /// <exception cref="System.ArgumentException">You must specify at least one projector.</exception>
-        public ReadModelCatchup(params object[] projectors)
+        public ReadModelCatchup(
+            Func<DbContext> readModelDbContext ,
+            Func<EventStoreDbContext> eventStoreDbContext,
+            long startAtEventId = 0,
+            params object[] projectors)
         {
+            if (readModelDbContext == null)
+            {
+                throw new ArgumentNullException(nameof(readModelDbContext));
+            }
+
+            if (eventStoreDbContext == null)
+            {
+                throw new ArgumentNullException(nameof(eventStoreDbContext));
+            }
+
             if (!projectors.OrEmpty().Any())
             {
                 throw new ArgumentException("You must specify at least one projector.");
             }
 
+            createReadModelDbContext = readModelDbContext;
+            createEventStoreDbContext = eventStoreDbContext;
+            this.startAtEventId = startAtEventId;
             this.projectors = new List<object>(projectors);
 
             EnsureProjectorNamesAreDistinct();
@@ -87,9 +93,9 @@ namespace Microsoft.Its.Domain.Sql
                 Disposable.Create(() => progress.OnCompleted())
             };
             bus = new InProcessEventBus(new Subject<IEvent>());
-            disposables.Add(bus.ReportErrorsToDatabase(() => CreateReadModelDbContext()));
+            disposables.Add(bus.ReportErrorsToDatabase(() => createReadModelDbContext()));
             disposables.Add(bus);
-            Sensors.ReadModelDbContexts.GetOrAdd(typeof (TDbContext).Name, CreateReadModelDbContext);
+            Sensors.ReadModelDbContexts.GetOrAdd(typeof (TDbContext).Name, createReadModelDbContext);
         }
 
         /// <summary>
@@ -112,11 +118,6 @@ namespace Microsoft.Its.Domain.Sql
         /// Gets an observable sequence showing the catchup's progress.
         /// </summary>
         public IObservable<ReadModelCatchupStatus> Progress => progress;
-
-        /// <summary>
-        /// Specifies the lowest id of the events to be caught up.
-        /// </summary>
-        public long StartAtEventId { get; set; }
 
         /// <summary>
         /// Runs a single catchup operation, which will catch up the subscribed projectors through the latest recorded event.
@@ -269,7 +270,7 @@ namespace Microsoft.Its.Domain.Sql
 
                     ReadModelUpdate.ReportFailure(
                         error,
-                        () => CreateReadModelDbContext());
+                        createReadModelDbContext);
                 }
 
                 var status = new ReadModelCatchupStatus
@@ -323,11 +324,19 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
+        internal async Task<EventStoreDbContext> CreateOpenEventStoreDbContext()
+        {
+            var context = createEventStoreDbContext();
+            var dbConnection = ((IObjectContextAdapter) context).ObjectContext.Connection;
+            await dbConnection.OpenAsync();
+            return context;
+        }
+
         private long GetStartingId()
         {
             var readModelInfos = subscribedReadModelInfos.Concat(unsubscribedReadModelInfos).ToArray();
 
-            using (var db = CreateReadModelDbContext())
+            using (var db = createReadModelDbContext())
             {
                 foreach (var readModelInfo in readModelInfos)
                 {
@@ -346,7 +355,7 @@ namespace Microsoft.Its.Domain.Sql
                 startAtId = readModelInfos.Min(i => i.CurrentAsOfEventId) + 1;
             }
 
-            return Math.Max(startAtId, StartAtEventId);
+            return Math.Max(startAtId, startAtEventId);
         }
 
         private static Domain.EventHandlingError SerializationError(Exception ex, StorableEvent e)
@@ -369,7 +378,7 @@ namespace Microsoft.Its.Domain.Sql
         {
             return new UnitOfWork<ReadModelUpdate>()
                 .AddResource(@event)
-                .EnsureDbContextIsInitialized(() => CreateReadModelDbContext());
+                .EnsureDbContextIsInitialized(() => createReadModelDbContext());
         }
 
         /// <summary>
@@ -378,6 +387,8 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="events">The events.</param>
         public void RunWhen(IObservable<Unit> events)
         {
+            EnsureInitialized();
+
             disposables.Add(events.Subscribe(es => Run().Wait()));
         }
 
@@ -391,19 +402,14 @@ namespace Microsoft.Its.Domain.Sql
             // figure out which event types we will need to query
             matchEvents = projectors.SelectMany(p => p.MatchesEvents())
                                     .Distinct()
-                                    .Select(m =>
-                                    {
-                                        if (m.Type == "Scheduled")
-                                        {
-                                            return new MatchEvent(m.StreamName, "*");
-                                        }
-                                        return m;
-                                    })
+                                    .Select(m => m.Type == "Scheduled"
+                                                     ? new MatchEvent(m.StreamName, "*")
+                                                     : m)
                                     .ToArray();
 
             Debug.WriteLine($"Catchup {Name}: Subscribing to event types: {matchEvents.Select(m => m.ToString()).ToJson()}");
 
-            using (var db = CreateReadModelDbContext())
+            using (var db = createReadModelDbContext())
             {
                 EnsureLockResourceNameIsInitialized(db);
 

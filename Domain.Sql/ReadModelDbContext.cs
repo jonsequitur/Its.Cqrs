@@ -24,13 +24,6 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Initializes a new instance of the <see cref="ReadModelDbContext"/> class.
         /// </summary>
-        public ReadModelDbContext() : this(NameOrConnectionString)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ReadModelDbContext"/> class.
-        /// </summary>
         /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
         public ReadModelDbContext(string nameOrConnectionString) : base(nameOrConnectionString)
         {
@@ -68,22 +61,6 @@ namespace Microsoft.Its.Domain.Sql
         protected virtual IEnumerable<Type> GetEntityModelConfigurationTypes()
         {
             return Discover.ConcreteTypesDerivedFrom(typeof (IEntityModelConfiguration));
-        }
-   
-        public static string NameOrConnectionString
-        {
-            get
-            {
-                return nameOrConnectionString;
-            }
-            set
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    throw new ArgumentException("The value cannot be null, empty or contain only whitespace.");
-                }
-                nameOrConnectionString = value;
-            }
         }
     }
 }

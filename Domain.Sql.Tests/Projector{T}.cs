@@ -3,6 +3,7 @@
 
 using System;
 using System.Data.Entity;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -13,13 +14,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
     {
         private readonly Func<DbContext> createDbContext;
 
-        public Projector(Func<DbContext> createDbContext)
+        public Projector(Func<DbContext> createDbContext = null)
         {
-            if (createDbContext == null)
-            {
-                throw new ArgumentNullException("createDbContext");
-            }
-            this.createDbContext = createDbContext;
+            this.createDbContext = createDbContext ?? (() => ReadModelDbContext());
         }
 
         public int CallCount { get; set; }
@@ -36,9 +33,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public Action<UnitOfWork<ReadModelUpdate>, T> OnUpdate = (work, @event) => { };
 
-        public DbContext CreateDbContext()
-        {
-            return createDbContext();
-        }
+        public DbContext CreateDbContext() => createDbContext();
     }
 }

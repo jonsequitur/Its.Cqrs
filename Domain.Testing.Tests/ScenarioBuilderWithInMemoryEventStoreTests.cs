@@ -17,13 +17,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             return new ScenarioBuilder(c => c.UseInMemoryCommandScheduling());
         }
 
-        public override bool UsesSqlStorage
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public override bool UsesSqlStorage => false;
 
         [Test]
         public void Event_streams_are_shared_among_repository_instances()

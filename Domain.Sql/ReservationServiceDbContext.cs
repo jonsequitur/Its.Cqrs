@@ -19,13 +19,6 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Initializes a new instance of the <see cref="ReservationServiceDbContext"/> class.
         /// </summary>
-        public ReservationServiceDbContext() : this(NameOrConnectionString)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ReservationServiceDbContext"/> class.
-        /// </summary>
         /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
         public ReservationServiceDbContext(string nameOrConnectionString) : base(nameOrConnectionString)
         {
@@ -34,22 +27,6 @@ namespace Microsoft.Its.Domain.Sql
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             modelBuilder.Configurations.Add(new ReservedValuesEntityTypeConfiguration());
-        }
-
-        public static string NameOrConnectionString
-        {
-            get
-            {
-                return nameOrConnectionString;
-            }
-            set
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    throw new ArgumentException("The value cannot be null, empty or contain only whitespace.");
-                }
-                nameOrConnectionString = value;
-            }
         }
 
         public DbSet<ReservedValue> ReservedValues { get; set; }

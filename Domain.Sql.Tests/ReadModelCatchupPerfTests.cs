@@ -9,6 +9,7 @@ using NUnit.Framework;
 using Test.Domain.Ordering;
 using Test.Domain.Ordering.Projections;
 using Assert = NUnit.Framework.Assert;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -44,7 +45,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var projector1 = Projector.Create<Order.ItemAdded>(e => { eventsRead++; }).Named(MethodBase.GetCurrentMethod().Name + ":projector1");
 
-            using (var catchup = new ReadModelCatchup(projector1) { StartAtEventId = startAtEventId })
+            using (var catchup = new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: startAtEventId, 
+                projectors: projector1))
             {
                 catchup.Run();
             }
@@ -59,7 +64,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var projector1 = Projector.Create<IEvent>(e => { eventsRead++; }).Named(MethodBase.GetCurrentMethod().Name + ":projector1");
 
-            using (var catchup = new ReadModelCatchup(projector1) { StartAtEventId = startAtEventId })
+            using (var catchup = new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: startAtEventId, projectors: projector1))
             {
                 catchup.Run();
             }
@@ -75,7 +83,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var projector1 = Projector.Create<Order.ItemAdded>(e => { eventsRead++; }).Named(MethodBase.GetCurrentMethod().Name + ":projector1");
             var projector2 = Projector.Create<CustomerAccount.RequestedNoSpam>(e => { eventsRead++; }).Named(MethodBase.GetCurrentMethod().Name + ":projector2");
 
-            using (var catchup = new ReadModelCatchup(projector1, projector2) { StartAtEventId = startAtEventId })
+            using (var catchup = new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: startAtEventId,
+                projectors: new object[] { projector1, projector2 }))
             {
                 catchup.Run();
             }
@@ -107,7 +119,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 }
             }).Named(MethodBase.GetCurrentMethod().Name + ":projector1");
 
-            using (var catchup = new ReadModelCatchup(projector1) { StartAtEventId = startAtEventId })
+            using (var catchup = new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: startAtEventId, projectors: projector1))
             {
                 catchup.Run();
             }
@@ -122,7 +137,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var projector1 = Projector.Create<IEvent>(e =>
             {
-                using (var db = new ReadModelDbContext())
+                using (var db = ReadModelDbContext())
                 {
                     db.Set<ProductInventory>().Add(new ProductInventory
                     {
@@ -137,7 +152,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 }
             }).Named(MethodBase.GetCurrentMethod().Name + ":projector1");
 
-            using (var catchup = new ReadModelCatchup(projector1) { StartAtEventId = startAtEventId })
+            using (var catchup = new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: startAtEventId, projectors: projector1))
             {
                 catchup.Run();
             }

@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
@@ -15,86 +16,22 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     public static class ConfigurationExtensions
     {
-        public static ISchedulerClockRepository SchedulerClockRepository(this Configuration configuration) =>
-            configuration.Container.Resolve<ISchedulerClockRepository>();
-
-        public static ISchedulerClockTrigger SchedulerClockTrigger(this Configuration configuration) =>
-            configuration.Container.Resolve<ISchedulerClockTrigger>();
-
         /// <summary>
-        /// Configures the system to use a SQL-based event store.
+        /// Deserializes a scheduled command from SQL storage and delivers it to the target.
         /// </summary>
         /// <param name="configuration">The configuration.</param>
-        /// <param name="createEventStoreDbContext">A function that returns an <see cref="EventStoreDbContext" />, if something different from the default is desired.</param>
-        /// <returns>The updated configuration.</returns>
-        public static Configuration UseSqlEventStore(
+        /// <param name="serializedCommand">The serialized command.</param>
+        /// <param name="db">The command scheduler database context.</param>
+        public static async Task DeserializeAndDeliver(
             this Configuration configuration,
-            Func<EventStoreDbContext> createEventStoreDbContext = null)
-        {
-            configuration.Container.AddStrategy(SqlEventSourcedRepositoryStrategy);
-            configuration.IsUsingSqlEventStore(true);
+            ScheduledCommand serializedCommand,
+            CommandSchedulerDbContext db) =>
+                await DeserializeAndDeliver(
+                    configuration.Container.Resolve<CommandSchedulerResolver>(),
+                    serializedCommand,
+                    db);
 
-            createEventStoreDbContext = createEventStoreDbContext ??
-                                        (() => new EventStoreDbContext());
-
-            configuration.Container
-                         .Register(c => createEventStoreDbContext())
-                         .Register<IETagChecker>(c => c.Resolve<SqlEventStoreEventStoreETagChecker>());
-
-            return configuration;
-        }
-
-        public static Configuration UseSqlReservationService(this Configuration configuration)
-        {
-            configuration.Container.Register<IReservationService>(c => new SqlReservationService());
-            return configuration;
-        }
-
-        /// <summary>
-        /// Configures the use of a SQL-backed command scheduler. 
-        /// </summary>
-        public static Configuration UseSqlStorageForScheduledCommands(
-            this Configuration configuration,
-            Action<SqlCommandSchedulerConfiguration> configure = null)
-        {
-            configuration.IsUsingInMemoryCommandScheduling(false);
-            
-            var container = configuration.Container;
-
-            var commandSchedulerConfiguration = new SqlCommandSchedulerConfiguration(configuration);
-            configure?.Invoke(commandSchedulerConfiguration);
-            container.Register(c => configuration);
-
-            container.RegisterDefaultClockName()
-                     .Register<ISchedulerClockRepository>(
-                         c => c.Resolve<SchedulerClockRepository>())
-                     .Register<IETagChecker>(
-                         c => c.Resolve<SqlEventStoreEventStoreETagChecker>())
-                     .Register<ISchedulerClockTrigger>(
-                         c => c.Resolve<SchedulerClockTrigger>());
-
-            configuration.Container
-                         .Resolve<SqlCommandSchedulerPipelineInitializer>()
-                         .Initialize(configuration);
-
-            var commandSchedulerResolver = new CommandSchedulerResolver(container);
-
-            container
-                .Register(
-                    c => new SchedulerClockTrigger(
-                             c.Resolve<CommandSchedulerDbContext>,
-                             async (serializedCommand, result, db) =>
-                             {
-                                 await DeserializeAndDeliver(commandSchedulerResolver, serializedCommand, db);
-
-                                 result.Add(serializedCommand.Result);
-                             }))
-                .Register<ISchedulerClockTrigger>(c => c.Resolve<SchedulerClockTrigger>());
-
-            return configuration;
-        }
-
-        private static async Task DeserializeAndDeliver(
+        internal static async Task DeserializeAndDeliver(
             CommandSchedulerResolver schedulerResolver,
             ScheduledCommand serializedCommand,
             CommandSchedulerDbContext db)
@@ -110,13 +47,118 @@ namespace Microsoft.Its.Domain.Sql
             await db.SaveChangesAsync();
         }
 
-        public static async Task DeserializeAndDeliver(
-            this Configuration configuration,
-            ScheduledCommand serializedCommand,
-            CommandSchedulerDbContext db)
+        /// <summary>
+        /// Gets a db context that can be used to work with the command scheduler database.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        public static CommandSchedulerDbContext CommandSchedulerDbContext(
+            this Configuration configuration)
         {
-            var resolver = configuration.Container.Resolve<CommandSchedulerResolver>();
-            await DeserializeAndDeliver(resolver, serializedCommand, db);
+            try
+            {
+                return configuration.Container.Resolve<CommandSchedulerDbContext>();
+            }
+            catch (TargetInvocationException)
+            {
+                throw new DomainConfigurationException("Command scheduler database is not configured.");
+            }
+        }
+
+        /// <summary>
+        /// Gets a db context that can be used to work with the event store.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        public static EventStoreDbContext EventStoreDbContext(
+            this Configuration configuration)
+        {
+            try
+            {
+                return configuration.Container.Resolve<EventStoreDbContext>();
+            }
+            catch (TargetInvocationException)
+            {
+                throw new DomainConfigurationException("Event store is not configured.");
+            }
+        }
+
+        /// <summary>
+        /// Gets a db context that can be used to work with read models.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        internal static ReadModelDbContext ReadModelDbContext(
+            this Configuration configuration)
+        {
+            try
+            {
+                return configuration.Container.Resolve<ReadModelDbContext>();
+            }
+            catch (TargetInvocationException)
+            {
+                throw new DomainConfigurationException("ReadModelDbContext is not configured.");
+            }
+        }
+
+        /// <summary>
+        /// Gets a scheduler clock repository.
+        /// </summary>
+        public static ISchedulerClockRepository SchedulerClockRepository(this Configuration configuration) =>
+            configuration.Container.Resolve<ISchedulerClockRepository>();
+
+         /// <summary>
+        /// Gets a scheduler clock trigger.
+        /// </summary>
+        public static ISchedulerClockTrigger SchedulerClockTrigger(this Configuration configuration) =>
+            configuration.Container.Resolve<ISchedulerClockTrigger>();
+
+        /// <summary>
+        /// Configures the system to use a SQL-based event store.
+        /// </summary>
+        /// <returns>The updated configuration.</returns>
+        public static Configuration UseSqlEventStore(
+            this Configuration configuration,
+            Action<EventStoreConfiguration> configure)
+        {
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
+            var schedulerConfiguration = new EventStoreConfiguration();
+            configure(schedulerConfiguration);
+            schedulerConfiguration.ApplyTo(configuration);
+            return configuration;
+        }
+
+        /// <summary>
+        /// Configures the use of a SQL-backed reservation service. 
+        /// </summary>
+        public static Configuration UseSqlReservationService(
+            this Configuration configuration,
+            Action<ReservationServiceConfiguration> configure)
+        {
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
+            var reservationServiceConfiguration = new ReservationServiceConfiguration();
+            configure(reservationServiceConfiguration);
+            reservationServiceConfiguration.ApplyTo(configuration);
+            return configuration;
+        }
+
+        /// <summary>
+        /// Configures the use of a SQL-backed command scheduler. 
+        /// </summary>
+        public static Configuration UseSqlStorageForScheduledCommands(
+            this Configuration configuration,
+            Action<CommandSchedulerConfiguration> configure = null)
+        {
+            var schedulerConfiguration = new CommandSchedulerConfiguration();
+            configure?.Invoke(schedulerConfiguration);
+            schedulerConfiguration.ApplyTo(configuration);
+
+            return configuration;
         }
 
         internal static void IsUsingSqlEventStore(this Configuration configuration, bool value) =>
@@ -128,18 +170,6 @@ namespace Microsoft.Its.Domain.Sql
                          .And()
                          .IfTypeIs<bool>()
                          .ElseDefault();
-
-        internal static Func<PocketContainer, object> SqlEventSourcedRepositoryStrategy(Type type)
-        {
-            if (type.IsGenericType &&
-                type.GetGenericTypeDefinition() == typeof (IEventSourcedRepository<>))
-            {
-                var aggregateType = type.GenericTypeArguments.Single();
-                var genericType = typeof (SqlEventSourcedRepository<>).MakeGenericType(aggregateType);
-                return c => c.Resolve(genericType);
-            }
-            return null;
-        }
 
         internal static PocketContainer RegisterDefaultClockName(this PocketContainer container) =>
             container.AddStrategy(t =>

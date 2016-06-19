@@ -20,6 +20,7 @@ using Moq;
 using NCrunch.Framework;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -27,7 +28,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReadModels", "ItsCqrsTestsCommandScheduler")]
     public class SqlCommandSchedulerTests_EventSourced : SqlCommandSchedulerTests
     {
-        protected EventStoreDbTest eventStoreDbTest;
         private IEventSourcedRepository<CustomerAccount> accountRepository;
         protected IEventSourcedRepository<Order> orderRepository;
         protected CompositeDisposable disposables;
@@ -48,33 +48,26 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [SetUp]
         public void SetUp()
         {
-            eventStoreDbTest = new EventStoreDbTest();
             clockName = Any.CamelCaseName();
 
             Clock.Reset();
 
             disposables = new CompositeDisposable
             {
-                Disposable.Create(() => eventStoreDbTest.TearDown()),
                 Disposable.Create(Clock.Reset)
             };
 
-            var bus = new FakeEventBus();
-            orderRepository = new SqlEventSourcedRepository<Order>(bus);
-            accountRepository = new SqlEventSourcedRepository<CustomerAccount>(bus);
-
-            var configuration = new Configuration();
-            configuration.UseEventBus(bus)
-                         .UseSqlEventStore()
-                         .UseDependency<IEventSourcedRepository<Order>>(t => orderRepository)
-                         .UseDependency<IEventSourcedRepository<CustomerAccount>>(t => accountRepository);
+            var configuration = new Configuration()
+                .UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString))
+                .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString));
 
             Configure(configuration);
 
             disposables.Add(ConfigurationContext.Establish(configuration));
+            disposables.Add(configuration);
 
-            Console.WriteLine(new { clockName });
-
+            orderRepository = configuration.Repository<Order>();
+            accountRepository = configuration.Repository<CustomerAccount>();
             clockTrigger = configuration.SchedulerClockTrigger();
             clockRepository = configuration.SchedulerClockRepository();
             clockRepository.CreateClock(clockName, Clock.Now());
@@ -260,7 +253,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 foreach (var command in db.ScheduledCommands.Where(c => c.AggregateId == aggregate.Id))
                 {
@@ -356,7 +349,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        .And
                        .Message
                        .Should()
-                       .Contain(string.Format("A clock named '{0}' already exists", name));
+                       .Contain($"A clock named '{name}' already exists");
         }
 
         [Test]
@@ -510,14 +503,18 @@ namespace Microsoft.Its.Domain.Sql.Tests
             TriggerConcurrencyExceptionOnOrderCommands(order.Id);
 
             // act
-            await clockTrigger.AdvanceClock(clockName, @by: TimeSpan.FromDays(20));
+            await Configuration
+                .Current
+                .SchedulerClockTrigger()
+                .AdvanceClock(clockName, @by: TimeSpan.FromDays(20));
 
             // assert
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 // make sure we actually triggered a concurrency exception
                 db.Errors
                   .Where(e => e.ScheduledCommand.AggregateId == order.Id)
+                  .ToArray()
                   .Should()
                   .Contain(e => e.Error.Contains("ConcurrencyException"));
 
@@ -558,7 +555,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await clockTrigger.AdvanceClock(clockName, TimeSpan.FromDays(31));
 
             //assert 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var error = db.Errors.Single(c => c.ScheduledCommand.AggregateId == order.Id).Error;
                 error.Should().Contain("oops!");
@@ -832,7 +829,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                  .Should()
                  .Be(shipmentId);
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
                   .Where(c => c.AggregateId == order.Id)
@@ -958,7 +955,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             order.Balance.Should().Be(10);
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
                   .Where(c => c.AggregateId == order.Id)
@@ -997,7 +994,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             await clockTrigger.AdvanceClock(clockName, TimeSpan.FromMinutes(1.2));
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.Errors
                   .Where(e => e.ScheduledCommand.AggregateId == customer.Id)
@@ -1030,7 +1027,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             customer = await accountRepository.GetLatest(customer.Id);
             customer.Events().Last().Should().BeOfType<CustomerAccount.EmailAddressChanged>();
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
                   .Where(c => c.AggregateId == customer.Id)
@@ -1053,7 +1050,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             order.Apply(new Cancel());
             await orderRepository.Save(order);
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
                   .Where(c => c.AggregateId == customerId)
@@ -1067,7 +1064,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             await clockTrigger.AdvanceClock(clockName, TimeSpan.FromMinutes(2));
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
                   .Where(c => c.AggregateId == customerId)
@@ -1109,7 +1106,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             await commandScheduler.Schedule(secondCommand);
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
                   .Count(c => c.AggregateId == orderId)
@@ -1124,7 +1121,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
-            var db = new CommandSchedulerDbContext();
+            var db = Configuration.Current.CommandSchedulerDbContext();
 
             disposables.Add(db);
 
@@ -1190,7 +1187,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 AggregateId = orderId
             });
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var commands = db.ScheduledCommands
                                  .Where(c => c.AggregateId == orderId)
@@ -1232,7 +1229,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             scheduledCommand.Result.Should().BeOfType<CommandScheduled>();
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var command = db.ScheduledCommands.Single(c => c.AggregateId == orderId);
 
@@ -1321,7 +1318,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     (await clockTrigger.Trigger(commands => commands.Due().Where(c => c.AggregateId == orderId))).ToLogString());
             }
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var command = db.ScheduledCommands.Single(c => c.AggregateId == orderId);
 
@@ -1391,7 +1388,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var reserverationService = new Mock<IReservationService>();
             reserverationService.Setup(m => m.Reserve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
                                 .Returns(() => Task.FromResult(true));
-            Configuration.Current.ReservationService = reserverationService.Object;
+            Configuration.Current.UseDependency(_ => reserverationService.Object);
 
             var aggregateId = Any.Guid();
             await accountRepository.Save(new CustomerAccount(aggregateId).Apply(new RequestNoSpam()));
@@ -1400,7 +1397,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 UserName = Any.Email()
             });
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var scheduledAggregateIds = db.ScheduledCommands
                                               .Where(c => aggregateId == c.AggregateId)
@@ -1429,7 +1426,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                             },
                                             Clock.Now().AddHours(1.5));
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var command = db.ScheduledCommands.Single(c => c.AggregateId == failedAggregateId);
                 var commandBody = command.SerializedCommand.FromJsonTo<dynamic>();
@@ -1466,7 +1463,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
             };
 
-            using (var commandScheduler = new CommandSchedulerDbContext())
+            using (var commandScheduler = Configuration.Current.CommandSchedulerDbContext())
             {
                 commandScheduler.Clocks.Add(clock);
                 commandScheduler.SaveChanges();
@@ -1497,10 +1494,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
         protected override void Configure(Configuration configuration) =>
             configuration
                 .UseDependency<GetClockName>(c => e => clockName)
-                .UseSqlStorageForScheduledCommands()
+                .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
                 .TraceScheduledCommands();
 
-        protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId) =>
+        protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)
+        {
+            Configuration.Current.UseDependency(_ => orderRepository);
             ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () =>
             {
                 // quick, add a new event in order to trigger a concurrency exception at the moment the scheduler tries to apply the command
@@ -1509,14 +1508,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 o.Apply(new Annotate<Order>("triggering a concurrency exception", Any.Guid().ToString()));
                 repository.Save(o).Wait();
 
-                return new EventStoreDbContext();
+                return EventStoreDbContext();
             };
+        }
 
-        protected void StopTriggeringConcurrencyExceptions() => ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () => new EventStoreDbContext();
+        protected void StopTriggeringConcurrencyExceptions() => 
+            ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () => EventStoreDbContext();
 
         protected int GetScheduledCommandNumberOfAttempts(Guid aggregateId)
         {
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var scheduledCommand = db.ScheduledCommands.SingleOrDefault(c => c.AggregateId == aggregateId);
                 return scheduledCommand.IfNotNull()

@@ -177,7 +177,6 @@
     <Compile Include="SnapshotRepositoryExtensionsTests.cs" />
     <Compile Include="StringOfTTests.cs" />
     <Compile Include="TypeDiscoveryTests.cs" />
-    <Compile Include="ReservationTests.cs" />
     <Compile Include="UnitOfWorkTests.cs" />
     <Compile Include="ValidationTests.cs" />
   </ItemGroup>

@@ -3,7 +3,6 @@
 
 using FluentAssertions;
 using Its.Log.Instrumentation;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
@@ -11,6 +10,7 @@ using System;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
@@ -640,7 +640,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
                 if (UsesSqlStorage)
                 {
-                    using (var db = new CommandSchedulerDbContext())
+                    using (var db = Configuration.Current.CommandSchedulerDbContext())
                     {
                         var scheduledCommands = db.ScheduledCommands
                                                   .Where(c => c.AggregateId == account.Id)
@@ -716,7 +716,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
                 if (UsesSqlStorage)
                 {
-                    using (var db = new CommandSchedulerDbContext())
+                    using (var db = Configuration.Current.CommandSchedulerDbContext())
                     {
                         var scheduledCommands = db.ScheduledCommands
                                                   .Where(c => c.AggregateId == account.Id)

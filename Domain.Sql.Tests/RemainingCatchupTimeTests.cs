@@ -9,6 +9,7 @@ using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -24,15 +25,18 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [SetUp]
-        public void Init()
+        public override void SetUp()
         {
-            VirtualClock.Start();
-        }
+            base.SetUp();
 
-        [TearDown]
-        public new void TearDown()
-        {
-            Clock.Reset();
+            var configuration = new Configuration()
+                .UseSqlEventStore(c =>
+                                  c.UseConnectionString(TestDatabases.EventStore.ConnectionString));
+
+            disposables.Add(
+                ConfigurationContext.Establish(configuration));
+            disposables.Add(
+                VirtualClock.Start());
         }
 
         [Test]
@@ -48,7 +52,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 {
                     if (eventsProcessed == 5)
                     {
-                        progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
+                        progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
                     }
                     VirtualClock.Current.AdvanceBy(TimeSpan.FromSeconds(1));
                     eventsProcessed++;
@@ -81,7 +85,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 if (eventsProcessed == 5)
                 {
-                    progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
+                    progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
                 }
                 VirtualClock.Current.AdvanceBy(TimeSpan.FromSeconds(1));
                 eventsProcessed++;
@@ -113,7 +117,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             //act
             await RunCatchup(projector);
-            var progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
+            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
 
             //assert
             progress.First(p => p.Name == EventHandler.FullName(projector))
@@ -140,7 +144,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await RunCatchup(projector);
 
             //act
-            var progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
+            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
 
             //assert
             progress.First(p => p.Name == EventHandler.FullName(projector))
@@ -163,7 +167,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 {
                     if (eventsProcessed == 4)
                     {
-                        progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
+                        progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
                     }
                     eventsProcessed++;
                 }
@@ -187,7 +191,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Events.Write(5);
 
             //act
-            var progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
+            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
 
             //assert
             progress.First(p => p.Name == EventHandler.FullName(new TestProjector()))
@@ -206,7 +210,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await RunCatchup(projector);
 
             //act
-            var progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
+            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
 
             //assert
             progress.First(p => p.Name == EventHandler.FullName(projector))
@@ -225,7 +229,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await RunCatchup(projector);
 
             //act
-            var progress = EventHandlerProgressCalculator.Calculate(() => new ReadModelDbContext());
+            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
 
             //assert
             progress.First(p => p.Name == EventHandler.FullName(projector))
@@ -236,7 +240,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         private void ResetReadModelInfo()
         {
-            using (var db = new ReadModelDbContext())
+            using (var db = ReadModelDbContext())
             {
                 foreach (var info in db.Set<ReadModelInfo>())
                 {

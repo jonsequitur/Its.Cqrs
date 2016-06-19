@@ -6,16 +6,19 @@ using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Microsoft.Its.Domain.Sql.CommandScheduler
+namespace Microsoft.Its.Domain.Sql
 {
     public class SqlEventStoreEventStoreETagChecker : IETagChecker
     {
         private readonly Func<EventStoreDbContext> createEventStoreDbContext;
 
-        public SqlEventStoreEventStoreETagChecker(Func<EventStoreDbContext> createEventStoreDbContext = null)
+        public SqlEventStoreEventStoreETagChecker(Func<EventStoreDbContext> createEventStoreDbContext)
         {
-            this.createEventStoreDbContext = createEventStoreDbContext ??
-                                             (() => new EventStoreDbContext());
+            if (createEventStoreDbContext == null)
+            {
+                throw new ArgumentNullException(nameof(createEventStoreDbContext));
+            }
+            this.createEventStoreDbContext = createEventStoreDbContext;
         }
 
         public async Task<bool> HasBeenRecorded(string scope, string etag)

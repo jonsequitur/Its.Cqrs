@@ -12,18 +12,9 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     public class EventStoreDbContext : DbContext
     {
-        private static string nameOrConnectionString;
-
         static EventStoreDbContext()
         {
             Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EventStoreDbContext"/> class.
-        /// </summary>
-        public EventStoreDbContext() : this(NameOrConnectionString)
-        {
         }
 
         /// <summary>
@@ -77,21 +68,5 @@ namespace Microsoft.Its.Domain.Sql
         }
 
         public DbSet<StorableEvent> Events { get; set; }
-        
-        public static string NameOrConnectionString
-        {
-            get
-            {
-                return nameOrConnectionString;
-            }
-            set
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    throw new ArgumentException("The value cannot be null, empty or contain only whitespace.");
-                }
-                nameOrConnectionString = value;
-            }
-        }
     }
 }

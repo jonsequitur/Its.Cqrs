@@ -71,6 +71,6 @@ namespace Microsoft.Its.Domain.Sql
         internal static DbContext CreateDbContext(object projector) =>
             projector.IfTypeIs<IEntityModelProjector>()
                      .Then(emp => emp.CreateDbContext())
-                     .Else(() => new ReadModelDbContext());
+                     .Else(() => Configuration.Current.Container.Resolve<ReadModelDbContext>());
     }
 }

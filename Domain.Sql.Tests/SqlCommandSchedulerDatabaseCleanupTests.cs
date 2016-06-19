@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Data.Entity.Infrastructure;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
@@ -34,16 +33,20 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [SetUp]
         public void SetUp()
         {
-            TestDatabases.SetConnectionStrings();
-
             aggregateId = Any.Guid();
             sequenceNumber = Any.PositiveInt();
+
+            disposables = new CompositeDisposable
+            {
+                ConfigurationContext.Establish(new Configuration()
+                                                   .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString)))
+            };
 
             if (clockName == null)
             {
                 clockName = Any.CamelCaseName();
 
-                using (var db = new CommandSchedulerDbContext())
+                using (var db = Configuration.Current.CommandSchedulerDbContext())
                 {
                     db.Clocks.Add(new CommandScheduler.Clock
                     {
@@ -56,13 +59,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 }
             }
 
-            disposables = new CompositeDisposable
-            {
-                ConfigurationContext.Establish(new Configuration()
-                                                   .UseSqlStorageForScheduledCommands())
-            };
             
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.Database.ExecuteSqlCommand("delete from PocketMigrator.AppliedMigrations where MigrationScope = 'CommandSchedulerCleanup'");
             }
@@ -151,14 +149,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                           var configuration = new Configuration()
                               .UseSqlStorageForScheduledCommands(
-                                  c => c.CleanUp(
-                                      frequencyInDays: 3,
-                                      completedCommandsOlderThan: 7.Days()));
+                                  c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString)
+                                        .CleanUp(
+                                            frequencyInDays: 3,
+                                            completedCommandsOlderThan: 7.Days()));
 
                           configuration.StartBackgroundWork();
                       });
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var appliedMigrations = db.Database
                     .SqlQuery<string>(@"
@@ -176,7 +175,7 @@ where MigrationScope = 'CommandSchedulerCleanup'");
 
         private void Run(IDbMigrator migration)
         {
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var results = migration.Migrate(db);
 
@@ -186,7 +185,7 @@ where MigrationScope = 'CommandSchedulerCleanup'");
 
         private bool ScheduledCommandExists()
         {
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 return db.ScheduledCommands.Any(c =>
                                                 c.AggregateId == aggregateId &&
@@ -199,7 +198,7 @@ where MigrationScope = 'CommandSchedulerCleanup'");
             DateTimeOffset? finalAttemptTime,
             DateTimeOffset? dueTime)
         {
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.ScheduledCommands.Add(new ScheduledCommand
                 {

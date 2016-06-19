@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,22 +13,18 @@ using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
     public class SqlEventSourcedRepositoryTests : EventSourcedRepositoryTests
     {
-        static SqlEventSourcedRepositoryTests()
-        {
-            EventStoreDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore";
-            Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
-        }
-   
         protected override void Configure(Configuration configuration, Action onSave = null)
         {
-            configuration.UseSqlEventStore()
+            configuration.UseSqlEventStore(c =>
+                                           c.UseConnectionString(
+                                               @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore"))
                          .UseEventBus(new FakeEventBus())
                          .IgnoreScheduledCommands();
         }
@@ -44,7 +39,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 repository.GetEventStoreContext = () =>
                 {
                     onSave();
-                    return new EventStoreDbContext();
+                    return EventStoreDbContext();
                 };
             }
 
@@ -68,7 +63,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                         UtcTime = e.Timestamp.UtcDateTime
                     });
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 db.Events.AddRange(storableEvents);
                 await db.SaveChangesAsync();
@@ -77,9 +72,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         protected override async Task DeleteEventsFromEventStore(Guid aggregateId)
         {
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
-                db.Database.ExecuteSqlCommand(string.Format("DELETE FROM EventStore.Events WHERE AggregateId = '{0}'", aggregateId));
+                db.Database.ExecuteSqlCommand($"DELETE FROM EventStore.Events WHERE AggregateId = '{aggregateId}'");
                 await db.SaveChangesAsync();
             }
         }
@@ -120,7 +115,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 }.ToStorableEvent()
             };
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 db.Events.AddOrUpdate(events.ToArray());
                 db.SaveChanges();
@@ -155,7 +150,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 }
             };
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 db.Events.AddOrUpdate(events.ToArray());
                 db.SaveChanges();
@@ -225,10 +220,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
             }
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 var events = db.Events.Where(e => e.AggregateId == order.Id).ToArray();
-                events.Count().Should().Be(0);
+                events.Length.Should().Be(0);
             }
         }
 

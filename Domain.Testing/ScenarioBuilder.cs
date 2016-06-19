@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -47,19 +46,6 @@ namespace Microsoft.Its.Domain.Testing
 
             configure?.Invoke(Configuration);
         }
-
-        /// <summary>
-        /// Specifes a delegate used to create <see cref="EventStoreDbContext" /> instances if <see>
-        ///         <cref>ScenarioBuilderExtensions.UseSqlEventStore{TScenarioBuilder}</cref>
-        ///     </see>
-        ///     is set to true.
-        /// </summary>
-        public Func<EventStoreDbContext> CreateEventStoreDbContext = () => new EventStoreDbContext();
-
-        /// <summary>
-        /// Specifes a delegate used to create <see cref="DbContext" /> instances for accessing read models.
-        /// </summary>
-        public Func<DbContext> CreateReadModelDbContext = () => new ReadModelDbContext();
 
         /// <summary>
         /// Helps to organize sets of events by aggregate.
@@ -111,7 +97,8 @@ namespace Microsoft.Its.Domain.Testing
             if (configuration.IsUsingSqlEventStore())
             {
                 // capture the highest event id from the event store before the scenario adds new ones
-                startCatchupAtEventId = CreateEventStoreDbContext().DisposeAfter(db => db.Events.Max<StorableEvent, long?>(e => e.Id) ?? 0) + 1;
+                startCatchupAtEventId = configuration.EventStoreDbContext()
+                                                     .DisposeAfter(db => db.Events.Max<StorableEvent, long?>(e => e.Id) ?? 0) + 1;
             }
 
             SourceAggregatesFromInitialEvents();
@@ -226,7 +213,7 @@ namespace Microsoft.Its.Domain.Testing
 
         private void PersistEventsToSql(IEnumerable<IEvent> events)
         {
-            using (var eventStore = CreateEventStoreDbContext())
+            using (var eventStore = configuration.EventStoreDbContext())
             {
                 events
                     .AssignSequenceNumbers()
@@ -249,18 +236,17 @@ namespace Microsoft.Its.Domain.Testing
 
             if (configuration.IsUsingSqlEventStore())
             {
-                var catchup = new ReadModelCatchup(projectors)
-                {
-                    CreateEventStoreDbContext = CreateEventStoreDbContext,
-                    CreateReadModelDbContext = CreateReadModelDbContext,
-                    StartAtEventId = startCatchupAtEventId
-                };
+                var catchup = new ReadModelCatchup(
+                    eventStoreDbContext: () => configuration.EventStoreDbContext(),
+                    readModelDbContext: () => configuration.ReadModelDbContext(),
+                    startAtEventId: startCatchupAtEventId,
+                    projectors: projectors);
 
                 using (catchup)
                 using (catchup.EventBus.Errors.Subscribe(scenario.AddEventHandlingError))
                 using (catchup.Progress.Subscribe(s => Console.WriteLine(s)))
                 {
-                    catchup.Run();
+                    catchup.Run().Wait(TimeSpan.FromSeconds(30));
                 }
             }
             else

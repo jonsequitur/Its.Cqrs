@@ -36,7 +36,7 @@ namespace Microsoft.Its.Domain
             }
 
             return Configuration.Current
-                                .ReservationService
+                                .ReservationService()
                                 .Reserve(valueToReserve(command),
                                          scope,
                                          ownerToken,

@@ -21,8 +21,6 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             Command<Order>.AuthorizeDefault = (order, command) => true;
 
-            TestDatabases.SetConnectionStrings();
-
             configuration = GetConfiguration();
             disposables.Add(ConfigurationContext.Establish(configuration));
         }

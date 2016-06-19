@@ -10,6 +10,7 @@ using Microsoft.Its.Recipes;
 using NCrunch.Framework;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -17,14 +18,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
     public class EventStoreDbTest
     {
         public long HighestEventId;
-        private CompositeDisposable disposables;
+        protected CompositeDisposable disposables;
         private bool classInitializeHasBeenCalled;
 
         public EventStoreDbTest()
         {
             Logging.Configure();
-
-            TestDatabases.SetConnectionStrings();
 
             Command<Order>.AuthorizeDefault = (order, command) => true;
             Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
@@ -51,7 +50,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 })
             };
 
-            HighestEventId = new EventStoreDbContext().DisposeAfter(db => GetHighestEventId(db));
+            HighestEventId = EventStoreDbContext()
+                .DisposeAfter(db => GetHighestEventId(db));
 
             if (!classInitializeHasBeenCalled)
             {
@@ -72,30 +72,41 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        .ThenDo(d => d.Dispose());
         }
 
-        public virtual CatchupWrapper CreateReadModelCatchup(params object[] projectors)
+        public ReadModelCatchup CreateReadModelCatchup(params object[] projectors)
         {
-            var startAtEventId = HighestEventId + 1;
-            var catchup = new ReadModelCatchup(projectors)
+            var catchup = new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: HighestEventId + 1,
+                projectors: projectors)
             {
-                StartAtEventId = startAtEventId,
-                Name = "from " + startAtEventId
+                Name = "from " + (HighestEventId + 1)
             };
             disposables.Add(catchup);
-            return new CatchupWrapper<ReadModelDbContext>(catchup);
+            return catchup;
         }
 
-        public virtual CatchupWrapper CreateReadModelCatchup<T>(params object[] projectors)
+        public ReadModelCatchup<T> CreateReadModelCatchup<T>(
+            Func<EventStoreDbContext> eventStoreDbContext,
+            params object[] projectors)
             where T : DbContext, new()
         {
-            var startAtEventId = HighestEventId + 1;
-            var catchup = new ReadModelCatchup<T>(projectors)
+            var catchup = new ReadModelCatchup<T>(
+                eventStoreDbContext: eventStoreDbContext,
+                readModelDbContext: () => new T(),
+                startAtEventId: HighestEventId + 1,
+                projectors: projectors)
             {
-                StartAtEventId = startAtEventId,
-                Name = "from " + startAtEventId
+                Name = "from " + (HighestEventId + 1)
             };
             disposables.Add(catchup);
+            return catchup;
+        }
 
-            return new CatchupWrapper<T>(catchup);
+        public ReadModelCatchup<T> CreateReadModelCatchup<T>(params object[] projectors)
+            where T : DbContext, new()
+        {
+            return CreateReadModelCatchup<T>(() => EventStoreDbContext(), projectors);
         }
     }
 }

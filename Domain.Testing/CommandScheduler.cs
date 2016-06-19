@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
 
@@ -24,7 +25,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             clockName = clockName ?? Sql.CommandScheduler.Clock.DefaultClockName;
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var now = Clock.Latest(Clock.Current, db.Clocks.Single(c => c.Name == clockName)).Now();
                 await scheduler.AdvanceClock(clockName, now);

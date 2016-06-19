@@ -1,18 +1,10 @@
-using Microsoft.Its.Domain.Sql.CommandScheduler;
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     public static class TestDatabases
     {
-        public static void SetConnectionStrings()
-        {
-            EventStoreDbContext.NameOrConnectionString = EventStore.ConnectionString;
-
-            ReadModelDbContext.NameOrConnectionString = ReadModels.ConnectionString;
-
-            CommandSchedulerDbContext.NameOrConnectionString = CommandScheduler.ConnectionString;
-        }
-
         public static class CommandScheduler
         {
             public static string ConnectionString { get; } =
@@ -29,6 +21,22 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             public static string ConnectionString { get; } =
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsReadModels";
+        }
+
+        public static class ReservationService
+        {
+            public static string ConnectionString { get; } =
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsReservationService";
+        }
+
+        public static EventStoreDbContext EventStoreDbContext()
+        {
+            return new EventStoreDbContext(EventStore.ConnectionString);
+        }
+
+        public static ReadModelDbContext ReadModelDbContext()
+        {
+            return new ReadModelDbContext(ReadModels.ConnectionString);
         }
     }
 }

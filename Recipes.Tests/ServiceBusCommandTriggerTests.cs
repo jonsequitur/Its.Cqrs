@@ -69,9 +69,9 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
                 var clockName = Any.Paragraph(4);
 
                 var configuration = new Configuration()
-                    .UseSqlEventStore()
+                    .UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString))
                     .UseDependency<GetClockName>(_ => @event => clockName)
-                    .UseSqlStorageForScheduledCommands()
+                    .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
                     .AddToCommandSchedulerPipeline<Order>(
                         schedule: async (cmd, next) =>
                         {
@@ -262,7 +262,7 @@ namespace Microsoft.Its.Cqrs.Recipes.Tests
             var receiver = new ServiceBusCommandQueueReceiver(
                 serviceBusSettings,
                 Configuration.Current.SchedulerClockTrigger(),
-                () => new CommandSchedulerDbContext());
+                () => new CommandSchedulerDbContext(TestDatabases.CommandScheduler.ConnectionString));
 
             receiver.Messages.Subscribe(s => Console.WriteLine("[ServiceBusCommandQueueReceiver] " + s.ToJson()));
 

@@ -22,13 +22,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <summary>
         /// Initializes a new instance of the <see cref="CommandSchedulerDbContext"/> class.
         /// </summary>
-        public CommandSchedulerDbContext() : this(NameOrConnectionString)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandSchedulerDbContext"/> class.
-        /// </summary>
         /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
         public CommandSchedulerDbContext(string nameOrConnectionString) : base(nameOrConnectionString)
         {
@@ -55,22 +48,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             // add infrastructure for catchup tracking
             modelBuilder.Configurations.Add(new ReadModelInfoEntityModelConfiguration.ReadModelInfoEntityTypeConfiguration());
             modelBuilder.Configurations.Add(new EventHandlingErrorEntityModelConfiguration.EventHandlingErrorEntityTypeConfiguration());
-        }
-
-        public static string NameOrConnectionString
-        {
-            get
-            {
-                return nameOrConnectionString;
-            }
-            set
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    throw new ArgumentException("The value cannot be null, empty or contain only whitespace.");
-                }
-                nameOrConnectionString = value;
-            }
         }
 
         private class ScheduledCommandEntityTypeConfiguration : EntityTypeConfiguration<ScheduledCommand>

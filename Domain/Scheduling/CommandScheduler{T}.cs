@@ -13,22 +13,22 @@ namespace Microsoft.Its.Domain
     internal class CommandScheduler<TAggregate> : ICommandScheduler<TAggregate> 
         where TAggregate : class
     {
-        private readonly IStore<TAggregate> store;
+        private readonly Func<IStore<TAggregate>> getStore;
         private readonly IETagChecker etagChecker;
 
         public CommandScheduler(
-            IStore<TAggregate> store,
+            Func<IStore<TAggregate>> getStore,
             IETagChecker etagChecker)
         {
-            if (store == null)
+            if (getStore == null)
             {
-                throw new ArgumentNullException(nameof(store));
+                throw new ArgumentNullException(nameof(getStore));
             }
             if (etagChecker == null)
             {
                 throw new ArgumentNullException(nameof(etagChecker));
             }
-            this.store = store;
+            this.getStore = getStore;
             this.etagChecker = etagChecker;
         }
 
@@ -85,6 +85,8 @@ namespace Microsoft.Its.Domain
             {
                 return;
             }
+
+            var store = getStore();
 
             await store.ApplyScheduledCommand(scheduledCommand, etagChecker);
         }

@@ -18,6 +18,13 @@ namespace Microsoft.Its.Domain
                 configuration.Container.Resolve<IEventSourcedRepository<TAggregate>>();
 
         /// <summary>
+        /// Gets the configured reservation service.
+        /// </summary>
+        public static IReservationService ReservationService(this Configuration configuration) =>
+            configuration.Container.Resolve<IReservationService>() ??
+            NoReservations.Instance;
+
+        /// <summary>
         /// Gets an <see cref="IStore{TAggregate}" />.
         /// </summary>
         public static IStore<TTarget> Store<TTarget>(this Configuration configuration)

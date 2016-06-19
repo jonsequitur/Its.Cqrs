@@ -14,6 +14,7 @@ using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using System.Data.SqlClient;
+using System.Reactive.Disposables;
 using NCrunch.Framework;
 using Test.Domain.Ordering.Projections;
 
@@ -27,18 +28,32 @@ namespace Microsoft.Its.Domain.Sql.Tests
             @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsMigrationsTestCommandScheduler";
         
         private Version version = new Version(10, 0, 0);
+        private CompositeDisposable disposables;
 
         [TestFixtureSetUp]
-        public void Init()
+        public void TestFixtureSetUp()
         {
-            EventStoreDbContext.NameOrConnectionString = MigrationsTestEventStore.ConnectionString;
-            CommandSchedulerDbContext.NameOrConnectionString = CommandSchedulerConnectionString;
+            disposables = new CompositeDisposable();
+
+            var configuration = new Configuration()
+                .UseSqlStorageForScheduledCommands(
+                    c => c.UseConnectionString(CommandSchedulerConnectionString));
+
+            disposables.Add(ConfigurationContext.Establish(configuration));
+
             Database.Delete(MigrationsTestEventStore.ConnectionString);
             Database.Delete(CommandSchedulerConnectionString);
             Database.Delete(MigrationsTestReadModels.ConnectionString);
             Database.Delete(MigrationsTestEventStore.ConnectionString);
+
             InitializeEventStore();
             InitializeCommandScheduler();
+        }
+
+        [TestFixtureTearDown]
+        public void TestFixtureTearDown()
+        {
+            disposables.Dispose();
         }
 
         [SetUp]
@@ -50,7 +65,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void event_store_etag_is_indexed()
         {
-            using (var context = new EventStoreDbContext())
+            using (var context = EventStoreDbContext())
             {
                 var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_ETag' AND object_id = OBJECT_ID('eventstore.events')").Single();
                 result.Should().NotBeEmpty();
@@ -60,7 +75,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void event_store_etag_is_nullable()
         {
-            using (var context = new EventStoreDbContext())
+            using (var context = EventStoreDbContext())
             {
                 var result = context.QueryDynamic(@"SELECT * FROM sys.columns WHERE name='ETag' AND object_id = OBJECT_ID('eventstore.events')").Single();
                 bool is_nullable = result.Single().is_nullable;
@@ -71,7 +86,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void event_store_stream_name_is_indexed()
         {
-            using (var context = new EventStoreDbContext())
+            using (var context = EventStoreDbContext())
             {
                 var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_StreamName' AND object_id = OBJECT_ID('eventstore.events')").Single();
                 result.Should().NotBeEmpty();
@@ -81,7 +96,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void event_store_type_is_indexed()
         {
-            using (var context = new EventStoreDbContext())
+            using (var context = EventStoreDbContext())
             {
                 var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_Type' AND object_id = OBJECT_ID('eventstore.events')").Single();
                 result.Should().NotBeEmpty();
@@ -91,7 +106,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void event_store_type_and_id_are_indexed()
         {
-            using (var context = new EventStoreDbContext())
+            using (var context = EventStoreDbContext())
             {
                 var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_Id_and_Type' AND object_id = OBJECT_ID('eventstore.events')").Single();
                 result.Should().NotBeEmpty();
@@ -101,7 +116,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void When_a_migration_is_run_it_creates_a_record_in_the_migrations_table()
         {
-            var appliedVersions = GetAppliedVersions<EventStoreDbContext>();
+            var appliedVersions = GetAppliedVersions(Configuration.Current.CommandSchedulerDbContext());
 
             appliedVersions
                 .Should()
@@ -128,7 +143,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
             }
 
-            GetAppliedVersions<MigrationsTestEventStore>()
+            GetAppliedVersions(new MigrationsTestEventStore())
                 .Should()
                 .NotContain(s => s == version.ToString());
 
@@ -225,7 +240,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             InitializeDatabase<MigrationsTestEventStore>(higherVersion);
             InitializeDatabase<MigrationsTestEventStore>(lowerVersion);
 
-            var appliedMigrations = GetAppliedVersions<MigrationsTestEventStore>();
+            var appliedMigrations = GetAppliedVersions(new MigrationsTestEventStore());
 
             appliedMigrations.Should().Contain(m => m == version + ".2");
             appliedMigrations.Should().Contain(m => m == version.ToString());
@@ -248,7 +263,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             InitializeDatabase<MigrationsTestEventStore>(higherVersion);
             InitializeDatabase<MigrationsTestEventStore>(lowerVersion);
 
-            var appliedMigrations = GetAppliedVersions<MigrationsTestEventStore>();
+            var appliedMigrations = GetAppliedVersions(new MigrationsTestEventStore());
 
             appliedMigrations.Should().Contain(m => m == version + ".2");
             appliedMigrations.Should().NotContain(m => m == version.ToString());
@@ -264,14 +279,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             InitializeDatabase<MigrationsTestEventStore>(migrator);
 
-            GetAppliedVersions<MigrationsTestEventStore>()
+            GetAppliedVersions(new MigrationsTestEventStore())
                 .Should().NotContain(v => v == version.ToString());
         }
 
         [Test]
-        public async Task Command_scheduler_database_contains_a_default_clock()
+        public void Command_scheduler_database_contains_a_default_clock()
         {
-            using (var db = new CommandSchedulerDbContext(CommandSchedulerConnectionString))
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.Clocks.Should().ContainSingle(c => c.Name == "default");
             }
@@ -287,9 +302,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var builder = new SqlConnectionStringBuilder();
             var migrated = false;
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
-                db.Database.ExecuteSqlCommand(string.Format("CREATE LOGIN [{0}] WITH PASSWORD = '{1}';", userName, password));
+                db.Database.ExecuteSqlCommand($"CREATE LOGIN [{userName}] WITH PASSWORD = '{password}';");
                 db.CreateReadonlyUser(user);
 
                 builder.ConnectionString = db.Database.Connection.ConnectionString;
@@ -438,7 +453,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     migrationVersion: version);
 
             // act
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 try
                 {
@@ -451,22 +466,21 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             // assert
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var etagsInserted = db.ETags
                                       .Where(e => e.Scope == scope && e.ETagValue == etag).ToArray();
                 etagsInserted.Should().BeEmpty();
             }
 
-            GetAppliedVersions<CommandSchedulerDbContext>()
+            GetAppliedVersions(Configuration.Current.CommandSchedulerDbContext())
                 .Should()
                 .NotContain(v => v == version.ToString());
         }
 
-        private static IEnumerable<string> GetAppliedVersions<TContext>()
-            where TContext : DbContext, new()
+        private static IEnumerable<string> GetAppliedVersions(DbContext context)
         {
-            using (var context = new TContext())
+            using (context)
             {
                 var connection = context.OpenConnection();
 
@@ -493,17 +507,22 @@ namespace Microsoft.Its.Domain.Sql.Tests
         
         private void InitializeEventStore()
         {
-            using (var context = new EventStoreDbContext())
+            using (var context = EventStoreDbContext())
             {
                 new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(context);
             }
         }
 
+        private static EventStoreDbContext EventStoreDbContext()
+        {
+            return new EventStoreDbContext(MigrationsTestEventStore.ConnectionString);
+        }
+
         private void InitializeCommandScheduler()
         {
-            using (var context = new CommandSchedulerDbContext(CommandSchedulerConnectionString))
+            using (var context = Configuration.Current.CommandSchedulerDbContext())
             {
-                new EventStoreDatabaseInitializer<CommandSchedulerDbContext>().InitializeDatabase(context);
+                new CommandSchedulerDatabaseInitializer().InitializeDatabase(context);
             }
         }
 

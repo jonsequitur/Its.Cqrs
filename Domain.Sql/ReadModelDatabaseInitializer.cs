@@ -13,7 +13,7 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     /// <typeparam name="TDbContext">The type of the db context.</typeparam>
     public class ReadModelDatabaseInitializer<TDbContext> : CreateAndMigrate<TDbContext>
-        where TDbContext : ReadModelDbContext, new()
+        where TDbContext : ReadModelDbContext
     {
         private readonly SetDatabaseVersion<TDbContext> version;
 

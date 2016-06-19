@@ -9,6 +9,7 @@ using Microsoft.Its.Recipes;
 using NCrunch.Framework;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -103,7 +104,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var id = Guid.NewGuid();
             var now = Clock.Now();
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 db.Events.Add(new TestEvent
                 {
@@ -114,7 +115,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 db.SaveChanges();
             }
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 var @event = db.Events.Single(e => e.AggregateId == id).ToDomainEvent();
 

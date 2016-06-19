@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Sql
 
             using (var db = createEventStoreDbContext.IfNotNull()
                                                      .Then(create => create())
-                                                     .Else(() => new EventStoreDbContext()))
+                                                     .Else(() => Configuration.Current.EventStoreDbContext()))
             {
                 count = db.Events.Count();
             }

@@ -11,6 +11,7 @@ using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
 using Test.Domain.Ordering.Projections;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -26,7 +27,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             base.SetUp();
 
             // reset order tallies
-            using (var db = new ReadModelDbContext())
+            using (var db = ReadModelDbContext())
             {
                 var tallies = db.Set<OrderTally>();
                 tallies.ToArray().ForEach(t => tallies.Remove(t));
@@ -130,7 +131,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task A_dynamic_projector_can_access_the_properties_of_unknown_event_types_dynamically()
         {
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 Enumerable.Range(1, 10).ForEach(i => db.Events.Add(new StorableEvent
                 {
@@ -159,7 +160,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             StorableEvent storableEvent = null;
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 storableEvent = new StorableEvent
                 {
@@ -191,7 +192,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             StorableEvent storableEvent = null;
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 storableEvent = new StorableEvent
                 {
@@ -313,7 +314,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_properties_are_duck_deserialized()
         {
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 Enumerable.Range(1, 5).ForEach(i => db.Events.Add(new StorableEvent
                 {
@@ -357,7 +358,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_classes_not_implementing_IEvent_are_used_to_query_the_event_store_then_nested_classes_can_be_used_to_specify_stream_names()
         {
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 Enumerable.Range(1, 5).ForEach(i => db.Events.Add(new StorableEvent
                 {
@@ -428,7 +429,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var receivedEventStreamName = "";
             var receivedEventTypeName = "";
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 db.Events.Add(new StorableEvent
                 {
@@ -476,7 +477,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var receivedEventStreamName = "";
             var receivedEventTypeName = "";
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 db.Events.Add(new StorableEvent
                 {
@@ -518,7 +519,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var projector = Projector.Combine(
                 Projector.CreateFor<Placed>(e =>
                 {
-                    using (var db1 = new ReadModelDbContext())
+                    using (var db1 = ReadModelDbContext())
                     {
                         db1.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count ++;
                         db1.SaveChanges();
@@ -526,7 +527,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 }),
                 Projector.CreateFor<Cancelled>(e =>
                 {
-                    using (var db2 = new ReadModelDbContext())
+                    using (var db2 = ReadModelDbContext())
                     {
                         db2.OrderTallyByStatus(OrderTally.OrderStatus.Canceled).Count ++;
                         db2.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count --;
@@ -535,7 +536,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 }),
                 Projector.CreateFor<Delivered>(e =>
                 {
-                    using (var db3 = new ReadModelDbContext())
+                    using (var db3 = ReadModelDbContext())
                     {
                         db3.OrderTallyByStatus(OrderTally.OrderStatus.Delivered).Count ++;
                         db3.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count --;
@@ -552,7 +553,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 await catchup.Run();
             }
 
-            using (var db = new ReadModelDbContext())
+            using (var db = ReadModelDbContext())
             {
                 db.Set<OrderTally>()
                   .Single(t => t.Status == "Canceled")
@@ -586,7 +587,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 await catchup.Run();
             }
 
-            using (var db = new ReadModelDbContext())
+            using (var db = ReadModelDbContext())
             {
                 db.Set<OrderTally>()
                   .Single(t => t.Status == "Canceled")
@@ -620,7 +621,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 await catchup.Run();
             }
 
-            using (var db = new ReadModelDbContext())
+            using (var db = ReadModelDbContext())
             {
                 db.Set<OrderTally>()
                   .Single(t => t.Status == "Fulfilled")
@@ -691,8 +692,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Catchup_continues_when_DuckTypeProjector_throws()
         {
             Events.Write(20);
-            int counter = 0;
-            int eventsHandled = 0;
+            var counter = 0;
+            var eventsHandled = 0;
             var handler = Projector.CreateFor<ItemAdded>(e =>
             {
                 counter++;
@@ -703,10 +704,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 eventsHandled++;
             });
 
-            await new ReadModelCatchup(handler)
-            {
-                StartAtEventId = HighestEventId + 1
-            }.SingleBatchAsync();
+            await new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: HighestEventId + 1,
+                projectors: handler).SingleBatchAsync();
 
             eventsHandled.Should().Be(19);
         }
@@ -715,8 +717,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Catchup_continues_when_DynamicProjector_throws()
         {
             Events.Write(20);
-            int counter = 0;
-            int eventsHandled = 0;
+            var counter = 0;
+            var eventsHandled = 0;
             var handler = Projector.CreateDynamic(e =>
             {
                 counter++;
@@ -727,10 +729,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 eventsHandled++;
             });
 
-            await new ReadModelCatchup(handler)
-            {
-                StartAtEventId = HighestEventId + 1
-            }.SingleBatchAsync();
+            await new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: HighestEventId + 1,
+                projectors: handler).SingleBatchAsync();
 
             eventsHandled.Should().Be(19);
         }
@@ -825,7 +828,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             On<Placed>(e =>
             {
-                using (var db = new ReadModelDbContext())
+                using (var db = ReadModelDbContext())
                 {
                     db.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count ++;
                     db.SaveChanges();
@@ -834,7 +837,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             On<Cancelled>(e =>
             {
-                using (var db = new ReadModelDbContext())
+                using (var db = ReadModelDbContext())
                 {
                     db.OrderTallyByStatus(OrderTally.OrderStatus.Canceled).Count ++;
                     db.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count --;
@@ -844,7 +847,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             On<Delivered>(e =>
             {
-                using (var db = new ReadModelDbContext())
+                using (var db = ReadModelDbContext())
                 {
                     db.OrderTallyByStatus(OrderTally.OrderStatus.Delivered).Count ++;
                     db.OrderTallyByStatus(OrderTally.OrderStatus.Pending).Count --;
@@ -854,7 +857,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             On("Order.Fulfilled", e =>
             {
-                using (var db = new ReadModelDbContext())
+                using (var db = ReadModelDbContext())
                 {
                     db.OrderTallyByStatus(OrderTally.OrderStatus.Fulfilled).Count ++;
                     db.SaveChanges();
@@ -863,7 +866,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             On("Order.Misdelivered", e =>
             {
-                using (var db = new ReadModelDbContext())
+                using (var db = ReadModelDbContext())
                 {
                     db.OrderTallyByStatus(OrderTally.OrderStatus.Misdelivered).Count ++;
                     db.SaveChanges();

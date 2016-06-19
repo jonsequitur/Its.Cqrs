@@ -9,6 +9,7 @@ using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -34,7 +35,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 unrelatedId
             }.ToLogString());
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 Enumerable.Range(1, 20).ForEach(i => db.Events.Add(new StorableEvent
                 {
@@ -89,13 +90,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 db.SaveChanges();
             }
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 //act
                 var events = (await db.Events.RelatedEvents(relatedId1)).ToArray();
 
                 // assert
-                events.Count().Should().Be(80);
+                events.Length.Should().Be(80);
                 events.Should().Contain(e => e.AggregateId == relatedId1);
                 events.Should().Contain(e => e.AggregateId == relatedId2);
                 events.Should().Contain(e => e.AggregateId == relatedId3);
@@ -114,10 +115,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 relatedId1,
                 relatedId2,
-                relatedId3,
+                relatedId3
             }.ToLogString());
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 db.Events.Add(new StorableEvent
                 {
@@ -153,11 +154,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             // assert
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 var events = (await db.Events.RelatedEvents(relatedId1)).ToArray();
 
-                events.Count().Should().Be(3);
+                events.Length.Should().Be(3);
                 events.Should().Contain(e => e.AggregateId == relatedId1);
                 events.Should().Contain(e => e.AggregateId == relatedId2);
                 events.Should().Contain(e => e.AggregateId == relatedId3);
@@ -180,7 +181,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 graph2Id2
             }.ToLogString());
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 db.Events.Add(new StorableEvent
                 {
@@ -225,11 +226,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             // assert
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 var events = (await db.Events.RelatedEvents(graph1Id1, graph2Id1)).ToArray();
 
-                events.Count().Should().Be(4);
+                events.Length.Should().Be(4);
                 events.Should().Contain(e => e.AggregateId == graph1Id1);
                 events.Should().Contain(e => e.AggregateId == graph1Id2);
                 events.Should().Contain(e => e.AggregateId == graph2Id1);

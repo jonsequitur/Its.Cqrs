@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reflection;
@@ -17,6 +18,7 @@ using Assert = NUnit.Framework.Assert;
 using Its.Log.Instrumentation;
 using Test.Domain.Ordering;
 using Test.Domain.Ordering.Projections;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -26,11 +28,23 @@ namespace Microsoft.Its.Domain.Sql.Tests
     {
         private readonly TimeSpan MaxWaitTime = TimeSpan.FromSeconds(5);
 
+        [SetUp]
+        public override void SetUp()
+        {
+            base.SetUp();
+
+            var configuration = new Configuration()
+                .UseSqlEventStore(c =>
+                                  c.UseConnectionString(EventStore.ConnectionString));
+
+            disposables.Add(
+                ConfigurationContext.Establish(configuration));
+        }
+
         [Test]
         public async Task ReadModelCatchup_only_queries_events_since_the_last_consumed_event_id()
         {
-            var bus = new FakeEventBus();
-            var repository = new SqlEventSourcedRepository<Order>(bus);
+            var repository = Configuration.Current.Repository<Order>();
 
             // save the order with no projectors running
             var order = new Order();
@@ -79,7 +93,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             StorableEvent extraneousEvent = null;
 
             using (var catchup = CreateReadModelCatchup(projector2))
-            using (var eventStore = new EventStoreDbContext())
+            using (var eventStore = EventStoreDbContext())
             {
                 var eventsQueried = 0;
                 catchup.Progress
@@ -300,7 +314,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var eventsQueried = 0;
 
             using (var catchup = CreateReadModelCatchup(projector))
-            using (var eventStore = new EventStoreDbContext())
+            using (var eventStore = EventStoreDbContext())
             {
                 catchup.Progress
                        .Where(s => !s.IsStartOfBatch)
@@ -346,7 +360,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var eventsQueried = 0;
 
             using (var catchup = CreateReadModelCatchup(projector))
-            using (var eventStore = new EventStoreDbContext())
+            using (var eventStore = EventStoreDbContext())
             {
                 catchup.Progress
                        .Where(s => !s.IsStartOfBatch)
@@ -392,7 +406,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var eventsQueried = 0;
 
             using (var catchup = CreateReadModelCatchup(projector))
-            using (var eventStore = new EventStoreDbContext())
+            using (var eventStore = EventStoreDbContext())
             {
                 catchup.Progress
                        .Where(s => !s.IsStartOfBatch)
@@ -424,10 +438,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var projector = Projector.Create<Event>(e => { eventsProjected++; })
                                      .Named(MethodBase.GetCurrentMethod().Name);
 
-            using (var catchup = new ReadModelCatchup(projector)
-            {
-                StartAtEventId = lastEventId - 20
-            })
+            using (var catchup = new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: lastEventId - 20, 
+                projectors: projector))
             {
                 await catchup.Run();
             }
@@ -444,7 +459,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var barrier = new Barrier(2);
             var progress = new List<ReadModelCatchupStatus>();
             Events.Write(10);
-            var projector = new Projector<Order.ItemAdded>(() => new ReadModelDbContext())
+            var projector = new Projector<Order.ItemAdded>
             {
                 OnUpdate = (work, e) =>
                 {
@@ -485,7 +500,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var errorMessage = Any.Paragraph(10);
             var productName = Any.Paragraph();
-            var projector = new Projector<Order.ItemAdded>(() => new ReadModelDbContext())
+            var projector = new Projector<Order.ItemAdded>
             {
                 OnUpdate = (work, e) => { throw new Exception(errorMessage); }
             };
@@ -505,7 +520,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             // assert
-            using (var db = new ReadModelDbContext())
+            using (var db = ReadModelDbContext())
             {
                 var error = db.Set<EventHandlingError>().Single(e => e.AggregateId == order.Id);
                 error.StreamName.Should().Be("Order");
@@ -529,7 +544,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 UtcTime = DateTime.UtcNow
             };
 
-            using (var eventStore = new EventStoreDbContext())
+            using (var eventStore = EventStoreDbContext())
             {
                 eventStore.Events.Add(badEvent);
                 await eventStore.SaveChangesAsync();
@@ -540,7 +555,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 await catchup.Run();
             }
 
-            using (var readModels = new ReadModelDbContext())
+            using (var readModels = ReadModelDbContext())
             {
                 var failure = readModels.Set<EventHandlingError>()
                                         .OrderByDescending(e => e.Id)
@@ -559,7 +574,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_an_exception_is_thrown_during_a_read_model_update_then_it_is_logged_on_its_bus()
         {
-            var projector = new Projector<Order.ItemAdded>(() => new ReadModelDbContext())
+            var projector = new Projector<Order.ItemAdded>
             {
                 OnUpdate = (work, e) => { throw new Exception("oops!"); }
             };
@@ -575,7 +590,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var errors = new List<Domain.EventHandlingError>();
             using (var catchup = CreateReadModelCatchup(projector))
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 db.Events.Add(itemAdded.ToStorableEvent());
                 db.SaveChanges();
@@ -598,9 +613,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task Database_command_timeouts_during_catchup_do_not_interrupt_catchup()
         {
             // reset read model tracking to 0
-            new ReadModelDbContext().DisposeAfter(c =>
+            ReadModelDbContext().DisposeAfter(c =>
             {
-                var projectorName = ReadModelInfo.NameForProjector(new Projector<Order.CustomerInfoChanged>(() => new ReadModelDbContext()));
+                var projectorName = ReadModelInfo.NameForProjector(new Projector<Order.CustomerInfoChanged>());
                 c.Set<ReadModelInfo>()
                  .SingleOrDefault(i => i.Name == projectorName)
                  .IfNotNull()
@@ -639,7 +654,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var names = new HashSet<string>();
 
-            var projector = new Projector<Order.CustomerInfoChanged>(() => new ReadModelDbContext())
+            var projector = new Projector<Order.CustomerInfoChanged>
             {
                 OnUpdate = (work, e) => names.Add(e.CustomerName)
             };
@@ -690,7 +705,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     }
                 };
 
-                using (var db = new EventStoreDbContext())
+                using (var db = EventStoreDbContext())
                 using (var catchup = CreateReadModelCatchup(projector))
                 {
                     var events = db.Events.Where(e => e.Id > HighestEventId);
@@ -704,7 +719,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Console.WriteLine("queued read model catchup task");
             barrier.SignalAndWait(MaxWaitTime); //1
 
-            new EventStoreDbContext().DisposeAfter(c =>
+            EventStoreDbContext().DisposeAfter(c =>
             {
                 Console.WriteLine("adding one more event, bypassing read model tracking");
                 c.Events.Add(new Order.ItemAdded
@@ -722,7 +737,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // check that everything worked:
             var projector2 = new Projector1();
             var projectorName = ReadModelInfo.NameForProjector(projector2);
-            using (var readModels = new ReadModelDbContext())
+            using (var readModels = ReadModelDbContext())
             {
                 var readModelInfo = readModels.Set<ReadModelInfo>().Single(i => i.Name == projectorName);
 
@@ -759,7 +774,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 OnUpdate = (work, e) =>
                 {
-                    using (var db = new ReadModelDbContext())
+                    using (var db = ReadModelDbContext())
                     {
                         // throw one exception in the middle
                         if (count++ == 15)
@@ -847,8 +862,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 ProductName = productName,
                 Price = .01m
             });
-            var repository = new SqlEventSourcedRepository<Order>(new FakeEventBus());
-            await repository.Save(order);
+            await Configuration.Current.Repository<Order>().Save(order);
             Projector1 projector = null;
             projector = new Projector1
             {
@@ -881,14 +895,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             // assert
-            using (var db = new ReadModelDbContext())
+            using (var db = ReadModelDbContext())
             {
                 var error = db.Set<EventHandlingError>().Single(e => e.AggregateId == order.Id);
-                error.Error.Should()
+                error.Error
+                     .Should()
                      .Contain(
-                         string.Format(
-                             "Violation of PRIMARY KEY constraint 'PK_dbo.ProductInventories'. Cannot insert duplicate key in object 'dbo.ProductInventories'. The duplicate key value is ({0})",
-                             productName));
+                         $"Violation of PRIMARY KEY constraint 'PK_dbo.ProductInventories'. Cannot insert duplicate key in object 'dbo.ProductInventories'. The duplicate key value is ({productName})");
             }
         }
 
@@ -1097,23 +1110,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var projector2 = Projector.Create<Order.ItemAdded>(e => projector2CallCount++).Named(MethodBase.GetCurrentMethod().Name + "2");
             var startProjector2AtId = new OtherEventStoreDbContext().DisposeAfter(db => GetHighestEventId(db)) + 1;
 
-            Events.Write(5, createEventStore: () => new EventStoreDbContext());
+            Events.Write(5, createEventStore: () => EventStoreDbContext());
             Events.Write(5, createEventStore: () => new OtherEventStoreDbContext());
 
-            using (
-                var eventStoreCatchup = new ReadModelCatchup(projector1)
-                {
-                    StartAtEventId = HighestEventId + 1,
-                    Name = "eventStoreCatchup",
-                    CreateEventStoreDbContext = () => new EventStoreDbContext()
-                })
-            using (
-                var otherEventStoreCatchup = new ReadModelCatchup(projector2)
-                {
-                    StartAtEventId = startProjector2AtId,
-                    Name = "otherEventStoreCatchup",
-                    CreateEventStoreDbContext = () => new OtherEventStoreDbContext()
-                })
+            using (var eventStoreCatchup = new ReadModelCatchup(
+                readModelDbContext: () => ReadModelDbContext(),
+                eventStoreDbContext: () => EventStoreDbContext(),
+                startAtEventId: HighestEventId + 1,
+                projectors: projector1)
+            {
+                Name = "eventStoreCatchup"
+            })
+            using (var otherEventStoreCatchup = new ReadModelCatchup(
+                readModelDbContext: () => ReadModelDbContext(),
+                eventStoreDbContext: () => new OtherEventStoreDbContext(),
+                startAtEventId: startProjector2AtId,
+                projectors: projector2)
+            {
+                Name = "otherEventStoreCatchup"
+            })
             {
                 // act
                 await eventStoreCatchup.SingleBatchAsync();
@@ -1125,7 +1140,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             projector2CallCount.Should().Be(5, "projector2 should get all events from event stream");
         }
 
-        public class Projector1 : IUpdateProjectionWhen<Order.ItemAdded>
+        public class Projector1 : IUpdateProjectionWhen<Order.ItemAdded>, IEntityModelProjector
         {
             public int CallCount { get; set; }
 
@@ -1140,9 +1155,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             public Action<UnitOfWork<ReadModelUpdate>, Order.ItemAdded> OnUpdate = (work, e) => { };
+
+            public DbContext CreateDbContext()
+            {
+                return ReadModelDbContext();
+            }
         }
 
-        public class Projector2 : IUpdateProjectionWhen<Order.ItemAdded>
+        public class Projector2 : IUpdateProjectionWhen<Order.ItemAdded>, IEntityModelProjector
         {
             public int CallCount { get; set; }
 
@@ -1157,6 +1177,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             public Action<UnitOfWork<ReadModelUpdate>, Order.ItemAdded> OnUpdate = (work, e) => { };
+
+            public DbContext CreateDbContext()
+            {
+                return ReadModelDbContext();
+            }
         }
     }
 }

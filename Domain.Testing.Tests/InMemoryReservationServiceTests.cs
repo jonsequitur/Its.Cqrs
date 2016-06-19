@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
         protected override async Task<ReservedValue> GetReservedValue(string value, string promoCode)
         {
-            var reservationService = (InMemoryReservationService) Configuration.Current.ReservationService;
+            var reservationService = (InMemoryReservationService) Configuration.Current.ReservationService();
             return await reservationService.GetReservedValue(value, promoCode);
         }
     }

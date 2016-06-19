@@ -6,6 +6,7 @@ using System.Reactive.Disposables;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.Tests;
 using NUnit.Framework;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
@@ -27,13 +28,12 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
         protected override ScenarioBuilder CreateScenarioBuilder()
         {
-            TestDatabases.SetConnectionStrings();
-
             var scenarioBuilder = new ScenarioBuilder();
 
             scenarioBuilder.Configuration
-                           .UseSqlEventStore()
-                           .UseSqlStorageForScheduledCommands();
+                           .UseSqlEventStore(c => c.UseConnectionString(EventStore.ConnectionString))
+                           .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
+                           .UseDependency(_ => ReadModelDbContext());
 
             return scenarioBuilder;
         }

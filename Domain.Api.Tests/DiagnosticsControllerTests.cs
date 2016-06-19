@@ -12,18 +12,13 @@ using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Api.Tests
 {
     [TestFixture]
     public class DiagnosticsControllerTests
     {
-        [TestFixtureSetUp]
-        public void TestFixtureSetUp()
-        {
-            TestSetUp.EnsureEventStoreIsInitialized();
-        }
-
         [Ignore("Test not finished")]
         [Test]
         public void Related_events_are_available_via_diagnostics_endpoint()
@@ -44,7 +39,7 @@ namespace Microsoft.Its.Domain.Api.Tests
                 unrelatedId
             }.ToLogString());
 
-            using (var db = new EventStoreDbContext())
+            using (var db = EventStoreDbContext())
             {
                 Enumerable.Range(1, 20).ForEach(i => db.Events.Add(new StorableEvent
                 {
