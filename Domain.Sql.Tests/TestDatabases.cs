@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Linq;
+
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     public static class TestDatabases
@@ -29,14 +31,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsReservationService";
         }
 
-        public static EventStoreDbContext EventStoreDbContext()
-        {
-            return new EventStoreDbContext(EventStore.ConnectionString);
-        }
+        public static EventStoreDbContext EventStoreDbContext() => 
+            new EventStoreDbContext(EventStore.ConnectionString);
 
-        public static ReadModelDbContext ReadModelDbContext()
+        public static ReadModelDbContext ReadModelDbContext() =>
+            new ReadModelDbContext(ReadModels.ConnectionString);
+
+        public static long HighestEventId(this EventStoreDbContext db)
         {
-            return new ReadModelDbContext(ReadModels.ConnectionString);
+            return db.Events.Max<StorableEvent, long?>(e => e.Id) ?? 0;
         }
     }
 }

@@ -77,7 +77,8 @@ namespace Microsoft.Its.Domain.Testing
                          .AddStrategy(type => InMemoryEventSourcedRepositoryStrategy(type, configuration.Container))
                          .Register<IETagChecker>(c => c.Resolve<InMemoryEventStoreETagChecker>())
                          .RegisterSingle(c => inMemoryEventStream)
-                         .RegisterSingle<ISnapshotRepository>(c => new InMemorySnapshotRepository());
+                         .RegisterSingle<ISnapshotRepository>(c => new InMemorySnapshotRepository())
+                         .Register<EventStoreDbContext>(c => c.Resolve<InMemoryEventStoreDbContext>());
 
             if (traceEvents)
             {
@@ -120,8 +121,9 @@ namespace Microsoft.Its.Domain.Testing
 
         public static Configuration UseInMemoryReservationService(this Configuration configuration)
         {
-            var inMemoryReservationService = new InMemoryReservationService();
-            configuration.Container.RegisterSingle<IReservationService>(c => inMemoryReservationService);
+            configuration.Container
+                         .RegisterSingle<IReservationService>(
+                             c => new InMemoryReservationService());
             return configuration;
         }
     }

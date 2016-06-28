@@ -4,6 +4,8 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
+using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -15,6 +17,10 @@ namespace Microsoft.Its.Domain.Sql
         static EventStoreDbContext()
         {
             Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
+        }
+
+        protected EventStoreDbContext()
+        {
         }
 
         /// <summary>
@@ -67,6 +73,12 @@ namespace Microsoft.Its.Domain.Sql
             modelBuilder.Entity<StorableEvent>().Ignore(a => a.Timestamp);
         }
 
-        public DbSet<StorableEvent> Events { get; set; }
+        public virtual DbSet<StorableEvent> Events { get; set; }
+
+        protected internal virtual async Task OpenAsync()
+        {
+            var dbConnection = ((IObjectContextAdapter) this).ObjectContext.Connection;
+            await dbConnection.OpenAsync();
+        }
     }
 }

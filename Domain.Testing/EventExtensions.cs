@@ -55,7 +55,9 @@ namespace Microsoft.Its.Domain.Testing
         /// Creates a domain event from a <see cref="IStoredEvent" />.
         /// </summary>
         /// <param name="storedEvent">The storable event.</param>
-        /// <returns>A deserialized domain event.</returns>
+        /// <returns>
+        /// A deserialized domain event.
+        /// </returns>
         public static IEvent ToDomainEvent(this IStoredEvent storedEvent) =>
             Serializer.DeserializeEvent(
                 aggregateName: storedEvent.StreamName,
@@ -67,6 +69,12 @@ namespace Microsoft.Its.Domain.Testing
                 body: storedEvent.Body,
                 uniqueEventId: storedEvent.Timestamp.Ticks,
                 serializerSettings: serializerSettings.Value);
+
+        /// <summary>
+        /// Creates a storable event.
+        /// </summary>
+        public static StorableEvent ToStorableEvent(this IStoredEvent storedEvent) =>
+            storedEvent.ToDomainEvent().ToStorableEvent();
 
         /// <summary>
         /// Creates an aggregate from a sequence of stored events.

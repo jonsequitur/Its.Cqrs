@@ -110,6 +110,7 @@
   <ItemGroup>
     <Compile Include="%28Its.Recipes%29\MaybeExtensions.cs" />
     <Compile Include="%28Its.Recipes%29\TestInputGenerator.cs" />
+    <Compile Include="InMemoryEventStoreTests.cs" />
     <Compile Include="VirtualClockCommandSchedulingTests.cs" />
     <Compile Include="VirtualClockTests.cs" />
     <Compile Include="InMemoryEventSourcedRepositoryMigrationTests.cs" />

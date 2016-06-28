@@ -24,14 +24,12 @@ namespace Microsoft.Its.Domain.Testing.Tests
             eventStream = new InMemoryEventStream();
             base.SetUp();
         }
-        
-        protected override void Configure(Configuration configuration, Action onSave = null)
-        {
+
+        protected override void Configure(Configuration configuration, Action onSave = null) =>
             configuration.UseEventBus(new FakeEventBus())
                          .UseDependency(_ => eventStream)
                          .UseInMemoryEventStore()
                          .IgnoreScheduledCommands();
-        }
 
         protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
             Action onSave = null)

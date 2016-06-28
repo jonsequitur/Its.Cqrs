@@ -1108,7 +1108,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var projector2CallCount = 0;
             var projector1 = Projector.Create<Order.ItemAdded>(e => projector1CallCount++).Named(MethodBase.GetCurrentMethod().Name + "1");
             var projector2 = Projector.Create<Order.ItemAdded>(e => projector2CallCount++).Named(MethodBase.GetCurrentMethod().Name + "2");
-            var startProjector2AtId = new OtherEventStoreDbContext().DisposeAfter(db => GetHighestEventId(db)) + 1;
+            var startProjector2AtId = new OtherEventStoreDbContext().DisposeAfter(db => db.HighestEventId()) + 1;
 
             Events.Write(5, createEventStore: () => EventStoreDbContext());
             Events.Write(5, createEventStore: () => new OtherEventStoreDbContext());

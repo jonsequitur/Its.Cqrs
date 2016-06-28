@@ -327,8 +327,7 @@ namespace Microsoft.Its.Domain.Sql
         internal async Task<EventStoreDbContext> CreateOpenEventStoreDbContext()
         {
             var context = createEventStoreDbContext();
-            var dbConnection = ((IObjectContextAdapter) context).ObjectContext.Connection;
-            await dbConnection.OpenAsync();
+            await context.OpenAsync();
             return context;
         }
 

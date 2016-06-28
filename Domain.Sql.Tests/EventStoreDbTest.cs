@@ -17,7 +17,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReadModels", "ItsCqrsTestsCommandScheduler")]
     public class EventStoreDbTest
     {
-        public long HighestEventId;
+        protected long HighestEventId;
         protected CompositeDisposable disposables;
         private bool classInitializeHasBeenCalled;
 
@@ -51,18 +51,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
 
             HighestEventId = EventStoreDbContext()
-                .DisposeAfter(db => GetHighestEventId(db));
+                .DisposeAfter(db => db.HighestEventId());
 
             if (!classInitializeHasBeenCalled)
             {
                 classInitializeHasBeenCalled = true;
                 AfterClassIsInitialized();
             }
-        }
-
-        protected static long GetHighestEventId(EventStoreDbContext db)
-        {
-            return db.Events.Max<StorableEvent, long?>(e => e.Id) ?? 0;
         }
 
         [TearDown]

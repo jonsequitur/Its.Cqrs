@@ -65,7 +65,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var db = EventStoreDbContext())
             {
-                db.Events.AddRange(storableEvents);
+                foreach (var @event in storableEvents)
+                {
+                    db.Events.Add(@event);
+                }
                 await db.SaveChangesAsync();
             }
         }

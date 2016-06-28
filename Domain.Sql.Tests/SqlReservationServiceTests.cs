@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
