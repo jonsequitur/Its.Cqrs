@@ -5,13 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Its.Domain.Serialization;
 
@@ -19,39 +16,6 @@ namespace Microsoft.Its.Domain.Sql
 {
     public static class DatabaseExtensions
     {
-        [Obsolete]
-        public static void Unique<TProjection>(
-            this DbContext context,
-            Expression<Func<TProjection, object>> member,
-            string schema = "dbo")
-            where TProjection : class
-        {
-            context.Database.ExecuteSqlCommand(AddUniqueIndex(context, member, schema));
-        }
-
-        internal static string AddUniqueIndex<TProjection>(
-            this DbContext context,
-            Expression<Func<TProjection, object>> member,
-            string schema = "dbo")
-            where TProjection : class =>
-                string.Format("CREATE UNIQUE INDEX IX_{0}_{1} ON {2}.{0} ({1})",
-                              context.TableNameFor<TProjection>(),
-                              member.MemberName(),
-                              schema);
-
-        [Obsolete]
-        public static void Unique<TProjection>(
-            this DbContext context,
-            Expression<Func<TProjection, object>> member1,
-            Expression<Func<TProjection, object>> member2,
-            string schema = "dbo") where TProjection : class =>
-                context.Database.ExecuteSqlCommand(
-                    string.Format("CREATE UNIQUE INDEX IX_{0}_{1}_{2} ON {3}.{0} ({1}, {2})",
-                                  context.TableNameFor<TProjection>(),
-                                  member1.MemberName(),
-                                  member2.MemberName(),
-                                  schema));
-
         /// <summary>
         /// Seeds an event store using JSON-serialized events stored in a file.
         /// </summary>
@@ -71,20 +35,6 @@ namespace Microsoft.Its.Domain.Sql
                     context.SaveChanges();
                 }
             }
-        }
-
-        private static string TableNameFor<T>(this DbContext context) where T : class
-        {
-            var objectContext = ((IObjectContextAdapter) context).ObjectContext;
-
-            var sql = objectContext.CreateObjectSet<T>().ToTraceString();
-
-            var match = new Regex(@"FROM ([\[\]a-z0-9]*\.)?(?<table>.*) AS", RegexOptions.IgnoreCase)
-                .Match(sql);
-
-            var matched = match.Groups["table"].Value;
-
-            return Regex.Replace(matched, @"[\[\]\.]", "");
         }
 
         /// <summary>
@@ -133,9 +83,9 @@ namespace Microsoft.Its.Domain.Sql
         /// | SERVICE_OBJECTIVE = { 'shared' | 'basic' | 'S0' | 'S1' | 'S2' | 'P1' | 'P2' | 'P3' }
         /// </remarks>
         internal static void CreateAzureDatabase(
-            this DbContext context, 
-            int dbSizeInGB = 2, 
-            string edition = "standard", 
+            this DbContext context,
+            int dbSizeInGB = 2,
+            string edition = "standard",
             string serviceObjective = "S0",
             string connectionString = null)
         {
@@ -227,17 +177,6 @@ namespace Microsoft.Its.Domain.Sql
             using (var command = connection.PrepareCommand(sql, parameters))
             {
                 return command.ExecuteQueriesToDynamic();
-            }
-        }
-
-        public static void Execute(
-            this IDbConnection connection,
-            string sql,
-            IDictionary<string, object> parameters = null)
-        {
-            using (var command = connection.PrepareCommand(sql, parameters))
-            {
-                command.ExecuteNonQuery();
             }
         }
 

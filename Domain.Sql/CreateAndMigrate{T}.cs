@@ -132,8 +132,7 @@ namespace Microsoft.Its.Domain.Sql
 
                     try
                     {
-                        context.OpenConnection()
-                               .Execute(sql);
+                        context.Database.ExecuteSqlCommand(sql);
                     }
                     catch (SqlException exception)
                     {

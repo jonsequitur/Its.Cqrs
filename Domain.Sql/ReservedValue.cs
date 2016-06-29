@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
 
 namespace Microsoft.Its.Domain.Sql
@@ -15,19 +16,19 @@ namespace Microsoft.Its.Domain.Sql
                     .Compile());
 
         public string OwnerToken { get; set; }
-        
+
         public string Value { get; set; }
 
+        [Index("IX_ReservedValues_ConfirmationToken_Scope", 1, IsUnique = true)]
         public string ConfirmationToken { get; set; }
 
+        [Index("IX_ReservedValues_ConfirmationToken_Scope", 2, IsUnique = true)]
         public string Scope { get; set; }
 
         public DateTimeOffset? Expiration { get; set; }
 
-        public ReservedValue Clone()
-        {
-            return cloneReservedValue.Value(this);
-        }
+        public ReservedValue Clone() => 
+            cloneReservedValue.Value(this);
 
         public override bool Equals(object obj)
         {

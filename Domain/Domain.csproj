@@ -153,7 +153,6 @@
     <Compile Include="Scheduling\IPrecondition.cs" />
     <Compile Include="Scheduling\ISpecifySchedulingBehavior.cs" />
     <Compile Include="Scheduling\NoEventStoreETagVerifications.cs" />
-    <Compile Include="Reservations\ISynchronousReservationService.cs" />
     <Compile Include="Scheduling\AnonymousCommandScheduler{T}.cs" />
     <Compile Include="Scheduling\CommandScheduler.cs" />
     <Compile Include="Scheduling\CommandScheduler{T}.cs" />
