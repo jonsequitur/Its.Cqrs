@@ -15,7 +15,7 @@ namespace Microsoft.Its.Domain.Sql
             exception.IsInsertConcurrencyException() ||
             exception is OptimisticConcurrencyException ||
             exception is DbUpdateConcurrencyException ||
-            (exception.InnerException != null && exception.InnerException.IsConcurrencyException());
+            (exception.InnerException?.IsConcurrencyException() == true);
 
         private static bool IsInsertConcurrencyException(this Exception exception) =>
             (exception is DataException ||
@@ -24,6 +24,6 @@ namespace Microsoft.Its.Domain.Sql
 
         public static bool IsUniquenessConstraint(this Exception exception) =>
             exception.IsConcurrencyException() &&
-            exception.ToString().Contains("with unique index \'IX");
+            exception.ToString().Contains("with unique index");
     }
 }
