@@ -3,6 +3,8 @@
 
 using System;
 using System.Data;
+using System.Data.Entity.Core;
+using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 
 namespace Microsoft.Its.Domain.Sql
@@ -10,9 +12,14 @@ namespace Microsoft.Its.Domain.Sql
     internal static class ExceptionExtensions
     {
         public static bool IsConcurrencyException(this Exception exception) =>
+            exception.IsInsertConcurrencyException() ||
+            exception is OptimisticConcurrencyException ||
+            exception is DbUpdateConcurrencyException ||
+            (exception.InnerException != null && exception.InnerException.IsConcurrencyException());
+
+        private static bool IsInsertConcurrencyException(this Exception exception) =>
             (exception is DataException ||
-             exception is SqlException ||
-             exception.InnerException.IsConcurrencyException()) &&
+             exception is SqlException) &&
             exception.ToString().Contains("Cannot insert duplicate key");
 
         public static bool IsUniquenessConstraint(this Exception exception) =>
