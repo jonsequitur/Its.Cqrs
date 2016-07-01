@@ -57,5 +57,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             exception.IsConcurrencyException().Should().BeTrue();
         }
+
+        [Test]
+        public void When_exception_is_ConcurrencyException_then_IsConcurrencyException_returns_true()
+        {
+            var exception = new ConcurrencyException("");
+
+            exception.IsConcurrencyException().Should().BeTrue();
+        }
     }
 }

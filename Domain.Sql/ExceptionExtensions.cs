@@ -12,6 +12,7 @@ namespace Microsoft.Its.Domain.Sql
     internal static class ExceptionExtensions
     {
         public static bool IsConcurrencyException(this Exception exception) =>
+            exception is ConcurrencyException ||
             exception.IsInsertConcurrencyException() ||
             exception is OptimisticConcurrencyException ||
             exception is DbUpdateConcurrencyException ||
