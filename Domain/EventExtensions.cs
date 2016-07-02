@@ -15,6 +15,29 @@ namespace Microsoft.Its.Domain
 {
     public static class EventExtensions
     {
+        public static long AbsoluteSequenceNumber(this IEvent @event)
+        {
+            var metadata = (@event as IHaveExtensibleMetada)?.Metadata;
+
+            if (metadata != null)
+            {
+                var dictionary = metadata as IDictionary<string, object>;
+
+                if (dictionary != null)
+                {
+                    dynamic value;
+                    if (dictionary.TryGetValue("AbsoluteSequenceNumber", out value))
+                    {
+                        return value;
+                    }
+
+                }
+
+            }
+
+            return 0;
+        }
+
         /// <summary>
         /// Returns a string representing the actor who committed the specified event.
         /// </summary>

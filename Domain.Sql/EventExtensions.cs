@@ -43,7 +43,8 @@ namespace Microsoft.Its.Domain.Sql
                 Type = domainEvent.EventName(),
                 Body = JsonConvert.SerializeObject(domainEvent, Formatting.None, serializerSettings.Value),
                 Timestamp = domainEvent.Timestamp,
-                ETag = domainEvent.ETag
+                ETag = domainEvent.ETag,
+                Id = domainEvent.AbsoluteSequenceNumber()
             };
         }
 

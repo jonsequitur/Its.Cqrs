@@ -113,11 +113,7 @@ namespace Microsoft.Its.Domain.Sql
                 SerializedEvent = e.Event.ToJson(),
                 StreamName = e.Event.EventStreamName(),
                 EventTypeName = e.Event.EventName(),
-                OriginalId = e.Event
-                              .IfTypeIs<IHaveExtensibleMetada>()
-                              .Then(ee => ee.Try(eee => eee.Metadata.AbsoluteSequenceNumber,
-                                                 ignore: ex => true))
-                              .Else(() => (long?) null)
+                OriginalId = e.Event.AbsoluteSequenceNumber()
             };
 
         private static EventHandlingError CreateEventHandlingError(IEvent e) =>

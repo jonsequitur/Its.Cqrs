@@ -118,7 +118,7 @@ namespace Microsoft.Its.Domain.Testing
             {
                 await eventStream.Append(new[]
                 {
-                    e.ToStoredEvent()
+                    e.ToInMemoryStoredEvent()
                 });
 
                 e.SetAggregate(aggregate);

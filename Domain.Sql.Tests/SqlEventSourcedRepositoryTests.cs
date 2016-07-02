@@ -46,7 +46,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             return repository;
         }
 
-        protected override async Task SaveEventsDirectly(params IStoredEvent[] events)
+        protected override async Task SaveEventsDirectly(params InMemoryStoredEvent[] events)
         {
             var storableEvents =
                 events.Select(
@@ -82,18 +82,22 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
         }
 
-        protected override IStoredEvent CreateStoredEvent(string streamName, string type, Guid aggregateId, int sequenceNumber, string body, DateTime utcTime)
-        {
-            return new StorableEvent
-                       {
-                           StreamName = streamName,
-                           Type = type,
-                           AggregateId = aggregateId,
-                           SequenceNumber = sequenceNumber,
-                           Body = body,
-                           UtcTime = utcTime
-                       }.ToStoredEvent();
-        }
+        protected override InMemoryStoredEvent CreateStoredEvent(
+            string streamName, 
+            string type, 
+            Guid aggregateId, 
+            int sequenceNumber, 
+            string body, 
+            DateTime utcTime) =>
+            new StorableEvent
+            {
+                StreamName = streamName,
+                Type = type,
+                AggregateId = aggregateId,
+                SequenceNumber = sequenceNumber,
+                Body = body,
+                UtcTime = utcTime
+            }.ToInMemoryStoredEvent();
 
         [Test]
         public override async Task Events_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_sourcing_to_fail()
@@ -175,7 +179,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 CustomerName = "Waylon Jennings",
                 AggregateId = orderId,
                 SequenceNumber = 1
-            }.ToStoredEvent();
+            }.ToInMemoryStoredEvent();
             var badEvent = new StorableEvent
             {
                 StreamName = goodEvent.StreamName,
@@ -188,7 +192,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     HairColor = "red"
                 }.ToJson(),
                 UtcTime = DateTime.UtcNow
-            }.ToStoredEvent();
+            }.ToInMemoryStoredEvent();
 
             await SaveEventsDirectly(goodEvent, badEvent);
 
@@ -240,7 +244,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Type = "SomeEventType",
                 StreamName = "SomeAggregateType",
                 Body = new { Something = Any.Words() }.ToJson()
-            }.ToStoredEvent();
+            }.ToInMemoryStoredEvent();
 
             await SaveEventsDirectly(e);
 

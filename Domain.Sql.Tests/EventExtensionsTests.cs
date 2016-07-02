@@ -52,5 +52,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             toStorableEvent.ShouldNotThrow();
         }
+
+        [Test]
+        public void ToStorableEvent_restores_Id_from_metadata()
+        {
+            Event e = new Annotated<CustomerAccount>("hi");
+
+            e.Metadata.AbsoluteSequenceNumber = 123;
+
+            e.ToStorableEvent().Id.Should().Be(123);
+        }
     }
 }

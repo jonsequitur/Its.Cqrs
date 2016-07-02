@@ -10,15 +10,17 @@ using Microsoft.Its.Domain.Serialization;
 
 namespace Microsoft.Its.Domain.Testing
 {
-    public class InMemoryEventStream : IEnumerable<IStoredEvent>
+    public class InMemoryEventStream : IEnumerable<InMemoryStoredEvent>
     {
-        private readonly HashSet<IStoredEvent> events = new HashSet<IStoredEvent>(new EventComparer());
+        private readonly HashSet<InMemoryStoredEvent> events = new HashSet<InMemoryStoredEvent>();
 
-        public EventHandler<IStoredEvent> BeforeSave;
+        internal long NextAbsoluteSequenceNumber = 0;
 
-        public IEnumerable<IStoredEvent> Events => events;
+        public EventHandler<InMemoryStoredEvent> BeforeSave;
 
-        public async Task Append(IStoredEvent[] @events)
+        public IEnumerable<InMemoryStoredEvent> Events => events;
+
+        public async Task Append(InMemoryStoredEvent[] @events)
         {
             await Task.Run(() =>
             {
@@ -42,10 +44,10 @@ namespace Microsoft.Its.Domain.Testing
             });
         }
 
-        public void RemoveEvents(Guid aggregateId) => 
+        public void RemoveEvents(Guid aggregateId) =>
             events.RemoveWhere(e => e.AggregateId == aggregateId.ToString());
 
-        private void ThrowConcurrencyException(IStoredEvent storedEvent)
+        private void ThrowConcurrencyException(InMemoryStoredEvent storedEvent)
         {
             var existing = events.Single(
                 e => e.AggregateId == storedEvent.AggregateId &&
@@ -65,18 +67,18 @@ Attempted:
 {attempted}");
         }
 
-        public async Task<IEnumerable<IStoredEvent>> All(string id) =>
+        public async Task<IEnumerable<InMemoryStoredEvent>> All(string id) =>
             await Task.Run(() => events.Where(e => e.AggregateId == id));
 
-        public async Task<IEnumerable<IStoredEvent>> AsOfDate(string id, DateTimeOffset date) =>
+        public async Task<IEnumerable<InMemoryStoredEvent>> AsOfDate(string id, DateTimeOffset date) =>
             await Task.Run(() => events.Where(e => e.AggregateId == id)
                                        .Where(e => e.Timestamp <= date));
 
-        public async Task<IEnumerable<IStoredEvent>> UpToVersion(string id, long version) =>
+        public async Task<IEnumerable<InMemoryStoredEvent>> UpToVersion(string id, long version) =>
             await Task.Run(() => events.Where(e => e.AggregateId == id)
                                        .Where(e => e.SequenceNumber <= version));
 
-        public IEnumerator<IStoredEvent> GetEnumerator() => events.GetEnumerator();
+        public IEnumerator<InMemoryStoredEvent> GetEnumerator() => events.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

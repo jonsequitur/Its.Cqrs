@@ -188,7 +188,7 @@ namespace Microsoft.Its.Domain.Testing
                                  var eventStream = configuration.Container.Resolve<InMemoryEventStream>();
 
                                  var storableEvents = es.AssignSequenceNumbers()
-                                                        .Select(e => e.ToStoredEvent());
+                                                        .Select(e => e.ToInMemoryStoredEvent());
 
                                  eventStream.Append(storableEvents.ToArray())
                                             .Wait();

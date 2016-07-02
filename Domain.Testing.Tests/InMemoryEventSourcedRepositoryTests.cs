@@ -64,13 +64,13 @@ namespace Microsoft.Its.Domain.Testing.Tests
         public override async Task Events_at_the_end_of_the_sequence_that_cannot_be_deserialized_due_to_unknown_type_do_not_cause_Version_to_be_incorrect()
         {
             var orderId = Guid.NewGuid();
-            var events = new List<IStoredEvent>
+            var events = new List<InMemoryStoredEvent>
             {
                 new Order.CustomerInfoChanged
                 {
                     CustomerName = "Waylon Jennings",
                     AggregateId = orderId
-                }.ToStoredEvent(),
+                }.ToInMemoryStoredEvent(),
                 new InMemoryStoredEvent
                 {
                     Type = "UKNOWN",
@@ -109,7 +109,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     CustomerName = "Waylon Jennings",
                     AggregateId = orderId,
                     SequenceNumber = 2
-                }.ToStoredEvent()
+                }.ToInMemoryStoredEvent()
             };
 
             await SaveEventsDirectly(events);
@@ -130,7 +130,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 CustomerName = "Waylon Jennings",
                 AggregateId = orderId,
                 SequenceNumber = 1
-            }.ToStoredEvent();
+            }.ToInMemoryStoredEvent();
             var badEvent = new InMemoryStoredEvent
             {
                 Type = goodEvent.Type,
@@ -154,7 +154,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             order.CustomerName.Should().Be("Willie Nelson");
         }
 
-        protected override async Task SaveEventsDirectly(params IStoredEvent[] events)
+        protected override async Task SaveEventsDirectly(params InMemoryStoredEvent[] events)
         {
             await eventStream.Append(events);
         }
@@ -164,7 +164,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             eventStream.RemoveEvents(aggregateId);
         }
 
-        protected override IStoredEvent CreateStoredEvent(string streamName, string type, Guid aggregateId, int sequenceNumber, string body, DateTime utcTime)
+        protected override InMemoryStoredEvent CreateStoredEvent(string streamName, string type, Guid aggregateId, int sequenceNumber, string body, DateTime utcTime)
         {
             return new InMemoryStoredEvent
             {

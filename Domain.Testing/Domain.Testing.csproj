@@ -89,7 +89,6 @@
     <Compile Include="CommandsInPipeline.cs" />
     <Compile Include="ConcurrentHashSet{T}.cs" />
     <Compile Include="ConfigurationExtensions.cs" />
-    <Compile Include="EventComparer.cs" />
     <Compile Include="IgnoreCommandScheduling{T}.cs" />
     <Compile Include="InMemoryCommandETagStore.cs" />
     <Compile Include="InMemoryEventStoreDbContext.cs" />
@@ -97,7 +96,6 @@
     <Compile Include="InMemoryCommandSchedulerPipelineInitializer{T}.cs" />
     <Compile Include="InMemoryReservationService.cs" />
     <Compile Include="InMemoryStore{T}.cs" />
-    <Compile Include="IStoredEvent.cs" />
     <Compile Include="TaskExtensions.cs" />
     <Compile Include="TestConfigurationExtensions.cs" />
     <Compile Include="EventExtensions.cs" />

@@ -263,7 +263,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public abstract Task Events_that_cannot_be_deserialized_due_to_unknown_member_do_not_cause_sourcing_to_fail();
 
-        protected abstract Task SaveEventsDirectly(params IStoredEvent[] events);
+        protected abstract Task SaveEventsDirectly(params InMemoryStoredEvent[] events);
 
         protected abstract Task DeleteEventsFromEventStore(Guid aggregateId);
 
@@ -449,7 +449,7 @@ namespace Microsoft.Its.Domain.Tests
             {
                 AggregateId = account.Id,
                 SequenceNumber = originalVersion + 1
-            }.ToStoredEvent());
+            }.ToInMemoryStoredEvent());
 
             // act
             account = await repository.GetLatest(account.Id);
@@ -482,7 +482,7 @@ namespace Microsoft.Its.Domain.Tests
                                {
                                    AggregateId = snapshot.AggregateId,
                                    SequenceNumber = 124
-                               }.ToStoredEvent());
+                               }.ToInMemoryStoredEvent());
 
             // act
             var account = await repository.GetLatest(snapshot.AggregateId);
@@ -501,7 +501,7 @@ namespace Microsoft.Its.Domain.Tests
                 CustomerName = "Waylon Jennings",
                 AggregateId = orderId,
                 SequenceNumber = 1
-            }.ToStoredEvent();
+            }.ToInMemoryStoredEvent();
             var badEvent = CreateStoredEvent(
                 streamName : goodEvent.StreamName,
                 type : "Scheduled:UNKNOWNCOMMAND",
@@ -536,7 +536,7 @@ namespace Microsoft.Its.Domain.Tests
                           .Select(i => new EventSourcedAggregateTests.PerfTestAggregate.SimpleEvent { AggregateId = aggregateId, SequenceNumber = i });
 
             Console.WriteLine("{0}: Adding new events to db", DateTimeOffset.UtcNow.ToString("O"));
-            await SaveEventsDirectly(largeListEvents.Select(e => e.ToStoredEvent()).ToArray());
+            await SaveEventsDirectly(largeListEvents.Select(e => e.ToInMemoryStoredEvent()).ToArray());
 
             var repository = CreateRepository<EventSourcedAggregateTests.PerfTestAggregate>();
 
@@ -555,7 +555,7 @@ namespace Microsoft.Its.Domain.Tests
             sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
         }
 
-        protected abstract IStoredEvent CreateStoredEvent(
+        protected abstract InMemoryStoredEvent CreateStoredEvent(
             string streamName,
             string type,
             Guid aggregateId,

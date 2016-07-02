@@ -1,11 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.Tests;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
@@ -73,7 +75,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             }.ToStorableEvent();
 
             var eventStream = new InMemoryEventStream();
-            await eventStream.Append(new[] { storableEvent.ToStoredEvent() });
+            await eventStream.Append(new[] { storableEvent.ToInMemoryStoredEvent() });
 
             Configuration.Current.UseDependency(_ => eventStream);
 
@@ -82,6 +84,31 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 var orderCreated = db.Events.Single(e => e.AggregateId == aggregateId);
 
                 orderCreated.Should().NotBeNull();
+            }
+        }
+
+        [Test]
+        public async Task Events_saved_to_the_in_memory_context_have_their_id_set()
+        {
+            var eventStream = new InMemoryEventStream();
+
+            using (var db = new InMemoryEventStoreDbContext(eventStream))
+            {
+                Events.Write(5, createEventStore: () => db);
+
+                await db.SaveChangesAsync();
+
+                Console.WriteLine(db.Events.Count());
+            }
+
+            using (var db = new InMemoryEventStoreDbContext(eventStream))
+            {
+                Console.WriteLine(db.Events.Count());
+
+                db.Events
+                  .Select(e => e.Id)
+                  .Should()
+                  .BeEquivalentTo(1L, 2L, 3L, 4L, 5L);
             }
         }
     }

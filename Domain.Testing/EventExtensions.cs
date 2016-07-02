@@ -20,7 +20,7 @@ namespace Microsoft.Its.Domain.Testing
             return events.Do(e => sequencesPerAggregate.GetOrAdd(e.AggregateId, id => new EventSequence(id)).Add(e));
         }
 
-        public static IStoredEvent ToStoredEvent(this IEvent e) =>
+        public static InMemoryStoredEvent ToInMemoryStoredEvent(this IEvent e) =>
             new InMemoryStoredEvent
             {
                 SequenceNumber = e.SequenceNumber,
@@ -32,7 +32,7 @@ namespace Microsoft.Its.Domain.Testing
                 StreamName = e.EventStreamName()
             };
 
-        public static IStoredEvent ToStoredEvent(this StorableEvent e) =>
+        public static InMemoryStoredEvent ToInMemoryStoredEvent(this StorableEvent e) =>
             new InMemoryStoredEvent
             {
                 SequenceNumber = e.SequenceNumber,
@@ -52,13 +52,13 @@ namespace Microsoft.Its.Domain.Testing
         });
 
         /// <summary>
-        /// Creates a domain event from a <see cref="IStoredEvent" />.
+        /// Creates a domain event from an <see cref="InMemoryStoredEvent" />.
         /// </summary>
         /// <param name="storedEvent">The storable event.</param>
         /// <returns>
         /// A deserialized domain event.
         /// </returns>
-        public static IEvent ToDomainEvent(this IStoredEvent storedEvent) =>
+        public static IEvent ToDomainEvent(this InMemoryStoredEvent storedEvent) =>
             Serializer.DeserializeEvent(
                 aggregateName: storedEvent.StreamName,
                 eventName: storedEvent.Type,
@@ -67,13 +67,13 @@ namespace Microsoft.Its.Domain.Testing
                 etag: storedEvent.ETag,
                 timestamp: storedEvent.Timestamp,
                 body: storedEvent.Body,
-                uniqueEventId: storedEvent.Timestamp.Ticks,
+                uniqueEventId: (long) storedEvent.Metadata.AbsoluteSequenceNumber,
                 serializerSettings: serializerSettings.Value);
 
         /// <summary>
         /// Creates a storable event.
         /// </summary>
-        public static StorableEvent ToStorableEvent(this IStoredEvent storedEvent) =>
+        public static StorableEvent ToStorableEvent(this InMemoryStoredEvent storedEvent) =>
             storedEvent.ToDomainEvent().ToStorableEvent();
 
         /// <summary>
@@ -81,9 +81,9 @@ namespace Microsoft.Its.Domain.Testing
         /// </summary>
         /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
         /// <param name="events">The events.</param>
-        public static TAggregate CreateAggregate<TAggregate>(this IEnumerable<IStoredEvent> events) where TAggregate : class, IEventSourced
+        public static TAggregate CreateAggregate<TAggregate>(this IEnumerable<InMemoryStoredEvent> events) where TAggregate : class, IEventSourced
         {
-            var storedEvents = events as IStoredEvent[] ?? events.ToArray();
+            var storedEvents = events as InMemoryStoredEvent[] ?? events.ToArray();
 
             var id = storedEvents.Select(e => e.AggregateId).Distinct().Single();
 

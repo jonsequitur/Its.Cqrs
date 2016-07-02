@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Microsoft.Its.Domain.Sql
 {
     /// <summary>
-    /// An event wrapper for writing events to a SQL databsae using Entity Framework.
+    /// Model for storing events in a SQL database using Entity Framework.
     /// </summary>
     [Table("Events", Schema = "EventStore")]
     public class StorableEvent

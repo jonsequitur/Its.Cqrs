@@ -16,23 +16,25 @@ namespace Microsoft.Its.Domain.Testing
 {
     public class InMemoryEventStoreDbContext : EventStoreDbContext
     {
-        private readonly DbSet<StorableEvent> events;
+        private readonly InMemoryEventStream eventStream;
+        private readonly DbSet<StorableEvent> sqlEvents;
 
-        public InMemoryEventStoreDbContext(InMemoryEventStream stream = null)
+        public InMemoryEventStoreDbContext(InMemoryEventStream eventStream = null)
         {
-            stream = stream ?? Domain.Configuration
-                                     .Current
-                                     .Container
-                                     .Resolve<InMemoryEventStream>();
+            this.eventStream = eventStream ?? new InMemoryEventStream();
+            eventStream = eventStream ?? Domain.Configuration
+                                               .Current
+                                               .Container
+                                               .Resolve<InMemoryEventStream>();
 
-            events = new InMemoryDbSet<StorableEvent>(stream.Events.Select(e => e.ToStorableEvent()));
+            sqlEvents = new InMemoryDbSet<StorableEvent>(new HashSet<StorableEvent>(eventStream.Events.Select(e => e.ToStorableEvent())));
         }
 
         public override DbSet<StorableEvent> Events
         {
             get
             {
-                return events;
+                return sqlEvents;
             }
             set
             {
@@ -41,12 +43,48 @@ namespace Microsoft.Its.Domain.Testing
 
         public override DbSet<TEntity> Set<TEntity>()
         {
-            return (dynamic) events;
+            return (dynamic) sqlEvents;
         }
 
         protected internal override Task OpenAsync()
         {
             return Task.FromResult(0);
+        }
+
+        public override int SaveChanges()
+        {
+            AssignIdsAndSyncStream().Wait();
+
+            return base.SaveChanges();
+        }
+
+        public override async Task<int> SaveChangesAsync()
+        {
+            await AssignIdsAndSyncStream();
+
+            return await base.SaveChangesAsync();
+        }
+
+        private async Task AssignIdsAndSyncStream()
+        {
+            var newEvents =
+                sqlEvents
+                    .Select(e => new
+                    {
+                        inMemoryEvent = e.ToInMemoryStoredEvent(),
+                        sqlEvent = e
+                    })
+                    .Where(ee => !eventStream.Contains(ee.inMemoryEvent))
+                    .ToArray();
+
+            newEvents.ForEach(e =>
+            {
+                var nextId = Interlocked.Increment(ref eventStream.NextAbsoluteSequenceNumber);
+                e.inMemoryEvent.Metadata.AbsoluteSequenceNumber = nextId;
+                e.sqlEvent.Id = nextId;
+            });
+
+            await eventStream.Append(newEvents.Select(_ => _.inMemoryEvent).ToArray());
         }
     }
 
@@ -56,15 +94,15 @@ namespace Microsoft.Its.Domain.Testing
         IDbAsyncEnumerable<T>
         where T : class
     {
-        private readonly List<T> source;
+        private readonly HashSet<T> source;
 
-        public InMemoryDbSet(IEnumerable<T> source)
+        public InMemoryDbSet(HashSet<T> source)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
-            this.source = source.ToList();
+            this.source = source;
         }
 
         public override T Add(T entity)
@@ -75,8 +113,9 @@ namespace Microsoft.Its.Domain.Testing
 
         public override IEnumerable<T> AddRange(IEnumerable<T> entities)
         {
-            source.AddRange(entities);
-            return entities;
+            var es = entities.ToArray();
+            es.ForEach(e => Add(e));
+            return es;
         }
 
         public override T Remove(T entity)
@@ -87,8 +126,9 @@ namespace Microsoft.Its.Domain.Testing
 
         public override IEnumerable<T> RemoveRange(IEnumerable<T> entities)
         {
-            entities.ForEach(e => Remove(e));
-            return entities;
+            var es = entities.ToArray();
+            es.ForEach(e => Remove(e));
+            return es;
         }
 
         public IEnumerator<T> GetEnumerator() => source.GetEnumerator();
