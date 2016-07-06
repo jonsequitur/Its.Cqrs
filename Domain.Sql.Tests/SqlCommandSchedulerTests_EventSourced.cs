@@ -353,46 +353,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task A_clock_can_be_associated_with_an_aggregate_so_that_its_scheduled_commands_can_be_advanced_later()
-        {
-            // arrange
-            var order = CommandSchedulingTests_EventSourced.CreateOrder();
-            clockRepository.AssociateWithClock(clockName, order.Id.ToString());
-
-            // act
-            order.Apply(new ShipOn(Clock.Now().AddDays(30)));
-            await orderRepository.Save(order);
-
-            //assert 
-            order = await orderRepository.GetLatest(order.Id);
-            var lastEvent = order.Events().Last();
-            lastEvent.Should().BeOfType<CommandScheduled<Order>>();
-
-            await clockTrigger.AdvanceClock(clockName, TimeSpan.FromDays(31));
-            order = await orderRepository.GetLatest(order.Id);
-            lastEvent = order.Events().Last();
-            lastEvent.Should().BeOfType<Order.Shipped>();
-        }
-
-        [Test]
-        public void When_an_association_is_made_with_an_existing_value_then_an_exception_is_thrown()
-        {
-            // arrange
-            var value = Any.FullName();
-            clockRepository.AssociateWithClock(clockName, value);
-
-            // act
-            Action reassociate = () => clockRepository.AssociateWithClock(clockName + "-2", value);
-
-            //assert 
-            reassociate.ShouldThrow<InvalidOperationException>()
-                       .And
-                       .Message
-                       .Should()
-                       .Contain(string.Format("Value '{0}' is already associated with another clock", value));
-        }
-
-        [Test]
         public async Task When_a_scheduled_command_fails_and_the_clock_is_advanced_again_then_it_can_be_retried()
         {
             // ARRANGE

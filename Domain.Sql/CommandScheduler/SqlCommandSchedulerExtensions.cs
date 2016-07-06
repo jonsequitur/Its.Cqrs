@@ -39,7 +39,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             command.DueTime = scheduled.DueTime;
             command.SequenceNumber = scheduled.SequenceNumber;
             command.NumberOfPreviousAttempts = scheduled.Attempts;
-
+            
             return command;
         }
     }

@@ -55,6 +55,11 @@ namespace Microsoft.Its.Domain
         string IScheduledCommand<TAggregate>.TargetId => AggregateId.ToString();
 
         /// <summary>
+        /// Gets the name of the command.
+        /// </summary>
+        public string CommandName => Command.CommandName;
+
+        /// <summary>
         /// Gets the time at which the command is scheduled to be applied.
         /// </summary>
         /// <remarks>

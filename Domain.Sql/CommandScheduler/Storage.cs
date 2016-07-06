@@ -53,7 +53,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 }
 
                 Debug.WriteLine(
-                    $"Storing command '{scheduledCommand.Command.CommandName}' ({scheduledCommand.TargetId}:{storedScheduledCommand.SequenceNumber}) on clock '{clock.Name}'");
+                    $"Storing command '{scheduledCommand.CommandName}' ({scheduledCommand.TargetId}:{storedScheduledCommand.SequenceNumber}) on clock '{clock.Name}'");
 
                 await SaveScheduledCommandToDatabase(db,
                                                      storedScheduledCommand,
@@ -139,7 +139,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     SerializedCommand = scheduledCommand.ToJson(),
                     CreatedTime = domainTime,
                     DueTime = scheduledCommand.DueTime ?? schedulerClock.Now(),
-                    Clock = schedulerClock
+                    Clock = schedulerClock,
+                    CommandName = scheduledCommand.CommandName
                 };
 
         private static async Task<Clock> GetOrAddSchedulerClock(
@@ -282,7 +283,8 @@ INSERT [Scheduler].[ScheduledCommand]
 (
     [AggregateId], 
     [SequenceNumber], 
-    [AggregateType], 
+    [AggregateType],
+    [CommandName], 
     [CreatedTime], 
     [DueTime], 
     [SerializedCommand], 
@@ -294,6 +296,7 @@ VALUES
     @aggregateId,
     @sequenceNumber,
     @aggregateType,
+    @commandName,
     @createdTime,
     @dueTime,
     @serializedCommand,
@@ -322,6 +325,7 @@ VALUES
                 new SqlParameter("@aggregateId", storedScheduledCommand.AggregateId),
                 new SqlParameter("@sequenceNumber", storedScheduledCommand.SequenceNumber),
                 new SqlParameter("@aggregateType", storedScheduledCommand.AggregateType),
+                new SqlParameter("@commandName", storedScheduledCommand.CommandName),
                 new SqlParameter("@createdTime", storedScheduledCommand.CreatedTime),
                 new SqlParameter("@dueTime", storedScheduledCommand.DueTime),
                 new SqlParameter("@serializedCommand", storedScheduledCommand.SerializedCommand),

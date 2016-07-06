@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
@@ -24,6 +25,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// </summary>
         public long SequenceNumber { get; set; }
 
+        [MaxLength(100)]
         public string AggregateType { get; set; }
 
         public DateTimeOffset CreatedTime { get; set; }
@@ -45,6 +47,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         public int Attempts { get; set; }
 
         public Clock Clock { get; set; }
+
+        [MaxLength(100)]
+        public string CommandName { get; set; }
 
         [JsonIgnore]
         public ScheduledCommandResult Result { get; set; }

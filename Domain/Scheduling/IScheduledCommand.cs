@@ -12,6 +12,11 @@ namespace Microsoft.Its.Domain
     public interface IScheduledCommand
     {
         /// <summary>
+        /// Gets the name of the command.
+        /// </summary>
+        string CommandName { get; }
+
+        /// <summary>
         /// Gets the time at which the command is scheduled to be applied.
         /// </summary>
         /// <remarks>If this value is null, the command should be delivered as soon as possible.</remarks>
@@ -20,7 +25,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Indicates a precondition for the command to be delivered. If the precondition does not exist, then command will fail, and the aggregate can decide whether to reschedule or ignore the command.
         /// </summary>
-        [JsonConverter(typeof (PreconditionConverter))]
+        [JsonConverter(typeof(PreconditionConverter))]
         IPrecondition DeliveryPrecondition { get; }
 
         /// <summary>

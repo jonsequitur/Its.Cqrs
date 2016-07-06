@@ -128,7 +128,12 @@ namespace Microsoft.Its.Domain
         /// Gets the sequence number of the scheduled command.
         /// </summary>
         internal long SequenceNumber { get; set; }
-       
+        
+        /// <summary>
+        /// Gets the name of the command.
+        /// </summary>
+        public string CommandName => Command.CommandName;
+
         /// <summary>
         /// Gets the time at which the command is scheduled to be applied.
         /// </summary>

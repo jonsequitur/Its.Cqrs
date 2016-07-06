@@ -9,6 +9,7 @@
     [SerializedCommand] NVARCHAR (MAX)     NOT NULL,
     [Attempts]          INT                NOT NULL,
     [Clock_Id]          INT                NOT NULL,
+    [CommandName] NVARCHAR(100) NULL, 
     CONSTRAINT [PK_Scheduler.ScheduledCommand] PRIMARY KEY NONCLUSTERED ([AggregateId] ASC, [SequenceNumber] ASC),
     CONSTRAINT [FK_Scheduler.ScheduledCommand_Scheduler.Clock_Clock_Id] FOREIGN KEY ([Clock_Id]) REFERENCES [Scheduler].[Clock] ([Id]) ON DELETE CASCADE
 );

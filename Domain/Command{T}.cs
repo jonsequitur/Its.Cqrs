@@ -34,6 +34,10 @@ namespace Microsoft.Its.Domain
 
         private dynamic handler;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Command{TTarget}"/> class.
+        /// </summary>
+        /// <param name="etag"></param>
         protected Command(string etag = null) : base(etag)
         {
         }
@@ -326,6 +330,8 @@ namespace Microsoft.Its.Domain
                            .WithErrorMessage($"Command with ETag '{command.ETag}' has already been applied.");
         }
 
+        /// <summary>Returns a string that represents the current object.</summary>
+        /// <returns>A string that represents the current object.</returns>
         public override string ToString() => $"{typeof (TTarget).Name}.{CommandName}";
     }
 }

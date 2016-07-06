@@ -31,65 +31,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         }
 
         /// <summary>
-        /// Associates an arbitrary lookup string with a named clock.
-        /// </summary>
-        /// <param name="clockName">The name of the clock.</param>
-        /// <param name="lookup">The lookup.</param>
-        /// <exception cref="System.ArgumentNullException">
-        /// clockName
-        /// or
-        /// lookup
-        /// </exception>
-        /// <exception cref="System.InvalidOperationException">Thrown if the lookup us alreayd associated with another clock.</exception>
-        public void AssociateWithClock(string clockName, string lookup)
-        {
-            if (clockName == null)
-            {
-                throw new ArgumentNullException(nameof(clockName));
-            }
-            if (lookup == null)
-            {
-                throw new ArgumentNullException(nameof(lookup));
-            }
-
-            using (var db = createDbContext())
-            {
-                var clock = db.Clocks.SingleOrDefault(c => c.Name == clockName);
-
-                if (clock == null)
-                {
-                    var now = Domain.Clock.Now();
-                    clock = new Clock
-                    {
-                        Name = clockName,
-                        UtcNow = now,
-                        StartTime = now
-                    };
-                    db.Clocks.Add(clock);
-                }
-
-                db.ClockMappings.Add(new ClockMapping
-                {
-                    Clock = clock,
-                    Value = lookup
-                });
-
-                try
-                {
-                    db.SaveChanges();
-                }
-                catch (DbUpdateException exception)
-                {
-                    if (exception.ToString().Contains(@"Cannot insert duplicate key row in object 'Scheduler.ClockMapping' with unique index 'IX_Value'"))
-                    {
-                        throw new InvalidOperationException($"Value '{lookup}' is already associated with another clock", exception);
-                    }
-                    throw;
-                }
-            }
-        }
-
-        /// <summary>
         /// Creates a clock.
         /// </summary>
         /// <param name="clockName">The name of the clock.</param>

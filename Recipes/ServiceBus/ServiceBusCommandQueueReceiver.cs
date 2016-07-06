@@ -238,6 +238,11 @@ namespace Microsoft.Its.Domain.ServiceBus
         /// </summary>
         private class ServiceBusScheduledCommand : Event, IScheduledCommand
         {
+            /// <summary>
+            /// Gets the name of the command.
+            /// </summary>
+            public string CommandName { get; set; }
+
             public DateTimeOffset? DueTime { get; private set; }
 
             public EventHasBeenRecordedPrecondition DeliveryPrecondition { get; set; }
@@ -252,7 +257,7 @@ namespace Microsoft.Its.Domain.ServiceBus
             [JsonIgnore]
             IClock IScheduledCommand.Clock { get; }
 
-            int IScheduledCommand.NumberOfPreviousAttempts => this.NumberOfPreviousAttempts;
+            int IScheduledCommand.NumberOfPreviousAttempts => NumberOfPreviousAttempts;
 
             public BrokeredMessage BrokeredMessage { get; internal set; }
         }
