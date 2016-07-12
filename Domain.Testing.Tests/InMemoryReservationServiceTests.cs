@@ -12,14 +12,11 @@ namespace Microsoft.Its.Domain.Testing.Tests
     [TestFixture]
     public class InMemoryReservationServiceTests : ReservationServiceTests
     {
-        private InMemoryEventStream eventStream;
-
         protected override void Configure(Configuration configuration)
         {
             configuration.UseInMemoryReservationService()
                          .UseInMemoryEventStore()
-                         .UseEventBus(new FakeEventBus())
-                         .UseDependency(_ => eventStream);
+                         .UseEventBus(new FakeEventBus());
         }
 
         protected override async Task<ReservedValue> GetReservedValue(string value, string promoCode)
