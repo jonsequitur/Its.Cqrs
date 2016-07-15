@@ -31,7 +31,7 @@ namespace Microsoft.Its.Domain.Tests
             var configurationContext = ConfigurationContext
                 .Establish(new Configuration()
                                .UseInMemoryEventStore()
-                               .IgnoreScheduledCommands());
+                               .UseInMemoryCommandScheduling());
             disposables.Add(configurationContext);
         }
 

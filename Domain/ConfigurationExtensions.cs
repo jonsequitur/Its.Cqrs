@@ -39,6 +39,13 @@ namespace Microsoft.Its.Domain
                 configuration.Container.Resolve<ICommandScheduler<TAggregate>>();
 
         /// <summary>
+        /// Gets an <see cref="ICommandScheduler{TAggregate}" />.
+        /// </summary>
+        public static ICommandDeliverer<TAggregate> CommandDeliverer<TAggregate>(this Configuration configuration)
+            where TAggregate : class =>
+                configuration.Container.Resolve<ICommandDeliverer<TAggregate>>();
+
+        /// <summary>
         /// Queues background work that will be started when StartBackgroundWork is called.
         /// </summary>
         /// <param name="configuration">The configuration.</param>
@@ -230,21 +237,25 @@ namespace Microsoft.Its.Domain
             ScheduledCommandInterceptor<TAggregate> deliver = null)
             where TAggregate : class
         {
-            var pipeline = configuration.Container
-                                        .Resolve<CommandSchedulerPipeline<TAggregate>>();
-
             if (schedule != null)
             {
+                var pipeline = configuration.Container.Resolve<CommandSchedulerPipeline<TAggregate>>();
                 pipeline.OnSchedule(schedule);
-            }
-            if (deliver != null)
-            {
-                pipeline.OnDeliver(deliver);
+
+                configuration.Container
+                    .Register(c => pipeline)
+                    .RegisterSingle(c => pipeline.Compose(configuration));
             }
 
-            configuration.Container
-                         .Register(c => pipeline)
-                         .RegisterSingle(c => pipeline.Compose(configuration));
+            if (deliver != null)
+            {
+                var pipeline = configuration.Container.Resolve<CommandDelivererPipeline<TAggregate>>();
+                pipeline.OnDeliver(deliver);
+
+                configuration.Container
+                    .Register(c => pipeline)
+                    .RegisterSingle(c => pipeline.Compose(configuration));
+            }
 
             return configuration;
         }

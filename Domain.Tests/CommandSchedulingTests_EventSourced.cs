@@ -27,12 +27,14 @@ namespace Microsoft.Its.Domain.Tests
         [SetUp]
         public void SetUp()
         {
-            disposables = new CompositeDisposable();
+            disposables = new CompositeDisposable
+            {
+                VirtualClock.Start()
+            };
+
             // disable authorization
             Command<Order>.AuthorizeDefault = (o, c) => true;
             Command<CustomerAccount>.AuthorizeDefault = (o, c) => true;
-
-            disposables.Add(VirtualClock.Start());
 
             customerAccountId = Any.Guid();
 
@@ -56,17 +58,24 @@ namespace Microsoft.Its.Domain.Tests
         {
             disposables.Dispose();
         }
-
+        
         [Test]
-        public void When_a_command_is_scheduled_for_later_execution_then_a_CommandScheduled_event_is_added()
+        public async Task Aggregates_can_schedule_commands_against_themselves_idempotently()
         {
-            var order = CreateOrder();
+            var it = new MarcoPoloPlayerWhoIsIt();
+            await configuration.Repository<MarcoPoloPlayerWhoIsIt>().Save(it);
 
-            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
+            await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.KeepSayingMarcoOverAndOver());
 
-            var lastEvent = order.PendingEvents.Last();
-            lastEvent.Should().BeOfType<CommandScheduled<Order>>();
-            lastEvent.As<CommandScheduled<Order>>().Command.Should().BeOfType<Ship>();
+            VirtualClock.Current.AdvanceBy(TimeSpan.FromMinutes(1));
+
+            it = await configuration.Repository<MarcoPoloPlayerWhoIsIt>().GetLatest(it.Id);
+
+            it.Events()
+                .OfType<MarcoPoloPlayerWhoIsIt.SaidMarco>()
+                .Count()
+                .Should()
+                .BeGreaterOrEqualTo(5);
         }
 
         [Test]
@@ -85,75 +94,6 @@ namespace Microsoft.Its.Domain.Tests
             order = await repository.GetLatest(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
-        }
-
-        [Test]
-        public async Task When_a_scheduled_command_fails_validation_then_a_failure_event_can_be_recorded_in_HandleScheduledCommandException_method()
-        {
-            // arrange
-            var order = CreateOrder(customerAccountId: (await customerRepository.GetLatest(customerAccountId)).Id);
-
-            // by the time Ship is applied, it will fail because of the cancellation
-            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
-            order.Apply(new Cancel());
-            await orderRepository.Save(order);
-
-            // act
-            VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
-
-            //assert 
-            order = await orderRepository.GetLatest(order.Id);
-            var lastEvent = order.Events().Last();
-            lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
-        }
-
-        [Test]
-        public async Task When_applying_a_scheduled_command_throws_then_further_command_scheduling_is_not_interrupted()
-        {
-            // arrange
-            var order1 = CreateOrder(customerAccountId: customerAccountId)
-                .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date))
-                .Apply(new Cancel());
-            await orderRepository.Save(order1);
-            var order2 = CreateOrder(customerAccountId: customerAccountId)
-                .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
-            await orderRepository.Save(order2);
-
-            // act
-            VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
-
-            // assert 
-            order1 = await orderRepository.GetLatest(order1.Id);
-            var lastEvent = order1.Events().Last();
-            lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
-
-            order2 = await orderRepository.GetLatest(order2.Id);
-            lastEvent = order2.Events().Last();
-            lastEvent.Should().BeOfType<Order.Shipped>();
-        }
-
-        [Test]
-        public async Task A_command_can_be_scheduled_against_another_aggregate()
-        {
-            var order = new Order(
-                new CreateOrder(Any.FullName())
-                {
-                    CustomerId = customerAccountId
-                })
-                .Apply(new AddItem
-                {
-                    ProductName = Any.Word(),
-                    Price = 12.99m
-                })
-                .Apply(new Cancel());
-            await orderRepository.Save(order);
-
-            var customerAccount = await customerRepository.GetLatest(customerAccountId);
-
-            customerAccount.Events()
-                           .Last()
-                           .Should()
-                           .BeOfType<CustomerAccount.OrderCancelationConfirmationEmailSent>();
         }
 
         [Test]
@@ -197,6 +137,84 @@ namespace Microsoft.Its.Domain.Tests
                 deliveryDependsOn: created);
 
             created.ETag.Should().NotBeNullOrEmpty();
+        }
+
+        [Test]
+        public async Task Multiple_scheduled_commands_having_the_some_causative_command_etag_have_repeatable_and_unique_etags()
+        {
+            var scheduled = new List<ICommand>();
+
+            configuration.AddToCommandSchedulerPipeline<MarcoPoloPlayerWhoIsIt>(async (cmd, next) =>
+            {
+                scheduled.Add(cmd.Command);
+                await next(cmd);
+            });
+            configuration.AddToCommandSchedulerPipeline<MarcoPoloPlayerWhoIsNotIt>(async (cmd, next) =>
+            {
+                scheduled.Add(cmd.Command);
+                await next(cmd);
+            });
+
+            var it = new MarcoPoloPlayerWhoIsIt()
+                .Apply(new MarcoPoloPlayerWhoIsIt.AddPlayer { PlayerId = Any.Guid() })
+                .Apply(new MarcoPoloPlayerWhoIsIt.AddPlayer { PlayerId = Any.Guid() });
+
+            await configuration.Repository<MarcoPoloPlayerWhoIsIt>().Save(it);
+
+            var sourceEtag = Any.Guid().ToString();
+
+            await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.KeepSayingMarcoOverAndOver
+            {
+                ETag = sourceEtag
+            });
+            var firstPassEtags = scheduled.Select(c => c.ETag).ToArray();
+
+            scheduled.Clear();
+
+            // revert the aggregate and do the same thing again
+            it = await configuration.Repository<MarcoPoloPlayerWhoIsIt>().GetLatest(it.Id);
+            await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.KeepSayingMarcoOverAndOver
+            {
+                ETag = sourceEtag
+            });
+
+            var secondPassEtags = scheduled.Select(c => c.ETag).ToArray();
+
+            secondPassEtags.Should()
+                .Equal(firstPassEtags);
+        }
+
+        [Test]
+        public async Task Scatter_gather_produces_a_unique_etag_per_sent_command()
+        {
+            var repo = configuration.Repository<MarcoPoloPlayerWhoIsIt>();
+            var it = new MarcoPoloPlayerWhoIsIt();
+            await repo.Save(it);
+
+            var numberOfPlayers = 6;
+            var players = Enumerable.Range(1, numberOfPlayers)
+                .Select(_ => new MarcoPoloPlayerWhoIsNotIt());
+
+            foreach (var player in players)
+            {
+                var joinGame = new MarcoPoloPlayerWhoIsNotIt.JoinGame
+                {
+                    IdOfPlayerWhoIsIt = it.Id
+                };
+                await player.ApplyAsync(joinGame).AndSave();
+            }
+
+            it =  await repo.GetLatest(it.Id);
+
+            await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.SayMarco()).AndSave();
+
+            it =  await repo.GetLatest(it.Id);
+
+            it.Events()
+                .OfType<MarcoPoloPlayerWhoIsIt.HeardPolo>()
+                .Count()
+                .Should()
+                .Be(numberOfPlayers);
         }
 
         [Test]
@@ -249,100 +267,60 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
-        public async Task Scatter_gather_produces_a_unique_etag_per_sent_command()
+        public void When_a_command_is_scheduled_for_later_execution_then_a_CommandScheduled_event_is_added()
         {
-            var repo = configuration.Repository<MarcoPoloPlayerWhoIsIt>();
-            var it = new MarcoPoloPlayerWhoIsIt();
-            await repo.Save(it);
+            var order = CreateOrder();
 
-            var numberOfPlayers = 6;
-            var players = Enumerable.Range(1, numberOfPlayers)
-                                    .Select(_ => new MarcoPoloPlayerWhoIsNotIt());
+            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
 
-            foreach (var player in players)
-            {
-                var joinGame = new MarcoPoloPlayerWhoIsNotIt.JoinGame
-                {
-                    IdOfPlayerWhoIsIt = it.Id
-                };
-                await player.ApplyAsync(joinGame).AndSave();
-            }
-
-            it =  await repo.GetLatest(it.Id);
-
-            await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.SayMarco()).AndSave();
-
-            it =  await repo.GetLatest(it.Id);
-
-            it.Events()
-              .OfType<MarcoPoloPlayerWhoIsIt.HeardPolo>()
-              .Count()
-              .Should()
-              .Be(numberOfPlayers);
+            var lastEvent = order.PendingEvents.Last();
+            lastEvent.Should().BeOfType<CommandScheduled<Order>>();
+            lastEvent.As<CommandScheduled<Order>>().Command.Should().BeOfType<Ship>();
         }
 
         [Test]
-        public async Task Multiple_scheduled_commands_having_the_some_causative_command_etag_have_repeatable_and_unique_etags()
+        public async Task When_a_scheduled_command_fails_validation_then_a_failure_event_can_be_recorded_in_HandleScheduledCommandException_method()
         {
-            var scheduled = new List<ICommand>();
+            // arrange
+            var order = CreateOrder(customerAccountId: (await customerRepository.GetLatest(customerAccountId)).Id);
 
-            configuration.AddToCommandSchedulerPipeline<MarcoPoloPlayerWhoIsIt>(async (cmd, next) =>
-            {
-                scheduled.Add(cmd.Command);
-                await next(cmd);
-            });
-            configuration.AddToCommandSchedulerPipeline<MarcoPoloPlayerWhoIsNotIt>(async (cmd, next) =>
-            {
-                scheduled.Add(cmd.Command);
-                await next(cmd);
-            });
+            // by the time Ship is applied, it will fail because of the cancellation
+            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
+            order.Apply(new Cancel());
+            await orderRepository.Save(order);
 
-            var it = new MarcoPoloPlayerWhoIsIt()
-                .Apply(new MarcoPoloPlayerWhoIsIt.AddPlayer { PlayerId = Any.Guid() })
-                .Apply(new MarcoPoloPlayerWhoIsIt.AddPlayer { PlayerId = Any.Guid() });
+            // act
+            VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
 
-            await configuration.Repository<MarcoPoloPlayerWhoIsIt>().Save(it);
-
-            var sourceEtag = Any.Guid().ToString();
-
-            await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.KeepSayingMarcoOverAndOver
-            {
-                ETag = sourceEtag
-            });
-            var firstPassEtags = scheduled.Select(c => c.ETag).ToArray();
-
-            scheduled.Clear();
-
-            // revert the aggregate and do the same thing again
-            it = await configuration.Repository<MarcoPoloPlayerWhoIsIt>().GetLatest(it.Id);
-            await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.KeepSayingMarcoOverAndOver
-            {
-                ETag = sourceEtag
-            });
-
-            var secondPassEtags = scheduled.Select(c => c.ETag).ToArray();
-
-            secondPassEtags.Should()
-                           .Equal(firstPassEtags);
+            //assert 
+            order = await orderRepository.GetLatest(order.Id);
+            var lastEvent = order.Events().Last();
+            lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
         }
 
         [Test]
-        public async Task Aggregates_can_schedule_commands_against_themselves_idempotently()
+        public async Task When_applying_a_scheduled_command_throws_then_further_command_scheduling_is_not_interrupted()
         {
-            var it = new MarcoPoloPlayerWhoIsIt();
-            await configuration.Repository<MarcoPoloPlayerWhoIsIt>().Save(it);
+            // arrange
+            var order1 = CreateOrder(customerAccountId: customerAccountId)
+                .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date))
+                .Apply(new Cancel());
+            await orderRepository.Save(order1);
+            var order2 = CreateOrder(customerAccountId: customerAccountId)
+                .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
+            await orderRepository.Save(order2);
 
-            await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.KeepSayingMarcoOverAndOver());
+            // act
+            VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
 
-            VirtualClock.Current.AdvanceBy(TimeSpan.FromMinutes(1));
+            // assert 
+            order1 = await orderRepository.GetLatest(order1.Id);
+            var lastEvent = order1.Events().Last();
+            lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
 
-            it = await configuration.Repository<MarcoPoloPlayerWhoIsIt>().GetLatest(it.Id);
-
-            it.Events()
-              .OfType<MarcoPoloPlayerWhoIsIt.SaidMarco>()
-              .Count()
-              .Should()
-              .BeGreaterOrEqualTo(5);
+            order2 = await orderRepository.GetLatest(order2.Id);
+            lastEvent = order2.Events().Last();
+            lastEvent.Should().BeOfType<Order.Shipped>();
         }
 
         public static Order CreateOrder(

@@ -66,6 +66,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             }
             SqlText = sqlText;
             MigrationVersion = migrationVersion;
+            MigrationScope = scope;
         }
 
         public string SqlText { get; }

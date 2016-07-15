@@ -20,15 +20,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [TestFixture]
     public class SqlCommandSchedulerTests_NonEventSourced : SqlCommandSchedulerTests
     {
-        private ICommandScheduler<CommandTarget> scheduler;
+        private ICommandScheduler<NonEventSourcedCommandTarget> scheduler;
         private string clockName;
         private CompositeDisposable disposables;
         private EventStoreDbTest eventStoreDbTest;
-        private IStore<CommandTarget> store;
+        private IStore<NonEventSourcedCommandTarget> store;
 
         public SqlCommandSchedulerTests_NonEventSourced()
         {
-            Command<CommandTarget>.AuthorizeDefault = (target, command) => true;
+            Command<NonEventSourcedCommandTarget>.AuthorizeDefault = (target, command) => true;
         }
 
         [SetUp]
@@ -72,9 +72,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                                             c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
                          .UseDependency<GetClockName>(_ => command => clockName);
 
-            scheduler = configuration.CommandScheduler<CommandTarget>();
+            scheduler = configuration.CommandScheduler<NonEventSourcedCommandTarget>();
 
-            store = configuration.Store<CommandTarget>();
+            store = configuration.Store<NonEventSourcedCommandTarget>();
         }
 
         private async Task AdvanceClock(TimeSpan @by)
@@ -89,7 +89,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task When_a_clock_is_advanced_its_associated_commands_are_triggered()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
 
             await scheduler.Schedule(target.Id,
@@ -109,7 +109,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task When_a_clock_is_advanced_then_commands_are_not_triggered_that_have_not_become_due()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
 
             // act
@@ -129,7 +129,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task Scheduled_commands_are_delivered_immediately_if_past_due_per_the_domain_clock()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
 
             // act
@@ -147,7 +147,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task Scheduled_commands_are_delivered_immediately_if_past_due_per_the_scheduler_clock()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
             var clockRepository = Configuration.Current.SchedulerClockRepository();
             var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 03:03:48 PM");
@@ -169,16 +169,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var deliveredTime = new DateTimeOffset();
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
             var clockRepository = Configuration.Current.SchedulerClockRepository();
             var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 01:00:00 AM");
             clockRepository.CreateClock(clockName, schedulerClockTime);
-            Configuration.Current.UseCommandHandler<CommandTarget, TestCommand>(async (_, __) =>
+            Configuration.Current.UseCommandHandler<NonEventSourcedCommandTarget, TestCommand>(async (_, __) =>
             {
                 if (__.ETag == "first")
                 {
-                    await Configuration.Current.CommandScheduler<CommandTarget>().Schedule(target.Id, new TestCommand
+                    await Configuration.Current.CommandScheduler<NonEventSourcedCommandTarget>().Schedule(target.Id, new TestCommand
                     {
                           CanBeDeliveredDuringScheduling = true
                     });
@@ -211,12 +211,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var deliveredTime = new DateTimeOffset();
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
             var clockRepository = Configuration.Current.SchedulerClockRepository();
             var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 01:00:00 AM");
             clockRepository.CreateClock(clockName, schedulerClockTime);
-            Configuration.Current.UseCommandHandler<CommandTarget,TestCommand>(async (_,__) => deliveredTime = Clock.Now());
+            Configuration.Current.UseCommandHandler<NonEventSourcedCommandTarget,TestCommand>(async (_,__) => deliveredTime = Clock.Now());
 
             // act
             await scheduler.Schedule(target.Id,
@@ -238,7 +238,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task A_command_handler_can_request_retry_of_a_failed_command_as_soon_as_possible()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName())
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName())
             {
                 OnHandleScheduledCommandError = async (commandTarget, failed) =>
                                                 failed.Retry(after: 1.Milliseconds())
@@ -262,7 +262,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task A_command_handler_can_request_retry_of_a_failed_command_as_late_as_it_wants()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName())
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName())
             {
                 OnHandleScheduledCommandError = async (commandTarget, failed) =>
                                                 failed.Retry(after: 1.Hours())
@@ -286,7 +286,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task A_command_handler_can_cancel_a_scheduled_command_after_it_fails()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName())
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName())
             {
                 OnHandleScheduledCommandError = async (commandTarget, failed) => failed.Cancel()
             };
@@ -309,7 +309,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task Specific_scheduled_commands_can_be_triggered_directly_by_target_id()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
 
             // act
@@ -337,7 +337,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task When_triggering_specific_commands_then_the_result_can_be_used_to_evaluate_failures()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
             var schedulerAdvancedResult = new SchedulerAdvancedResult();
 
@@ -368,7 +368,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task When_a_command_is_scheduled_but_an_exception_is_thrown_in_a_handler_then_an_error_is_recorded()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
 
             // act
@@ -390,7 +390,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var deliveryAttempts = 0;
-            Configuration.Current.AddToCommandSchedulerPipeline<CommandTarget>(
+            Configuration.Current.AddToCommandSchedulerPipeline<NonEventSourcedCommandTarget>(
                 deliver: async (command, next) =>
                 {
                     deliveryAttempts++;
@@ -431,7 +431,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var deliveredEtags = new List<string>();
-            Configuration.Current.AddToCommandSchedulerPipeline<CommandTarget>(
+            Configuration.Current.AddToCommandSchedulerPipeline<NonEventSourcedCommandTarget>(
                 deliver: async (scheduled, next) =>
                 {
                     deliveredEtags.Add(scheduled.Command.ETag);
@@ -494,7 +494,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var deliveryAttempts = 0;
-            Configuration.Current.AddToCommandSchedulerPipeline<CommandTarget>(
+            Configuration.Current.AddToCommandSchedulerPipeline<NonEventSourcedCommandTarget>(
                 deliver: async (command, next) =>
                 {
                     deliveryAttempts++;
@@ -523,7 +523,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task When_command_is_durable_but_immediate_delivery_succeeds_then_it_is_not_redelivered()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName());
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
 
             // act
@@ -543,7 +543,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public override async Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
         {
-              var commandScheduler = Configuration.Current.CommandScheduler<CommandTarget>();
+              var commandScheduler = Configuration.Current.CommandScheduler<NonEventSourcedCommandTarget>();
         
             var failedTargetId = Any.CamelCaseName();
             var successfulTargetId = Any.CamelCaseName();
@@ -598,7 +598,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 commandScheduler.SaveChanges();
             }
 
-            var scheduledCommand = new ScheduledCommand<CommandTarget>(
+            var scheduledCommand = new ScheduledCommand<NonEventSourcedCommandTarget>(
                 targetId: targetId,
                 command: command,
                 dueTime: DateTimeOffset.Parse("2016-03-20 09:00:00 AM"))

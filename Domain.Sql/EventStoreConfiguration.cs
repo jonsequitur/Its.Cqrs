@@ -40,7 +40,7 @@ namespace Microsoft.Its.Domain.Sql
             configuration.IsUsingSqlEventStore(true);
 
             configuration.Container
-                         .Register<IETagChecker>(c => c.Resolve<SqlEventStoreEventStoreETagChecker>());
+                         .Register<IETagChecker>(c => c.Resolve<SqlEventStoreETagChecker>());
 
             foreach (var configure in configureActions)
             {

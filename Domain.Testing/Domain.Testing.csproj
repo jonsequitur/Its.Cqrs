@@ -89,7 +89,6 @@
     <Compile Include="CommandsInPipeline.cs" />
     <Compile Include="ConcurrentHashSet{T}.cs" />
     <Compile Include="ConfigurationExtensions.cs" />
-    <Compile Include="IgnoreCommandScheduling{T}.cs" />
     <Compile Include="InMemoryCommandETagStore.cs" />
     <Compile Include="InMemoryEventStoreDbContext.cs" />
     <Compile Include="InMemoryEventStoreETagChecker.cs" />

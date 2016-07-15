@@ -29,7 +29,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             configuration.UseEventBus(new FakeEventBus())
                          .UseDependency(_ => eventStream)
                          .UseInMemoryEventStore()
-                         .IgnoreScheduledCommands();
+                         .UseInMemoryCommandScheduling();
 
         protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
             Action onSave = null)

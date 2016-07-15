@@ -3,9 +3,7 @@
 
 using System;
 using System.Data.Entity;
-using System.Linq;
 using System.Reactive.Disposables;
-using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
 using NCrunch.Framework;
 using NUnit.Framework;
@@ -19,18 +17,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
     {
         protected long HighestEventId;
         protected CompositeDisposable disposables;
-        private bool classInitializeHasBeenCalled;
 
         public EventStoreDbTest()
         {
-            Logging.Configure();
-
             Command<Order>.AuthorizeDefault = (order, command) => true;
             Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
-        }
-
-        protected virtual void AfterClassIsInitialized()
-        {
         }
 
         [SetUp]
@@ -52,12 +43,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             HighestEventId = EventStoreDbContext()
                 .DisposeAfter(db => db.HighestEventId());
-
-            if (!classInitializeHasBeenCalled)
-            {
-                classInitializeHasBeenCalled = true;
-                AfterClassIsInitialized();
-            }
         }
 
         [TearDown]

@@ -60,7 +60,7 @@ namespace Microsoft.Its.Domain.Tests
             var configuration = new Configuration()
                 .UseInMemoryEventStore()
                 .AddToCommandSchedulerPipeline<Order>(
-                    schedule: async (cmd, next) => { scheduled = true; });
+                    schedule: async (cmd, next) => scheduled = true);
 
             var scheduler = configuration.CommandScheduler<Order>();
 
@@ -75,9 +75,9 @@ namespace Microsoft.Its.Domain.Tests
             var delivered = false;
             configuration
                 .AddToCommandSchedulerPipeline<Order>(
-                    deliver: async (cmd, next) => { delivered = true; });
+                    deliver: async (cmd, next) => delivered = true);
 
-            var scheduler = configuration.CommandScheduler<Order>();
+            var scheduler = configuration.CommandDeliverer<Order>();
 
             await scheduler.Deliver(new CommandScheduled<Order>());
 
@@ -159,19 +159,19 @@ namespace Microsoft.Its.Domain.Tests
             var log = new List<string>();
             using (LogTraceOutputTo(log))
             {
-                await configuration.CommandScheduler<CommandTarget>()
+                await configuration.CommandScheduler<NonEventSourcedCommandTarget>()
                                    .Schedule(Any.Guid(), new CreateCommandTarget(Any.Word()));
             }
 
             log.Count.Should().Be(4);
             log.Should().ContainSingle(e => e.Contains("[Scheduling]") &&
-                                            e.Contains("CommandTarget.CreateCommandTarget"));
+                                            e.Contains("NonEventSourcedCommandTarget.CreateCommandTarget"));
             log.Should().ContainSingle(e => e.Contains("[Scheduled]") &&
-                                            e.Contains("CommandTarget.CreateCommandTarget"));
+                                            e.Contains("NonEventSourcedCommandTarget.CreateCommandTarget"));
             log.Should().ContainSingle(e => e.Contains("[Delivering]") &&
-                                            e.Contains("CommandTarget.CreateCommandTarget"));
+                                            e.Contains("NonEventSourcedCommandTarget.CreateCommandTarget"));
             log.Should().ContainSingle(e => e.Contains("[Delivered]") &&
-                                            e.Contains("CommandTarget.CreateCommandTarget"));
+                                            e.Contains("NonEventSourcedCommandTarget.CreateCommandTarget"));
         }
 
         [Test]

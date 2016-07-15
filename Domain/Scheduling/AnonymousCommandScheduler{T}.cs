@@ -11,26 +11,18 @@ namespace Microsoft.Its.Domain
     internal class AnonymousCommandScheduler<TAggregate> : ICommandScheduler<TAggregate>
     {
         private readonly Func<IScheduledCommand<TAggregate>, Task> schedule;
-        private readonly Func<IScheduledCommand<TAggregate>, Task> deliver;
 
-        public AnonymousCommandScheduler(Func<IScheduledCommand<TAggregate>, Task> schedule, Func<IScheduledCommand<TAggregate>, Task> deliver)
+        public AnonymousCommandScheduler(Func<IScheduledCommand<TAggregate>, Task> schedule)
         {
             if (schedule == null)
             {
                 throw new ArgumentNullException(nameof(schedule));
             }
-            if (deliver == null)
-            {
-                throw new ArgumentNullException(nameof(deliver));
-            }
+
             this.schedule = schedule;
-            this.deliver = deliver;
         }
 
         public async Task Schedule(IScheduledCommand<TAggregate> scheduledCommand) =>
             await schedule(scheduledCommand);
-
-        public async Task Deliver(IScheduledCommand<TAggregate> scheduledCommand) =>
-            await deliver(scheduledCommand);
     }
 }

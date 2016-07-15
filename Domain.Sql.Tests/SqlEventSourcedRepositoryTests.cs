@@ -26,7 +26,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                            c.UseConnectionString(
                                                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore"))
                          .UseEventBus(new FakeEventBus())
-                         .IgnoreScheduledCommands();
+                         .UseInMemoryCommandScheduling();
         }
 
         protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(

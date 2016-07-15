@@ -19,7 +19,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
     {
         protected VirtualClockCommandSchedulingTests()
         {
-            Command<CommandTarget>.AuthorizeDefault = (target, command) => true;
+            Command<NonEventSourcedCommandTarget>.AuthorizeDefault = (target, command) => true;
         }
 
         [Test]
@@ -129,7 +129,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         public async Task When_a_command_is_delivered_and_throws_during_clock_advance_then_other_commands_are_still_delivered()
         {
             // arrange
-            var target = new CommandTarget(Any.CamelCaseName())
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName())
             {
                 OnEnactCommand = async (commandTarget, command) =>
                 {
@@ -141,12 +141,12 @@ namespace Microsoft.Its.Domain.Testing.Tests
                     }
                 }
             };
-            var store = Configuration.Current.Store<CommandTarget>();
+            var store = Configuration.Current.Store<NonEventSourcedCommandTarget>();
             await store.Put(target);
             VirtualClock.Start();
 
             // act
-            var scheduler = Configuration.Current.CommandScheduler<CommandTarget>();
+            var scheduler = Configuration.Current.CommandScheduler<NonEventSourcedCommandTarget>();
 
             await scheduler.Schedule(target.Id,
                                      new TestCommand(etag: "first"),

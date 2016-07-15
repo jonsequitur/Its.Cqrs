@@ -8,11 +8,11 @@ using Pocket;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-    internal class CommandSchedulerResolver
+    internal class CommandDelivererResolver
     {
         private readonly Dictionary<string, Func<object>> schedulerResolversByAggregateTypeName;
 
-        public CommandSchedulerResolver(PocketContainer container)
+        public CommandDelivererResolver(PocketContainer container)
         {
             if (container == null)
             {
@@ -23,7 +23,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             Command.KnownTargetTypes.ForEach(aggregateType =>
             {
-                var schedulerType = typeof (ICommandScheduler<>).MakeGenericType(aggregateType);
+                var schedulerType = typeof (ICommandDeliverer<>).MakeGenericType(aggregateType);
 
                 schedulerResolversByAggregateTypeName.Add(
                     AggregateType.EventStreamName(aggregateType),

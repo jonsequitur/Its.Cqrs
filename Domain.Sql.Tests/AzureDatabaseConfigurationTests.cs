@@ -15,7 +15,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [ExclusivelyUses("ItsCqrsMigrationsTestEventStore", "ItsCqrsMigrationsTestReadModels")]
     public class AzureDatabaseConfigurationTests
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             Settings.Sources = new ISettingsSource[]

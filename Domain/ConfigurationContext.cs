@@ -9,6 +9,9 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Sets up an ambient context in which a given domain configuration is used.
+    /// </summary>
     [DebuggerStepThrough]
     public class ConfigurationContext : IDisposable
     {
@@ -30,6 +33,12 @@ namespace Microsoft.Its.Domain
             Configuration = configuration;
         }
 
+        /// <summary>
+        /// Sets <see cref="Configuration.Current" /> to the specified configuration for all callers on the current <see cref="CallContext" />.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <returns>A <see cref="ConfigurationContext" /> that, when disposed, reverts the configuration to the previous (possibly global) one.</returns>
+        /// <exception cref="System.InvalidOperationException">ConfigurationContexts cannot be nested.</exception>
         public static ConfigurationContext Establish(Configuration configuration)
         {
             var current = Current;
@@ -48,12 +57,18 @@ namespace Microsoft.Its.Domain
 
         internal bool AllowOverride { get; set; }
 
+        /// <summary>
+        /// Gets the current configuration context, or null.
+        /// </summary>
         public static ConfigurationContext Current =>
             CallContext.LogicalGetData(callContextKey)
                        .IfTypeIs<Guid>()
                        .Then(id => contexts.IfContains(id))
                        .ElseDefault();
 
+        /// <summary>
+        /// Gets the configuration used within the current context.
+        /// </summary>
         public Configuration Configuration { get; }
 
         /// <summary>

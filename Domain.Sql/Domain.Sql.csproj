@@ -92,7 +92,7 @@
     <Compile Include="AppLock.cs" />
     <Compile Include="CommandScheduler\CommandSchedulerCleanupMigration.cs" />
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
-    <Compile Include="SqlEventStoreEventStoreETagChecker.cs" />
+    <Compile Include="SqlEventStoreETagChecker.cs" />
     <Compile Include="CommandScheduler\ETag.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockRepository.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockTrigger.cs" />
@@ -161,7 +161,7 @@
     <Compile Include="ReservedValue.cs" />
     <Compile Include="CommandScheduler\ScheduledCommand.cs" />
     <Compile Include="CommandScheduler\SqlCommandSchedulerPipelineInitializer{T}.cs" />
-    <Compile Include="CommandScheduler\CommandSchedulerResolver.cs" />
+    <Compile Include="CommandScheduler\CommandDelivererResolver.cs" />
     <Compile Include="Migrations\ScriptBasedDbMigrator.cs" />
     <Compile Include="Sensors.cs" />
     <Compile Include="SetDatabaseVersion{T}.cs" />

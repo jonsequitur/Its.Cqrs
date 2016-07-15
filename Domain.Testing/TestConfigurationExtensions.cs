@@ -30,14 +30,7 @@ namespace Microsoft.Its.Domain.Testing
 
             return configuration;
         }
-
-        public static Configuration IgnoreScheduledCommands(this Configuration configuration)
-        {
-            configuration.Container.RegisterGeneric(variantsOf: typeof (ICommandScheduler<>),
-                                                    to: typeof (IgnoreCommandScheduling<>));
-            return configuration;
-        }
-
+        
         public static Configuration UseInMemoryCommandTargetStore(this Configuration configuration)
         {
             configuration.Container

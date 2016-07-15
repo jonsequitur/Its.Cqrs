@@ -141,6 +141,10 @@
     <Compile Include="IETagChecker.cs" />
     <Compile Include="IEventMigratingAggregate.cs" />
     <Compile Include="IStore{T}.cs" />
+    <Compile Include="Scheduling\AnonymousCommandDeliverer{T}.cs" />
+    <Compile Include="Scheduling\CommandDeliverer.cs" />
+    <Compile Include="Scheduling\CommandDelivererPipeline{T}.cs" />
+    <Compile Include="Scheduling\ICommandDeliverer{T}.cs" />
     <Compile Include="Snapshots\IApplySnapshot{T}.cs" />
     <Compile Include="Snapshots\JsonSnapshot.cs" />
     <Compile Include="Snapshots\JsonSnapshotter{T}.cs" />

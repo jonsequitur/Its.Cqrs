@@ -10,7 +10,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         protected abstract void Configure(Configuration configuration);
 
         public abstract Task When_a_clock_is_advanced_its_associated_commands_are_triggered();
-
         public abstract Task When_a_clock_is_advanced_then_commands_are_not_triggered_that_have_not_become_due();
 
         public abstract Task Scheduled_commands_are_delivered_immediately_if_past_due_per_the_domain_clock();

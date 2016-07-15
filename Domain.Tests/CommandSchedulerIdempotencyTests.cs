@@ -136,20 +136,20 @@ namespace Microsoft.Its.Domain.Tests
             DateTimeOffset? dueTime = null,
             IPrecondition deliveryDependsOn = null)
         {
-            var repository = Configuration.Current.Store<CommandTarget>();
+            var repository = Configuration.Current.Store<NonEventSourcedCommandTarget>();
 
             if (await repository.Get(targetId) == null)
             {
-                await repository.Put(new CommandTarget(targetId));
+                await repository.Put(new NonEventSourcedCommandTarget(targetId));
             }
 
-            var command = new ScheduledCommand<CommandTarget>(
+            var command = new ScheduledCommand<NonEventSourcedCommandTarget>(
                 new TestCommand(etag),
                 targetId,
                 dueTime,
                 deliveryDependsOn);
 
-            var scheduler = Configuration.Current.CommandScheduler<CommandTarget>();
+            var scheduler = Configuration.Current.CommandScheduler<NonEventSourcedCommandTarget>();
 
             await scheduler.Schedule(command);
         }

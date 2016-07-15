@@ -12,7 +12,7 @@ namespace Microsoft.Its.Domain.Tests
     {
         protected override void Configure(Configuration configuration)
         {
-            Command<CommandTarget>.AuthorizeDefault = (account, command) => true;
+            Command<NonEventSourcedCommandTarget>.AuthorizeDefault = (account, command) => true;
 
             configuration.UseInMemoryCommandTargetStore()
                          .UseInMemoryEventStore()

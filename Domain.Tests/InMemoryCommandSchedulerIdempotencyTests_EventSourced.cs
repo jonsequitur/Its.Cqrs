@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
 
@@ -17,9 +16,7 @@ namespace Microsoft.Its.Domain.Tests
                          .UseInMemoryCommandScheduling();
         }
 
-        protected override ScheduleCommand GetScheduleDelegate()
-        {
-            return ScheduleCommandAgainstEventSourcedAggregate;
-        }
+        protected override ScheduleCommand GetScheduleDelegate() => 
+            ScheduleCommandAgainstEventSourcedAggregate;
     }
 }

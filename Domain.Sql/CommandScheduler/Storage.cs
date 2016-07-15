@@ -69,7 +69,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
         internal static async Task DeserializeAndDeliverScheduledCommand<TAggregate>(
             ScheduledCommand scheduled,
-            ICommandScheduler<TAggregate> scheduler)
+            ICommandDeliverer<TAggregate> scheduler)
         {
             try
             {

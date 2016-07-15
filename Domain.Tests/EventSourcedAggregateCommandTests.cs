@@ -34,7 +34,8 @@ namespace Microsoft.Its.Domain.Tests
             disposables = new CompositeDisposable
             {
                 ConfigurationContext.Establish(new Configuration()
-                                                   .IgnoreScheduledCommands())
+                    .UseInMemoryEventStore()
+                    .UseInMemoryCommandScheduling())
             };
         }
 

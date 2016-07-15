@@ -12,33 +12,27 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [SetUpFixture]
     internal class SetUpDbConfiguration
     {
-        [SetUp]
+        [OneTimeSetUp]
         public void SetUp()
         {
             DbConfiguration.SetConfiguration(new TestDbConfiguration());
         }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Console.WriteLine("SetUpFixture.TearDown");
-        }
     }
-    
+
     public class TestDbConfiguration : DbConfiguration
     {
         public TestDbConfiguration()
         {
             SetExecutionStrategy("System.Data.SqlClient",
-                                 () =>
-                                 {
-                                     if (!UseSqlAzureExecutionStrategy)
-                                     {
-                                         return new DefaultExecutionStrategy();
-                                     }
+                () =>
+                {
+                    if (!UseSqlAzureExecutionStrategy)
+                    {
+                        return new DefaultExecutionStrategy();
+                    }
 
-                                     return new SqlAzureExecutionStrategy();
-                                 });
+                    return new SqlAzureExecutionStrategy();
+                });
         }
 
         public static bool UseSqlAzureExecutionStrategy { get; set; }

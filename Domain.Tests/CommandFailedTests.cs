@@ -14,7 +14,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void When_a_cancel_has_been_signaled_then_IsCanceled_returns_true()
         {
-            var failed = new CommandFailed(new ScheduledCommand<CommandTarget>(new TestCommand(), Any.Guid()));
+            var failed = new CommandFailed(new ScheduledCommand<NonEventSourcedCommandTarget>(new TestCommand(), Any.Guid()));
 
             failed.Cancel();
 
@@ -26,7 +26,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void When_a_cancel_has_been_not_signaled_then_IsCanceled_returns_false()
         {
-            var failed = new CommandFailed(new ScheduledCommand<CommandTarget>(new TestCommand(), Any.Guid()));
+            var failed = new CommandFailed(new ScheduledCommand<NonEventSourcedCommandTarget>(new TestCommand(), Any.Guid()));
 
             failed.IsCanceled
                   .Should()
@@ -36,7 +36,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void NumberOfPreviousAttempts_returns_the_value_set_on_the_scheduled_command()
         {
-            var failed = new CommandFailed(new ScheduledCommand<CommandTarget>(new TestCommand(), Any.Guid())
+            var failed = new CommandFailed(new ScheduledCommand<NonEventSourcedCommandTarget>(new TestCommand(), Any.Guid())
             {
                 NumberOfPreviousAttempts = 8
             });
@@ -47,7 +47,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void When_a_retry_is_not_pending_then_WillBeRetried_returns_false()
         {
-            var failed = new CommandFailed(new ScheduledCommand<CommandTarget>(new TestCommand(), Any.Guid()));
+            var failed = new CommandFailed(new ScheduledCommand<NonEventSourcedCommandTarget>(new TestCommand(), Any.Guid()));
 
             failed.WillBeRetried
                   .Should()
@@ -57,7 +57,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void When_a_retry_is_pending_then_WillBeRetried_returns_true()
         {
-            var failed = new CommandFailed(new ScheduledCommand<CommandTarget>(new TestCommand(), Any.Guid()));
+            var failed = new CommandFailed(new ScheduledCommand<NonEventSourcedCommandTarget>(new TestCommand(), Any.Guid()));
 
             failed.Retry();
 

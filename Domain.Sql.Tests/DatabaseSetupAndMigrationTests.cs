@@ -17,6 +17,7 @@ using System.Data.SqlClient;
 using System.Reactive.Disposables;
 using NCrunch.Framework;
 using Test.Domain.Ordering.Projections;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -30,8 +31,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
         private Version version = new Version(10, 0, 0);
         private CompositeDisposable disposables;
 
-        [TestFixtureSetUp]
-        public void TestFixtureSetUp()
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
             disposables = new CompositeDisposable();
 
@@ -44,14 +45,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Database.Delete(MigrationsTestEventStore.ConnectionString);
             Database.Delete(CommandSchedulerConnectionString);
             Database.Delete(MigrationsTestReadModels.ConnectionString);
-            Database.Delete(MigrationsTestEventStore.ConnectionString);
 
             InitializeEventStore();
             InitializeCommandScheduler();
         }
 
-        [TestFixtureTearDown]
-        public void TestFixtureTearDown()
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
             disposables.Dispose();
         }
@@ -459,7 +459,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 {
                     db.EnsureDatabaseIsUpToDate(migrator);
                 }
-                catch (Exception exception) 
+                catch (SqlException exception)
+                    when (exception.Message.Contains("Cannot insert duplicate key row in object 'Scheduler.ETag'"))
                 {
                     Console.WriteLine(exception);
                 }
@@ -478,7 +479,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 .NotContain(v => v == version.ToString());
         }
 
-        private static IEnumerable<string> GetAppliedVersions(DbContext context)
+        private static string[] GetAppliedVersions(DbContext context)
         {
             using (context)
             {
@@ -511,11 +512,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(context);
             }
-        }
-
-        private static EventStoreDbContext EventStoreDbContext()
-        {
-            return new EventStoreDbContext(MigrationsTestEventStore.ConnectionString);
         }
 
         private void InitializeCommandScheduler()

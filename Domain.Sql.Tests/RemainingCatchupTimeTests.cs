@@ -17,13 +17,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [TestFixture]
     public class RemainingCatchupTimeTests : EventStoreDbTest
     {
-        protected override void AfterClassIsInitialized()
-        {
-              // these tests behave a little oddly sometimes if the database has just been rebuilt and no events have yet been caught up, so run a quick catchup to start
-            Events.Write(1);
-            RunCatchup(new TestProjector()).Wait();
-        }
-
         [SetUp]
         public override void SetUp()
         {
@@ -31,7 +24,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var configuration = new Configuration()
                 .UseSqlEventStore(c =>
-                                  c.UseConnectionString(TestDatabases.EventStore.ConnectionString));
+                                  c.UseConnectionString(EventStore.ConnectionString));
 
             disposables.Add(
                 ConfigurationContext.Establish(configuration));
@@ -184,7 +177,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task If_no_events_have_been_processed_then_the_remaining_time_is_null()
+        public void If_no_events_have_been_processed_then_the_remaining_time_is_null()
         {
             //arrange
             ResetReadModelInfo();

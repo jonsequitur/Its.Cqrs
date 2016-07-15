@@ -14,7 +14,6 @@ using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
-using Microsoft.Its.Domain.Tests.Infrastructure;
 using Microsoft.Its.Recipes;
 using Moq;
 using NCrunch.Framework;
@@ -35,11 +34,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
         protected ISchedulerClockTrigger clockTrigger;
         protected ISchedulerClockRepository clockRepository;
 
-        [TestFixtureSetUp]
-        public void TestFixtureSetUp()
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
-            Logging.Configure();
-
             // disable authorization checks
             Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
             Command<Order>.AuthorizeDefault = (order, command) => true;
@@ -535,8 +532,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var eventCount = order.Events().Count();
 
             var orderScheduler = Configuration.Current
-                                              .CommandScheduler<Order>()
-                                              .Wrap(deliver: async (c, next) =>
+                                              .CommandDeliverer<Order>()
+                                              .InterceptDeliver(async (c, next) =>
                                               {
                                                   barrier.SignalAndWait(TimeSpan.FromSeconds(10));
                                                   await next(c);
@@ -1306,34 +1303,33 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var orderId = Any.Guid();
 
-            var orderScheduler = Configuration.Current
-                                              .CommandScheduler<Order>()
-                                              .Wrap(
-                                                  schedule: async (c, next) =>
-                                                  {
-                                                      scheduleCount++;
-                                                      await next(c);
-                                                  },
-                                                  deliver: async (c, next) =>
-                                                  {
-                                                      deliverCount++;
-                                                      await next(c);
-                                                  });
-
-            Configuration.Current.UseDependency(_ => orderScheduler);
+            Configuration.Current
+                .AddToCommandSchedulerPipeline<Order>(
+                    schedule:
+                        async (c, next) =>
+                        {
+                            scheduleCount++;
+                            await next(c);
+                        },
+                    deliver:
+                        async (c, next) =>
+                        {
+                            deliverCount++;
+                            await next(c);
+                        });
 
             await Configuration.Current
-                               .CommandScheduler<Order>()
-                               .Schedule(
-                                   new CommandScheduled<Order>
-                                   {
-                                       DueTime = Clock.Now().AddDays(-1),
-                                       AggregateId = orderId,
-                                       Command = new CreateOrder(Any.FullName())
-                                       {
-                                           AggregateId = orderId
-                                       }
-                                   });
+                .CommandScheduler<Order>()
+                .Schedule(
+                    new CommandScheduled<Order>
+                    {
+                        DueTime = Clock.Now().AddDays(-1),
+                        AggregateId = orderId,
+                        Command = new CreateOrder(Any.FullName())
+                        {
+                            AggregateId = orderId
+                        }
+                    });
 
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
 

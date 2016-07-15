@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql
 {
-    public class SqlEventStoreEventStoreETagChecker : IETagChecker
+    public class SqlEventStoreETagChecker : IETagChecker
     {
         private readonly Func<EventStoreDbContext> createEventStoreDbContext;
 
-        public SqlEventStoreEventStoreETagChecker(Func<EventStoreDbContext> createEventStoreDbContext)
+        public SqlEventStoreETagChecker(Func<EventStoreDbContext> createEventStoreDbContext)
         {
             if (createEventStoreDbContext == null)
             {

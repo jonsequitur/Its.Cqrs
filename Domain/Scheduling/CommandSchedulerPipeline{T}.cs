@@ -10,18 +10,12 @@ namespace Microsoft.Its.Domain
     {
         private readonly List<ScheduledCommandInterceptor<TAggregate>> onSchedule = new List<ScheduledCommandInterceptor<TAggregate>>();
 
-        private readonly List<ScheduledCommandInterceptor<TAggregate>> onDeliver = new List<ScheduledCommandInterceptor<TAggregate>>();
-
         public void OnSchedule(ScheduledCommandInterceptor<TAggregate> segment) =>
             onSchedule.Insert(0, segment);
 
-        public void OnDeliver(ScheduledCommandInterceptor<TAggregate> segment) =>
-            onDeliver.Insert(0, segment);
-
         public ICommandScheduler<TAggregate> Compose(Configuration configuration) =>
             configuration.Container
-                         .Resolve<CommandScheduler<TAggregate>>()
-                         .Wrap(onSchedule.Compose(),
-                               onDeliver.Compose());
+                .Resolve<CommandScheduler<TAggregate>>()
+                .InterceptSchedule(onSchedule.Compose());
     }
 }

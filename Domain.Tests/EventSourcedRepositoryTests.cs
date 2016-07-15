@@ -526,7 +526,7 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Category("Performance")]
-        [Ignore]
+        [Explicit]
         public async Task When_sourcing_an_aggregate_with_a_large_number_of_source_events_then_the_operation_completes_quickly()
         {
             var count = 30000;

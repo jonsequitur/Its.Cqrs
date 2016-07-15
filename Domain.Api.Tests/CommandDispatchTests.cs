@@ -24,12 +24,11 @@ namespace Microsoft.Its.Domain.Api.Tests
 {
     [TestFixture]
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsCommandScheduler")]
-    public class CommandDispatchTests 
+    public class CommandDispatchTests
     {
         private CompositeDisposable disposables;
 
-        [TestFixtureSetUp]
-        public void TestFixtureSetUp()
+        static CommandDispatchTests()
         {
             // this is a shim to make sure that the Test.Domain.Ordering.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
             var controller = new OrderApiController();

@@ -21,7 +21,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     {
         private static long startAtEventId;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             var howMany = 500;

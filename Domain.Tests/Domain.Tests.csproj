@@ -84,9 +84,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework, Version=3.4.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.4.1\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -141,7 +141,7 @@
     <Compile Include="CommandSchedulerPipelineTests.cs" />
     <Compile Include="CommandSchedulerTestAggregate.cs" />
     <Compile Include="CommandSchedulingTests_EventSourced.cs" />
-    <Compile Include="CommandTarget.cs" />
+    <Compile Include="NonEventSourcedCommandTarget.cs" />
     <Compile Include="EventSourcedAggregateCommandTests.cs" />
     <Compile Include="ConfigurationContextTests.cs" />
     <Compile Include="ConfigurationTests.cs" />
@@ -155,14 +155,12 @@
     <Compile Include="EventSourcedRepositoryTests.cs" />
     <Compile Include="EventTests.cs" />
     <Compile Include="HashTests.cs" />
-    <Compile Include="Infrastructure\Logging.cs" />
-    <Compile Include="Infrastructure\NoOpEventBus.cs" />
     <Compile Include="InMemoryCommandSchedulerIdempotencyTests_EventSourced.cs" />
     <Compile Include="InMemoryCommandSchedulerIdempotencyTests_NonEventSourced.cs" />
     <Compile Include="InProcessEventBusTests.cs" />
     <Compile Include="MarcoPolo.cs" />
     <Compile Include="NonEventSourcedAggregateCommandTests.cs" />
-    <Compile Include="NonEventSourcedAggregateCommandSchedulingTests.cs">
+    <Compile Include="CommandSchedulingTests_NonEventSourced.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ObjectIdTests.cs" />
@@ -187,7 +185,9 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Domain.Sql\Domain.Sql.csproj">

@@ -27,16 +27,16 @@ namespace Microsoft.Its.Domain.Sql
             ScheduledCommand serializedCommand,
             CommandSchedulerDbContext db) =>
                 await DeserializeAndDeliver(
-                    configuration.Container.Resolve<CommandSchedulerResolver>(),
+                    configuration.Container.Resolve<CommandDelivererResolver>(),
                     serializedCommand,
                     db);
 
         internal static async Task DeserializeAndDeliver(
-            CommandSchedulerResolver schedulerResolver,
+            CommandDelivererResolver delivererResolver,
             ScheduledCommand serializedCommand,
             CommandSchedulerDbContext db)
         {
-            dynamic scheduler = schedulerResolver.ResolveSchedulerForAggregateTypeNamed(serializedCommand.AggregateType);
+            dynamic scheduler = delivererResolver.ResolveSchedulerForAggregateTypeNamed(serializedCommand.AggregateType);
 
             await Storage.DeserializeAndDeliverScheduledCommand(
                 serializedCommand,
@@ -152,10 +152,12 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         public static Configuration UseSqlStorageForScheduledCommands(
             this Configuration configuration,
-            Action<CommandSchedulerConfiguration> configure = null)
+            Action<CommandSchedulerConfiguration> configure)
         {
+            if (configure == null)
+                throw new ArgumentNullException(nameof(configure));
             var schedulerConfiguration = new CommandSchedulerConfiguration();
-            configure?.Invoke(schedulerConfiguration);
+            configure.Invoke(schedulerConfiguration);
             schedulerConfiguration.ApplyTo(configuration);
 
             return configuration;
