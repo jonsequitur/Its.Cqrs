@@ -1,9 +1,7 @@
 Its.Cqrs
 ========
 
-[![Join the chat at https://gitter.im/jonsequitur/Its.Cqrs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jonsequitur/Its.Cqrs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/jonsequitur/Its.Cqrs?svg=true&branch=master)](https://ci.appveyor.com/project/jonsequitur/its-cqrs)
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/jonsequitur/Its.Cqrs?svg=true&branch=master)](https://ci.appveyor.com/project/jonsequitur/its-cqrs) [![Join the chat at https://gitter.im/jonsequitur/Its.Cqrs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jonsequitur/Its.Cqrs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) 
 
 A set of libraries for CQRS and Event Sourcing, with a Domain-Driven Design flavor. 
 
