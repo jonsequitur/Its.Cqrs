@@ -12,7 +12,9 @@ namespace Microsoft.Its.Domain
     /// A basic command scheduler implementation that can be used as the basis for composing command scheduling behaviors.
     /// </summary>
     /// <typeparam name="TAggregate">The type of the command target.</typeparam>
-    internal class CommandScheduler<TAggregate> : ICommandScheduler<TAggregate>, ICommandDeliverer<TAggregate>
+    internal class CommandScheduler<TAggregate> :
+        ICommandScheduler<TAggregate>,
+        ICommandDeliverer<TAggregate>
         where TAggregate : class
     {
         private static readonly MethodInfo createCommandFailed = typeof(CommandFailed)
