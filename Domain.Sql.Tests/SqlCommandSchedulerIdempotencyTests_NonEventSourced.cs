@@ -2,26 +2,26 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using Microsoft.Its.Domain.Testing;
+using System.Threading.Tasks;
+using Microsoft.Its.Domain.Tests;
 using NCrunch.Framework;
 using NUnit.Framework;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
+    [UseInMemoryCommandTargetStore]
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReadModels", "ItsCqrsTestsCommandScheduler")]
     public class SqlCommandSchedulerIdempotencyTests_NonEventSourced : SqlCommandSchedulerIdempotencyTests
     {
-        protected override void Configure(Configuration configuration)
-        {
-            base.Configure(configuration);
-
-            configuration.UseInMemoryCommandTargetStore();
-        }
-
-        protected override ScheduleCommand GetScheduleDelegate()
-        {
-            return ScheduleCommandAgainstNonEventSourcedAggregate;
-        }
+        protected override Task Schedule(
+            string targetId,
+            string etag,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryDependsOn = null) =>
+                ScheduleCommandAgainstNonEventSourcedAggregate(targetId,
+                    etag,
+                    dueTime,
+                    deliveryDependsOn);
     }
 }

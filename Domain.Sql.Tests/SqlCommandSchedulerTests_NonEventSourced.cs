@@ -1,15 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved. 
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
+﻿
 using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
-using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
-using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -18,72 +14,27 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     [Category("Command scheduling")]
     [TestFixture]
+    [UseSqlStorageForScheduledCommands,
+     UseSqlEventStore,
+     DisableCommandAuthorization]
     public class SqlCommandSchedulerTests_NonEventSourced : SqlCommandSchedulerTests
     {
-        private ICommandScheduler<NonEventSourcedCommandTarget> scheduler;
-        private string clockName;
-        private CompositeDisposable disposables;
-        private EventStoreDbTest eventStoreDbTest;
-        private IStore<NonEventSourcedCommandTarget> store;
-
-        public SqlCommandSchedulerTests_NonEventSourced()
-        {
-            Command<NonEventSourcedCommandTarget>.AuthorizeDefault = (target, command) => true;
-        }
-
-        [SetUp]
-        public void SetUp()
-        {
-            eventStoreDbTest = new EventStoreDbTest();
-            clockName = Any.CamelCaseName();
-
-            VirtualClock.Start();
-
-            disposables = new CompositeDisposable
-            {
-                Disposable.Create(() => eventStoreDbTest.TearDown())
-            };
-
-            var configuration = new Configuration();
-
-            Configure(configuration);
-
-            disposables.Add(ConfigurationContext.Establish(configuration));
-            disposables.Add(configuration);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Clock.Reset();
-            disposables.Dispose();
-        }
-
-        protected override void Configure(Configuration configuration)
-        {
-            disposables = new CompositeDisposable();
-            clockName = Any.CamelCaseName();
-
-            configuration.UseInMemoryCommandTargetStore()
-                         .TraceScheduledCommands()
-                         .UseSqlEventStore(c =>
-                                           c.UseConnectionString(TestDatabases.EventStore.ConnectionString))
-                         .UseSqlStorageForScheduledCommands(c =>
-                                                            c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
-                         .UseDependency<GetClockName>(_ => command => clockName);
-
-            scheduler = configuration.CommandScheduler<NonEventSourcedCommandTarget>();
-
-            store = configuration.Store<NonEventSourcedCommandTarget>();
-        }
-
         private async Task AdvanceClock(TimeSpan @by)
         {
-            await Configuration.Current
-                               .SchedulerClockTrigger()
-                               .AdvanceClock(clockName: clockName,
-                                             @by: @by);
+            var configuration = Configuration.Current;
+
+            await configuration.SchedulerClockTrigger()
+                               .AdvanceClock(clockName: clockName, @by: @by);
         }
+
+        private static string clockName =>
+            Configuration.Current.Container.Resolve<GetClockName>()(null);
+
+        private IStore<NonEventSourcedCommandTarget> store =>
+            Configuration.Current.Store<NonEventSourcedCommandTarget>();
+
+        private ICommandScheduler<NonEventSourcedCommandTarget> scheduler =>
+            Configuration.Current.CommandScheduler<NonEventSourcedCommandTarget>();
 
         [Test]
         public override async Task When_a_clock_is_advanced_its_associated_commands_are_triggered()
@@ -149,9 +100,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
-            var clockRepository = Configuration.Current.SchedulerClockRepository();
+        
             var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 03:03:48 PM");
-            clockRepository.CreateClock(clockName, schedulerClockTime);
 
             // act
             await scheduler.Schedule(target.Id,
@@ -171,10 +121,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var deliveredTime = new DateTimeOffset();
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
-            var clockRepository = Configuration.Current.SchedulerClockRepository();
-            var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 01:00:00 AM");
-            clockRepository.CreateClock(clockName, schedulerClockTime);
-            Configuration.Current.UseCommandHandler<NonEventSourcedCommandTarget, TestCommand>(async (_, __) =>
+                   Configuration.Current.UseCommandHandler<NonEventSourcedCommandTarget, TestCommand>(async (_, __) =>
             {
                 if (__.ETag == "first")
                 {
@@ -207,31 +154,35 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public override async Task Scheduled_commands_with_no_due_time_set_the_correct_clock_time_when_delivery_is_deferred()
+        public override async Task Scheduled_commands_with_no_due_time_are_delivered_at_Clock_Now_when_delivery_is_deferred()
         {
             // arrange
             var deliveredTime = new DateTimeOffset();
+            var configuration = Configuration.Current;
+
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
             await store.Put(target);
-            var clockRepository = Configuration.Current.SchedulerClockRepository();
-            var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 01:00:00 AM");
-            clockRepository.CreateClock(clockName, schedulerClockTime);
-            Configuration.Current.UseCommandHandler<NonEventSourcedCommandTarget,TestCommand>(async (_,__) => deliveredTime = Clock.Now());
+            configuration
+                .UseCommandHandler<NonEventSourcedCommandTarget, TestCommand>(async (_, __) => deliveredTime = Clock.Now());
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand
-                                     {
-                                         CanBeDeliveredDuringScheduling = false
-                                     },
-                                     dueTime: null);
+            await configuration
+                .CommandScheduler<NonEventSourcedCommandTarget>()
+                .Schedule(target.Id,
+                    new TestCommand
+                    {
+                        CanBeDeliveredDuringScheduling = false
+                    },
+                    dueTime: null);
 
-            await Configuration.Current
-                               .SchedulerClockTrigger()
-                               .AdvanceClock(clockName, by: 1.Hours());
+            await configuration
+                .SchedulerClockTrigger()
+                .AdvanceClock(clockName, by: 1.Hours());
 
             // assert 
-            deliveredTime.Should().Be(DateTimeOffset.Parse("2016-02-13 01:00:00 AM"));
+            deliveredTime
+                .Should()
+                .Be(Clock.Now());
         }
 
         [Test]

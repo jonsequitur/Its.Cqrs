@@ -11,15 +11,9 @@ using Test.Domain.Ordering;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
     public class ValidationTests
     {
-        [SetUp]
-        public void SetUp()
-        {
-            // disable authorization
-            Command<Order>.AuthorizeDefault = (o, c) => true;
-        }
-
         [Test]
         public void Command_applicability_can_be_validated_by_the_command_class()
         {

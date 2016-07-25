@@ -14,28 +14,19 @@ using Test.Domain.Ordering;
 namespace Microsoft.Its.Domain.Testing.Tests
 {
     [TestFixture]
+    [UseInMemoryEventStore]
+    [UseInMemoryCommandScheduling]
     public class InMemoryEventSourcedRepositoryTests : EventSourcedRepositoryTests
     {
-        private InMemoryEventStream eventStream;
-
-        [SetUp]
-        public override void SetUp()
-        {
-            eventStream = new InMemoryEventStream();
-            base.SetUp();
-        }
-
-        protected override void Configure(Configuration configuration, Action onSave = null) =>
-            configuration.UseEventBus(new FakeEventBus())
-                         .UseDependency(_ => eventStream)
-                         .UseInMemoryEventStore()
-                         .UseInMemoryCommandScheduling();
-
         protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
             Action onSave = null)
         {
             if (onSave != null)
             {
+                var eventStream = new InMemoryEventStream();
+
+                Configuration.Current.UseDependency(_ => eventStream);
+
                 eventStream.BeforeSave += (sender, @event) => onSave();
             }
 
@@ -46,6 +37,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
         public override async Task When_storage_fails_then_no_events_are_published()
         {
             var repository = CreateRepository<Order>(onSave: () => { throw new ConcurrencyException("oops!"); });
+            var publishedEvents = ListenToPublishedEvents();
 
             var order = new Order();
             Action save = () =>
@@ -53,9 +45,8 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             save.ShouldThrow<ConcurrencyException>();
 
-            ((FakeEventBus)Configuration.Current.EventBus)
-                .PublishedEvents()
-                .Count()
+            publishedEvents
+                .Count
                 .Should()
                 .Be(0);
         }
@@ -154,19 +145,14 @@ namespace Microsoft.Its.Domain.Testing.Tests
             order.CustomerName.Should().Be("Willie Nelson");
         }
 
-        protected override async Task SaveEventsDirectly(params InMemoryStoredEvent[] events)
-        {
-            await eventStream.Append(events);
-        }
+        protected override async Task SaveEventsDirectly(params InMemoryStoredEvent[] events) =>
+            await Configuration.Current.InMemoryEventStream().Append(events);
 
-        protected override async Task DeleteEventsFromEventStore(Guid aggregateId)
-        {
-            eventStream.RemoveEvents(aggregateId);
-        }
+        protected override async Task DeleteEventsFromEventStore(Guid aggregateId) =>
+            Configuration.Current.InMemoryEventStream().RemoveEvents(aggregateId);
 
-        protected override InMemoryStoredEvent CreateStoredEvent(string streamName, string type, Guid aggregateId, int sequenceNumber, string body, DateTime utcTime)
-        {
-            return new InMemoryStoredEvent
+        protected override InMemoryStoredEvent CreateStoredEvent(string streamName, string type, Guid aggregateId, int sequenceNumber, string body, DateTime utcTime) =>
+            new InMemoryStoredEvent
             {
                 Type = type,
                 AggregateId = aggregateId.ToString(),
@@ -175,6 +161,5 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 Body = body,
                 Timestamp = utcTime
             };
-        }
     }
 }

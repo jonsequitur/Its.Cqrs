@@ -15,23 +15,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     [Category("Catchups")]
     [TestFixture]
+    [UseSqlEventStore]
     public class RemainingCatchupTimeTests : EventStoreDbTest
     {
-        [SetUp]
-        public override void SetUp()
-        {
-            base.SetUp();
-
-            var configuration = new Configuration()
-                .UseSqlEventStore(c =>
-                                  c.UseConnectionString(EventStore.ConnectionString));
-
-            disposables.Add(
-                ConfigurationContext.Establish(configuration));
-            disposables.Add(
-                VirtualClock.Start());
-        }
-
         [Test]
         public async Task If_events_have_been_processed_during_initial_replay_then_the_remaining_time_is_estimated_correctly()
         {

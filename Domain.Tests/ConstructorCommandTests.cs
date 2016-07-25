@@ -10,15 +10,9 @@ using Test.Domain.Ordering;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
     public class ConstructorCommandTests
     {
-        [SetUp]
-        public void SetUp()
-        {
-            // disable authorization
-            Command<Order>.AuthorizeDefault = (o, c) => true;
-        }
-
         [Test]
         public void A_constructor_command_can_be_used_to_create_a_new_aggregate_instance()
         {

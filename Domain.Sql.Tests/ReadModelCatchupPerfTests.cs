@@ -17,7 +17,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [Category("Catchups")]
     [Category("Performance")]
     [TestFixture]
-    public class ReadModelCatchupPerfTests : EventStoreDbTest
+    public class ReadModelCatchupPerfTests
     {
         private static long startAtEventId;
 
@@ -31,9 +31,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             startAtEventId = startAtEventId - howMany;
         }
 
-        public override void SetUp()
+        [SetUp]
+        public void SetUp()
         {
-            base.SetUp();
             GC.Collect();
             Thread.Sleep(1000);
         }

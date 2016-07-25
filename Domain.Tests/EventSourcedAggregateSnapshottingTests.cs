@@ -15,32 +15,11 @@ using Test.Domain.Ordering;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
+    [UseInMemoryCommandScheduling]
+    [UseInMemoryEventStore]
     public class EventSourcedAggregateSnapshottingTests
     {
-        private CompositeDisposable disposables;
-
-        [SetUp]
-        public void SetUp()
-        {
-            // disable authorization
-            Command<Order>.AuthorizeDefault = (o, c) => true;
-            Command<CustomerAccount>.AuthorizeDefault = (o, c) => true;
-
-            disposables = new CompositeDisposable();
-
-            var configurationContext = ConfigurationContext
-                .Establish(new Configuration()
-                               .UseInMemoryEventStore()
-                               .UseInMemoryCommandScheduling());
-            disposables.Add(configurationContext);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            disposables.Dispose();
-        }
-
         [Test]
         public async Task Snapshots_include_etags_for_events_that_have_been_persisted_to_the_event_store()
         {
@@ -48,10 +27,10 @@ namespace Microsoft.Its.Domain.Tests
 
             var configuration = Configuration.Current;
             var addPlayer = new MarcoPoloPlayerWhoIsNotIt.JoinGame
-            {
-                IdOfPlayerWhoIsIt = Any.Guid(),
-                ETag = etag
-            };
+                            {
+                                IdOfPlayerWhoIsIt = Any.Guid(),
+                                ETag = etag
+                            };
 
             var player = await new MarcoPoloPlayerWhoIsNotIt()
                                    .ApplyAsync(addPlayer);

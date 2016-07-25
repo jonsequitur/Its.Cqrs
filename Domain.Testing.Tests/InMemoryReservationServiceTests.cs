@@ -10,15 +10,10 @@ using NUnit.Framework;
 namespace Microsoft.Its.Domain.Testing.Tests
 {
     [TestFixture]
+    [UseInMemoryReservationService]
+    [UseInMemoryEventStore]
     public class InMemoryReservationServiceTests : ReservationServiceTests
     {
-        protected override void Configure(Configuration configuration)
-        {
-            configuration.UseInMemoryReservationService()
-                         .UseInMemoryEventStore()
-                         .UseEventBus(new FakeEventBus());
-        }
-
         protected override async Task<ReservedValue> GetReservedValue(string value, string promoCode)
         {
             var reservationService = (InMemoryReservationService) Configuration.Current.ReservationService();

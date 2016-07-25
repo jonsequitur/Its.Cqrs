@@ -2,11 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Reactive.Disposables;
 using FluentAssertions;
 using Microsoft.Its.Domain.Api.Serialization;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
-using Microsoft.Its.Domain.Testing;
+using Microsoft.Its.Domain.Tests;
 using NUnit.Framework;
 using Newtonsoft.Json.Linq;
 using Test.Domain.Ordering;
@@ -16,36 +15,21 @@ using Assert = NUnit.Framework.Assert;
 namespace Microsoft.Its.Domain.Api.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
+    [UseInMemoryCommandScheduling]
+    [UseInMemoryEventStore]
     public class ValidationTests
     {
-        private CompositeDisposable disposables;
-
-        [SetUp]
-        public void SetUp()
+        static ValidationTests()
         {
             // this is a shim to make sure that the Test.Domain.Ordering.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
             var controller = new OrderApiController();
-
-            disposables = new CompositeDisposable();
-
-            Command<Order>.AuthorizeDefault = (order, command) => true;
-
-            var configuration = new Configuration()
-                .UseInMemoryEventStore()
-                .UseInMemoryCommandScheduling();
-            disposables.Add(ConfigurationContext.Establish(configuration));
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            disposables.Dispose();
         }
 
         [Test]
         public void Command_properties_can_be_validated()
         {
-           var order = new Order(Guid.NewGuid())
+            var order = new Order(Guid.NewGuid())
                 .Apply(new ChangeCustomerInfo { CustomerName = "Joe" })
                 .Apply(new Deliver())
                 .SavedToEventStore();

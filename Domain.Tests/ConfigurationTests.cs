@@ -17,17 +17,14 @@ using Test.Domain.Ordering;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
     public class ConfigurationTests
     {
-        [SetUp]
-        public void SetUp()
-        {
-            Command<Order>.AuthorizeDefault = (order, command) => true;
-        }
-
         [Test]
         public void Root_Configuration_uses_the_InProcessEventBus_Instance()
         {
+            ConfigurationContext.Current.Dispose();
+
             Configuration.Current
                          .EventBus
                          .Should()
@@ -72,36 +69,33 @@ namespace Microsoft.Its.Domain.Tests
             var applicationsContainer = new PocketContainer()
                 .Register<IPaymentService>(_ => new CreditCardPaymentGateway(chargeLimit: 1));
 
-            var configuration = new Configuration()
-                .UseDependencies(type =>
-                {
-                    if (applicationsContainer.Any(reg => reg.Key == type))
-                    {
-                        return () => applicationsContainer.Resolve(type);
-                    }
+            Configuration.Current
+                         .UseDependencies(type =>
+                         {
+                             if (applicationsContainer.Any(reg => reg.Key == type))
+                             {
+                                 return () => applicationsContainer.Resolve(type);
+                             }
 
-                    return null;
-                });
+                             return null;
+                         });
 
-            using (ConfigurationContext.Establish(configuration))
-            {
-                var order = new Order(new CreateOrder(Any.FullName()))
-                    .Apply(new AddItem
-                    {
-                        Price = 5m,
-                        ProductName = Any.Word()
-                    })
-                    .Apply(new Ship())
-                    .Apply(new ChargeAccount
-                    {
-                        AccountNumber = Any.PositiveInt().ToString()
-                    });
+            var order = new Order(new CreateOrder(Any.FullName()))
+                .Apply(new AddItem
+                       {
+                           Price = 5m,
+                           ProductName = Any.Word()
+                       })
+                .Apply(new Ship())
+                .Apply(new ChargeAccount
+                       {
+                           AccountNumber = Any.PositiveInt().ToString()
+                       });
 
-                order.Events()
-                     .Last()
-                     .Should()
-                     .BeOfType<Order.PaymentConfirmed>();
-            }
+            order.Events()
+                 .Last()
+                 .Should()
+                 .BeOfType<Order.PaymentConfirmed>();
         }
 
         [Test]

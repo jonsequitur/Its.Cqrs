@@ -24,22 +24,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     [Category("Catchups")]
     [TestFixture]
+    [UseSqlEventStore]
     public class ReadModelCatchupTest : EventStoreDbTest
     {
         private readonly TimeSpan MaxWaitTime = TimeSpan.FromSeconds(5);
-
-        [SetUp]
-        public override void SetUp()
-        {
-            base.SetUp();
-
-            var configuration = new Configuration()
-                .UseSqlEventStore(c =>
-                                  c.UseConnectionString(EventStore.ConnectionString));
-
-            disposables.Add(
-                ConfigurationContext.Establish(configuration));
-        }
 
         [Test]
         public async Task ReadModelCatchup_only_queries_events_since_the_last_consumed_event_id()

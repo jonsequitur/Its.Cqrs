@@ -67,8 +67,10 @@ QUOTENAME(name),
 N'OBJECT', 
 N'INSERT') 
 FROM sys.tables;";
-            var result = context.Database.SqlQuery<int?>(HasPermsSql).Single();
-            return (result ?? 0) == 1;
+            var result = context.Database.SqlQuery<int?>(HasPermsSql).SingleOrDefault();
+
+            // if there are no records in the db, assume write permissions and let things fail later 
+            return (result ?? 1) == 1;
         }
 
         /// <summary>

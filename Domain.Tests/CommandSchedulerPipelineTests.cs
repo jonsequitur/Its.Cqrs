@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using FluentAssertions;
+using Its.Log.Instrumentation;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
-using FluentAssertions;
-using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
@@ -19,40 +19,11 @@ namespace Microsoft.Its.Domain.Tests
 {
     [Category("Command scheduling")]
     [TestFixture]
+    [DisableCommandAuthorization]
+    [UseInMemoryCommandScheduling]
+    [UseInMemoryEventStore]
     public class CommandSchedulerPipelineTests
     {
-        private CompositeDisposable disposables;
-        private Configuration configuration;
-
-        [SetUp]
-        public void SetUp()
-        {
-            disposables = new CompositeDisposable();
-            // disable authorization
-            Command<Order>.AuthorizeDefault = (o, c) => true;
-            Command<CustomerAccount>.AuthorizeDefault = (o, c) => true;
-
-            disposables.Add(VirtualClock.Start());
-
-            configuration = new Configuration()
-                .UseInMemoryCommandScheduling()
-                .UseInMemoryEventStore()
-                .TraceScheduledCommands();
-
-            disposables.Add(ConfigurationContext.Establish(configuration));
-            disposables.Add(configuration);
-
-            Formatter.ListExpansionLimit = 100;
-            Console.WriteLine("Command.KnownTypes: \n" + Command.KnownTypes.Select(t => t.FullName).ToLogString());
-            Console.WriteLine("Command.KnownTargetTypes: \n" + Command.KnownTargetTypes.Select(t => t.FullName).ToLogString());
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            disposables.Dispose();
-        }
-
         [Test]
         public async Task CommandSchedulerPipeline_can_be_used_to_specify_command_scheduler_behavior_on_schedule()
         {
@@ -73,11 +44,11 @@ namespace Microsoft.Its.Domain.Tests
         public async Task CommandSchedulerPipeline_can_be_used_to_specify_command_scheduler_behavior_on_deliver()
         {
             var delivered = false;
-            configuration
-                .AddToCommandSchedulerPipeline<Order>(
-                    deliver: async (cmd, next) => delivered = true);
+            Configuration.Current
+                         .AddToCommandSchedulerPipeline<Order>(
+                             deliver: async (cmd, next) => delivered = true);
 
-            var scheduler = configuration.CommandDeliverer<Order>();
+            var scheduler = Configuration.Current.CommandDeliverer<Order>();
 
             await scheduler.Deliver(new CommandScheduled<Order>());
 
@@ -89,23 +60,23 @@ namespace Microsoft.Its.Domain.Tests
         {
             var checkpoints = new List<string>();
 
-            configuration
-                .AddToCommandSchedulerPipeline<Order>(
-                    schedule: async (cmd, next) =>
-                    {
-                        checkpoints.Add("two");
-                        await next(cmd);
-                        checkpoints.Add("three");
-                    })
-                .AddToCommandSchedulerPipeline<Order>(
-                    schedule: async (cmd, next) =>
-                    {
-                        checkpoints.Add("one");
-                        await next(cmd);
-                        checkpoints.Add("four");
-                    });
+            Configuration.Current
+                         .AddToCommandSchedulerPipeline<Order>(
+                             schedule: async (cmd, next) =>
+                             {
+                                 checkpoints.Add("two");
+                                 await next(cmd);
+                                 checkpoints.Add("three");
+                             })
+                         .AddToCommandSchedulerPipeline<Order>(
+                             schedule: async (cmd, next) =>
+                             {
+                                 checkpoints.Add("one");
+                                 await next(cmd);
+                                 checkpoints.Add("four");
+                             });
 
-            var scheduler = configuration.CommandScheduler<Order>();
+            var scheduler = Configuration.Current.CommandScheduler<Order>();
 
             await scheduler.Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
 
@@ -120,28 +91,28 @@ namespace Microsoft.Its.Domain.Tests
         {
             var checkpoints = new List<string>();
 
-            configuration
-                .AddToCommandSchedulerPipeline<Order>(
-                    schedule: async (cmd, next) =>
-                    {
-                        checkpoints.Add("two");
-                        await next(cmd);
-                        checkpoints.Add("three");
-                    });
+            Configuration.Current
+                         .AddToCommandSchedulerPipeline<Order>(
+                             schedule: async (cmd, next) =>
+                             {
+                                 checkpoints.Add("two");
+                                 await next(cmd);
+                                 checkpoints.Add("three");
+                             });
 
             // make sure to trigger a resolve
-            var scheduler = configuration.CommandScheduler<Order>();
+            var scheduler = Configuration.Current.CommandScheduler<Order>();
 
-            configuration
-                .AddToCommandSchedulerPipeline<Order>(
-                    schedule: async (cmd, next) =>
-                    {
-                        checkpoints.Add("one");
-                        await next(cmd);
-                        checkpoints.Add("four");
-                    });
+            Configuration.Current
+                         .AddToCommandSchedulerPipeline<Order>(
+                             schedule: async (cmd, next) =>
+                             {
+                                 checkpoints.Add("one");
+                                 await next(cmd);
+                                 checkpoints.Add("four");
+                             });
 
-            scheduler = configuration.CommandScheduler<Order>();
+            scheduler = Configuration.Current.CommandScheduler<Order>();
 
             await scheduler.Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
 
@@ -154,12 +125,13 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task When_CommandSchedulerPipeline_tracing_is_enabled_then_by_default_trace_output_goes_to_SystemDiagnosticsTrace()
         {
-            configuration.UseInMemoryCommandTargetStore();
+            Configuration.Current.UseInMemoryCommandTargetStore();
 
             var log = new List<string>();
             using (LogTraceOutputTo(log))
             {
-                await configuration.CommandScheduler<NonEventSourcedCommandTarget>()
+                await Configuration.Current
+                                   .CommandScheduler<NonEventSourcedCommandTarget>()
                                    .Schedule(Any.Guid(), new CreateCommandTarget(Any.Word()));
             }
 
@@ -182,13 +154,13 @@ namespace Microsoft.Its.Domain.Tests
             var onDeliveringWasCalled = false;
             var onDeliveredWasCalled = false;
 
-            configuration.TraceScheduledCommands(
+            Configuration.Current.TraceScheduledCommands(
                 onScheduling: _ => onSchedulingWasCalled = true,
                 onScheduled: _ => onScheduledWasCalled = true,
                 onDelivering: _ => onDeliveringWasCalled = true,
                 onDelivered: _ => onDeliveredWasCalled = true);
 
-            await configuration.CommandScheduler<Order>()
+            await Configuration.Current.CommandScheduler<Order>()
                                .Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
 
             onSchedulingWasCalled.Should().BeTrue();
@@ -202,21 +174,21 @@ namespace Microsoft.Its.Domain.Tests
         {
             var commandsScheduled = new List<IScheduledCommand>();
             var commandsDelivered = new List<IScheduledCommand>();
-            configuration.TraceScheduledCommands()
+            Configuration.Current.TraceScheduledCommands()
                          .TraceScheduledCommands(onScheduled: cmd => { commandsScheduled.Add(cmd); },
-                                                 onDelivered: cmd => { },
-                                                 onScheduling: cmd => { },
-                                                 onDelivering: cmd => { })
+                             onDelivered: cmd => { },
+                             onScheduling: cmd => { },
+                             onDelivering: cmd => { })
                          .TraceScheduledCommands(onDelivered: cmd => { commandsDelivered.Add(cmd); },
-                                                 onScheduled: cmd => { },
-                                                 onScheduling: cmd => { },
-                                                 onDelivering: cmd => { });
+                             onScheduled: cmd => { },
+                             onScheduling: cmd => { },
+                             onDelivering: cmd => { });
 
             var log = new List<string>();
             using (LogTraceOutputTo(log))
             {
                 // send a command
-                await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+                await Configuration.Current.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
             }
 
             log.Should().ContainSingle(e => e.Contains("[Scheduled]"));
@@ -230,7 +202,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task When_pipeline_tracing_is_enabled_multiple_times_with_default_behavior_then_it_does_not_produce_redundant_trace_output()
         {
-            configuration.TraceScheduledCommands()
+            Configuration.Current.TraceScheduledCommands()
                          .TraceScheduledCommands()
                          .TraceScheduledCommands();
 
@@ -238,7 +210,7 @@ namespace Microsoft.Its.Domain.Tests
             using (LogTraceOutputTo(log))
             {
                 // send a command
-                await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+                await Configuration.Current.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
             }
 
             log.Should().ContainSingle(e => e.Contains("[Scheduled]"));
@@ -254,13 +226,13 @@ namespace Microsoft.Its.Domain.Tests
 
             // initialize twice
             new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
-                .Initialize(configuration);
+                .Initialize(Configuration.Current);
 
             new AnonymousCommandSchedulerPipelineInitializer(cmd => commandsScheduled.Add(cmd))
-                .Initialize(configuration);
+                .Initialize(Configuration.Current);
 
             // send a command
-            await configuration.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            await Configuration.Current.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
 
             commandsScheduled.Count.Should().Be(1);
         }
@@ -288,9 +260,9 @@ namespace Microsoft.Its.Domain.Tests
                     });
             }
 
-            public IEnumerable<IScheduledCommand> ScheduledCommands { get; private set; }
+            public IEnumerable<IScheduledCommand> ScheduledCommands { get; }
 
-            public IEnumerable<IScheduledCommand> DeliveredCommands { get; private set; }
+            public IEnumerable<IScheduledCommand> DeliveredCommands { get; }
         }
 
         public IDisposable LogTraceOutputTo(List<string> log)
@@ -299,10 +271,10 @@ namespace Microsoft.Its.Domain.Tests
             Trace.Listeners.Add(listener);
 
             return new CompositeDisposable
-            {
-                Log.Events().Subscribe(e => log.Add(e.ToLogString())),
-                Disposable.Create(() => Trace.Listeners.Remove(listener))
-            };
+                   {
+                       Log.Events().Subscribe(e => log.Add(e.ToLogString())),
+                       Disposable.Create(() => Trace.Listeners.Remove(listener))
+                   };
         }
     }
 }

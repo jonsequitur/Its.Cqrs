@@ -65,7 +65,8 @@ namespace Microsoft.Its.Domain.Sql
             // Both either null or not null, then they're equal
             if (first.HasValue == false)
             {
-                return true;}
+                return true;
+            }
 
             return first.Value.Equals(second);
         }

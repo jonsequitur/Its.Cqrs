@@ -5,23 +5,24 @@ using System;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
-using System.Reactive.Disposables;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Microsoft.Its.Domain.Testing;
+using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NCrunch.Framework;
 using NUnit.Framework;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
     [ExclusivelyUses("ItsCqrsTestsCommandScheduler")]
+    [DisableCommandAuthorization]
+    [UseSqlStorageForScheduledCommands]
     public class SqlCommandSchedulerDatabaseCleanupTests
     {
-        private CompositeDisposable disposables;
-        private string clockName;
         private Guid aggregateId;
         private int sequenceNumber;
 
@@ -35,41 +36,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             aggregateId = Any.Guid();
             sequenceNumber = Any.PositiveInt();
-
-            disposables = new CompositeDisposable
-            {
-                ConfigurationContext.Establish(new Configuration()
-                                                   .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString)))
-            };
-
-            if (clockName == null)
-            {
-                clockName = Any.CamelCaseName();
-
-                using (var db = Configuration.Current.CommandSchedulerDbContext())
-                {
-                    db.Clocks.Add(new CommandScheduler.Clock
-                    {
-                        Name = clockName,
-                        StartTime = Clock.Now(),
-                        UtcNow = Clock.Now()
-                    });
-
-                    db.SaveChanges();
-                }
-            }
-
             
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 db.Database.ExecuteSqlCommand("delete from PocketMigrator.AppliedMigrations where MigrationScope = 'CommandSchedulerCleanup'");
             }
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            disposables.Dispose();
         }
 
         [Test]
@@ -132,8 +103,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void Cleanup_can_be_scheduled_periodically()
         {
-            var clock = VirtualClock.Start(DateTimeOffset.Parse("2016-06-07 07:07:41 PM"));
-            disposables.Add(clock);
+            var clock = VirtualClock.Current;
+
+            clock.AdvanceTo(DateTimeOffset.Parse("2046-06-07 07:07:41 PM"));
 
             // arrange: set up some test data
             WriteScheduledCommand(
@@ -166,10 +138,10 @@ where MigrationScope = 'CommandSchedulerCleanup'");
 
                 appliedMigrations   
                     .Should()
-                    .BeEquivalentTo("2016.6.8",
-                                    "2016.6.11",
-                                    "2016.6.14",
-                                    "2016.6.17");
+                    .BeEquivalentTo("2046.6.7",
+                                    "2046.6.10",
+                                    "2046.6.13",
+                                    "2046.6.16");
             }
         }
 
@@ -198,6 +170,8 @@ where MigrationScope = 'CommandSchedulerCleanup'");
             DateTimeOffset? finalAttemptTime,
             DateTimeOffset? dueTime)
         {
+            var clockName = Configuration.Current.Container.Resolve<GetClockName>()(null);
+
             using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 db.ScheduledCommands.Add(new ScheduledCommand

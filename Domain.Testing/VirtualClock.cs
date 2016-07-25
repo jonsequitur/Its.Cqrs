@@ -160,7 +160,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <exception cref="System.InvalidOperationException">You must dispose the current VirtualClock before starting another.</exception>
         public static VirtualClock Start(
             DateTimeOffset? now = null,
-            [CallerMemberName] string callerMemberName = null,
+            [CallerMemberName] string caller = null,
             [CallerFilePath] string callerFilePath = null)
         {
             var clock = Clock.Current as VirtualClock;
@@ -174,7 +174,7 @@ namespace Microsoft.Its.Domain.Testing
 
             var virtualClock = new VirtualClock(now ?? DateTimeOffset.Now)
             {
-                creatorMemberName = callerMemberName,
+                creatorMemberName = caller,
                 creatorFilePath = callerFilePath
             };
 

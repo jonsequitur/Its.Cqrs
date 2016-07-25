@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.Its.Recipes;
-using NCrunch.Framework;
 using NUnit.Framework;
 using Test.Domain.Ordering;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
@@ -14,8 +13,7 @@ using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
-    [ExclusivelyUses("ItsCqrsTestsEventStore")]
-    public class StorableEventTests : EventStoreDbTest
+    public class StorableEventTests
     {
         [Test]
         public void UtcTime_getter_accurately_converts_values_set_via_TimeStamp_setter()

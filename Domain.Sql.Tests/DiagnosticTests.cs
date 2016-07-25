@@ -3,19 +3,13 @@
 
 using FluentAssertions;
 using NUnit.Framework;
-using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
-    public class DiagnosticTests : EventStoreDbTest
+    [UseSqlEventStore]
+    public class DiagnosticTests 
     {
-        [SetUp]
-        public void SetUp()
-        {
-            Sensors.GetEventStoreDbContext = () => EventStoreDbContext();
-        }
-
         [Test]
         public void Sensor_can_be_used_to_check_read_model_catchup_status()
         {

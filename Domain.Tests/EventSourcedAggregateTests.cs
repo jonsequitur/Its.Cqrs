@@ -6,8 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
-using System.Reactive.Disposables;
-using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
@@ -15,32 +13,11 @@ using Test.Domain.Ordering;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
+    [UseInMemoryCommandScheduling]
+    [UseInMemoryEventStore]
     public class EventSourcedAggregateTests
     {
-        private CompositeDisposable disposables;
-
-        [SetUp]
-        public void SetUp()
-        {
-            // disable authorization
-            Command<Order>.AuthorizeDefault = (o, c) => true;
-            Command<CustomerAccount>.AuthorizeDefault = (o, c) => true;
-
-            disposables = new CompositeDisposable();
-
-            var configurationContext = ConfigurationContext
-                .Establish(new Configuration()
-                               .UseInMemoryEventStore()
-                               .UseInMemoryCommandScheduling());
-            disposables.Add(configurationContext);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            disposables.Dispose();
-        }
-
         [Test]
         public void When_created_using_new_it_has_a_unique_id_immediately()
         {

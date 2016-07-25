@@ -7,16 +7,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     public abstract class SqlCommandSchedulerTests
     {
-        protected abstract void Configure(Configuration configuration);
-
         public abstract Task When_a_clock_is_advanced_its_associated_commands_are_triggered();
+
         public abstract Task When_a_clock_is_advanced_then_commands_are_not_triggered_that_have_not_become_due();
 
         public abstract Task Scheduled_commands_are_delivered_immediately_if_past_due_per_the_domain_clock();
 
         public abstract Task Scheduled_commands_are_delivered_immediately_if_past_due_per_the_scheduler_clock();
 
-        public abstract Task Scheduled_commands_with_no_due_time_set_the_correct_clock_time_when_delivery_is_deferred();
+        public abstract Task Scheduled_commands_with_no_due_time_are_delivered_at_Clock_Now_when_delivery_is_deferred();
 
         public abstract Task A_command_handler_can_request_retry_of_a_failed_command_as_soon_as_possible();
 

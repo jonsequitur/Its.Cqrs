@@ -34,6 +34,9 @@ namespace Microsoft.Its.Domain.Testing
             Console.WriteLine(json);
         }
 
+        public static InMemoryEventStream InMemoryEventStream(this Configuration configuration) => 
+            configuration.Container.Resolve<InMemoryEventStream>();
+
         internal static void EnsureCommandSchedulerPipelineTrackerIsInitialized(this Configuration configuration) =>
             TrackCommandsInPipeline(configuration);
 

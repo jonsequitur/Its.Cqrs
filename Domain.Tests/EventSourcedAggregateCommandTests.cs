@@ -4,47 +4,24 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Reactive.Disposables;
-using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Its.Recipes;
-using Its.Validation;
 using Its.Validation.Configuration;
+using System.Linq;
+using System.Threading.Tasks;
+using Its.Validation;
+using Microsoft.Its.Recipes;
 using Moq;
 using NUnit.Framework;
 using Test.Domain.Ordering;
-using Microsoft.Its.Domain.Testing;
 
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
+    [UseInMemoryCommandScheduling]
+    [UseInMemoryEventStore]
     public class EventSourcedAggregateCommandTests
     {
-        private CompositeDisposable disposables;
-
-        [SetUp]
-        public void SetUp()
-        {
-            // disable authorization
-            Command<FakeAggregateWithEnactCommandConvention>.AuthorizeDefault = (o, c) => true;
-            Command<FakeAggregateWithNestedCommandConvention>.AuthorizeDefault = (o, c) => true;
-            Command<Order>.AuthorizeDefault = (o, c) => true;
-
-            disposables = new CompositeDisposable
-            {
-                ConfigurationContext.Establish(new Configuration()
-                    .UseInMemoryEventStore()
-                    .UseInMemoryCommandScheduling())
-            };
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            disposables.Dispose();
-        }
-
         [Test]
         public void Default_CommandValidator_uses_DataAnnotations()
         {
@@ -90,9 +67,9 @@ namespace Microsoft.Its.Domain.Tests
         public void When_aggregate_state_is_invalid_then_calling_ApplyTo_throws()
         {
             var command = new CommandWithAggregateValidator
-            {
-                Name = "foo"
-            };
+                          {
+                              Name = "foo"
+                          };
 
             command.Invoking(c => c.ApplyTo(new FakeAggregateWithEnactCommandConvention()))
                    .ShouldThrow<CommandValidationException>()
@@ -105,16 +82,16 @@ namespace Microsoft.Its.Domain.Tests
         {
             var order = new Order(new CreateOrder(Any.FullName()))
                 .Apply(new AddItem
-                {
-                    Price = 10m,
-                    ProductName = Any.CompanyName()
-                })
+                       {
+                           Price = 10m,
+                           ProductName = Any.CompanyName()
+                       })
                 .Apply(new Ship())
                 .Apply(new ChargeCreditCard
-                {
-                    Amount = 10m,
-                    CallPaymentService = _ => { throw new ArgumentException("Insufficient funds!"); }
-                });
+                       {
+                           Amount = 10m,
+                           CallPaymentService = _ => { throw new ArgumentException("Insufficient funds!"); }
+                       });
 
             order.PendingEvents
                  .Last()
@@ -126,15 +103,15 @@ namespace Microsoft.Its.Domain.Tests
         public void A_command_can_call_a_domain_service_and_cache_the_value_and_set_its_ETag_on_success()
         {
             var chargeCreditCard = new ChargeCreditCard
-            {
-                Amount = 10m
-            };
+                                   {
+                                       Amount = 10m
+                                   };
             var order = new Order(new CreateOrder(Any.FullName()))
                 .Apply(new AddItem
-                {
-                    Price = 10m,
-                    ProductName = Any.CompanyName()
-                })
+                       {
+                           Price = 10m,
+                           ProductName = Any.CompanyName()
+                       })
                 .Apply(new Ship())
                 .Apply(chargeCreditCard);
 
@@ -183,9 +160,9 @@ namespace Microsoft.Its.Domain.Tests
         public void Authorization_can_be_specified_in_the_command_class()
         {
             var command = new CommandWithCustomAuthorization
-            {
-                Authorized = () => false
-            };
+                          {
+                              Authorized = () => false
+                          };
 
             command.Invoking(c => c.ApplyTo(new FakeAggregateWithEnactCommandConvention()))
                    .ShouldThrow<CommandAuthorizationException>();
@@ -203,17 +180,17 @@ namespace Microsoft.Its.Domain.Tests
             order.Apply(new AddItem { Price = 10, ProductName = "Widget" })
                  .Apply(new Ship())
                  .Apply(new ProvideCreditCardInfo
-                 {
-                     CreditCardCvv2 = "123",
-                     CreditCardExpirationMonth = "09",
-                     CreditCardExpirationYear = "2071",
-                     CreditCardNumber = "2344123412341234",
-                     CreditCardName = Any.FullName()
-                 })
+                        {
+                            CreditCardCvv2 = "123",
+                            CreditCardExpirationMonth = "09",
+                            CreditCardExpirationYear = "2071",
+                            CreditCardNumber = "2344123412341234",
+                            CreditCardName = Any.FullName()
+                        })
                  .Apply(new ChargeCreditCard
-                 {
-                     Amount = 10,
-                 })
+                        {
+                            Amount = 10,
+                        })
                  .Apply(new Deliver())
                  .ConfirmSave();
 
@@ -221,9 +198,9 @@ namespace Microsoft.Its.Domain.Tests
 
             var requiredVersion = actualVersion - 1;
             var command = new Cancel
-            {
-                AppliesToVersion = requiredVersion
-            };
+                          {
+                              AppliesToVersion = requiredVersion
+                          };
 
             Action applyCancel = () => order.Apply(command);
 
@@ -241,9 +218,9 @@ namespace Microsoft.Its.Domain.Tests
 
             var requiredVersion = actualVersion;
             var command = new Cancel
-            {
-                AppliesToVersion = requiredVersion
-            };
+                          {
+                              AppliesToVersion = requiredVersion
+                          };
 
             Action applyCancel = () => order.Apply(command);
 
@@ -255,7 +232,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             Command<FakeAggregateWithNestedCommandConvention>.KnownTypes
                                                              .Should()
-                                                             .Contain(t => t == typeof (FakeAggregateWithNestedCommandConvention.CommandWithAggregateValidator));
+                                                             .Contain(t => t == typeof(FakeAggregateWithNestedCommandConvention.CommandWithAggregateValidator));
         }
 
         [Test]
@@ -263,7 +240,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             Command<FakeAggregateWithNestedCommandConvention>.Named("CommandWithAggregateValidator")
                                                              .Should()
-                                                             .Be(typeof (FakeAggregateWithNestedCommandConvention.CommandWithAggregateValidator));
+                                                             .Be(typeof(FakeAggregateWithNestedCommandConvention.CommandWithAggregateValidator));
         }
 
         [Test]
@@ -292,18 +269,18 @@ namespace Microsoft.Its.Domain.Tests
             var order = new Order(new CreateOrder(Any.FullName()));
 
             order.Apply(new ChangeCustomerInfo
-            {
-                CustomerName = newName,
-                ETag = etag
-            });
+                        {
+                            CustomerName = newName,
+                            ETag = etag
+                        });
 
             order.ConfirmSave();
 
             order.Apply(new ChangeCustomerInfo
-            {
-                CustomerName = Any.FullName(),
-                ETag = etag
-            });
+                        {
+                            CustomerName = Any.FullName(),
+                            ETag = etag
+                        });
 
             order.CustomerName.Should().Be(newName);
         }
@@ -315,15 +292,15 @@ namespace Microsoft.Its.Domain.Tests
 
             var order = new Order(new CreateOrder(Any.FullName()))
                 .Apply(new AddItem
-                {
-                    Price = 5m,
-                    ProductName = Any.Word()
-                })
+                       {
+                           Price = 5m,
+                           ProductName = Any.Word()
+                       })
                 .Apply(new Ship())
                 .Apply(new ChargeAccount
-                {
-                    AccountNumber = Any.PositiveInt().ToString()
-                });
+                       {
+                           AccountNumber = Any.PositiveInt().ToString()
+                       });
 
             order.Events()
                  .Last()
@@ -342,15 +319,15 @@ namespace Microsoft.Its.Domain.Tests
 
             var order = new Order(new CreateOrder(Any.FullName()))
                 .Apply(new AddItem
-                {
-                    Price = 5m,
-                    ProductName = Any.Word()
-                })
+                       {
+                           Price = 5m,
+                           ProductName = Any.Word()
+                       })
                 .Apply(new Ship())
                 .Apply(new ChargeAccount
-                {
-                    AccountNumber = Any.PositiveInt().ToString()
-                });
+                       {
+                           AccountNumber = Any.PositiveInt().ToString()
+                       });
 
             order.PendingEvents
                  .Last()
@@ -364,10 +341,10 @@ namespace Microsoft.Its.Domain.Tests
             Configuration.Current.UseDependency<IPaymentService>(_ => new CreditCardPaymentGateway());
             var order = new Order(new CreateOrder(Any.FullName()));
             order.Apply(new AddItem
-            {
-                Price = 5m,
-                ProductName = Any.Word()
-            });
+                        {
+                            Price = 5m,
+                            ProductName = Any.Word()
+                        });
 
             await order.ApplyAsync(new Ship());
 
@@ -418,17 +395,12 @@ namespace Microsoft.Its.Domain.Tests
                 PendingEvents = history;
             }
 
-            public Guid Id { get; private set; }
+            public Guid Id { get; }
 
-            public long Version
-            {
-                get
-                {
-                    return PendingEvents.Max(e => e.SequenceNumber);
-                }
-            }
+            public long Version => PendingEvents.Max(e => e.SequenceNumber);
 
-            public IEnumerable<IEvent> PendingEvents { get; private set; }
+            public IEnumerable<IEvent> PendingEvents { get; }
+
             public void ConfirmSave()
             {
                 throw new NotImplementedException();
@@ -441,15 +413,9 @@ namespace Microsoft.Its.Domain.Tests
                 [Required]
                 public string Name { get; set; }
 
-                public override IValidationRule<FakeAggregateWithNestedCommandConvention> Validator
-                {
-                    get
-                    {
-                        return Validate
-                            .That<FakeAggregateWithNestedCommandConvention>(o => IsValid)
-                            .WithErrorMessage("Ain't valid!");
-                    }
-                }
+                public override IValidationRule<FakeAggregateWithNestedCommandConvention> Validator => Validate
+                    .That<FakeAggregateWithNestedCommandConvention>(o => IsValid)
+                    .WithErrorMessage("Ain't valid!");
 
                 public bool IsValid { get; set; }
             }
@@ -457,55 +423,31 @@ namespace Microsoft.Its.Domain.Tests
 
         public class CommandWithCommandValidator : Command<FakeAggregateWithEnactCommandConvention>
         {
-            private readonly IValidationRule commandValidator;
-
             public CommandWithCommandValidator(IValidationRule commandValidator)
             {
-                this.commandValidator = commandValidator;
+                CommandValidator = commandValidator;
             }
 
-            public override IValidationRule<FakeAggregateWithEnactCommandConvention> Validator
-            {
-                get
-                {
-                    return Validate.That<FakeAggregateWithEnactCommandConvention>(o => o.IsValid);
-                }
-            }
+            public override IValidationRule<FakeAggregateWithEnactCommandConvention> Validator => Validate.That<FakeAggregateWithEnactCommandConvention>(o => o.IsValid);
 
-            public override IValidationRule CommandValidator
-            {
-                get
-                {
-                    return commandValidator;
-                }
-            }
+            public override IValidationRule CommandValidator { get; }
+
+            public override bool Authorize(FakeAggregateWithEnactCommandConvention target) => true;
         }
 
         public class CommandWithBadCommandValidator : Command<FakeAggregateWithEnactCommandConvention>
         {
-            public override IValidationRule CommandValidator
-            {
-                get
-                {
-                    return Validate.That<string>(t => true);
-                }
-            }
+            public override IValidationRule CommandValidator => Validate.That<string>(t => true);
+
+            public override bool Authorize(FakeAggregateWithEnactCommandConvention target) => true;
         }
 
         public class CommandWithCustomAuthorization : Command<FakeAggregateWithEnactCommandConvention>
         {
-            public override IValidationRule<FakeAggregateWithEnactCommandConvention> Validator
-            {
-                get
-                {
-                    return Validate.That<FakeAggregateWithEnactCommandConvention>(a => true);
-                }
-            }
+            public override IValidationRule<FakeAggregateWithEnactCommandConvention> Validator =>
+                Validate.That<FakeAggregateWithEnactCommandConvention>(a => true);
 
-            public override bool Authorize(FakeAggregateWithEnactCommandConvention aggregate)
-            {
-                return Authorized();
-            }
+            public override bool Authorize(FakeAggregateWithEnactCommandConvention aggregate) => Authorized();
 
             public Func<bool> Authorized = () => false;
         }
@@ -515,23 +457,22 @@ namespace Microsoft.Its.Domain.Tests
             [Required]
             public string Name { get; set; }
 
-            public override IValidationRule<FakeAggregateWithEnactCommandConvention> Validator
-            {
-                get
-                {
-                    return Validate
-                        .That<FakeAggregateWithEnactCommandConvention>(o => IsValid)
-                        .WithErrorMessage("Ain't valid!");
-                }
-            }
+            public override IValidationRule<FakeAggregateWithEnactCommandConvention> Validator =>
+                Validate
+                    .That<FakeAggregateWithEnactCommandConvention>(o => IsValid)
+                    .WithErrorMessage("Ain't valid!");
 
             public bool IsValid { get; set; }
+
+            public override bool Authorize(FakeAggregateWithEnactCommandConvention target) => true;
         }
 
         public class CommandWithDataAnnotations : Command<FakeAggregateWithEnactCommandConvention>
         {
             [Required]
             public string Name { get; set; }
+
+            public override bool Authorize(FakeAggregateWithEnactCommandConvention target) => true;
         }
 
         public class ConstructorCommandWithDataAnnotations : ConstructorCommand<FakeAggregateWithEnactCommandConvention>
@@ -539,26 +480,18 @@ namespace Microsoft.Its.Domain.Tests
             [Required]
             public string Name { get; set; }
 
-            public override IValidationRule CommandValidator
-            {
-                get
+            public override IValidationRule CommandValidator =>
+                new ValidationPlan<ConstructorCommandWithDataAnnotations>
                 {
-                    var baseValidations = (IValidationRule<ConstructorCommandWithDataAnnotations>) base.CommandValidator;
+                    (IValidationRule<ConstructorCommandWithDataAnnotations>) base.CommandValidator
+                };
 
-                    return new ValidationPlan<ConstructorCommandWithDataAnnotations>
-                    {
-                        baseValidations
-                    };
-                }
-            }
+            public override bool Authorize(FakeAggregateWithEnactCommandConvention target) => true;
         }
 
         public class NonEventSourcedCommand : Command<object>
         {
-            public override bool Authorize(object aggregate)
-            {
-                return true;
-            }
+            public override bool Authorize(object aggregate) => true;
         }
     }
 }

@@ -32,25 +32,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [TestFixture]
     public class RollingCatchupTest : EventStoreDbTest
     {
-        public override void SetUp()
-        {
-            TestDbConfiguration.UseSqlAzureExecutionStrategy = false;
-
-            base.SetUp();
-
-            var configuration = new Configuration()
-                .UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString));
-
-            disposables.Add(ConfigurationContext.Establish(configuration));
-            disposables.Add(configuration);
-        }
-
-        public override void TearDown()
-        {
-            TestDbConfiguration.UseSqlAzureExecutionStrategy = true;
-            base.TearDown();
-        }
-
         [Test]
         public void Events_committed_to_the_event_store_are_caught_up_by_multiple_independent_read_model_stores()
         {

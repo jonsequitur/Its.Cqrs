@@ -14,7 +14,7 @@ using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
-    public class QueryableExtensionsTests : EventStoreDbTest
+    public class QueryableExtensionsTests
     {
         [Test]
         public async Task RelatedEvents_returns_all_events_in_related_aggregates()

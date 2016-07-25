@@ -18,17 +18,10 @@ using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
+    [UseSqlEventStore]
+    [UseInMemoryCommandScheduling]
     public class SqlEventSourcedRepositoryTests : EventSourcedRepositoryTests
     {
-        protected override void Configure(Configuration configuration, Action onSave = null)
-        {
-            configuration.UseSqlEventStore(c =>
-                                           c.UseConnectionString(
-                                               @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsEventStore"))
-                         .UseEventBus(new FakeEventBus())
-                         .UseInMemoryCommandScheduling();
-        }
-
         protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
             Action onSave = null)
         {

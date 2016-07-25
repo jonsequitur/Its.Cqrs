@@ -5,7 +5,6 @@ using System;
 using System.Data;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
-using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -23,59 +22,28 @@ using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
+    [NUnit.Framework.Category("Command scheduling")]
     [TestFixture]
+    [UseSqlStorageForScheduledCommands,
+     UseSqlEventStore,
+     DisableCommandAuthorization]
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReadModels", "ItsCqrsTestsCommandScheduler")]
     public class SqlCommandSchedulerTests_EventSourced : SqlCommandSchedulerTests
     {
-        private IEventSourcedRepository<CustomerAccount> accountRepository;
-        protected IEventSourcedRepository<Order> orderRepository;
-        protected CompositeDisposable disposables;
-        protected string clockName;
-        protected ISchedulerClockTrigger clockTrigger;
-        protected ISchedulerClockRepository clockRepository;
+        private static string clockName =>
+            Configuration.Current.Container.Resolve<GetClockName>()(null);
 
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
-        {
-            // disable authorization checks
-            Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
-            Command<Order>.AuthorizeDefault = (order, command) => true;
-        }
+        private IEventSourcedRepository<Order> orderRepository =>
+            Configuration.Current.Repository<Order>();
 
-        [SetUp]
-        public void SetUp()
-        {
-            clockName = Any.CamelCaseName();
+        private IEventSourcedRepository<CustomerAccount> accountRepository =>
+            Configuration.Current.Repository<CustomerAccount>();
 
-            Clock.Reset();
+        private ISchedulerClockTrigger clockTrigger =>
+            Configuration.Current.SchedulerClockTrigger();
 
-            disposables = new CompositeDisposable
-            {
-                Disposable.Create(Clock.Reset)
-            };
-
-            var configuration = new Configuration()
-                .UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString))
-                .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString));
-
-            Configure(configuration);
-
-            disposables.Add(ConfigurationContext.Establish(configuration));
-            disposables.Add(configuration);
-
-            orderRepository = configuration.Repository<Order>();
-            accountRepository = configuration.Repository<CustomerAccount>();
-            clockTrigger = configuration.SchedulerClockTrigger();
-            clockRepository = configuration.SchedulerClockRepository();
-            clockRepository.CreateClock(clockName, Clock.Now());
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Inventory.IsAvailable = sku => true;
-            disposables.Dispose();
-        }
+        private ISchedulerClockRepository clockRepository =>
+            Configuration.Current.SchedulerClockRepository();
 
         [Test]
         public override async Task When_a_clock_is_advanced_its_associated_commands_are_triggered()
@@ -102,6 +70,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                  .Should()
                  .Be(shipmentId, "Properties should be transferred correctly from the serialized command");
         }
+
 
         [Test]
         public async Task When_a_scheduler_clock_is_advanced_then_the_domain_clock_is_coordinated_to_the_scheduler_clock_for_events_written_as_a_result()
@@ -224,8 +193,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public override async Task Immediately_scheduled_commands_triggered_by_a_scheduled_command_have_their_due_time_set_to_the_causative_command_clock()
         {
-            VirtualClock.Start();
-
             var aggregate = new CommandSchedulerTestAggregate();
             var repository = Configuration.Current
                                           .Repository<CommandSchedulerTestAggregate>();
@@ -262,30 +229,33 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public override async Task Scheduled_commands_with_no_due_time_set_the_correct_clock_time_when_delivery_is_deferred()
+        public override async Task Scheduled_commands_with_no_due_time_are_delivered_at_Clock_Now_when_delivery_is_deferred()
         {
             // arrange
             var deliveredTime = new DateTimeOffset();
             var configuration = Configuration.Current;
-            var clockTrigger = configuration.SchedulerClockTrigger();
-            await clockTrigger.AdvanceClock(clockName, DateTimeOffset.Parse("2046-02-13 01:00:00 AM"));
+
             configuration
                 .UseCommandHandler<Order, CreateOrder>(async (_, __) => deliveredTime = Clock.Now());
 
             // act
-            await configuration.CommandScheduler<Order>()
-                               .Schedule(Any.Guid(),
-                                         new CreateOrder(Any.FullName())
-                                         {
-                                             CanBeDeliveredDuringScheduling = false
-                                         },
-                                         dueTime: null);
+            await configuration
+                .CommandScheduler<Order>()
+                .Schedule(Any.Guid(),
+                    new CreateOrder(Any.FullName())
+                    {
+                        CanBeDeliveredDuringScheduling = false
+                    },
+                    dueTime: null);
 
-            await clockTrigger
+            await configuration
+                .SchedulerClockTrigger()
                 .AdvanceClock(clockName, by: 1.Hours());
 
             // assert 
-            deliveredTime.Should().Be(DateTimeOffset.Parse("2046-02-13 01:00:00 AM"));
+            deliveredTime
+                .Should()
+                .Be(Clock.Now());
         }
 
         [Test]
@@ -963,8 +933,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_a_command_is_scheduled_but_the_event_that_triggered_it_was_not_successfully_written_then_the_command_is_not_applied()
         {
-            VirtualClock.Start();
-
             // create a customer account
             var customer = new CustomerAccount(Any.Guid())
                 .Apply(new ChangeEmailAddress(Any.Email()));
@@ -1078,32 +1046,30 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
-            var db = Configuration.Current.CommandSchedulerDbContext();
-
-            disposables.Add(db);
-
             var initialSequenceNumber = Any.PositiveInt();
 
             var orderId = Any.Guid();
 
             await commandScheduler.Schedule(new CommandScheduled<Order>
-            {
-                AggregateId = orderId,
-                Command = new Cancel(),
-                SequenceNumber = initialSequenceNumber,
-                DueTime = Clock.Now().AddYears(1)
-            });
+                                            {
+                                                AggregateId = orderId,
+                                                Command = new Cancel(),
+                                                SequenceNumber = initialSequenceNumber,
+                                                DueTime = Clock.Now().AddYears(1)
+                                            });
 
             var secondCommand = new CommandScheduled<Order>
-            {
-                AggregateId = orderId,
-                Command = new Cancel(),
-                SequenceNumber = initialSequenceNumber,
-                DueTime = Clock.Now().AddYears(1)
-            };
+                                {
+                                    AggregateId = orderId,
+                                    Command = new Cancel(),
+                                    SequenceNumber = initialSequenceNumber,
+                                    DueTime = Clock.Now().AddYears(1)
+                                };
 
+            // act
             Action again = () => commandScheduler.Schedule(secondCommand).Wait();
 
+            // assert
             again.ShouldNotThrow<DbUpdateException>();
         }
 
@@ -1245,7 +1211,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public override async Task When_a_scheduled_command_depends_on_an_event_that_never_arrives_it_is_eventually_abandoned()
         {
-            VirtualClock.Start();
             var commandScheduler = Configuration.Current.CommandScheduler<Order>();
 
             var orderId = Any.Guid();
@@ -1298,8 +1263,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             var scheduleCount = 0;
             var deliverCount = 0;
-
-            VirtualClock.Start();
 
             var orderId = Any.Guid();
 
@@ -1447,14 +1410,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             target.Should().NotBeNull();
         }
 
-        protected override void Configure(Configuration configuration) =>
-            configuration
-                .UseDependency<GetClockName>(c => e => clockName)
-                .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
-                .TraceScheduledCommands();
-
         protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)
         {
+            var orderRepository = this.orderRepository;
             Configuration.Current.UseDependency(_ => orderRepository);
             ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () =>
             {

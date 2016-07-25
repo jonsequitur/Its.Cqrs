@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
-using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
@@ -16,60 +15,26 @@ namespace Microsoft.Its.Domain.Tests
 {
     [Category("Command scheduling")]
     [TestFixture]
+    [UseInMemoryCommandScheduling]
+    [UseInMemoryEventStore]
+    [DisableCommandAuthorization]
     public class CommandSchedulingTests_EventSourced
     {
-        private CompositeDisposable disposables;
-        private Configuration configuration;
-        private Guid customerAccountId;
-        private IEventSourcedRepository<CustomerAccount> customerRepository;
-        private IEventSourcedRepository<Order> orderRepository;
+   
+        private IEventSourcedRepository<Order> orderRepository =>
+            Configuration.Current.Repository<Order>();
 
-        [SetUp]
-        public void SetUp()
-        {
-            disposables = new CompositeDisposable
-            {
-                VirtualClock.Start()
-            };
-
-            // disable authorization
-            Command<Order>.AuthorizeDefault = (o, c) => true;
-            Command<CustomerAccount>.AuthorizeDefault = (o, c) => true;
-
-            customerAccountId = Any.Guid();
-
-            configuration = new Configuration()
-                .UseInMemoryCommandScheduling()
-                .UseInMemoryEventStore()
-                .TraceScheduledCommands();
-
-            customerRepository = configuration.Repository<CustomerAccount>();
-            orderRepository = configuration.Repository<Order>();
-
-            customerRepository.Save(new CustomerAccount(customerAccountId)
-                                        .Apply(new ChangeEmailAddress(Any.Email())));
-
-            disposables.Add(ConfigurationContext.Establish(configuration));
-            disposables.Add(configuration);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            disposables.Dispose();
-        }
-        
         [Test]
         public async Task Aggregates_can_schedule_commands_against_themselves_idempotently()
         {
             var it = new MarcoPoloPlayerWhoIsIt();
-            await configuration.Repository<MarcoPoloPlayerWhoIsIt>().Save(it);
+            await Configuration.Current.Repository<MarcoPoloPlayerWhoIsIt>().Save(it);
 
             await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.KeepSayingMarcoOverAndOver());
 
             VirtualClock.Current.AdvanceBy(TimeSpan.FromMinutes(1));
 
-            it = await configuration.Repository<MarcoPoloPlayerWhoIsIt>().GetLatest(it.Id);
+            it = await Configuration.Current.Repository<MarcoPoloPlayerWhoIsIt>().GetLatest(it.Id);
 
             it.Events()
                 .OfType<MarcoPoloPlayerWhoIsIt.SaidMarco>()
@@ -82,7 +47,7 @@ namespace Microsoft.Its.Domain.Tests
         public async Task CommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
         {
             // arrange
-            var repository = configuration.Repository<Order>();
+            var repository = Configuration.Current.Repository<Order>();
 
             var order = CreateOrder();
 
@@ -99,7 +64,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void If_Schedule_is_dependent_on_an_event_with_no_aggregate_id_then_it_throws()
         {
-            var scheduler = configuration.CommandScheduler<CustomerAccount>();
+            var scheduler = Configuration.Current.CommandScheduler<CustomerAccount>();
 
             Action schedule = () => scheduler.Schedule(
                 Any.Guid(),
@@ -143,6 +108,7 @@ namespace Microsoft.Its.Domain.Tests
         public async Task Multiple_scheduled_commands_having_the_some_causative_command_etag_have_repeatable_and_unique_etags()
         {
             var scheduled = new List<ICommand>();
+            var configuration = Configuration.Current;
 
             configuration.AddToCommandSchedulerPipeline<MarcoPoloPlayerWhoIsIt>(async (cmd, next) =>
             {
@@ -187,7 +153,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task Scatter_gather_produces_a_unique_etag_per_sent_command()
         {
-            var repo = configuration.Repository<MarcoPoloPlayerWhoIsIt>();
+            var repo = Configuration.Current.Repository<MarcoPoloPlayerWhoIsIt>();
             var it = new MarcoPoloPlayerWhoIsIt();
             await repo.Save(it);
 
@@ -221,11 +187,11 @@ namespace Microsoft.Its.Domain.Tests
         public async Task Scheduled_commands_triggered_by_a_scheduled_command_are_idempotent()
         {
             var aggregate = new CommandSchedulerTestAggregate();
-            var repository = configuration.Repository<CommandSchedulerTestAggregate>();
+            var repository = Configuration.Current.Repository<CommandSchedulerTestAggregate>();
 
             await repository.Save(aggregate);
 
-            var scheduler = configuration.CommandScheduler<CommandSchedulerTestAggregate>();
+            var scheduler = Configuration.Current.CommandScheduler<CommandSchedulerTestAggregate>();
 
             var dueTime = Clock.Now().AddMinutes(5);
 
@@ -282,7 +248,7 @@ namespace Microsoft.Its.Domain.Tests
         public async Task When_a_scheduled_command_fails_validation_then_a_failure_event_can_be_recorded_in_HandleScheduledCommandException_method()
         {
             // arrange
-            var order = CreateOrder(customerAccountId: (await customerRepository.GetLatest(customerAccountId)).Id);
+            var order = CreateOrder();
 
             // by the time Ship is applied, it will fail because of the cancellation
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
@@ -302,6 +268,7 @@ namespace Microsoft.Its.Domain.Tests
         public async Task When_applying_a_scheduled_command_throws_then_further_command_scheduling_is_not_interrupted()
         {
             // arrange
+            var customerAccountId = Any.Guid();
             var order1 = CreateOrder(customerAccountId: customerAccountId)
                 .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date))
                 .Apply(new Cancel());

@@ -15,7 +15,7 @@ namespace Microsoft.Its.Domain.Tests
     {
         public Func<NonEventSourcedCommandTarget, CommandFailed<TestCommand>, Task> OnHandleScheduledCommandError;
         public Func<NonEventSourcedCommandTarget, TestCommand, Task> OnEnactCommand;
-
+        
         public NonEventSourcedCommandTarget(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
@@ -31,6 +31,8 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         public string Id { get; }
+
+        public bool IsValid { get; set; } = true;
 
         public ConcurrentBag<ICommand<NonEventSourcedCommandTarget>> CommandsEnacted { get; } = new ConcurrentBag<ICommand<NonEventSourcedCommandTarget>>();
 
@@ -136,7 +138,11 @@ namespace Microsoft.Its.Domain.Tests
 
         public bool IsValid { get; set; }
 
-        public override IValidationRule CommandValidator => Validate.That<TestCommand>(cmd => cmd.IsValid);
+        public override IValidationRule CommandValidator =>
+            Validate.That<TestCommand>(cmd => cmd.IsValid);
+
+        public override IValidationRule<NonEventSourcedCommandTarget> Validator =>
+            Validate.That<NonEventSourcedCommandTarget>(_ => _.IsValid);
 
         public bool CanBeDeliveredDuringScheduling { get; set; }
 

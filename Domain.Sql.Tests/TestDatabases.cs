@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -30,6 +31,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             public static string ConnectionString { get; } =
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=ItsCqrsTestsReservationService";
         }
+
+        public static CommandSchedulerDbContext CommandSchedulerDbContext() => 
+            new CommandSchedulerDbContext(CommandScheduler.ConnectionString);
 
         public static EventStoreDbContext EventStoreDbContext() => 
             new EventStoreDbContext(EventStore.ConnectionString);

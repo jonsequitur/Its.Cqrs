@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -16,40 +17,14 @@ using Test.Domain.Ordering;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
     public abstract class EventSourcedRepositoryTests
     {
         private CompositeDisposable disposables;
 
-        protected abstract void Configure(Configuration configuration, Action onSave = null);
-
         protected abstract IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
             Action onSave = null)
             where TAggregate : class, IEventSourced;
-
-        [SetUp]
-        public virtual void SetUp()
-        {
-            // disable authorization checks
-            Command<Order>.AuthorizeDefault = (order, command) => true;
-            Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
-
-            var configuration = new Configuration();
-
-            Configure(configuration);
-
-            disposables = new CompositeDisposable
-            {
-                ConfigurationContext.Establish(configuration),
-                configuration
-            };
-        }
-
-        [TearDown]
-        public virtual void TearDown()
-        {
-            Clock.Reset();
-            disposables.Dispose();
-        }
 
         [Test]
         public async Task Serialized_events_are_deserialized_in_their_correct_sequence_and_type()
@@ -159,6 +134,8 @@ namespace Microsoft.Its.Domain.Tests
             var order = new Order();
             var repository = CreateRepository<Order>();
 
+            var publishedEvents = ListenToPublishedEvents();
+
             order
                 .Apply(new AddItem
                 {
@@ -172,12 +149,12 @@ namespace Microsoft.Its.Domain.Tests
                 });
             await repository.Save(order);
 
-            var bus = (FakeEventBus) Configuration.Current.EventBus;
-            bus.PublishedEvents().Count()
+            
+            publishedEvents.Count
                .Should().Be(3);
-            bus.PublishedEvents().Skip(1).First()
+            publishedEvents.Skip(1).First()
                .Should().BeOfType<Order.ItemAdded>();
-            bus.PublishedEvents().Skip(1).Skip(1).First()
+            publishedEvents.Skip(1).Skip(1).First()
                .Should().BeOfType<Order.FulfillmentMethodSelected>();
         }
 
@@ -186,7 +163,6 @@ namespace Microsoft.Its.Domain.Tests
         {
             // set up the repository so we're not starting from the beginning
             var order = new Order();
-            var bus = (FakeEventBus) Configuration.Current.EventBus;
             var repository = CreateRepository<Order>();
             order.Apply(new AddItem
             {
@@ -195,7 +171,8 @@ namespace Microsoft.Its.Domain.Tests
                 Quantity = 2
             });
             await repository.Save(order);
-            bus.Clear();
+
+            var publishedEvents = ListenToPublishedEvents();
 
             // apply 2 commands
             var order2 = await repository.GetLatest(order.Id);
@@ -204,9 +181,9 @@ namespace Microsoft.Its.Domain.Tests
                 .Apply(new ChangeCustomerInfo { CustomerName = "Wanda" });
             await repository.Save(order2);
 
-            bus.PublishedEvents().Count().Should().Be(2);
-            bus.PublishedEvents().First().SequenceNumber.Should().Be(3);
-            bus.PublishedEvents().Skip(1).First().SequenceNumber.Should().Be(4);
+            publishedEvents.Count().Should().Be(2);
+            publishedEvents.First().SequenceNumber.Should().Be(3);
+            publishedEvents.Skip(1).First().SequenceNumber.Should().Be(4);
         }
 
         [Test]
@@ -282,76 +259,25 @@ namespace Microsoft.Its.Domain.Tests
         public async Task After_Save_additional_events_continue_in_the_correct_sequence()
         {
             var order = new Order();
-            var bus = (FakeEventBus) Configuration.Current.EventBus;
+            var publishedEvents = ListenToPublishedEvents();
             var repository = CreateRepository<Order>();
             var addEvent = new Action(() =>
                                       order.Apply(new AddItem { Price = 1m, ProductName = "Widget" }));
 
             addEvent();
             await repository.Save(order);
-            bus.PublishedEvents().Last().SequenceNumber.Should().Be(2);
+            publishedEvents.Last().SequenceNumber.Should().Be(2);
 
             addEvent();
             addEvent();
             await repository.Save(order);
-            bus.PublishedEvents().Last().SequenceNumber.Should().Be(4);
+            publishedEvents.Last().SequenceNumber.Should().Be(4);
 
             addEvent();
             addEvent();
             addEvent();
             await repository.Save(order);
-            bus.PublishedEvents().Last().SequenceNumber.Should().Be(7);
-        }
-
-        [Test]
-        public async Task GetAggregate_can_be_used_within_a_consequenter_to_access_an_aggregate_without_having_to_re_source()
-        {
-            // arrange
-            var order = new Order()
-                .Apply(new ChangeCustomerInfo
-                {
-                    CustomerName = Any.FullName()
-                })
-                .Apply(new AddItem
-                {
-                    ProductName = "Cog",
-                    Price = 9.99m
-                })
-                .Apply(new AddItem
-                {
-                    ProductName = "Sprocket",
-                    Price = 9.99m
-                })
-                .Apply(new ProvideCreditCardInfo
-                {
-                    CreditCardNumber = Any.String(16, 16, Characters.Digits),
-                    CreditCardCvv2 = "123",
-                    CreditCardExpirationMonth = "12",
-                    CreditCardName = Any.FullName(),
-                    CreditCardExpirationYear = "16"
-                })
-                .Apply(new SpecifyShippingInfo())
-                .Apply(new Place());
-
-            var repository = CreateRepository<Order>();
-            Configuration.Current.UseDependency<IEventSourcedRepository<Order>>(t =>
-                                                                                {
-                                                                                    throw new Exception("GetAggregate should not be triggering this call.");
-                                                                                });
-            Order aggregate = null;
-#pragma warning disable 612
-#pragma warning disable 618
-            var consquenter = Consequenter.Create<Order.Placed>(e => { aggregate = e.GetAggregate(); });
-#pragma warning restore 618
-#pragma warning restore 612
-            var bus = Configuration.Current.EventBus as FakeEventBus;
-            bus.Subscribe(consquenter);
-
-            // act
-            await repository.Save(order);
-
-            // assert
-            aggregate.Should().Be(order);
+            publishedEvents.Last().SequenceNumber.Should().Be(7);
         }
 
         [Test]
@@ -562,6 +488,65 @@ namespace Microsoft.Its.Domain.Tests
             int sequenceNumber,
             string body,
             DateTime utcTime);
+
+        [Test]
+        public async Task GetAggregate_can_be_used_within_a_consequenter_to_access_an_aggregate_without_having_to_re_source()
+        {
+            // arrange
+            var order = new Order()
+                .Apply(new ChangeCustomerInfo
+                {
+                    CustomerName = Any.FullName()
+                })
+                .Apply(new AddItem
+                {
+                    ProductName = "Cog",
+                    Price = 9.99m
+                })
+                .Apply(new AddItem
+                {
+                    ProductName = "Sprocket",
+                    Price = 9.99m
+                })
+                .Apply(new ProvideCreditCardInfo
+                {
+                    CreditCardNumber = Any.String(16, 16, Characters.Digits),
+                    CreditCardCvv2 = "123",
+                    CreditCardExpirationMonth = "12",
+                    CreditCardName = Any.FullName(),
+                    CreditCardExpirationYear = "16"
+                })
+                .Apply(new SpecifyShippingInfo())
+                .Apply(new Place());
+
+            var repository = CreateRepository<Order>();
+            Configuration.Current.UseDependency<IEventSourcedRepository<Order>>(t =>
+            {
+                throw new Exception("GetAggregate should not be triggering this call.");
+            });
+            Order aggregate = null;
+#pragma warning disable 612
+#pragma warning disable 618
+            var consquenter = Consequenter.Create<Order.Placed>(e => { aggregate = e.GetAggregate(); });
+#pragma warning restore 618
+#pragma warning restore 612
+            var bus = Configuration.Current.EventBus;
+            bus.Subscribe(consquenter);
+
+            // act
+            await repository.Save(order);
+
+            // assert
+            aggregate.Should().Be(order);
+        }
+
+        protected static IList<IEvent> ListenToPublishedEvents()
+        {
+            var publishedEvents = new List<IEvent>();
+            var configuration = Configuration.Current;
+            configuration.RegisterForDisposal(configuration.EventBus.Events<IEvent>().Subscribe(e => publishedEvents.Add(e)));
+            return publishedEvents;
+        }
 
         [Ignore("Scenario under consideration")]
         [Test]

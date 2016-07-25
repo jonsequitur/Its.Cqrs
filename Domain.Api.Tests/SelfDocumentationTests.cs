@@ -8,6 +8,7 @@ using System.Net;
 using FluentAssertions;
 using Microsoft.Its.Domain.Api.Documentation;
 using Microsoft.Its.Domain.Api.Tests.Infrastructure;
+using Microsoft.Its.Domain.Tests;
 using NUnit.Framework;
 using Newtonsoft.Json.Linq;
 using Test.Domain.Ordering;
@@ -16,15 +17,13 @@ using Test.Domain.Ordering.Domain.Api.Controllers;
 namespace Microsoft.Its.Domain.Api.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
     public class SelfDocumentationTests
     {
-        [SetUp]
-        public void SetUp()
+        static SelfDocumentationTests()
         {
              // this is a shim to make sure that the Test.Domain.Ordering.Api assembly is loaded into the AppDomain, otherwise Web API won't discover the controller type
             var controller = new OrderApiController();
-
-            Command<Order>.AuthorizeDefault = (order, command) => true;
         }
 
         [Test]

@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Recipes;
@@ -14,64 +13,22 @@ namespace Microsoft.Its.Domain.Tests
 {
     [Category("Command scheduling")]
     [TestFixture]
+    [DisableCommandAuthorization]
     public abstract class CommandSchedulerIdempotencyTests
     {
-        public delegate Task ScheduleCommand(string targetId,
-                                             string etag,
-                                             DateTimeOffset? dueTime = null,
-                                             IPrecondition deliveryDependsOn = null);
-
-        private CompositeDisposable disposables = new CompositeDisposable();
-        private ConcurrentBag<IScheduledCommand> commandsDelivered;
-        private ConcurrentBag<IScheduledCommand> commandsScheduled;
-        private ScheduleCommand schedule;
-
-        protected abstract void Configure(Configuration configuration);
-
-        [SetUp]
-        public void SetUp()
-        {
-            Clock.Reset();
-
-            Command<Order>.AuthorizeDefault = (order, command) => true;
-
-            disposables = new CompositeDisposable
-            {
-                Disposable.Create(Clock.Reset)
-            };
-
-            schedule = GetScheduleDelegate();
-
-            commandsScheduled = new ConcurrentBag<IScheduledCommand>();
-            commandsDelivered = new ConcurrentBag<IScheduledCommand>();
-
-            var configuration = new Configuration()
-                .TraceScheduledCommands() // trace to console
-                .TraceScheduledCommands(
-                    onScheduling: _ => { },
-                    onScheduled: c => commandsScheduled.Add(c),
-                    onDelivering: _ => { },
-                    onDelivered: c => commandsDelivered.Add(c));
-
-            Configure(configuration);
-
-            disposables.Add(ConfigurationContext.Establish(configuration));
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            disposables.Dispose();
-        }
-
         [Test]
         public async Task When_Schedule_is_called_with_a_command_having_the_same_target_and_etag_then_it_is_not_delivered_a_second_time()
         {
             var targetId = Any.Guid().ToString();
             var etag = Any.Guid().ToString().ToETag();
+            var commandsDelivered = new ConcurrentBag<IScheduledCommand>();
 
-            await schedule(targetId, etag);
-            await schedule(targetId, etag);
+            Configuration.Current
+                         .TraceScheduledCommands(
+                             onDelivered: c => commandsDelivered.Add(c));
+
+            await Schedule(targetId, etag);
+            await Schedule(targetId, etag);
 
             commandsDelivered.Should().HaveCount(1);
         }
@@ -82,8 +39,14 @@ namespace Microsoft.Its.Domain.Tests
             var targetId = Any.Guid().ToString();
             var etag = Any.Guid().ToString().ToETag();
 
-            await schedule(targetId, etag, dueTime: Clock.Now().AddHours(2));
-            await schedule(targetId, etag, dueTime: Clock.Now().AddHours(2));
+            var commandsScheduled = new ConcurrentBag<IScheduledCommand>();
+
+            Configuration.Current
+                         .TraceScheduledCommands(
+                             onScheduled: c => commandsScheduled.Add(c));
+
+            await Schedule(targetId, etag, dueTime: Clock.Now().AddHours(2));
+            await Schedule(targetId, etag, dueTime: Clock.Now().AddHours(2));
 
             commandsScheduled
                 .Should()
@@ -92,7 +55,11 @@ namespace Microsoft.Its.Domain.Tests
                 .ContainSingle(c => c.Result is CommandDeduplicated);
         }
 
-        protected abstract ScheduleCommand GetScheduleDelegate();
+        protected abstract Task Schedule(
+            string targetId,
+            string etag,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryDependsOn = null);
 
         protected static async Task ScheduleCommandAgainstEventSourcedAggregate(
             string targetId,

@@ -15,36 +15,9 @@ using Test.Domain.Ordering;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
     public abstract class ReservationServiceTests
     {
-        private CompositeDisposable disposables;
-        protected static Action onSave;
-        protected abstract void Configure(Configuration configuration);
-
-        [SetUp]
-        public void SetUp()
-        {
-            // disable authorization checks
-            Command<Order>.AuthorizeDefault = (order, command) => true;
-            Command<CustomerAccount>.AuthorizeDefault = (account, command) => true;
-
-            var configuration = new Configuration();
-            Configure(configuration);
-            disposables = new CompositeDisposable
-            {
-                ConfigurationContext.Establish(configuration),
-                configuration,
-                VirtualClock.Start(),
-                Disposable.Create(() => onSave = null)
-            };
-        }
-
-        [TearDown]
-        public virtual void TearDown()
-        {
-            disposables.Dispose();
-        }
-
         [Test]
         public void When_a_command_reserves_a_unique_value_then_a_subsequent_request_by_the_same_owner_succeeds()
         {
@@ -105,7 +78,7 @@ namespace Microsoft.Its.Domain.Tests
             });
 
             // assert
-            secondAttempt.ShouldBeInvalid(string.Format("The user name {0} is taken. Please choose another.", username));
+            secondAttempt.ShouldBeInvalid($"The user name {username} is taken. Please choose another.");
         }
 
         [Test]
@@ -114,11 +87,20 @@ namespace Microsoft.Its.Domain.Tests
             var username = Any.CamelCaseName();
             var scope = Any.CamelCaseName();
             var barrier = new Barrier(2);
-            onSave = () => barrier.SignalAndWait(2000);
+
+            // onSave = () => barrier.SignalAndWait(2000);
             var reservationService = Configuration.Current.ReservationService();
-            
-            var attempt1 = Task.Run(async () => await reservationService.Reserve(username, scope, "owner-token1"));
-            var attempt2 = Task.Run(async () => await reservationService.Reserve(username, scope, "owner-token2"));
+
+            var attempt1 = Task.Run(async () =>
+            {
+                barrier.SignalAndWait(1000);
+                return await reservationService.Reserve(username, scope, "owner-token1");
+            });
+            var attempt2 = Task.Run(async () =>
+            {
+                barrier.SignalAndWait(1000);
+                return await reservationService.Reserve(username, scope, "owner-token2");
+            });
 
             await Task.WhenAll(attempt1, attempt2);
 

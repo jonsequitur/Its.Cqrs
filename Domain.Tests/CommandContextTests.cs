@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
@@ -15,30 +14,11 @@ using Test.Domain.Ordering;
 namespace Microsoft.Its.Domain.Tests
 {
     [TestFixture]
+    [DisableCommandAuthorization]
+    [UseInMemoryEventStore]
+    [UseInMemoryCommandScheduling]
     public class CommandContextTests
     {
-        private IDisposable disposables;
-
-        [SetUp]
-        public void SetUp()
-        {
-            Command<CustomerAccount>.AuthorizeDefault = (order, command) => true;
-            Command<Order>.AuthorizeDefault = (order, command) => true;
-
-            disposables = new CompositeDisposable
-            {
-                ConfigurationContext.Establish(new Configuration()
-                                                   .UseInMemoryCommandScheduling()
-                                                   .UseInMemoryEventStore())
-            };
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            disposables.Dispose();
-        }
-
         [Test]
         public void The_event_Actor_is_set_from_the_Command_Principal()
         {

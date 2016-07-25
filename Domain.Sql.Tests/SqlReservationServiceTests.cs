@@ -4,10 +4,8 @@
 using System;
 using FluentAssertions;
 using System.Linq;
-using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NCrunch.Framework;
@@ -17,18 +15,11 @@ using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [TestFixture]
+	[UseSqlEventStore]
+	[UseSqlReservationService]
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReservationService")]
     public class SqlReservationServiceTests : ReservationServiceTests
     {
-        protected override void Configure(Configuration configuration)
-        {
-            configuration.UseSqlEventStore(c => c.UseConnectionString(EventStore.ConnectionString))
-                         .UseSqlReservationService(c => c.UseConnectionString(ReservationService.ConnectionString))
-                         .UseEventBus(new FakeEventBus());
-
-            configuration.RegisterForDisposal(Disposable.Create(() => onSave = null));
-        }
-
         protected override async Task<ReservedValue> GetReservedValue(string value, string promoCode)
         {
             var reservationService = (SqlReservationService) Configuration.Current.ReservationService();

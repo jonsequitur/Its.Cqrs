@@ -22,8 +22,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [SetUp]
         public override void SetUp()
         {
-            Console.WriteLine("ReportingProjectorTests.SetUp");
-
             base.SetUp();
 
             // reset order tallies
