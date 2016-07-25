@@ -48,28 +48,20 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             Func<IScheduledCommand<TAggregate>, Task> next)
             where TAggregate : class
         {
-            IClock clock;
-            if (cmd.DueTime != null)
-            {
-                clock = Domain.Clock.Create(() => cmd.DueTime.Value);
-            }
-            else
-            {
-                clock = cmd.Clock;
-            }
+            var clock = cmd.DueTime != null
+                            ? Domain.Clock.Create(() => cmd.DueTime.Value)
+                            : cmd.Clock;
 
             using (CommandContext.Establish(cmd.Command, clock))
             {
                 await next(cmd);
 
-                if (!cmd.Command.RequiresDurableScheduling())
+                if (cmd.Command.RequiresDurableScheduling())
                 {
-                    return;
+                    await Storage.UpdateScheduledCommand(
+                        cmd,
+                        createDbContext);
                 }
-
-                await Storage.UpdateScheduledCommand(
-                    cmd,
-                    createDbContext);
             }
         }
 
