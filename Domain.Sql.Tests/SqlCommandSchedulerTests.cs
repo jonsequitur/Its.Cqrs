@@ -1,12 +1,33 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Threading.Tasks;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     public abstract class SqlCommandSchedulerTests
     {
+        protected Task<SchedulerAdvancedResult> AdvanceClock(TimeSpan by) =>
+            Configuration
+                .Current
+                .SchedulerClockTrigger()
+                .AdvanceClock(
+                    clockName: clockName,
+                    by: by);
+
+        protected Task<SchedulerAdvancedResult> AdvanceClock(DateTimeOffset to) =>
+            Configuration
+                .Current
+                .SchedulerClockTrigger()
+                .AdvanceClock(
+                    clockName: clockName,
+                    to: to);
+
+        protected static string clockName =>
+            Configuration.Current.Container.Resolve<GetClockName>()(null);
+
         public abstract Task When_a_clock_is_advanced_its_associated_commands_are_triggered();
 
         public abstract Task When_a_clock_is_advanced_then_commands_are_not_triggered_that_have_not_become_due();

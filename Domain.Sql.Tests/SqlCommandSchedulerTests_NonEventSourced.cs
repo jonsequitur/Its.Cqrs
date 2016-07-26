@@ -19,14 +19,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
      DisableCommandAuthorization]
     public class SqlCommandSchedulerTests_NonEventSourced : SqlCommandSchedulerTests
     {
-        private async Task AdvanceClock(TimeSpan by) =>
-            await Configuration
-                      .Current
-                      .SchedulerClockTrigger()
-                      .AdvanceClock(
-                          clockName: clockName,
-                          by: by);
-
         private static string clockName =>
             Configuration.Current.Container.Resolve<GetClockName>()(null);
 

@@ -14,7 +14,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <param name="startTime">The initial time to which the clock is set.</param>
         /// <exception cref="System.ArgumentNullException">clockName</exception>
         /// <exception cref="ConcurrencyException">Thrown if a clock with the specified name already exists.</exception>
-        void CreateClock(
+        IClock CreateClock(
             string clockName,
             DateTimeOffset startTime);
 

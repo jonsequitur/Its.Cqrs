@@ -154,6 +154,7 @@
     <Compile Include="ReportingProjectorTests.cs" />
     <Compile Include="ReadModelCatchupRollingCatchupTests.cs" />
     <Compile Include="SetUpDbConfiguration.cs" />
+    <Compile Include="SqlCommandSchedulerClockTests.cs" />
     <Compile Include="SqlCommandSchedulerDatabaseCleanupTests.cs" />
     <Compile Include="SqlCommandSchedulerIdempotencyTests.cs" />
     <Compile Include="SqlCommandSchedulerIdempotencyTests_EventSourced.cs" />

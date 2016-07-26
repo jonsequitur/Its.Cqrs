@@ -24,37 +24,21 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     [NUnit.Framework.Category("Command scheduling")]
     [TestFixture]
-    [UseSqlStorageForScheduledCommands,
-     UseSqlEventStore,
-     DisableCommandAuthorization]
+    [UseSqlStorageForScheduledCommands]
+     [UseSqlEventStore]
+     [DisableCommandAuthorization]
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReadModels", "ItsCqrsTestsCommandScheduler")]
     public class SqlCommandSchedulerTests_EventSourced : SqlCommandSchedulerTests
     {
-        private Task<SchedulerAdvancedResult> AdvanceClock(TimeSpan by) =>
-            clockTrigger.AdvanceClock(
-                clockName: clockName,
-                @by: @by);
-
-        private Task<SchedulerAdvancedResult> AdvanceClock(DateTimeOffset to) =>
-            clockTrigger.AdvanceClock(
-                clockName: clockName,
-                to: to);
-
         private ISchedulerClockTrigger clockTrigger =>
             Configuration.Current.SchedulerClockTrigger();
-
-        private static string clockName =>
-            Configuration.Current.Container.Resolve<GetClockName>()(null);
 
         private IEventSourcedRepository<Order> orderRepository =>
             Configuration.Current.Repository<Order>();
 
         private IEventSourcedRepository<CustomerAccount> accountRepository =>
             Configuration.Current.Repository<CustomerAccount>();
-
-        private ISchedulerClockRepository clockRepository =>
-            Configuration.Current.SchedulerClockRepository();
-
+        
         [Test]
         public override async Task When_a_clock_is_advanced_its_associated_commands_are_triggered()
         {
@@ -179,12 +163,10 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var order = CommandSchedulingTests_EventSourced.CreateOrder();
 
-            await AdvanceClock(clockRepository.ReadClock(clockName).AddDays(10));
+            await AdvanceClock(10.Days());
 
             // act
-            var shipOn = clockRepository.ReadClock(clockName).AddDays(-5);
-
-            order.Apply(new ShipOn(shipOn));
+            order.Apply(new ShipOn(Clock.Now().AddDays(-5)));
             await orderRepository.Save(order);
 
             await SchedulerWorkComplete();
@@ -261,67 +243,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             deliveredTime
                 .Should()
                 .Be(Clock.Now());
-        }
-
-        [Test]
-        public async Task When_a_clock_is_advanced_then_unassociated_commands_are_not_triggered()
-        {
-            // arrange
-            var clockOne = Any.CamelCaseName();
-            var clockTwo = Any.CamelCaseName();
-
-            clockRepository.CreateClock(clockTwo, Clock.Now());
-
-            var order = CommandSchedulingTests_EventSourced.CreateOrder();
-
-            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(2).Date)
-            {
-                ShipmentId = clockOne
-            });
-            order.PendingEvents.Last().As<IHaveExtensibleMetada>().Metadata.ClockName = clockOne;
-            await orderRepository.Save(order);
-
-            // act
-            await AdvanceClock(@by: TimeSpan.FromDays(30));
-
-            //assert 
-            order = await orderRepository.GetLatest(order.Id);
-            var lastEvent = order.Events().Last();
-            lastEvent.Should().BeOfType<CommandScheduled<Order>>();
-        }
-
-        [Test]
-        public void A_clock_cannot_be_moved_to_a_prior_time()
-        {
-            // arrange
-            var name = Any.AlphanumericString(8, 8);
-            clockRepository.CreateClock(name, DateTimeOffset.UtcNow);
-
-            // act
-            Action moveBackwards = () => AdvanceClock(DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(5))).Wait();
-
-            // assert
-            moveBackwards.ShouldThrow<InvalidOperationException>()
-                         .And
-                         .Message
-                         .Should()
-                         .Contain("A clock cannot be moved backward");
-        }
-
-        [Test]
-        public void Two_clocks_cannot_be_created_having_the_same_name()
-        {
-            var name = Any.CamelCaseName();
-            clockRepository.CreateClock(name, DateTimeOffset.UtcNow);
-
-            Action createAgain = () =>
-                                 clockRepository.CreateClock(name, DateTimeOffset.UtcNow.AddDays(1));
-
-            createAgain.ShouldThrow<ConcurrencyException>()
-                       .And
-                       .Message
-                       .Should()
-                       .Contain($"A clock named '{name}' already exists");
         }
 
         [Test]

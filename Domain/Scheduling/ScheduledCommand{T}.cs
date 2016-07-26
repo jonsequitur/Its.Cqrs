@@ -21,7 +21,7 @@ namespace Microsoft.Its.Domain
 
         static ScheduledCommand()
         {
-            if (typeof (IEventSourced).IsAssignableFrom(typeof (TTarget)))
+            if (typeof(IEventSourced).IsAssignableFrom(typeof(TTarget)))
             {
                 targetIsEventSourced = true;
                 TargetGuid = command => Guid.Parse(command.TargetId);
@@ -36,11 +36,13 @@ namespace Microsoft.Its.Domain
             ICommand<TTarget> command,
             Guid aggregateId,
             DateTimeOffset? dueTime = null,
-            IPrecondition deliveryPrecondition = null) :
-                this(command, 
-            aggregateId.ToString(),
-                     dueTime,
-                     deliveryPrecondition)
+            IPrecondition deliveryPrecondition = null,
+            IClock clock = null) :
+                this(command,
+                    aggregateId.ToString(),
+                    dueTime,
+                    deliveryPrecondition,
+                    clock)
         {
         }
 
@@ -48,7 +50,8 @@ namespace Microsoft.Its.Domain
             ICommand<TTarget> command,
             string targetId,
             DateTimeOffset? dueTime = null,
-            IPrecondition deliveryPrecondition = null)
+            IPrecondition deliveryPrecondition = null,
+            IClock clock = null)
         {
             if (command == null)
             {
@@ -63,6 +66,7 @@ namespace Microsoft.Its.Domain
             TargetId = targetId;
             DueTime = dueTime;
             DeliveryPrecondition = deliveryPrecondition;
+            Clock = clock;
 
             this.EnsureCommandHasETag();
         }
@@ -75,11 +79,11 @@ namespace Microsoft.Its.Domain
             DateTimeOffset? dueTime = null,
             IPrecondition deliveryPrecondition = null) :
                 this(command,
-                     targetId
-                         .IfNotNull()
-                         .Else(() => aggregateId?.ToString()),
-                     dueTime,
-                     deliveryPrecondition)
+                    targetId
+                        .IfNotNull()
+                        .Else(() => aggregateId?.ToString()),
+                    dueTime,
+                    deliveryPrecondition)
         {
         }
 
@@ -102,7 +106,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets the command to be applied at a later time.
         /// </summary>
-        [JsonConverter(typeof (CommandConverter))]
+        [JsonConverter(typeof(CommandConverter))]
         public ICommand<TTarget> Command { get; }
 
         /// <summary>
@@ -128,7 +132,7 @@ namespace Microsoft.Its.Domain
         /// Gets the sequence number of the scheduled command.
         /// </summary>
         internal long SequenceNumber { get; set; }
-        
+
         /// <summary>
         /// Gets the name of the command.
         /// </summary>
@@ -172,17 +176,17 @@ namespace Microsoft.Its.Domain
         /// </returns>
         public override string ToString()
             => string.Format("{0} ({1} .. {2}) {3}{4}{5}",
-                             Command,
-                             TargetId,
-                             Command.ETag,
-                             DueTime.IfNotNull()
-                                    .Then(due => " due " + due)
-                                    .ElseDefault(),
-                             DeliveryPrecondition.IfNotNull()
-                                                 .Then(p => $", depends on {p}")
-                                                 .ElseDefault(),
-                             Result.IfNotNull()
-                                   .Then(r => $", {r}")
-                                   .ElseDefault());
+                Command,
+                TargetId,
+                Command.ETag,
+                DueTime.IfNotNull()
+                    .Then(due => " due " + due)
+                    .ElseDefault(),
+                DeliveryPrecondition.IfNotNull()
+                    .Then(p => $", depends on {p}")
+                    .ElseDefault(),
+                Result.IfNotNull()
+                    .Then(r => $", {r}")
+                    .ElseDefault());
     }
 }

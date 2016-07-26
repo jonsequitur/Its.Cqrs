@@ -20,7 +20,6 @@ namespace Microsoft.Its.Domain.Tests
     [DisableCommandAuthorization]
     public class CommandSchedulingTests_EventSourced
     {
-   
         private IEventSourcedRepository<Order> orderRepository =>
             Configuration.Current.Repository<Order>();
 

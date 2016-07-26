@@ -176,6 +176,7 @@
     <Compile Include="ReservationServiceTests.cs" />
     <Compile Include="ScheduledCommandTests.cs" />
     <Compile Include="ScheduledCommand_T_Tests.cs" />
+    <Compile Include="SchedulerClockTests.cs" />
     <Compile Include="SerializerTests.cs" />
     <Compile Include="Infrastructure\TestConsequenter.cs" />
     <Compile Include="SnapshotRepositoryExtensionsTests.cs" />

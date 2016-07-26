@@ -20,14 +20,16 @@ namespace Microsoft.Its.Domain
             Guid aggregateId,
             TCommand command,
             DateTimeOffset? dueTime = null,
-            IEvent deliveryDependsOn = null)
+            IEvent deliveryDependsOn = null,
+            IClock clock = null)
             where TCommand : ICommand<TAggregate>
         {
             var scheduledCommand = new ScheduledCommand<TAggregate>(
                 command,
                 aggregateId,
                 dueTime,
-                deliveryDependsOn.ToPrecondition());
+                deliveryDependsOn.ToPrecondition(),
+                clock);
 
             await scheduler.Schedule(scheduledCommand);
 
@@ -42,18 +44,39 @@ namespace Microsoft.Its.Domain
             string targetId,
             TCommand command,
             DateTimeOffset? dueTime = null,
-            IPrecondition deliveryDependsOn = null)
+            IPrecondition deliveryDependsOn = null,
+            IClock clock = null)
             where TCommand : ICommand<TTarget>
         {
             var scheduledCommand = new ScheduledCommand<TTarget>(
                 command,
                 targetId,
                 dueTime,
-                deliveryDependsOn);
+                deliveryDependsOn,
+                clock);
 
             await scheduler.Schedule(scheduledCommand);
 
             return scheduledCommand;
+        }
+
+        /// <summary>
+        /// Schedules a constructor command on the specified scheduler.
+        /// </summary>
+        public static async Task<IScheduledCommand<TTarget>> Schedule<TTarget>(
+            this ICommandScheduler<TTarget> scheduler,
+            ConstructorCommand<TTarget> command,
+            DateTimeOffset? dueTime = null,
+            IPrecondition deliveryDependsOn = null,
+            IClock clock = null) 
+            where TTarget : class
+        {
+            return await scheduler.Schedule(
+                command: command,
+                targetId: command.AggregateId.ToString(),
+                dueTime: dueTime,
+                deliveryDependsOn: deliveryDependsOn,
+                clock: clock);
         }
 
         internal static ICommandScheduler<TAggregate> InterceptSchedule<TAggregate>(

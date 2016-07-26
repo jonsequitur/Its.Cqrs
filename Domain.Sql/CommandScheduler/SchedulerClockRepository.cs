@@ -37,7 +37,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <param name="startTime">The initial time to which the clock is set.</param>
         /// <exception cref="System.ArgumentNullException">clockName</exception>
         /// <exception cref="ConcurrencyException">Thrown if a clock with the specified name already exists.</exception>
-        public void CreateClock(
+        public IClock CreateClock(
             string clockName,
             DateTimeOffset startTime)
         {
@@ -48,15 +48,20 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             using (var db = createDbContext())
             {
-                db.Clocks.Add(new Clock
+                var clock = new Clock
                 {
                     Name = clockName,
                     UtcNow = startTime,
                     StartTime = startTime
-                });
+                };
+
+                db.Clocks.Add(clock);
+
                 try
                 {
                     db.SaveChanges();
+
+                    return clock;
                 }
                 catch (DbUpdateException ex)
                 {
