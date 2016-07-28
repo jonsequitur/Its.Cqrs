@@ -28,6 +28,7 @@ namespace Microsoft.Its.Domain.Tests
         public NonEventSourcedCommandTarget(CreateCommandTarget create = null)
         {
             Id = create?.Id ?? Any.Word();
+            CreatedTime = Clock.Now();
         }
 
         public string Id { get; }
@@ -37,6 +38,8 @@ namespace Microsoft.Its.Domain.Tests
         public ConcurrentBag<ICommand<NonEventSourcedCommandTarget>> CommandsEnacted { get; } = new ConcurrentBag<ICommand<NonEventSourcedCommandTarget>>();
 
         public ConcurrentBag<CommandFailed> CommandsFailed { get; } = new ConcurrentBag<CommandFailed>();
+
+        public DateTimeOffset CreatedTime { get; }
     }
 
     public class CommandTargetCommandHandler :

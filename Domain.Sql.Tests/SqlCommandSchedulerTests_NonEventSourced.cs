@@ -1,49 +1,43 @@
-﻿
+﻿// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
+using static Microsoft.Its.Domain.Tests.CurrentConfiguration;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [Category("Command scheduling")]
     [TestFixture]
-    [UseSqlStorageForScheduledCommands,
-     UseSqlEventStore,
-     DisableCommandAuthorization]
+    [UseSqlStorageForScheduledCommands]
+    [UseSqlEventStore]
+    [DisableCommandAuthorization]
     public class SqlCommandSchedulerTests_NonEventSourced : SqlCommandSchedulerTests
     {
-        private static string clockName =>
-            Configuration.Current.Container.Resolve<GetClockName>()(null);
-
-        private IStore<NonEventSourcedCommandTarget> store =>
-            Configuration.Current.Store<NonEventSourcedCommandTarget>();
-
-        private ICommandScheduler<NonEventSourcedCommandTarget> scheduler =>
-            Configuration.Current.CommandScheduler<NonEventSourcedCommandTarget>();
-
         [Test]
         public override async Task When_a_clock_is_advanced_its_associated_commands_are_triggered()
         {
             // arrange
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
+            await Save(target);
 
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(),
-                                     Clock.Now().AddDays(1));
+            await Schedule(target.Id,
+                new TestCommand(),
+                Clock.Now().AddDays(1));
 
             // act
             await AdvanceClock(25.Hours());
 
             //assert 
-            target = await store.Get(target.Id);
+            target = await Get<NonEventSourcedCommandTarget>(target.Id);
 
             target.CommandsEnacted.Should().HaveCount(1);
         }
@@ -53,17 +47,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
+            await Save(target);
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(),
-                                     Clock.Now().AddDays(2));
+            await Schedule(target.Id,
+                new TestCommand(),
+                Clock.Now().AddDays(2));
 
             await AdvanceClock(TimeSpan.FromDays(1.1));
 
             //assert 
-            target = await store.Get(target.Id);
+            target = await Get<NonEventSourcedCommandTarget>(target.Id);
 
             target.CommandsEnacted.Should().HaveCount(0);
         }
@@ -73,15 +67,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
+            await Save(target);
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(),
-                                     Clock.Now().AddMinutes(-2));
+            await Schedule(target.Id,
+                new TestCommand(),
+                Clock.Now().AddMinutes(-2));
 
             //assert 
-            target = await store.Get(target.Id);
+            target = await Get<NonEventSourcedCommandTarget>(target.Id);
 
             target.CommandsEnacted.Should().HaveCount(1);
         }
@@ -91,17 +85,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
-        
+            await Save(target);
+
             var schedulerClockTime = DateTimeOffset.Parse("2016-02-13 03:03:48 PM");
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(),
-                                     schedulerClockTime.AddMinutes(-2));
+            await Schedule(target.Id,
+                new TestCommand(),
+                schedulerClockTime.AddMinutes(-2));
 
             //assert 
-            target = await store.Get(target.Id);
+            target = await Get<NonEventSourcedCommandTarget>(target.Id);
 
             target.CommandsEnacted.Should().HaveCount(1);
         }
@@ -112,15 +106,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // arrange
             var deliveredTime = new DateTimeOffset();
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
-                   Configuration.Current.UseCommandHandler<NonEventSourcedCommandTarget, TestCommand>(async (_, __) =>
+            await Save(target);
+            Configuration.Current.UseCommandHandler<NonEventSourcedCommandTarget, TestCommand>(async (_, cmd) =>
             {
-                if (__.ETag == "first")
+                if (cmd.ETag == "first")
                 {
-                    await Configuration.Current.CommandScheduler<NonEventSourcedCommandTarget>().Schedule(target.Id, new TestCommand
-                    {
-                          CanBeDeliveredDuringScheduling = true
-                    });
+                    await Schedule(target.Id,
+                        new TestCommand
+                        {
+                            CanBeDeliveredDuringScheduling = true
+                        });
                 }
                 else
                 {
@@ -129,17 +124,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
             });
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand
-                                     {
-                                         CanBeDeliveredDuringScheduling = true,
-                                         ETag = "first"
-                                     },
-                                     dueTime: DateTimeOffset.Parse("2016-02-13 01:05:00 AM"));
+            await Schedule(target.Id,
+                new TestCommand
+                {
+                    CanBeDeliveredDuringScheduling = true,
+                    ETag = "first"
+                },
+                dueTime: DateTimeOffset.Parse("2016-02-13 01:05:00 AM"));
 
-            await Configuration.Current
-                               .SchedulerClockTrigger()
-                               .AdvanceClock(clockName, by: 1.Hours());
+            await AdvanceClock(clockName: clockName, by: 1.Hours());
 
             // assert 
             deliveredTime.Should().Be(DateTimeOffset.Parse("2016-02-13 01:05:00 AM"));
@@ -150,26 +143,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var deliveredTime = new DateTimeOffset();
-            var configuration = Configuration.Current;
 
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
-            configuration
+            await Save(target);
+
+            Configuration
+                .Current
                 .UseCommandHandler<NonEventSourcedCommandTarget, TestCommand>(async (_, __) => deliveredTime = Clock.Now());
 
             // act
-            await configuration
-                .CommandScheduler<NonEventSourcedCommandTarget>()
-                .Schedule(target.Id,
-                    new TestCommand
-                    {
-                        CanBeDeliveredDuringScheduling = false
-                    },
-                    dueTime: null);
+            await Schedule(target.Id,
+                new TestCommand
+                {
+                    CanBeDeliveredDuringScheduling = false
+                },
+                dueTime: null);
 
-            await configuration
-                .SchedulerClockTrigger()
-                .AdvanceClock(clockName, by: 1.Hours());
+            await AdvanceClock(
+                clockName: clockName,
+                by: 1.Hours());
 
             // assert 
             deliveredTime
@@ -186,17 +178,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 OnHandleScheduledCommandError = async (commandTarget, failed) =>
                                                 failed.Retry(after: 1.Milliseconds())
             };
-            await store.Put(target);
+            await Save(target);
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(isValid: false),
-                                     Clock.Now().Add(2.Minutes()));
+            await Schedule(target.Id,
+                new TestCommand(isValid: false),
+                Clock.Now().Add(2.Minutes()));
             await AdvanceClock(5.Minutes());
             await AdvanceClock(1.Seconds()); // should trigger a retry
 
             //assert 
-            target = await store.Get(target.Id);
+            target = await Get<NonEventSourcedCommandTarget>(target.Id);
 
             target.CommandsFailed.Should().HaveCount(2);
         }
@@ -210,17 +202,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 OnHandleScheduledCommandError = async (commandTarget, failed) =>
                                                 failed.Retry(after: 1.Hours())
             };
-            await store.Put(target);
+            await Save(target);
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(isValid: false),
-                                     Clock.Now().Add(2.Minutes()));
+            await Schedule(target.Id,
+                new TestCommand(isValid: false),
+                Clock.Now().Add(2.Minutes()));
             await AdvanceClock(5.Minutes());
             await AdvanceClock(5.Minutes()); // should not trigger a retry
 
             //assert 
-            target = await store.Get(target.Id);
+            target = await Get<NonEventSourcedCommandTarget>(target.Id);
 
             target.CommandsFailed.Should().HaveCount(1);
         }
@@ -233,78 +225,19 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 OnHandleScheduledCommandError = async (commandTarget, failed) => failed.Cancel()
             };
-            await store.Put(target);
+            await Save(target);
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(isValid: false),
-                                     Clock.Now().AddMinutes(2));
+            await Schedule(target.Id,
+                new TestCommand(isValid: false),
+                Clock.Now().AddMinutes(2));
 
             await AdvanceClock(5.Minutes());
 
             //assert 
-            target = await store.Get(target.Id);
+            target = await Get<NonEventSourcedCommandTarget>(target.Id);
 
             target.CommandsFailed.Should().HaveCount(1);
-        }
-
-        [Test]
-        public override async Task Specific_scheduled_commands_can_be_triggered_directly_by_target_id()
-        {
-            // arrange
-            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
-
-            // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(),
-                                     Clock.Now().AddDays(2));
-
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
-            {
-                var aggregateId = target.Id.ToGuidV3();
-                var command = db.ScheduledCommands
-                                .Single(c => c.AggregateId == aggregateId);
-                await Configuration.Current
-                                   .SchedulerClockTrigger()
-                                   .Trigger(command, new SchedulerAdvancedResult(), db);
-            }
-
-            //assert 
-            target = await store.Get(target.Id);
-
-            target.CommandsEnacted.Should().HaveCount(1);
-        }
-
-        [Test]
-        public override async Task When_triggering_specific_commands_then_the_result_can_be_used_to_evaluate_failures()
-        {
-            // arrange
-            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
-            var schedulerAdvancedResult = new SchedulerAdvancedResult();
-
-            // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(isValid: false),
-                                     Clock.Now().AddDays(2));
-
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
-            {
-                var aggregateId = target.Id.ToGuidV3();
-                var command = db.ScheduledCommands
-                                .Single(c => c.AggregateId == aggregateId);
-
-                await Configuration.Current
-                                   .SchedulerClockTrigger()
-                                   .Trigger(command, schedulerAdvancedResult, db);
-            }
-
-            //assert 
-            schedulerAdvancedResult
-                .FailedCommands
-                .Should()
-                .HaveCount(1);
         }
 
         [Test]
@@ -312,14 +245,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
+            await Save(target);
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand(isValid: false));
+            await Schedule(target.Id,
+                new TestCommand(isValid: false));
 
             //assert 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 var aggregateId = target.Id.ToGuidV3();
                 var error = db.Errors.Single(e => e.ScheduledCommand.AggregateId == aggregateId);
@@ -341,9 +274,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 });
 
             // act
-            await scheduler.Schedule(Any.CamelCaseName(),
-                                     new TestCommand(isValid: false),
-                                     Clock.Now().Add(2.Minutes()));
+            await Schedule(Any.CamelCaseName(),
+                new TestCommand(isValid: false),
+                Clock.Now().Add(2.Minutes()));
             await AdvanceClock(1.Days());
             await AdvanceClock(1.Days()); // should trigger a retry
 
@@ -355,16 +288,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task Constructor_commands_can_be_scheduled_to_create_new_aggregate_instances()
         {
             var id = Any.CamelCaseName();
-            await scheduler.Schedule(id,
-                                     new CreateCommandTarget(id),
-                                     Clock.Now().AddDays(30));
+            await Schedule(id,
+                new CreateCommandTarget(id),
+                Clock.Now().AddDays(30));
 
-            await Configuration.Current
-                               .SchedulerClockTrigger()
-                               .AdvanceClock(clockName: clockName,
-                                             @by: TimeSpan.FromDays(31));
+            await AdvanceClock(clockName: clockName,
+                by: TimeSpan.FromDays(31));
 
-            var target = await store.Get(id);
+            var target = await Get<NonEventSourcedCommandTarget>(id);
 
             target.Should().NotBeNull();
         }
@@ -388,8 +319,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var command2 = new CreateCommandTarget(id, etag: etag2);
 
             // act
-            await scheduler.Schedule(id, command1);
-            await scheduler.Schedule(id, command2);
+            await Schedule(id, command1);
+            await Schedule(id, command2);
 
             await AdvanceClock(1.Days());
             await AdvanceClock(1.Days());
@@ -397,9 +328,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             // assert
             deliveredEtags.Should()
-                          .ContainSingle(e => e == etag1)
-                          .And
-                          .ContainSingle(e => e == etag2);
+                .ContainSingle(e => e == etag1)
+                .And
+                .ContainSingle(e => e == etag2);
         }
 
         [Test]
@@ -412,23 +343,23 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Guid.NewGuid());
 
             // act
-            await scheduler.Schedule(targetId,
-                                     new CreateCommandTarget(targetId),
-                                     deliveryDependsOn: precondition);
-        
+            await Schedule(targetId,
+                new CreateCommandTarget(targetId),
+                deliveryDependsOn: precondition);
+
             // assert
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 var aggregateId = targetId.ToGuidV3();
                 var command = db.ScheduledCommands.Single(c => c.AggregateId == aggregateId);
 
                 command.AppliedTime
-                       .Should()
-                       .NotHaveValue();
+                    .Should()
+                    .NotHaveValue();
 
                 command.Attempts
-                       .Should()
-                       .Be(0);
+                    .Should()
+                    .Be(0);
             }
         }
 
@@ -443,19 +374,19 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     deliveryAttempts++;
                     await next(command);
                 });
-         
+
             var precondition = new EventHasBeenRecordedPrecondition(
                 Guid.NewGuid().ToString().ToETag(),
                 Guid.NewGuid());
 
             // act
-            await scheduler.Schedule(Any.CamelCaseName(),
-                                     new TestCommand(),
-                                     deliveryDependsOn: precondition);
-         
+            await Schedule(Any.CamelCaseName(),
+                new TestCommand(),
+                deliveryDependsOn: precondition);
+
             for (var i = 0; i < 10; i++)
             {
-                  await AdvanceClock(1.Days());
+                await AdvanceClock(1.Days());
             }
 
             //assert 
@@ -467,18 +398,18 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
-            await store.Put(target);
+            await Save(target);
 
             // act
-            await scheduler.Schedule(target.Id,
-                                     new TestCommand
-                                     {
-                                         RequiresDurableScheduling = true
-                                     });
+            await Schedule(target.Id,
+                new TestCommand
+                {
+                    RequiresDurableScheduling = true
+                });
             await AdvanceClock(2.Days());
 
             //assert 
-            target = await store.Get(target.Id);
+            target = await Get<NonEventSourcedCommandTarget>(target.Id);
 
             target.CommandsEnacted.Should().HaveCount(1);
         }
@@ -486,19 +417,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public override async Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
         {
-              var commandScheduler = Configuration.Current.CommandScheduler<NonEventSourcedCommandTarget>();
-        
             var failedTargetId = Any.CamelCaseName();
             var successfulTargetId = Any.CamelCaseName();
 
-            await commandScheduler.Schedule(failedTargetId,
-                                            new CreateCommandTarget(failedTargetId),
-                                            Clock.Now().AddHours(1)); 
-            await commandScheduler.Schedule(successfulTargetId,
-                                            new CreateCommandTarget(successfulTargetId),
-                                            Clock.Now().AddHours(1.5));
+            await Schedule(failedTargetId,
+                new CreateCommandTarget(failedTargetId),
+                Clock.Now().AddHours(1));
+            await Schedule(successfulTargetId,
+                new CreateCommandTarget(successfulTargetId),
+                Clock.Now().AddHours(1.5));
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 var aggregateId = failedTargetId.ToGuidV3();
 
@@ -510,53 +439,43 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             // act
-            Action advanceClock = () => Configuration.Current
-                                                     .SchedulerClockTrigger()
-                                                     .AdvanceClock(clockName: clockName,
-                                                                   @by: TimeSpan.FromHours(2)).Wait();
+            Action advanceClock = () => AdvanceClock(clockName: clockName,
+                by: TimeSpan.FromHours(2)).Wait();
 
             // assert
             advanceClock.ShouldNotThrow();
 
-            var successfulAggregate = await store.Get(successfulTargetId);
+            var successfulAggregate = await Get<NonEventSourcedCommandTarget>(successfulTargetId);
             successfulAggregate.Should().NotBeNull();
         }
 
         [Test]
-        public override async Task When_a_clock_is_set_on_a_command_then_it_takes_precedence_over_GetClockName()
+        public override async Task When_a_clock_is_set_on_a_command_then_it_takes_precedence_over_default_clock()
         {
             // arrange
             var clockName = Any.CamelCaseName();
             var targetId = Any.CamelCaseName();
-            var command = new CreateCommandTarget(targetId);
             var clock = new CommandScheduler.Clock
             {
                 Name = clockName,
                 UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
             };
 
-            using (var commandScheduler = Configuration.Current.CommandSchedulerDbContext())
+            using (var commandScheduler = CommandSchedulerDbContext())
             {
                 commandScheduler.Clocks.Add(clock);
                 commandScheduler.SaveChanges();
             }
 
-            var scheduledCommand = new ScheduledCommand<NonEventSourcedCommandTarget>(
-                targetId: targetId,
-                command: command,
-                dueTime: DateTimeOffset.Parse("2016-03-20 09:00:00 AM"))
-            {
-                Clock = clock
-            };
+            var dueTime = DateTimeOffset.Parse("2016-03-20 09:00:00 AM");
 
             // act
-            await scheduler.Schedule(scheduledCommand);
+            await Schedule(new CreateCommandTarget(targetId), dueTime, clock: clock);
 
-            await Configuration.Current.SchedulerClockTrigger()
-                .AdvanceClock(clockName, by: 30.Days());
+            await AdvanceClock(clockName: clockName, by: 30.Days());
 
             //assert 
-            var target = await store.Get(targetId);
+            var target = await Get<NonEventSourcedCommandTarget>(targetId);
 
             target.Should().NotBeNull();
         }

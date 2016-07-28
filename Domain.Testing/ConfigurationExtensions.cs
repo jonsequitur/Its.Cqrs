@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain.Testing
@@ -14,6 +15,9 @@ namespace Microsoft.Its.Domain.Testing
         public static async Task AndSave<TAggregate>(this Task<TAggregate> aggregate)
             where TAggregate : class, IEventSourced =>
                 await Configuration.Current.Repository<TAggregate>().Save(await aggregate);
+
+        public static string DefaultClockName(this Configuration configuration) =>
+            configuration.Container.Resolve<GetClockName>()(null);
 
         public static void WriteInMemoryEventsToConsole(this Configuration configuration)
         {
@@ -34,7 +38,7 @@ namespace Microsoft.Its.Domain.Testing
             Console.WriteLine(json);
         }
 
-        public static InMemoryEventStream InMemoryEventStream(this Configuration configuration) => 
+        public static InMemoryEventStream InMemoryEventStream(this Configuration configuration) =>
             configuration.Container.Resolve<InMemoryEventStream>();
 
         internal static void EnsureCommandSchedulerPipelineTrackerIsInitialized(this Configuration configuration) =>

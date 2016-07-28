@@ -10,6 +10,7 @@ using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Tests.CurrentConfiguration;
 
 namespace Microsoft.Its.Domain.Tests
 {
@@ -20,20 +21,17 @@ namespace Microsoft.Its.Domain.Tests
     [DisableCommandAuthorization]
     public class CommandSchedulingTests_EventSourced
     {
-        private IEventSourcedRepository<Order> orderRepository =>
-            Configuration.Current.Repository<Order>();
-
         [Test]
         public async Task Aggregates_can_schedule_commands_against_themselves_idempotently()
         {
             var it = new MarcoPoloPlayerWhoIsIt();
-            await Configuration.Current.Repository<MarcoPoloPlayerWhoIsIt>().Save(it);
+            await Save(it);
 
             await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.KeepSayingMarcoOverAndOver());
 
             VirtualClock.Current.AdvanceBy(TimeSpan.FromMinutes(1));
 
-            it = await Configuration.Current.Repository<MarcoPoloPlayerWhoIsIt>().GetLatest(it.Id);
+            it = await Get<MarcoPoloPlayerWhoIsIt>(it.Id);
 
             it.Events()
                 .OfType<MarcoPoloPlayerWhoIsIt.SaidMarco>()
@@ -46,16 +44,14 @@ namespace Microsoft.Its.Domain.Tests
         public async Task CommandScheduler_executes_scheduled_commands_immediately_if_no_due_time_is_specified()
         {
             // arrange
-            var repository = Configuration.Current.Repository<Order>();
-
             var order = CreateOrder();
 
             // act
             order.Apply(new ShipOn(Clock.Now().Subtract(TimeSpan.FromDays(2))));
-            await repository.Save(order);
+            await Save(order);
 
             //assert 
-            order = await repository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
         }
@@ -63,9 +59,7 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void If_Schedule_is_dependent_on_an_event_with_no_aggregate_id_then_it_throws()
         {
-            var scheduler = Configuration.Current.CommandScheduler<CustomerAccount>();
-
-            Action schedule = () => scheduler.Schedule(
+            Action schedule = () => Schedule(
                 Any.Guid(),
                 new SendOrderConfirmationEmail(Any.Word()),
                 deliveryDependsOn: new Order.Created
@@ -84,18 +78,13 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task If_Schedule_is_dependent_on_an_event_with_no_ETag_then_it_sets_one()
         {
-            var scheduler = new Configuration()
-                .UseInMemoryEventStore()
-                .UseInMemoryCommandScheduling()
-                .CommandScheduler<CustomerAccount>();
-
             var created = new Order.Created
             {
                 AggregateId = Any.Guid(),
                 ETag = null
             };
 
-            await scheduler.Schedule(
+            await Schedule(
                 Any.Guid(),
                 new SendOrderConfirmationEmail(Any.Word()),
                 deliveryDependsOn: created);
@@ -108,7 +97,6 @@ namespace Microsoft.Its.Domain.Tests
         {
             var scheduled = new List<ICommand>();
             var configuration = Configuration.Current;
-
             configuration.AddToCommandSchedulerPipeline<MarcoPoloPlayerWhoIsIt>(async (cmd, next) =>
             {
                 scheduled.Add(cmd.Command);
@@ -124,7 +112,7 @@ namespace Microsoft.Its.Domain.Tests
                 .Apply(new MarcoPoloPlayerWhoIsIt.AddPlayer { PlayerId = Any.Guid() })
                 .Apply(new MarcoPoloPlayerWhoIsIt.AddPlayer { PlayerId = Any.Guid() });
 
-            await configuration.Repository<MarcoPoloPlayerWhoIsIt>().Save(it);
+            await Save(it);
 
             var sourceEtag = Any.Guid().ToString();
 
@@ -137,7 +125,7 @@ namespace Microsoft.Its.Domain.Tests
             scheduled.Clear();
 
             // revert the aggregate and do the same thing again
-            it = await configuration.Repository<MarcoPoloPlayerWhoIsIt>().GetLatest(it.Id);
+            it = await Get<MarcoPoloPlayerWhoIsIt>(it.Id);
             await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.KeepSayingMarcoOverAndOver
             {
                 ETag = sourceEtag
@@ -152,9 +140,8 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public async Task Scatter_gather_produces_a_unique_etag_per_sent_command()
         {
-            var repo = Configuration.Current.Repository<MarcoPoloPlayerWhoIsIt>();
             var it = new MarcoPoloPlayerWhoIsIt();
-            await repo.Save(it);
+            await Save(it);
 
             var numberOfPlayers = 6;
             var players = Enumerable.Range(1, numberOfPlayers)
@@ -169,11 +156,11 @@ namespace Microsoft.Its.Domain.Tests
                 await player.ApplyAsync(joinGame).AndSave();
             }
 
-            it =  await repo.GetLatest(it.Id);
+            it =  await Get<MarcoPoloPlayerWhoIsIt>(it.Id);
 
             await it.ApplyAsync(new MarcoPoloPlayerWhoIsIt.SayMarco()).AndSave();
 
-            it =  await repo.GetLatest(it.Id);
+            it =  await Get<MarcoPoloPlayerWhoIsIt>(it.Id);
 
             it.Events()
                 .OfType<MarcoPoloPlayerWhoIsIt.HeardPolo>()
@@ -186,12 +173,9 @@ namespace Microsoft.Its.Domain.Tests
         public async Task Scheduled_commands_triggered_by_a_scheduled_command_are_idempotent()
         {
             var aggregate = new CommandSchedulerTestAggregate();
-            var repository = Configuration.Current.Repository<CommandSchedulerTestAggregate>();
 
-            await repository.Save(aggregate);
-
-            var scheduler = Configuration.Current.CommandScheduler<CommandSchedulerTestAggregate>();
-
+            await Save(aggregate);
+          
             var dueTime = Clock.Now().AddMinutes(5);
 
             Console.WriteLine(new { dueTime });
@@ -210,18 +194,18 @@ namespace Microsoft.Its.Domain.Tests
                 }
             };
 
-            await scheduler.Schedule(
+            await Schedule(
                 aggregate.Id,
                 dueTime: dueTime,
                 command: command);
-            await scheduler.Schedule(
+            await Schedule(
                 aggregate.Id,
                 dueTime: dueTime,
                 command: command);
 
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
 
-            aggregate = await repository.GetLatest(aggregate.Id);
+            aggregate = await Get<CommandSchedulerTestAggregate>(aggregate.Id);
 
             var events = aggregate.Events().ToArray();
             events.Count().Should().Be(3);
@@ -252,13 +236,13 @@ namespace Microsoft.Its.Domain.Tests
             // by the time Ship is applied, it will fail because of the cancellation
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
             order.Apply(new Cancel());
-            await orderRepository.Save(order);
+            await Save(order);
 
             // act
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
 
             //assert 
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
         }
@@ -271,20 +255,20 @@ namespace Microsoft.Its.Domain.Tests
             var order1 = CreateOrder(customerAccountId: customerAccountId)
                 .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date))
                 .Apply(new Cancel());
-            await orderRepository.Save(order1);
+            await Save(order1);
             var order2 = CreateOrder(customerAccountId: customerAccountId)
                 .Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date));
-            await orderRepository.Save(order2);
+            await Save(order2);
 
             // act
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(32));
 
             // assert 
-            order1 = await orderRepository.GetLatest(order1.Id);
+            order1 = await Get<Order>(order1.Id);
             var lastEvent = order1.Events().Last();
             lastEvent.Should().BeOfType<Order.ShipmentCancelled>();
 
-            order2 = await orderRepository.GetLatest(order2.Id);
+            order2 = await Get<Order>(order2.Id);
             lastEvent = order2.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
         }

@@ -2,15 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Data;
 using System.Data.Entity.Infrastructure;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
-using Its.Log.Instrumentation;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
-using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
@@ -19,26 +15,18 @@ using NCrunch.Framework;
 using NUnit.Framework;
 using Test.Domain.Ordering;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
+using static Microsoft.Its.Domain.Tests.CurrentConfiguration;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
     [NUnit.Framework.Category("Command scheduling")]
     [TestFixture]
     [UseSqlStorageForScheduledCommands]
-     [UseSqlEventStore]
-     [DisableCommandAuthorization]
+    [UseSqlEventStore]
+    [DisableCommandAuthorization]
     [ExclusivelyUses("ItsCqrsTestsEventStore", "ItsCqrsTestsReadModels", "ItsCqrsTestsCommandScheduler")]
     public class SqlCommandSchedulerTests_EventSourced : SqlCommandSchedulerTests
     {
-        private ISchedulerClockTrigger clockTrigger =>
-            Configuration.Current.SchedulerClockTrigger();
-
-        private IEventSourcedRepository<Order> orderRepository =>
-            Configuration.Current.Repository<Order>();
-
-        private IEventSourcedRepository<CustomerAccount> accountRepository =>
-            Configuration.Current.Repository<CustomerAccount>();
-        
         [Test]
         public override async Task When_a_clock_is_advanced_its_associated_commands_are_triggered()
         {
@@ -50,71 +38,18 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 ShipmentId = shipmentId
             });
-            await orderRepository.Save(order);
+            await Save(order);
 
             // act
             await AdvanceClock(by: TimeSpan.FromDays(32));
 
             //assert 
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
             order.ShipmentId
-                 .Should()
-                 .Be(shipmentId, "Properties should be transferred correctly from the serialized command");
-        }
-
-        [Test]
-        public async Task When_a_scheduler_clock_is_advanced_then_the_domain_clock_is_coordinated_to_the_scheduler_clock_for_events_written_as_a_result()
-        {
-            // arrange
-            var shipmentId = Any.AlphanumericString(8, 8);
-            var order = CommandSchedulingTests_EventSourced.CreateOrder();
-
-            var shipDate = Clock.Now().AddMonths(1).Date;
-            order.Apply(new ShipOn(shipDate)
-            {
-                ShipmentId = shipmentId
-            });
-            await orderRepository.Save(order);
-
-            // act
-            await AdvanceClock(@by: TimeSpan.FromDays(33));
-
-            //assert 
-            order = await orderRepository.GetLatest(order.Id);
-            order.Events().OfType<Order.Shipped>()
-                 .Last()
-                 .Timestamp
-                 .Should()
-                 .Be(shipDate);
-        }
-
-        [Test]
-        public async Task When_a_scheduler_clock_is_advanced_then_the_domain_clock_is_unaffected_for_events_written_by_other_aggregates()
-        {
-            // arrange
-            var shipmentId = Any.AlphanumericString(8, 8);
-            var order = CommandSchedulingTests_EventSourced.CreateOrder();
-
-            var shipDate = Clock.Now().AddMonths(1).Date;
-            order.Apply(new ShipOn(shipDate)
-            {
-                ShipmentId = shipmentId
-            });
-            await orderRepository.Save(order);
-
-            // act
-            await AdvanceClock(                                            @by: TimeSpan.FromDays(32));
-
-            //assert 
-            order = await orderRepository.GetLatest(order.Id);
-            order.Events()
-                 .OfType<Order.Shipped>()
-                 .Last()
-                 .Timestamp
-                 .Should()
-                 .Be(shipDate);
+                .Should()
+                .Be(shipmentId, "Properties should be transferred correctly from the serialized command");
         }
 
         [Test]
@@ -128,13 +63,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 ShipmentId = shipmentId
             });
-            await orderRepository.Save(order);
+            await Save(order);
 
             // act
-            await AdvanceClock(                                            @by: TimeSpan.FromDays(30));
+            await AdvanceClock(by: TimeSpan.FromDays(30));
 
             //assert 
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<CommandScheduled<Order>>();
         }
@@ -147,16 +82,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             // act
             order.Apply(new ShipOn(Clock.Now().Subtract(TimeSpan.FromDays(2))));
-            await orderRepository.Save(order);
+            await Save(order);
 
             await SchedulerWorkComplete();
 
             //assert 
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
         }
-      
+
         [Test]
         public override async Task Scheduled_commands_are_delivered_immediately_if_past_due_per_the_scheduler_clock()
         {
@@ -167,12 +102,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             // act
             order.Apply(new ShipOn(Clock.Now().AddDays(-5)));
-            await orderRepository.Save(order);
+            await Save(order);
 
             await SchedulerWorkComplete();
 
             //assert 
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             var lastEvent = order.Events().Last();
             lastEvent.Should().BeOfType<Order.Shipped>();
         }
@@ -181,16 +116,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task Immediately_scheduled_commands_triggered_by_a_scheduled_command_have_their_due_time_set_to_the_causative_command_clock()
         {
             var aggregate = new CommandSchedulerTestAggregate();
-            var repository = Configuration.Current
-                                          .Repository<CommandSchedulerTestAggregate>();
 
-            await repository.Save(aggregate);
+            await Save(aggregate);
 
-            var scheduler = Configuration.Current.CommandScheduler<CommandSchedulerTestAggregate>();
 
             var dueTime = Clock.Now().AddMinutes(5);
 
-            await scheduler.Schedule(
+            await Schedule(
                 aggregate.Id,
                 dueTime: dueTime,
                 command: new CommandSchedulerTestAggregate.CommandThatSchedulesAnotherCommand
@@ -204,13 +136,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 foreach (var command in db.ScheduledCommands.Where(c => c.AggregateId == aggregate.Id))
                 {
                     command.AppliedTime
-                           .IfNotNull()
-                           .ThenDo(v => v.Should().BeCloseTo(dueTime, 10));
+                        .IfNotNull()
+                        .ThenDo(v => v.Should().BeCloseTo(dueTime, 10));
                 }
             }
         }
@@ -220,162 +152,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var deliveredTime = new DateTimeOffset();
-            var configuration = Configuration.Current;
 
-            configuration
+            Configuration
+                .Current
                 .UseCommandHandler<Order, CreateOrder>(async (_, __) => deliveredTime = Clock.Now());
 
             // act
-            await configuration
-                .CommandScheduler<Order>()
-                .Schedule(Any.Guid(),
-                    new CreateOrder(Any.FullName())
-                    {
-                        CanBeDeliveredDuringScheduling = false
-                    },
-                    dueTime: null);
+            await Schedule(Any.Guid(),
+                new CreateOrder(Any.FullName())
+                {
+                    CanBeDeliveredDuringScheduling = false
+                },
+                dueTime: null);
 
-            await configuration
-                .SchedulerClockTrigger()
-                .AdvanceClock(clockName, by: 1.Hours());
+            await AdvanceClock(clockName: clockName, by: 1.Hours());
 
             // assert 
             deliveredTime
                 .Should()
                 .Be(Clock.Now());
-        }
-
-        [Test]
-        public async Task When_a_scheduled_command_fails_and_the_clock_is_advanced_again_then_it_can_be_retried()
-        {
-            // ARRANGE
-            var account = new CustomerAccount()
-                .Apply(new ChangeEmailAddress
-                {
-                    NewEmailAddress = Any.Email()
-                });
-
-            account
-                .Apply(new SendMarketingEmailOn(Clock.Now().AddDays(5)))
-                .Apply(new RequestNoSpam());
-            await accountRepository.Save(account);
-
-            // ACT
-            await AdvanceClock(TimeSpan.FromDays(6));
-            account.CommunicationsSent.Count().Should().Be(0);
-
-            // requesting spam will unblock the original scheduled command if it is re-attempted
-            account = await accountRepository.GetLatest(account.Id);
-            account.Apply(new RequestSpam());
-            await accountRepository.Save(account);
-            await AdvanceClock(TimeSpan.FromMinutes(1));
-
-            // ASSERT 
-            account = await accountRepository.GetLatest(account.Id);
-            account.CommunicationsSent.Count().Should().Be(1);
-        }
-
-        [Test]
-        public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_it_is_retried_by_default()
-        {
-            var order = CommandSchedulingTests_EventSourced.CreateOrder();
-            await orderRepository.Save(order);
-
-            TriggerConcurrencyExceptionOnOrderCommands(order.Id);
-
-            var orderScheduler = Configuration.Current.CommandScheduler<Order>();
-            await orderScheduler
-                .Schedule(new CommandScheduled<Order>
-                {
-                    AggregateId = order.Id,
-                    Command = new Cancel()
-                });
-
-            for (var i = 1; i < 6; i++)
-            {
-                Console.WriteLine("Advancing clock");
-                GetScheduledCommandNumberOfAttempts(order.Id).Should().Be(i);
-                await AdvanceClock(@by: TimeSpan.FromDays(20));
-            }
-        }
-
-        [Test]
-        public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_commands_that_its_handler_scheduled_are_not_duplicated()
-        {
-            var order = CommandSchedulingTests_EventSourced.CreateOrder();
-            await accountRepository.Save(new CustomerAccount(order.CustomerId).Apply(new ChangeEmailAddress(Any.Email())));
-            await orderRepository.Save(order);
-
-            TriggerConcurrencyExceptionOnOrderCommands(order.Id);
-
-            var orderScheduler = Configuration.Current.CommandScheduler<Order>();
-            await orderScheduler
-                .Schedule(new CommandScheduled<Order>
-                {
-                    AggregateId = order.Id,
-                    Command = new Cancel()
-                });
-
-            for (var i = 1; i < 3; i++)
-            {
-                await AdvanceClock(@by: TimeSpan.FromDays(1));
-            }
-
-            StopTriggeringConcurrencyExceptions();
-
-            await AdvanceClock(@by: TimeSpan.FromDays(1));
-
-            await SchedulerWorkComplete();
-
-            var customer = await accountRepository.GetLatest(order.CustomerId);
-
-            customer.Events()
-                    .OfType<CustomerAccount.OrderCancelationConfirmationEmailSent>()
-                    .Count()
-                    .Should()
-                    .Be(1);
-        }
-
-        [Test]
-        public async Task When_a_scheduled_command_fails_due_to_a_concurrency_exception_then_it_is_not_marked_as_applied()
-        {
-            // arrange 
-            var order = CommandSchedulingTests_EventSourced.CreateOrder();
-            var ship = new Ship();
-
-            order.Apply(ship);
-
-            order.Apply(new ChargeCreditCardOn
-            {
-                Amount = 10,
-                ChargeDate = Clock.Now().AddDays(10)
-            });
-
-            await orderRepository.Save(order);
-
-            TriggerConcurrencyExceptionOnOrderCommands(order.Id);
-
-            // act
-            await Configuration
-                .Current
-                .SchedulerClockTrigger()
-                .AdvanceClock(clockName, @by: TimeSpan.FromDays(20));
-
-            // assert
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
-            {
-                // make sure we actually triggered a concurrency exception
-                db.Errors
-                  .Where(e => e.ScheduledCommand.AggregateId == order.Id)
-                  .ToArray()
-                  .Should()
-                  .Contain(e => e.Error.Contains("ConcurrencyException"));
-
-                var scheduledCommand = db.ScheduledCommands.Single(c => c.AggregateId == order.Id);
-
-                scheduledCommand.AppliedTime.Should().NotHaveValue();
-                scheduledCommand.Attempts.Should().Be(1);
-            }
         }
 
         [Test]
@@ -386,29 +181,29 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var innerRepository = new SqlEventSourcedRepository<Order>();
             var saveCount = 0;
             Configuration.Current
-                         .Container
-                         .Register<IEventSourcedRepository<Order>>(c => new FakeEventSourcedRepository<Order>(innerRepository)
-                         {
-                             OnSave = async o =>
-                             {
-                                 saveCount++;
+                .Container
+                .Register<IEventSourcedRepository<Order>>(c => new FakeEventSourcedRepository<Order>(innerRepository)
+                {
+                    OnSave = async o =>
+                    {
+                        saveCount++;
 
-                                 // throw on the second save attempt, which is when the clock is advanced delivering the scheduled command
-                                 if (saveCount == 2)
-                                 {
-                                     throw new Exception("oops!");
-                                 }
-                                 await innerRepository.Save(o);
-                             }
-                         });
+                        // throw on the second save attempt, which is when the clock is advanced delivering the scheduled command
+                        if (saveCount == 2)
+                        {
+                            throw new Exception("oops!");
+                        }
+                        await innerRepository.Save(o);
+                    }
+                });
 
             // act
             order.Apply(new ShipOn(Clock.Now().AddDays(30)));
-            await Configuration.Current.Repository<Order>().Save(order);
+            await Save(order);
             await AdvanceClock(TimeSpan.FromDays(31));
 
             //assert 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 var error = db.Errors.Single(c => c.ScheduledCommand.AggregateId == order.Id).Error;
                 error.Should().Contain("oops!");
@@ -416,61 +211,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_two_different_callers_advance_the_same_clock_at_the_same_time_then_commands_are_only_run_once()
-        {
-            // arrange
-            var order = CommandSchedulingTests_EventSourced.CreateOrder();
-            var barrier = new Barrier(2);
-
-            // act
-            order.Apply(new ShipOn(Clock.Now().AddDays(5)));
-            await orderRepository.Save(order);
-            var eventCount = order.Events().Count();
-
-            var orderScheduler = Configuration.Current
-                                              .CommandDeliverer<Order>()
-                                              .InterceptDeliver(async (c, next) =>
-                                              {
-                                                  barrier.SignalAndWait(TimeSpan.FromSeconds(10));
-                                                  await next(c);
-                                              });
-            Configuration.Current.UseDependency(_ => orderScheduler);
-
-            var caller1 = Task.Run(() => AdvanceClock(TimeSpan.FromDays(10)));
-            var caller2 = Task.Run(() => AdvanceClock(TimeSpan.FromDays(10)));
-
-            try
-            {
-                Task.WaitAll(caller1, caller2);
-            }
-            catch (DataException ex)
-            {
-                Console.WriteLine("Expected exception thrown:\n" + ex);
-            }
-
-            (await orderRepository.GetLatest(order.Id))
-                .Events()
-                .Count()
-                .Should()
-                .Be(eventCount + 1, "the scheduled command should only be applied once");
-        }
-        
-        [Test]
         public async Task When_a_scheduled_command_fails_then_the_events_written_by_the_command_handler_are_not_saved_to_the_aggregate()
         {
             var aggregate = new CommandSchedulerTestAggregate();
-            var repository = Configuration.Current.Repository<CommandSchedulerTestAggregate>();
 
-            await repository.Save(aggregate);
+            await Save(aggregate);
 
-            var scheduler = Configuration.Current.CommandScheduler<CommandSchedulerTestAggregate>();
+            await Schedule(
+                aggregate.Id,
+                command: new CommandSchedulerTestAggregate.CommandThatRecordsCommandSucceededEventWithoutExplicitlySavingAndThenFails());
 
-            await
-                scheduler.Schedule(
-                    aggregate.Id,
-                    command: new CommandSchedulerTestAggregate.CommandThatRecordsCommandSucceededEventWithoutExplicitlySavingAndThenFails());
-
-            var latestAggregate = await repository.GetLatest(aggregate.Id);
+            var latestAggregate = await Get<CommandSchedulerTestAggregate>(aggregate.Id);
 
             latestAggregate.EventHistory.OfType<CommandSchedulerTestAggregate.CommandSucceeded>().Should().HaveCount(0);
         }
@@ -486,25 +237,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     Amount = 10,
                     ChargeDate = Clock.Now().AddDays(30)
                 });
-            await orderRepository.Save(order);
+            await Save(order);
 
             // act
             // initial attempt fails
             await AdvanceClock(TimeSpan.FromDays(31));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             order.Events().Last().Should().BeOfType<CommandScheduled<Order>>();
 
             // two more attempts
             await AdvanceClock(TimeSpan.FromDays(1));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             order.Events().Last().Should().BeOfType<CommandScheduled<Order>>();
             await AdvanceClock(TimeSpan.FromDays(1));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             order.Events().Last().Should().BeOfType<CommandScheduled<Order>>();
 
             // final attempt results in giving up
             await AdvanceClock(TimeSpan.FromDays(1));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             var last = order.Events().Last();
             last.Should().BeOfType<Order.Cancelled>();
             last.As<Order.Cancelled>().Reason.Should().Be("Final credit card charge attempt failed.");
@@ -522,25 +273,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     ChargeDate = Clock.Now().AddDays(30),
                     ChargeRetryPeriod = TimeSpan.Zero
                 });
-            await orderRepository.Save(order);
+            await Save(order);
 
             // act
             // initial attempt fails
             await AdvanceClock(TimeSpan.FromDays(30.1));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             order.Events().Last().Should().BeOfType<CommandScheduled<Order>>();
 
             // two more attempts, advancing the clock only a tick at a time
             await AdvanceClock(TimeSpan.FromTicks(1));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             order.Events().Last().Should().BeOfType<CommandScheduled<Order>>();
             await AdvanceClock(TimeSpan.FromTicks(1));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             order.Events().Last().Should().BeOfType<CommandScheduled<Order>>();
 
             // final attempt results in giving up
             await AdvanceClock(TimeSpan.FromTicks(1));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             var last = order.Events().Last();
             last.Should().BeOfType<Order.Cancelled>();
             last.As<Order.Cancelled>().Reason.Should().Be("Final credit card charge attempt failed.");
@@ -557,26 +308,26 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     ChargeDate = Clock.Now().AddDays(1),
                     ChargeRetryPeriod = TimeSpan.FromDays(7)
                 });
-            await orderRepository.Save(order);
+            await Save(order);
 
             // act
             // initial attempt fails
             await AdvanceClock(TimeSpan.FromDays(4));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             order.Events().Last().Should().BeOfType<CommandScheduled<Order>>();
 
             // ship the order so the next retry will succeed
             order.Apply(new Ship());
-            await orderRepository.Save(order);
+            await Save(order);
 
             // advance the clock a couple of days, which doesn't trigger a retry yet
             await AdvanceClock(TimeSpan.FromDays(2));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             order.Events().Should().NotContain(e => e is Order.CreditCardCharged);
 
             // advance the clock enough to trigger a retry
             await AdvanceClock(TimeSpan.FromDays(5));
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
             order.Events().Should().Contain(e => e is Order.CreditCardCharged);
         }
 
@@ -600,115 +351,36 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 .Apply(new ShipOn(Clock.Now().AddDays(10)))
                 .Apply(new Ship());
 
-            await orderRepository.Save(order);
+            await Save(order);
 
-            Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = cmds =>
-                                                                                     cmds.Where(cmd => cmd.AggregateId == order.Id)
-                                                                                         .Where(cmd => cmd.AppliedTime == null &&
-                                                                                                       cmd.FinalAttemptTime == null);
-
-            var result = await clockTrigger.Trigger(query);
+            var result = await AdvanceClock(11.Days());
 
             // the command should fail validation 
             result.FailedCommands.Count().Should().Be(1);
 
-            result = await clockTrigger.Trigger(query);
+            result = await AdvanceClock(1.Hours());
 
             result.FailedCommands.Count().Should().Be(0);
         }
 
         [Test]
-        public async Task A_scheduled_command_can_schedule_other_commands()
-        {
-            // ARRANGE
-            var email = Any.Email();
-            Console.WriteLine(new { clockName, email });
-            var account = new CustomerAccount()
-                .Apply(new ChangeEmailAddress(email))
-                .Apply(new SendMarketingEmailOn(Clock.Now().AddDays(1)))
-                .Apply(new RequestSpam());
-            await accountRepository.Save(account);
-
-            // ACT
-            var result = await AdvanceClock(TimeSpan.FromDays(10));
-            Console.WriteLine(result.ToLogString());
-           
-            await SchedulerWorkComplete();
-
-            // ASSERT
-            account = await accountRepository.GetLatest(account.Id);
-
-            Console.WriteLine(account.Events()
-                                     .Select(e => string.Format("{0}: {1}{2}\n",
-                                                                e.EventName(),
-                                                                e.Timestamp,
-                                                                e.IfTypeIs<IScheduledCommand<CustomerAccount>>()
-                                                                 .Then(s => " -->  DUE: " + s.DueTime)
-                                                                 .ElseDefault()))
-                                     .ToLogString());
-
-            account.Events()
-                   .OfType<CommandScheduled<CustomerAccount>>()
-                   .Count()
-                   .Should()
-                   .Be(3);
-            account.Events()
-                   .Last()
-                   .Should()
-                   .BeOfType<CommandScheduled<CustomerAccount>>();
-        }
-
-        [Test]
-        public override async Task Specific_scheduled_commands_can_be_triggered_directly_by_target_id()
-        {
-            // arrange
-            var shipmentId = Any.AlphanumericString(8, 8);
-            var order = CommandSchedulingTests_EventSourced.CreateOrder();
-
-            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
-            {
-                ShipmentId = shipmentId
-            });
-            await orderRepository.Save(order);
-
-            // act
-            await clockTrigger.Trigger(commands => commands.Where(cmd => cmd.AggregateId == order.Id));
-
-            //assert 
-            order = await orderRepository.GetLatest(order.Id);
-            var lastEvent = order.Events().Last();
-            lastEvent.Should().BeOfType<Order.Shipped>();
-            order.ShipmentId
-                 .Should()
-                 .Be(shipmentId);
-
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
-            {
-                db.ScheduledCommands
-                  .Where(c => c.AggregateId == order.Id)
-                  .Should()
-                  .OnlyContain(c => c.AppliedTime != null);
-            }
-        }
-
-        [Test]
-        public async Task When_a_command_is_triggered_and_succeeds_then_result_SuccessfulCommands_references_it()
+        public async Task When_a_command_is_triggered_and_succeeds_then_Result_SuccessfulCommands_references_it()
         {
             // arrange
             var shipmentId = Any.AlphanumericString(8, 8);
             var customerAccountId = Any.Guid();
-            await accountRepository.Save(new CustomerAccount(customerAccountId)
-                                             .Apply(new ChangeEmailAddress(Any.Email())));
+            await Save(new CustomerAccount(customerAccountId)
+                .Apply(new ChangeEmailAddress(Any.Email())));
             var order = CommandSchedulingTests_EventSourced.CreateOrder(customerAccountId: customerAccountId);
 
             order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
             {
                 ShipmentId = shipmentId
             });
-            await orderRepository.Save(order);
+            await Save(order);
 
             // act
-            var result = await clockTrigger.Trigger(commands => commands.Where(cmd => cmd.AggregateId == order.Id));
+            var result = await AdvanceClock(by: 32.Days());
 
             //assert 
             result.SuccessfulCommands
@@ -717,65 +389,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                        .IfTypeIs<IScheduledCommand<Order>>()
                                        .Then(c => c.TargetId == order.Id.ToString())
                                        .ElseDefault());
-        }
-
-        [Test]
-        public async Task When_a_clock_is_advanced_then_resulting_SuccessfulCommands_are_included_in_the_result()
-        {
-            // arrange
-            var shipmentId = Any.AlphanumericString(8, 8);
-            var customerAccountId = Any.Guid();
-            await accountRepository.Save(new CustomerAccount(customerAccountId)
-                                             .Apply(new ChangeEmailAddress(Any.Email())));
-            var order = CommandSchedulingTests_EventSourced.CreateOrder(customerAccountId: customerAccountId);
-
-            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
-            {
-                ShipmentId = shipmentId
-            });
-            await orderRepository.Save(order);
-
-            // act
-            var result = await AdvanceClock(to: Clock.Now().AddMonths(2));
-
-            //assert 
-            result.SuccessfulCommands
-                  .Should()
-                  .ContainSingle(a => a.ScheduledCommand
-                                       .IfTypeIs<IScheduledCommand<Order>>()
-                                       .Then(c => c.TargetId == order.Id.ToString())
-                                       .ElseDefault());
-        }
-
-        [Test]
-        public override async Task When_triggering_specific_commands_then_the_result_can_be_used_to_evaluate_failures()
-        {
-            // arrange
-            var shipmentId = Any.AlphanumericString(8, 8);
-            var customerAccountId = Any.Guid();
-            await accountRepository.Save(new CustomerAccount(customerAccountId)
-                                             .Apply(new ChangeEmailAddress(Any.Email())));
-            var order = CommandSchedulingTests_EventSourced.CreateOrder(customerAccountId: customerAccountId);
-
-            order.Apply(new ShipOn(shipDate: Clock.Now().AddMonths(1).Date)
-            {
-                ShipmentId = shipmentId
-            })
-                 .Apply(new Cancel());
-            await orderRepository.Save(order);
-
-            // act
-            var result = await clockTrigger.Trigger(commands => commands.Where(cmd => cmd.AggregateId == order.Id));
-
-            //assert 
-            order = await orderRepository.GetLatest(order.Id);
-
-            result.FailedCommands.Count().Should().Be(1);
-            result.FailedCommands.Single()
-                  .Exception
-                  .ToString()
-                  .Should()
-                  .Contain("The order has been cancelled");
         }
 
         [Test]
@@ -786,7 +399,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 CustomerId = Any.Guid()
             });
-            await orderRepository.Save(order);
+            await Save(order);
 
             var command = new AddItem
             {
@@ -795,20 +408,22 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 ETag = Any.Guid().ToString()
             };
 
-            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
-
             // act
-            await commandScheduler.Schedule(order.Id, command, Clock.Now().AddDays(1));
-            Thread.Sleep(1); // the sequence number is set from the current tick count, which every now and then produces a duplicate here 
-            await commandScheduler.Schedule(order.Id, command, Clock.Now().AddDays(1));
-            await clockTrigger.Trigger(cmd => cmd.Where(c => c.AggregateId == order.Id));
+            var scheduledCommand = await Schedule(order.Id, command, Clock.Now().AddDays(1));
 
+            var deliverer = Configuration
+                .Current
+                .CommandDeliverer<Order>();
+
+            await deliverer.Deliver(scheduledCommand);
+            await deliverer.Deliver(scheduledCommand);
+    
             // assert
-            order = await orderRepository.GetLatest(order.Id);
+            order = await Get<Order>(order.Id);
 
             order.Balance.Should().Be(10);
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
                   .Where(c => c.AggregateId == order.Id)
@@ -833,26 +448,26 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // create a customer account
             var customer = new CustomerAccount(Any.Guid())
                 .Apply(new ChangeEmailAddress(Any.Email()));
-            await accountRepository.Save(customer);
+            await Save(customer);
 
             var order = new Order(new CreateOrder(Any.FullName())
             {
                 CustomerId = customer.Id
             });
-            await orderRepository.Save(order);
+            await Save(order);
 
             // act
             order.Apply(new Cancel());
-            await orderRepository.Save(order);
+            await Save(order);
 
             await AdvanceClock(TimeSpan.FromMinutes(1.2));
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 db.Errors
-                  .Where(e => e.ScheduledCommand.AggregateId == customer.Id)
-                  .Should()
-                  .Contain(e => e.Error.Contains("drat!"));
+                    .Where(e => e.ScheduledCommand.AggregateId == customer.Id)
+                    .Should()
+                    .Contain(e => e.Error.Contains("drat!"));
             }
         }
 
@@ -862,7 +477,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // create a customer account
             var customer = new CustomerAccount(Any.Guid())
                 .Apply(new ChangeEmailAddress(Any.Email()));
-            await accountRepository.Save(customer);
+            await Save(customer);
 
             var order = new Order(new CreateOrder(Any.FullName())
             {
@@ -875,15 +490,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             // assert
             // verify that the customer did not receive the scheduled NotifyOrderCanceled command
-            customer = await accountRepository.GetLatest(customer.Id);
+            customer = await Get<CustomerAccount>(customer.Id);
             customer.Events().Last().Should().BeOfType<CustomerAccount.EmailAddressChanged>();
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
-                  .Where(c => c.AggregateId == customer.Id)
-                  .Should()
-                  .ContainSingle(c => c.AppliedTime == null);
+                    .Where(c => c.AggregateId == customer.Id)
+                    .Should()
+                    .ContainSingle(c => c.AppliedTime == null);
             }
         }
 
@@ -899,33 +514,33 @@ namespace Microsoft.Its.Domain.Sql.Tests
             });
 
             order.Apply(new Cancel());
-            await orderRepository.Save(order);
+            await Save(order);
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
-                  .Where(c => c.AggregateId == customerId)
-                  .Should()
-                  .ContainSingle(c => c.AppliedTime == null);
+                    .Where(c => c.AggregateId == customerId)
+                    .Should()
+                    .ContainSingle(c => c.AppliedTime == null);
             }
 
             // act
             // now save the customer and advance the clock
-            await accountRepository.Save(new CustomerAccount(customerId).Apply(new ChangeEmailAddress(Any.Email())));
+            await Save(new CustomerAccount(customerId).Apply(new ChangeEmailAddress(Any.Email())));
 
             await AdvanceClock(TimeSpan.FromMinutes(2));
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
-                  .Where(c => c.AggregateId == customerId)
-                  .Should()
-                  .ContainSingle(c => c.AppliedTime != null);
+                    .Where(c => c.AggregateId == customerId)
+                    .Should()
+                    .ContainSingle(c => c.AppliedTime != null);
 
-                var customer = await accountRepository.GetLatest(customerId);
+                var customer = await Get<CustomerAccount>(customerId);
                 customer.Events()
-                        .Last()
-                        .Should().BeOfType<CustomerAccount.OrderCancelationConfirmationEmailSent>();
+                    .Last()
+                    .Should().BeOfType<CustomerAccount.OrderCancelationConfirmationEmailSent>();
             }
         }
 
@@ -957,12 +572,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             await commandScheduler.Schedule(secondCommand);
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 db.ScheduledCommands
-                  .Count(c => c.AggregateId == orderId)
-                  .Should()
-                  .Be(2);
+                    .Count(c => c.AggregateId == orderId)
+                    .Should()
+                    .Be(2);
             }
         }
 
@@ -977,20 +592,20 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var orderId = Any.Guid();
 
             await commandScheduler.Schedule(new CommandScheduled<Order>
-                                            {
-                                                AggregateId = orderId,
-                                                Command = new Cancel(),
-                                                SequenceNumber = initialSequenceNumber,
-                                                DueTime = Clock.Now().AddYears(1)
-                                            });
+            {
+                AggregateId = orderId,
+                Command = new Cancel(),
+                SequenceNumber = initialSequenceNumber,
+                DueTime = Clock.Now().AddYears(1)
+            });
 
             var secondCommand = new CommandScheduled<Order>
-                                {
-                                    AggregateId = orderId,
-                                    Command = new Cancel(),
-                                    SequenceNumber = initialSequenceNumber,
-                                    DueTime = Clock.Now().AddYears(1)
-                                };
+            {
+                AggregateId = orderId,
+                Command = new Cancel(),
+                SequenceNumber = initialSequenceNumber,
+                DueTime = Clock.Now().AddYears(1)
+            };
 
             // act
             Action again = () => commandScheduler.Schedule(secondCommand).Wait();
@@ -1002,17 +617,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public override async Task Constructor_commands_can_be_scheduled_to_create_new_aggregate_instances()
         {
-            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
-
             var orderId = Any.Guid();
             var customerName = Any.FullName();
 
-            await commandScheduler.Schedule(orderId, new CreateOrder(customerName)
+            await Schedule(orderId, new CreateOrder(customerName)
             {
                 AggregateId = orderId
             });
 
-            var order = await Configuration.Current.Container.Resolve<IEventSourcedRepository<Order>>().GetLatest(orderId);
+            var order = await Get<Order>(orderId);
 
             order.Should().NotBeNull();
             order.CustomerName.Should().Be(customerName);
@@ -1021,29 +634,26 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public override async Task When_a_constructor_command_fails_with_a_ConcurrencyException_it_is_not_retried()
         {
-            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
-
             var orderId = Any.Guid();
             var customerName = Any.FullName();
 
-            await commandScheduler.Schedule(orderId, new CreateOrder(customerName)
+            await Schedule(orderId, new CreateOrder(customerName)
             {
                 AggregateId = orderId
             });
 
-            await commandScheduler.Schedule(orderId, new CreateOrder(customerName)
+            await Schedule(orderId, new CreateOrder(customerName)
             {
                 AggregateId = orderId
             });
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 var commands = db.ScheduledCommands
-                                 .Where(c => c.AggregateId == orderId)
-                                 .OrderBy(c => c.CreatedTime)
-                                 .ToArray();
+                    .Where(c => c.AggregateId == orderId)
+                    .OrderBy(c => c.CreatedTime)
+                    .ToArray();
 
-                Console.WriteLine(commands.ToDiagnosticJson());
                 commands.Length.Should().Be(2);
                 commands
                     .Should()
@@ -1054,8 +664,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public override async Task When_an_immediately_scheduled_command_depends_on_a_precondition_that_has_not_been_met_yet_then_there_is_not_initially_an_attempt_recorded()
         {
-            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
-
             var orderId = Any.Guid();
             var customerName = Any.FullName();
 
@@ -1064,39 +672,40 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 AggregateId = Any.Guid(),
                 ETag = Any.Guid().ToString()
             };
-           
-            var scheduledCommand =   await commandScheduler.Schedule(orderId,
-                                                                     new CreateOrder(customerName)
-                                                                     {
-                                                                         AggregateId = orderId
-                                                                     },
-                                                                     deliveryDependsOn: prerequisiteEvent);
 
-            var order = await orderRepository.GetLatest(orderId);
+            var scheduledCommand = await Configuration
+                                             .Current
+                                             .CommandScheduler<Order>()
+                                             .Schedule(orderId,
+                                                 new CreateOrder(customerName)
+                                                 {
+                                                     AggregateId = orderId
+                                                 },
+                                                 deliveryDependsOn: prerequisiteEvent);
+
+            var order = await Get<Order>(orderId);
 
             order.Should().BeNull();
 
             scheduledCommand.Result.Should().BeOfType<CommandScheduled>();
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 var command = db.ScheduledCommands.Single(c => c.AggregateId == orderId);
 
                 command.AppliedTime
-                       .Should()
-                       .NotHaveValue();
+                    .Should()
+                    .NotHaveValue();
 
                 command.Attempts
-                       .Should()
-                       .Be(0);
+                    .Should()
+                    .Be(0);
             }
         }
 
         [Test]
         public async Task When_an_immediately_scheduled_command_depends_on_an_event_then_delivery_in_memory_waits_on_the_event_being_saved()
         {
-            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
-
             var orderId = Any.Guid();
             var customerName = Any.FullName();
 
@@ -1109,38 +718,36 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 ETag = prerequisiteETag
             };
 
-            await commandScheduler.Schedule(orderId,
-                                            new CreateOrder(customerName)
-                                            {
-                                                AggregateId = orderId
-                                            },
-                                            deliveryDependsOn: prerequisiteEvent);
+            await Schedule(orderId,
+                new CreateOrder(customerName)
+                {
+                    AggregateId = orderId
+                },
+                deliveryDependsOn: prerequisiteEvent);
 
             // sanity check that the order is null
-            var order = await orderRepository.GetLatest(orderId);
+            var order = await Get<Order>(orderId);
             order.Should().BeNull();
 
-            await accountRepository.Save(new CustomerAccount(prerequisiteAggregateId)
-                                             .Apply(new ChangeEmailAddress(Any.Email())
-                                             {
-                                                 ETag = prerequisiteETag
-                                             }));
+            await Save(new CustomerAccount(prerequisiteAggregateId)
+                .Apply(new ChangeEmailAddress(Any.Email())
+                {
+                    ETag = prerequisiteETag
+                }));
 
             await SchedulerWorkComplete();
 
             // assert
             // now the order should have been created
-            order = await orderRepository.GetLatest(orderId);
+            order = await Get<Order>(orderId);
             order.Should().NotBeNull();
         }
 
         [Test]
         public override async Task When_a_scheduled_command_depends_on_an_event_that_never_arrives_it_is_eventually_abandoned()
         {
-            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
-
             var orderId = Any.Guid();
-            await orderRepository.Save(new Order(new CreateOrder(Any.FullName())
+            await Save(new Order(new CreateOrder(Any.FullName())
             {
                 AggregateId = orderId
             }));
@@ -1151,36 +758,34 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 ETag = Any.Guid().ToString()
             };
 
-            await commandScheduler.Schedule(orderId,
-                                            new AddItem
-                                            {
-                                                ProductName = Any.Paragraph(3),
-                                                Price = 10m
-                                            },
-                                            deliveryDependsOn: prerequisiteEvent);
+            await Schedule(orderId,
+                new AddItem
+                {
+                    ProductName = Any.Paragraph(3),
+                    Price = 10m
+                },
+                deliveryDependsOn: prerequisiteEvent);
 
             for (var i = 0; i < 7; i++)
             {
-                VirtualClock.Current.AdvanceBy(TimeSpan.FromMinutes(90));
-                Console.WriteLine(
-                    (await clockTrigger.Trigger(commands => commands.Due().Where(c => c.AggregateId == orderId))).ToLogString());
+                await AdvanceClock(by: 90.Days());
             }
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 var command = db.ScheduledCommands.Single(c => c.AggregateId == orderId);
 
                 command.AppliedTime
-                       .Should()
-                       .NotHaveValue();
+                    .Should()
+                    .NotHaveValue();
 
                 command.Attempts
-                       .Should()
-                       .BeGreaterOrEqualTo(5);
+                    .Should()
+                    .BeGreaterOrEqualTo(5);
 
                 command.FinalAttemptTime
-                       .Should()
-                       .HaveValue();
+                    .Should()
+                    .HaveValue();
             }
         }
 
@@ -1207,18 +812,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
                             await next(c);
                         });
 
-            await Configuration.Current
-                .CommandScheduler<Order>()
-                .Schedule(
-                    new CommandScheduled<Order>
-                    {
-                        DueTime = Clock.Now().AddDays(-1),
-                        AggregateId = orderId,
-                        Command = new CreateOrder(Any.FullName())
-                        {
-                            AggregateId = orderId
-                        }
-                    });
+            await Schedule(
+                dueTime: Clock.Now().AddDays(-1),
+                aggregateId: orderId,
+                command: new CreateOrder(Any.FullName())
+                {
+                    AggregateId = orderId
+                });
 
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
 
@@ -1229,49 +829,46 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task When_a_command_is_non_durable_then_immediate_scheduling_does_not_result_in_a_command_scheduler_db_entry()
         {
-            var commandScheduler = Configuration.Current.CommandScheduler<CustomerAccount>();
             var reserverationService = new Mock<IReservationService>();
             reserverationService.Setup(m => m.Reserve(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
-                                .Returns(() => Task.FromResult(true));
+                .Returns(() => Task.FromResult(true));
             Configuration.Current.UseDependency(_ => reserverationService.Object);
 
             var aggregateId = Any.Guid();
-            await accountRepository.Save(new CustomerAccount(aggregateId).Apply(new RequestNoSpam()));
-            await commandScheduler.Schedule(aggregateId, new RequestUserName
+            await Save(new CustomerAccount(aggregateId).Apply(new RequestNoSpam()));
+            await Schedule(aggregateId, new RequestUserName
             {
                 UserName = Any.Email()
             });
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 var scheduledAggregateIds = db.ScheduledCommands
-                                              .Where(c => aggregateId == c.AggregateId)
-                                              .ToArray();
+                    .Where(c => aggregateId == c.AggregateId)
+                    .ToArray();
 
                 scheduledAggregateIds.Should()
-                                     .BeEmpty();
+                    .BeEmpty();
             }
         }
 
         [Test]
         public override async Task When_a_clock_is_advanced_and_a_command_fails_to_be_deserialized_then_other_commands_are_still_applied()
         {
-            var commandScheduler = Configuration.Current.CommandScheduler<Order>();
-        
             var failedAggregateId = Any.Guid();
             var successfulAggregateId = Any.Guid();
 
-            await commandScheduler.Schedule(failedAggregateId,
-                                            new CreateOrder(Any.FullName()),
-                                            Clock.Now().AddHours(1)); 
-            await commandScheduler.Schedule(successfulAggregateId,
-                                            new CreateOrder(Any.FullName())
-                                            {
-                                                AggregateId = successfulAggregateId
-                                            },
-                                            Clock.Now().AddHours(1.5));
+            await Schedule(failedAggregateId,
+                new CreateOrder(Any.FullName()),
+                Clock.Now().AddHours(1));
+            await Schedule(successfulAggregateId,
+                new CreateOrder(Any.FullName())
+                {
+                    AggregateId = successfulAggregateId
+                },
+                Clock.Now().AddHours(1.5));
 
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            using (var db = CommandSchedulerDbContext())
             {
                 var command = db.ScheduledCommands.Single(c => c.AggregateId == failedAggregateId);
                 var commandBody = command.SerializedCommand.FromJsonTo<dynamic>();
@@ -1281,18 +878,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             // act
-            Action advanceClock = () => AdvanceClock(                                                                  @by: TimeSpan.FromHours(2)).Wait();
+            Action advanceClock = () => AdvanceClock(by: TimeSpan.FromHours(2)).Wait();
 
             // assert
             advanceClock.ShouldNotThrow();
 
-            var repository = Configuration.Current.Repository<Order>();
-            var successfulAggregate = await repository.GetLatest(successfulAggregateId);
+            var successfulAggregate = await Get<Order>(successfulAggregateId);
             successfulAggregate.Should().NotBeNull();
         }
 
         [Test]
-        public override async Task When_a_clock_is_set_on_a_command_then_it_takes_precedence_over_GetClockName()
+        public override async Task When_a_clock_is_set_on_a_command_then_it_takes_precedence_over_default_clock()
         {
             // arrange
             var clockName = Any.CamelCaseName();
@@ -1307,65 +903,24 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 UtcNow = DateTimeOffset.Parse("2016-03-01 02:00:00 AM")
             };
 
-            using (var commandScheduler = Configuration.Current.CommandSchedulerDbContext())
+            using (var commandScheduler = CommandSchedulerDbContext())
             {
                 commandScheduler.Clocks.Add(clock);
                 commandScheduler.SaveChanges();
             }
 
-            var scheduledCommand = new ScheduledCommand<Order>(
-                aggregateId: create.AggregateId,
-                command: create,
-                dueTime: DateTimeOffset.Parse("2016-03-20 09:00:00 AM"))
-            {
-                Clock = clock
-            };
-
             // act
-            var configuration = Configuration.Current;
-            await configuration.CommandScheduler<Order>().Schedule(scheduledCommand);
+            await Schedule(
+                create,
+                dueTime: DateTimeOffset.Parse("2016-03-20 09:00:00 AM"),
+                clock: clock);
 
-            await configuration.SchedulerClockTrigger()
-                               .AdvanceClock(clockName,
-                                             by: 30.Days());
+            await AdvanceClock(clockName: clockName, by: 30.Days());
 
             //assert 
-            var target = await configuration.Repository<Order>().GetLatest(create.AggregateId);
+            var target = await Get<Order>(create.AggregateId);
 
             target.Should().NotBeNull();
         }
-
-        protected void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)
-        {
-            var orderRepository = this.orderRepository;
-            Configuration.Current.UseDependency(_ => orderRepository);
-            ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () =>
-            {
-                // quick, add a new event in order to trigger a concurrency exception at the moment the scheduler tries to apply the command
-                var repository = new SqlEventSourcedRepository<Order>();
-                var o = repository.GetLatest(orderId).Result;
-                o.Apply(new Annotate<Order>("triggering a concurrency exception", Any.Guid().ToString()));
-                repository.Save(o).Wait();
-
-                return EventStoreDbContext();
-            };
-        }
-
-        protected void StopTriggeringConcurrencyExceptions() => 
-            ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () => EventStoreDbContext();
-
-        protected int GetScheduledCommandNumberOfAttempts(Guid aggregateId)
-        {
-            using (var db = Configuration.Current.CommandSchedulerDbContext())
-            {
-                var scheduledCommand = db.ScheduledCommands.SingleOrDefault(c => c.AggregateId == aggregateId);
-                return scheduledCommand.IfNotNull()
-                                       .Then(c => c.Attempts)
-                                       .ElseDefault();
-            }
-        }
-
-        protected async Task SchedulerWorkComplete() =>
-            await clockTrigger.Done(clockName);
     }
 }

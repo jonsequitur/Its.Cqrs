@@ -6,10 +6,10 @@ using System.Collections.Concurrent;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
+using static Microsoft.Its.Domain.Tests.CurrentConfiguration;
 
 namespace Microsoft.Its.Domain.Tests
 {
@@ -25,9 +25,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var target = CreateCommandTarget();
 
-            await Configuration.Current
-                               .CommandScheduler<NonEventSourcedCommandTarget>()
-                               .Schedule(target.Id, new TestCommand());
+            await Schedule(target.Id, new TestCommand());
 
             target.CommandsEnacted
                   .Should()
@@ -38,7 +36,8 @@ namespace Microsoft.Its.Domain.Tests
         public async Task Multiple_scheduled_commands_having_the_some_causative_command_etag_have_repeatable_and_unique_etags()
         {
             var senderId = Any.Word();
-            await Configuration.Current.Store<NonEventSourcedCommandTarget>().Put(new NonEventSourcedCommandTarget(senderId));
+
+            await Save(new NonEventSourcedCommandTarget(senderId));
 
             var targetIds = new[] { Any.Word(), Any.Word(), Any.Word() };
 
@@ -66,8 +65,7 @@ namespace Microsoft.Its.Domain.Tests
                 firstCommand,
                 senderId);
 
-            await Configuration.Current
-                               .CommandDeliverer<NonEventSourcedCommandTarget>().Deliver(scheduledCommand);
+            await Deliver(scheduledCommand);
 
             var secondCommand = new SendRequests(targetIds)
                                 {
@@ -79,10 +77,7 @@ namespace Microsoft.Its.Domain.Tests
                 senderId);
 
             // redeliver
-            await Configuration.Current
-                               .CommandDeliverer<NonEventSourcedCommandTarget>().Deliver(scheduledCommand);
-
-            Console.WriteLine(results.ToJson());
+            await Deliver(scheduledCommand);
 
             results.Should().HaveCount(6);
             results.Select(r => r.ETag)
@@ -101,6 +96,7 @@ namespace Microsoft.Its.Domain.Tests
             await CreateCommandTarget().ApplyAsync(new SendRequests(recipientIds));
 
             var store = Configuration.Current.Store<NonEventSourcedCommandTarget>() as InMemoryStore<NonEventSourcedCommandTarget>;
+
             var receivedCommands = store.SelectMany(t => t.CommandsEnacted);
 
             receivedCommands
@@ -113,19 +109,18 @@ namespace Microsoft.Its.Domain.Tests
         public async Task Scheduled_commands_triggered_by_a_scheduled_command_are_idempotent()
         {
             var id = Any.Word();
-            var store = Configuration.Current.Store<NonEventSourcedCommandTarget>();
-            await store.Put(new NonEventSourcedCommandTarget(id));
+
+            await Save(new NonEventSourcedCommandTarget(id));
 
             var command = new SendRequests(new[] { id })
                           {
                               ETag = "hello".ToETag()
                           };
 
-            var scheduler = Configuration.Current.CommandScheduler<NonEventSourcedCommandTarget>();
-            await scheduler.Schedule(id, command);
-            await scheduler.Schedule(id, command);
+            await Schedule(id, command);
+            await Schedule(id, command);
 
-            var recipient = await store.Get(id);
+            var recipient = await Get<NonEventSourcedCommandTarget>(id);
 
             recipient
                 .CommandsEnacted
@@ -139,9 +134,7 @@ namespace Microsoft.Its.Domain.Tests
         {
             var target = CreateCommandTarget();
 
-            await Configuration.Current
-                               .CommandScheduler<NonEventSourcedCommandTarget>()
-                               .Schedule(target.Id, new TestCommand(isValid: false));
+            await Schedule(target.Id, new TestCommand(isValid: false));
 
             target.CommandsFailed
                   .Select(f => f.ScheduledCommand)
@@ -154,13 +147,11 @@ namespace Microsoft.Its.Domain.Tests
         public async Task When_applying_a_scheduled_command_throws_then_further_command_scheduling_is_not_interrupted()
         {
             var target = CreateCommandTarget();
-            var configuration = Configuration.Current;
-            await configuration.CommandScheduler<NonEventSourcedCommandTarget>()
-                               .Schedule(target.Id,
+
+            await Schedule(target.Id,
                                    new TestCommand(isValid: false),
                                    dueTime: Clock.Now().AddMinutes(1));
-            await configuration.CommandScheduler<NonEventSourcedCommandTarget>()
-                               .Schedule(target.Id,
+            await Schedule(target.Id,
                                    new TestCommand(),
                                    dueTime: Clock.Now().AddMinutes(2));
 
@@ -179,7 +170,7 @@ namespace Microsoft.Its.Domain.Tests
         private static NonEventSourcedCommandTarget CreateCommandTarget()
         {
             var target = new NonEventSourcedCommandTarget(Any.Word());
-            Configuration.Current.Store<NonEventSourcedCommandTarget>().Put(target);
+            Save(target).Wait();
             return target;
         }
     }

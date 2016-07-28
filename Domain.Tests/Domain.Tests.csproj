@@ -141,6 +141,7 @@
     <Compile Include="CommandSchedulerPipelineTests.cs" />
     <Compile Include="CommandSchedulerTestAggregate.cs" />
     <Compile Include="CommandSchedulingTests_EventSourced.cs" />
+    <Compile Include="Infrastructure\CurrentConfiguration.cs" />
     <Compile Include="Infrastructure\DisableCommandAuthorizationAttribute.cs" />
     <Compile Include="Infrastructure\DomainConfigurationAttribute.cs" />
     <Compile Include="Infrastructure\UseInMemoryCommandSchedulingAttribute.cs" />

@@ -104,7 +104,7 @@ namespace Microsoft.Its.Domain.Sql
         public static ISchedulerClockRepository SchedulerClockRepository(this Configuration configuration) =>
             configuration.Container.Resolve<ISchedulerClockRepository>();
 
-         /// <summary>
+        /// <summary>
         /// Gets a scheduler clock trigger.
         /// </summary>
         public static ISchedulerClockTrigger SchedulerClockTrigger(this Configuration configuration) =>

@@ -109,13 +109,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Gets an observable sequence containing all errors that occur during handling of events published on the bus.
         /// </summary>
-        public virtual IObservable<EventHandlingError> Errors
-        {
-            get
-            {
-                return errorSubject;
-            }
-        }
+        public virtual IObservable<EventHandlingError> Errors => errorSubject;
 
         /// <summary>
         ///     Subscribes an event handler to events published on the bus.

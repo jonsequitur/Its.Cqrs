@@ -9,22 +9,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     public abstract class SqlCommandSchedulerTests
     {
-        protected Task<SchedulerAdvancedResult> AdvanceClock(TimeSpan by) =>
-            Configuration
-                .Current
-                .SchedulerClockTrigger()
-                .AdvanceClock(
-                    clockName: clockName,
-                    by: by);
-
-        protected Task<SchedulerAdvancedResult> AdvanceClock(DateTimeOffset to) =>
-            Configuration
-                .Current
-                .SchedulerClockTrigger()
-                .AdvanceClock(
-                    clockName: clockName,
-                    to: to);
-
         protected static string clockName =>
             Configuration.Current.Container.Resolve<GetClockName>()(null);
 
@@ -44,10 +28,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public abstract Task A_command_handler_can_cancel_a_scheduled_command_after_it_fails();
 
-        public abstract Task Specific_scheduled_commands_can_be_triggered_directly_by_target_id();
-
-        public abstract Task When_triggering_specific_commands_then_the_result_can_be_used_to_evaluate_failures();
-
         public abstract Task When_a_command_is_scheduled_but_an_exception_is_thrown_in_a_handler_then_an_error_is_recorded();
 
         public abstract Task When_a_command_is_scheduled_but_the_target_it_applies_to_is_not_found_then_the_command_is_retried();
@@ -66,6 +46,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public abstract Task Immediately_scheduled_commands_triggered_by_a_scheduled_command_have_their_due_time_set_to_the_causative_command_clock();
 
-        public abstract Task When_a_clock_is_set_on_a_command_then_it_takes_precedence_over_GetClockName();
+        public abstract Task When_a_clock_is_set_on_a_command_then_it_takes_precedence_over_default_clock();
     }
 }

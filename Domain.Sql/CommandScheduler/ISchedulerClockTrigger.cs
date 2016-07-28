@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+    [Obsolete("The interface will be removed in a future version.")]
     public interface ISchedulerClockTrigger
     {
         /// <summary>
@@ -33,28 +34,5 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             string clockName,
             DateTimeOffset to,
             Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null);
-
-        /// <summary>
-        /// Triggers all commands matched by the specified query.
-        /// </summary>
-        /// <param name="query">The query.</param>
-        /// <returns>
-        /// A result summarizing the triggered commands.
-        /// </returns>
-        /// <exception cref="System.ArgumentNullException">query</exception>
-        /// <remarks>If the query matches commands that have been successfully applied already or abandoned, they will be re-applied.</remarks>
-        Task<SchedulerAdvancedResult> Trigger(Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query);
-
-        /// <summary>
-        /// Triggers a specific scheduled command.
-        /// </summary>
-        /// <param name="scheduled">The scheduled command.</param>
-        /// <param name="result">The result of the trigger operation.</param>
-        /// <param name="db">The command scheduler database context.</param>
-        /// <returns></returns>
-        Task Trigger(
-            ScheduledCommand scheduled,
-            SchedulerAdvancedResult result,
-            CommandSchedulerDbContext db);
     }
 }

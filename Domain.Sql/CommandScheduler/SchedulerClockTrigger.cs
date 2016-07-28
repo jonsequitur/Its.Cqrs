@@ -10,7 +10,9 @@ using Microsoft.Its.Domain.Serialization;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+#pragma warning disable 618
     internal class SchedulerClockTrigger : ISchedulerClockTrigger
+#pragma warning restore 618
     {
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
         private readonly Func<ScheduledCommand, SchedulerAdvancedResult, CommandSchedulerDbContext, Task> deliver;
@@ -42,10 +44,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// </returns>
         public async Task<SchedulerAdvancedResult> AdvanceClock(string clockName,
                                                                 TimeSpan by,
-                                                                Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
-        {
-            return await Advance(clockName, by: @by, query: query);
-        }
+                                                                Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null) => 
+            await Advance(clockName, by: by, query: query);
 
         /// <summary>
         /// Advances the clock to a specified time and triggers any commands that are due by that time.
@@ -72,7 +72,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             {
                 throw new ArgumentNullException(nameof(clockName));
             }
-            if (to == null && @by == null)
+            if (to == null && by == null)
             {
                 throw new ArgumentException($"Either {nameof(to)} or {nameof(by)} must be specified.");
             }
@@ -86,7 +86,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     throw new ObjectNotFoundException($"No clock named {clockName} was found.");
                 }
 
-                to = to ?? clock.UtcNow.Add(@by.Value);
+                to = to ?? clock.UtcNow.Add(by.Value);
 
                 if (to < clock.UtcNow)
                 {
@@ -110,49 +110,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 // ToArray closes the connection so that when we perform saves during the loop there are no connection errors
                 foreach (var scheduled in await commands.ToArrayAsync())
                 {
-                    await Trigger(scheduled, result, db);
+                    await deliver(scheduled, result, db);
                 }
 
                 return result;
             }
         }
-
-        /// <summary>
-        /// Triggers all commands matched by the specified query.
-        /// </summary>
-        /// <param name="query">The query.</param>
-        /// <returns>
-        /// A result summarizing the triggered commands.
-        /// </returns>
-        /// <exception cref="System.ArgumentNullException">query</exception>
-        /// <remarks>If the query matches commands that have been successfully applied already or abandoned, they will be re-applied.</remarks>
-        public async Task<SchedulerAdvancedResult> Trigger(Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query)
-        {
-            // QUESTION: (Trigger) re: the remarks XML comment, would it be clearer to have two methods, e.g. something like TriggerAnyCommands and TriggerEligibleCommands?
-            if (query == null)
-            {
-                throw new ArgumentNullException(nameof(query));
-            }
-
-            var result = new SchedulerAdvancedResult();
-
-            using (var db = createCommandSchedulerDbContext())
-            {
-                var commands = query(db.ScheduledCommands).ToArray();
-
-                foreach (var scheduled in commands)
-                {
-                    await Trigger(scheduled, result, db);
-                }
-            }
-
-            return result;
-        }
-
-        public async Task Trigger(
-            ScheduledCommand scheduled,
-            SchedulerAdvancedResult result,
-            CommandSchedulerDbContext db) =>
-                await deliver(scheduled, result, db);
     }
 }
