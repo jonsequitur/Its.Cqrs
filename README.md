@@ -5,6 +5,13 @@ Its.Cqrs
 
 A set of libraries for CQRS and Event Sourcing, with a Domain-Driven Design flavor. 
 
+* Its.Domain: [![NuGet Status](http://img.shields.io/nuget/v/Its.Domain.svg?style=flat)](https://www.nuget.org/packages/Its.Domain/) [![NuGet Pre Release](https://img.shields.io/nuget/vpre/Its.Domain.svg?maxAge=2592000)]()
+* Its.Domain.Api: [![NuGet Status](http://img.shields.io/nuget/v/Its.Domain.Api.svg?style=flat)](https://www.nuget.org/packages/Its.Domain.Api/) [![NuGet Pre Release](https://img.shields.io/nuget/vpre/Its.Domain.Api.svg?maxAge=2592000)]()
+* Its.Domain.Sql: [![NuGet Status](http://img.shields.io/nuget/v/Its.Domain.Sql.svg?style=flat)](https://www.nuget.org/packages/Its.Domain.Sql/) [![NuGet Pre Release](https://img.shields.io/nuget/vpre/Its.Domain.Sql.svg?maxAge=2592000)]()
+* Its.Domain.Testing: [![NuGet Status](http://img.shields.io/nuget/v/Its.Domain.Testing.svg?style=flat)](https://www.nuget.org/packages/Its.Domain.Testing/) [![NuGet Pre Release](https://img.shields.io/nuget/vpre/Its.Domain.Testing.svg?maxAge=2592000)]()
+
+
+
 Here are some useful definitions:
 ---------------------------------
 
