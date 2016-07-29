@@ -15,22 +15,15 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 #pragma warning restore 618
     {
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
-        private readonly Func<ScheduledCommand, SchedulerAdvancedResult, CommandSchedulerDbContext, Task> deliver;
 
         public SchedulerClockTrigger(
-            Func<CommandSchedulerDbContext> createCommandSchedulerDbContext,
-            Func<ScheduledCommand, SchedulerAdvancedResult, CommandSchedulerDbContext, Task> deliver)
+            Func<CommandSchedulerDbContext> createCommandSchedulerDbContext)
         {
             if (createCommandSchedulerDbContext == null)
             {
                 throw new ArgumentNullException(nameof(createCommandSchedulerDbContext));
             }
-            if (deliver == null)
-            {
-                throw new ArgumentNullException(nameof(deliver));
-            }
             this.createCommandSchedulerDbContext = createCommandSchedulerDbContext;
-            this.deliver = deliver;
         }
 
         /// <summary>
@@ -42,10 +35,11 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <returns>
         /// A result summarizing the triggered commands.
         /// </returns>
-        public async Task<SchedulerAdvancedResult> AdvanceClock(string clockName,
-                                                                TimeSpan by,
-                                                                Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null) => 
-            await Advance(clockName, by: by, query: query);
+        public async Task<SchedulerAdvancedResult> AdvanceClock(
+            string clockName,
+            TimeSpan by,
+            Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null) =>
+                await Advance(clockName, by: by, query: query);
 
         /// <summary>
         /// Advances the clock to a specified time and triggers any commands that are due by that time.
@@ -56,17 +50,17 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// <returns>
         /// A result summarizing the triggered commands.
         /// </returns>
-        public async Task<SchedulerAdvancedResult> AdvanceClock(string clockName,
-                                                                DateTimeOffset to,
-                                                                Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
-        {
-            return await Advance(clockName, to, query: query);
-        }
+        public async Task<SchedulerAdvancedResult> AdvanceClock(
+            string clockName,
+            DateTimeOffset to,
+            Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null) =>
+                await Advance(clockName, to, query: query);
 
-        private async Task<SchedulerAdvancedResult> Advance(string clockName,
-                                                            DateTimeOffset? to = null,
-                                                            TimeSpan? by = null,
-                                                            Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
+        private async Task<SchedulerAdvancedResult> Advance(
+            string clockName,
+            DateTimeOffset? to = null,
+            TimeSpan? by = null,
+            Func<IQueryable<ScheduledCommand>, IQueryable<ScheduledCommand>> query = null)
         {
             if (clockName == null)
             {
@@ -110,7 +104,8 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 // ToArray closes the connection so that when we perform saves during the loop there are no connection errors
                 foreach (var scheduled in await commands.ToArrayAsync())
                 {
-                    await deliver(scheduled, result, db);
+                    await Configuration.Current.DeserializeAndDeliver(scheduled, db);
+                    result.Add(scheduled.Result);
                 }
 
                 return result;

@@ -62,40 +62,19 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             configuration.IsUsingInMemoryCommandScheduling(false);
 
-            var container = configuration.Container;
-
-            container.Register(c => configuration);
-
-            container.RegisterDefaultClockName()
-                     .Register<ISchedulerClockRepository>(
-                         c => c.Resolve<SchedulerClockRepository>())
-                     .Register<IETagChecker>(
-                         c => c.Resolve<SqlEventStoreETagChecker>())
-                     .Register<ISchedulerClockTrigger>(
-                         c => c.Resolve<SchedulerClockTrigger>());
-
-            configuration.Container
-                         .Resolve<SqlCommandSchedulerPipelineInitializer>()
-                         .Initialize(configuration);
-
-            container.RegisterSingle(c => new CommandDelivererResolver(c));
-
-            container
-                .Register(
-                    c =>
-                    {
-                        var commandSchedulerResolver = c.Resolve<CommandDelivererResolver>();
-
-                        return new SchedulerClockTrigger(
-                            c.Resolve<CommandSchedulerDbContext>,
-                            async (serializedCommand, result, db) =>
-                            {
-                                await ConfigurationExtensions.DeserializeAndDeliver(commandSchedulerResolver, serializedCommand, db);
-
-                                result.Add(serializedCommand.Result);
-                            });
-                    })
-                .Register<ISchedulerClockTrigger>(c => c.Resolve<SchedulerClockTrigger>());
+            configuration
+                .Container
+                .RegisterDefaultClockName()
+                .Register<ISchedulerClockRepository>(
+                    c => c.Resolve<SchedulerClockRepository>())
+                .Register<IETagChecker>(
+                    c => c.Resolve<SqlEventStoreETagChecker>())
+                .Register<ISchedulerClockTrigger>(
+                    c => c.Resolve<SchedulerClockTrigger>())
+                .RegisterSingle(
+                    c => new CommandDelivererResolver(c))
+                .Resolve<SqlCommandSchedulerPipelineInitializer>()
+                .Initialize(configuration);
 
             foreach (var configure in configureActions)
             {
