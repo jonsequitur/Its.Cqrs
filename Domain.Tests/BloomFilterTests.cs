@@ -79,12 +79,9 @@ namespace Microsoft.Its.Domain.Tests
                     falsePositives.Count.Should().BeInRange(70, 120);
                     return;
                 }
-                catch
+                catch (Exception) when (attempts == 0)
                 {
-                    if (attempts == 0)
-                    {
-                        throw;
-                    }
+                    throw;
                 }
             }
         }

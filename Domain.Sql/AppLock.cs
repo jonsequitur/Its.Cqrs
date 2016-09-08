@@ -73,18 +73,14 @@ SELECT @result";
                 {
                     Debug.WriteLineIf(WriteDebugOutput, $"Trying to acquire app lock '{lockResourceName}' (#{GetHashCode()})");
 
-                    result = (int)getAppLock.ExecuteScalar();
+                    result = (int) getAppLock.ExecuteScalar();
                 }
                 catch (SqlException exception)
+                    when (exception.Message.StartsWith("Timeout expired."))
                 {
-                    if (exception.Message.StartsWith("Timeout expired."))
-                    {
-                        Debug.WriteLineIf(WriteDebugOutput, $"Timeout expired waiting for sp_getapplock. (#{GetHashCode()})");
-                        DebugWriteLocks();
-                        return;
-                    }
-
-                    throw;
+                    Debug.WriteLineIf(WriteDebugOutput, $"Timeout expired waiting for sp_getapplock. (#{GetHashCode()})");
+                    DebugWriteLocks();
+                    return;
                 }
             }
 
