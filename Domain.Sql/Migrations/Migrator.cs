@@ -39,18 +39,20 @@ namespace Microsoft.Its.Domain.Sql.Migrations
 
             var migrators = parentage.SelectMany(type =>
             {
-                var resourcePrefix = $"{type.Assembly.GetName().Name}.Migrations.{type.Name}-";
+                var assembly = type.Assembly;
 
-                return type.Assembly
+                var resourcePrefix = $"{assembly.GetName().Name}.Migrations.{type.Name}-";
+
+                return assembly
                            .GetManifestResourceNames()
                            .Where(name => name.StartsWith(resourcePrefix,
                                                           StringComparison.InvariantCultureIgnoreCase))
-                           .Select(name => new ScriptBasedDbMigrator(name));
+                           .Select(name => new ScriptBasedDbMigrator(name, assembly));
             })
                                      .OrderBy(m => m.MigrationVersion)
                                      .ToList();
 
-            migrators.Insert(0, new ScriptBasedDbMigrator(bootstrapResourceName));
+            migrators.Insert(0, new ScriptBasedDbMigrator(bootstrapResourceName, typeof(ScriptBasedDbMigrator).Assembly));
 
             return migrators;
         }

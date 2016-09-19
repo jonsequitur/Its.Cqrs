@@ -5,6 +5,7 @@ using System;
 using System.Data.Entity;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace Microsoft.Its.Domain.Sql.Migrations
@@ -21,11 +22,15 @@ namespace Microsoft.Its.Domain.Sql.Migrations
         private static readonly Regex resourceNameParser = new Regex(@"(?<scope>[\w]+)\-(?<version>[0-9_]+)",
                                                         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        public ScriptBasedDbMigrator(string resourceName)
+        public ScriptBasedDbMigrator(string resourceName, Assembly assembly)
         {
             if (resourceName == null)
             {
                 throw new ArgumentNullException(nameof(resourceName));
+            }
+            if (assembly == null)
+            {
+                throw new ArgumentNullException(nameof(assembly));
             }
 
             var matches = resourceNameParser.Match(resourceName);
@@ -43,8 +48,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
                 throw new ArgumentException("resourceName was not in the expected format");
             }
 
-            var stream = typeof (ScriptBasedDbMigrator).Assembly
-                                                       .GetManifestResourceStream(resourceName);
+            var stream = assembly.GetManifestResourceStream(resourceName);
 
             SqlText = new StreamReader(stream).ReadToEnd();
         }
