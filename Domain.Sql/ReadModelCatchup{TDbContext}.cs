@@ -25,6 +25,7 @@ namespace Microsoft.Its.Domain.Sql
     public class ReadModelCatchup<TDbContext> : IDisposable
         where TDbContext : DbContext
     {
+        public int BatchSize { get; set; }
         private readonly List<object> projectors;
         private readonly CompositeDisposable disposables;
         private MatchEvent[] matchEvents;
@@ -56,11 +57,13 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="eventStoreDbContext">A delegate to create event store database contexts on demand.</param>
         /// <param name="startAtEventId">The event id that the catchup should start from.</param>
         /// <param name="projectors">The projectors to be updated as new events are added to the event store.</param>
+        /// <param name="batchSize">The number of events queried from the event store at each iteration.</param>
         /// <exception cref="System.ArgumentException">You must specify at least one projector.</exception>
         public ReadModelCatchup(
-            Func<DbContext> readModelDbContext ,
+            Func<DbContext> readModelDbContext,
             Func<EventStoreDbContext> eventStoreDbContext,
             long startAtEventId = 0,
+            int batchSize = 10000,
             params object[] projectors)
         {
             if (readModelDbContext == null)
@@ -82,6 +85,7 @@ namespace Microsoft.Its.Domain.Sql
             createEventStoreDbContext = eventStoreDbContext;
             this.startAtEventId = startAtEventId;
             this.projectors = new List<object>(projectors);
+            BatchSize = batchSize;
 
             EnsureProjectorNamesAreDistinct();
 
@@ -94,7 +98,7 @@ namespace Microsoft.Its.Domain.Sql
             bus = new InProcessEventBus(new Subject<IEvent>());
             disposables.Add(bus.ReportErrorsToDatabase(() => createReadModelDbContext()));
             disposables.Add(bus);
-            Sensors.ReadModelDbContexts.GetOrAdd(typeof (TDbContext).Name, createReadModelDbContext);
+            Sensors.ReadModelDbContexts.GetOrAdd(typeof (TDbContext).Name, createReadModelDbContext);   
         }
 
         /// <summary>
@@ -143,7 +147,8 @@ namespace Microsoft.Its.Domain.Sql
                     await CreateOpenEventStoreDbContext(),
                     lockResourceName,
                     GetStartingId,
-                    matchEvents))
+                    matchEvents,
+                    BatchSize))
                 {
                     ReportStatus(new ReadModelCatchupStatus
                     {

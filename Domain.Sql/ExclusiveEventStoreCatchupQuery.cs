@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Reactive.Disposables;
 
@@ -21,18 +20,31 @@ namespace Microsoft.Its.Domain.Sql
         private readonly IEnumerable<StorableEvent> events;
         private readonly long startAtId;
         private readonly IQueryable<StorableEvent> eventQuery;
+        private readonly int batchSize;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExclusiveEventStoreCatchupQuery"/> class.
+        /// Initializes a new instance of the <see cref="ExclusiveEventStoreCatchupQuery" /> class.
         /// </summary>
         /// <param name="dbContext">The event store database context to execute the query against.</param>
         /// <param name="lockResourceName">Name of the lock. Multiple instances compete with other instances having the same <paramref name="lockResourceName" />.</param>
         /// <param name="getStartAtId">The id of the first event to query.</param>
         /// <param name="matchEvents">Specifies the event types to include the query. If none are specified, all events are queried.</param>
-        public ExclusiveEventStoreCatchupQuery(EventStoreDbContext dbContext, string lockResourceName, Func<long> getStartAtId, MatchEvent[] matchEvents)
+        /// <param name="batchSize">The number of events queried from the event store at each iteration.</param>
+        public ExclusiveEventStoreCatchupQuery(
+            EventStoreDbContext dbContext, 
+            string lockResourceName, 
+            Func<long> getStartAtId, 
+            MatchEvent[] matchEvents,
+            int batchSize = 10000)
         {
+            if (batchSize < 1)
+            {
+                throw new ArgumentException($"{nameof(batchSize)} must be greater than zero.");
+            }
+
             this.dbContext = dbContext;
             this.lockResourceName = lockResourceName;
+            this.batchSize = batchSize;
 
             if (TryGetAppLock())
             {
@@ -92,9 +104,16 @@ namespace Microsoft.Its.Domain.Sql
             IEnumerator<StorableEvent> enumerator = null;
             var nextIdToFetch = startAt;
 
-            Action reset = () => { enumerator = events.Where(e => e.Id >= nextIdToFetch).GetEnumerator(); };
+            Action reset = () =>
+            {
+                enumerator = events.Where(e => e.Id >= nextIdToFetch)
+                                   .Take(batchSize)
+                                   .GetEnumerator();
+            };
 
             reset();
+
+            var receivedEvents = 0;
 
             while (true)
             {
@@ -107,7 +126,16 @@ namespace Microsoft.Its.Domain.Sql
 
                     if (!enumerator.MoveNext())
                     {
-                        yield break;
+                        if (receivedEvents >= expectedNumberOfEvents)
+                        {
+                            yield break;
+                        }
+
+                        reset();
+                    }
+                    else
+                    {
+                        receivedEvents++;
                     }
                 }
                 catch (InvalidOperationException exception)
@@ -126,9 +154,12 @@ namespace Microsoft.Its.Domain.Sql
 
                 var @event = enumerator.Current;
 
-                nextIdToFetch = @event.Id + 1;
+                if (@event != null)
+                {
+                    nextIdToFetch = @event.Id + 1;
 
-                yield return @event;
+                    yield return @event;
+                }
             }
         }
 
