@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ using Test.Domain.Ordering;
 using Test.Domain.Ordering.Projections;
 using Assert = NUnit.Framework.Assert;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
+using Unit = System.Reactive.Unit;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -619,6 +621,37 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             projector1Count.Should().Be(15);
             projector2Count.Should().Be(25);
+        }
+
+        [Test]
+        public async Task When_initialization_fails_then_polling_continues()
+        {
+            var shouldThrow = true;
+            var eventsReceived = 0;
+            Events.Write(15, i => new Order.CreditCardCharged());
+
+            Func<EventStoreDbContext> getDbContext = () =>
+            {
+                if (shouldThrow)
+                {
+                    shouldThrow = false;
+                    throw new Exception("oops!");
+                }
+
+                return Configuration.Current.EventStoreDbContext();
+            };
+
+            var subject = new Subject<Unit>();
+
+            var catchup = CreateReadModelCatchup<ReadModels1DbContext>(
+                    getDbContext,
+                    Projector.Create<Order.CreditCardCharged>(e => eventsReceived++))
+                .PollEventStore(subject);
+
+            subject.OnNext(Unit.Default);
+            subject.OnNext(Unit.Default);
+
+            eventsReceived.Should().Be(15);
         }
 
         private static TimeSpan DefaultTimeout
