@@ -62,11 +62,16 @@ namespace Microsoft.Its.Domain.Sql
 
                     if (!aggregates.Any(streamName => string.IsNullOrWhiteSpace(streamName) || streamName == MatchEvent.Wildcard))
                     {
-                        eventQuery = eventQuery.Where(e => aggregates.Contains(e.StreamName));
-
                         if (!eventTypes.Any(type => string.IsNullOrWhiteSpace(type) || type == MatchEvent.Wildcard))
                         {
-                            eventQuery = eventQuery.Where(e => eventTypes.Contains(e.Type));
+                            // Filter on StreamName and Type
+                            var projectionEventFilter = new CatchupEventFilter(matchEvents);
+                            eventQuery = eventQuery.Where(projectionEventFilter.Filter);
+                        }
+                        else
+                        {
+                            // Filter on StreamName
+                            eventQuery = eventQuery.Where(e => aggregates.Contains(e.StreamName));
                         }
                     }
                 }
