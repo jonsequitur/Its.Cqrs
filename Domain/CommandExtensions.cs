@@ -5,6 +5,9 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for working with commands.
+    /// </summary>
     public static class CommandExtensions
     {
         /// <summary>

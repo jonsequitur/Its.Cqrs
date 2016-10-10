@@ -10,6 +10,9 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain.Testing
 {
+    /// <summary>
+    /// Methods for working with events.
+    /// </summary>
     public static class EventExtensions
     {
         internal static IEnumerable<IEvent> AssignSequenceNumbers(this IEnumerable<IEvent> events)
@@ -20,6 +23,10 @@ namespace Microsoft.Its.Domain.Testing
             return events.Do(e => sequencesPerAggregate.GetOrAdd(e.AggregateId, id => new EventSequence(id)).Add(e));
         }
 
+        /// <summary>
+        /// Creates an in-memory stored event from the specified event.
+        /// </summary>
+        /// <param name="e">The event from which to create an in-memory stored event.</param>
         public static InMemoryStoredEvent ToInMemoryStoredEvent(this IEvent e) =>
             new InMemoryStoredEvent
             {
@@ -32,6 +39,10 @@ namespace Microsoft.Its.Domain.Testing
                 StreamName = e.EventStreamName()
             };
 
+        /// <summary>
+        /// Creates an in-memory stored event from the specified <see cref="StorableEvent" />.
+        /// </summary>
+        /// <param name="e">The event from which to create an in-memory stored event.</param>
         public static InMemoryStoredEvent ToInMemoryStoredEvent(this StorableEvent e) =>
             new InMemoryStoredEvent
             {

@@ -11,6 +11,9 @@ namespace Microsoft.Its.Domain.Authorization
     /// </summary>
     public class AuthorizationQuery
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthorizationQuery"/> class.
+        /// </summary>
         protected internal AuthorizationQuery()
         {
         }

@@ -24,6 +24,9 @@ namespace Microsoft.Its.Domain
                 .Concrete()
                 .DerivedFrom(type);
 
+        /// <summary>
+        /// Gets the types derived from the specified type.
+        /// </summary>
         public static IEnumerable<Type> DerivedFrom(this IEnumerable<Type> types, Type type) =>
             types.Where(type.IsAssignableFrom);
 
@@ -96,6 +99,9 @@ namespace Microsoft.Its.Domain
                 .Where(t => !t.IsInterface)
                 .Where(t => !t.IsGenericTypeDefinition);
 
+        /// <summary>
+        /// Returns a sequence of types within the <see cref="AppDomain" />.
+        /// </summary>
         public static IEnumerable<Type> AppDomainTypes() =>
             AppDomainAssemblies()
                 .Where(a => !a.IsDynamic)

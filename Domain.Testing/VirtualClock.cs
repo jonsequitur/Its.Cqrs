@@ -158,6 +158,8 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="now">The time to which the virtual clock is set.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException">You must dispose the current VirtualClock before starting another.</exception>
+        /// <param name="caller">The caller.</param>
+        /// <param name="callerFilePath">The caller file path.</param>
         public static VirtualClock Start(
             DateTimeOffset? now = null,
             [CallerMemberName] string caller = null,
@@ -196,6 +198,9 @@ namespace Microsoft.Its.Domain.Testing
             return scheduler.Schedule(scheduledCommand, dueTime, func);
         }
 
+        /// <summary>
+        /// Gets a task that completes when all currently-due command scheduler work is done.
+        /// </summary>
         public async Task Done() => await Scheduler.Done();
 
         /// <summary>
@@ -205,7 +210,7 @@ namespace Microsoft.Its.Domain.Testing
         /// A string that represents the current object.
         /// </returns>
         /// <filterpriority>2</filterpriority>
-        public override string ToString() => $"{GetType()}: {Now().ToString("O")}";
+        public override string ToString() => $"{GetType()}: {Now():O}";
 
         private class RxScheduler : HistoricalScheduler
         {

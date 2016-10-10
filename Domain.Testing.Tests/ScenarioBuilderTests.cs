@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {

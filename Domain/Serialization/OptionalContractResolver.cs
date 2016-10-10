@@ -9,6 +9,10 @@ using Newtonsoft.Json.Serialization;
 
 namespace Microsoft.Its.Domain.Serialization
 {
+    /// <summary>
+    /// Used by Newtonsoft.Json.JsonSerializer to resolves a Newtonsoft.Json.Serialization.JsonContract for <see cref="Optional{T}" /> values.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.Serialization.DefaultContractResolver" />
     [DebuggerStepThrough]
     public class OptionalContractResolver : DefaultContractResolver
     {

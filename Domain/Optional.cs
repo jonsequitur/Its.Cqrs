@@ -3,8 +3,14 @@
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Methods for working with optionals.
+    /// </summary>
     public static class Optional
     {
+        /// <summary>
+        ///  Creates an optional containing the specified value.
+        /// </summary>
         public static Optional<T> Create<T>(T value) => new Optional<T>(value);
     }
 }

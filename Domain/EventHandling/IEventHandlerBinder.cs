@@ -5,6 +5,9 @@ using System;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Binds events published on the bus to specific methods on the target handler.
+    /// </summary>
     public interface IEventHandlerBinder
     {
         /// <summary>

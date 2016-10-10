@@ -6,8 +6,14 @@ using System.Linq.Expressions;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for working with expressions.
+    /// </summary>
     public static class ExpressionExtensions
     {
+        /// <summary>
+        /// Gets member name specified by the expression.
+        /// </summary>
         public static string MemberName<T>(this Expression<Func<T, object>> expression)
         {
             if (expression == null)

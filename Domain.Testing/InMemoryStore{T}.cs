@@ -9,7 +9,10 @@ using System.Reactive;
 using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Testing
-{
+{ 
+    /// <summary>
+    /// Simulates storage in memory for entities that can have commands applied to them by the command scheduler.
+    /// </summary>
     public class InMemoryStore<T> : IStore<T>, IEnumerable<T>
         where T : class
     {
@@ -18,6 +21,11 @@ namespace Microsoft.Its.Domain.Testing
         private readonly Func<T, string> getId;
         private readonly Func<string, T> create;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InMemoryStore{T}"/> class.
+        /// </summary>
+        /// <param name="getId">The get identifier.</param>
+        /// <param name="create">The create.</param>
         public InMemoryStore(Func<T, string> getId = null, Func<string, T> create = null)
         {
             this.create = create;
@@ -32,6 +40,11 @@ namespace Microsoft.Its.Domain.Testing
             }
         }
 
+        /// <summary>
+        ///     Gets a command target by the id.
+        /// </summary>
+        /// <param name="id">The id of the aggregate.</param>
+        /// <returns>The deserialized aggregate, or null if none exists with the specified id.</returns>
         public Task<T> Get(string id)
         {
             T value;
@@ -46,6 +59,9 @@ namespace Microsoft.Its.Domain.Testing
             return Task.FromResult(value);
         }
 
+        /// <summary>
+        ///     Persists the state of the command target.
+        /// </summary>
         public Task Put(T value)
         {
             dictionary.TryAdd(getId(value), value);
@@ -53,8 +69,15 @@ namespace Microsoft.Its.Domain.Testing
             return Task.FromResult(Unit.Default);
         }
 
+        /// <summary>
+        /// Adds the specified value to the store.
+        /// </summary>
+        /// <param name="value">The value.</param>
         public void Add(T value) => Put(value);
 
+        /// <summary>Returns an enumerator that iterates through the collection.</summary>
+        /// <returns>A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the collection.</returns>
+        /// <filterpriority>1</filterpriority>
         public IEnumerator<T> GetEnumerator() => dictionary.Values.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

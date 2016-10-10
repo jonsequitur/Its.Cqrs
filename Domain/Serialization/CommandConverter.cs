@@ -7,6 +7,10 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain.Serialization
 {
+    /// <summary>
+    /// Used by Newtonsoft.Json.JsonSerializer to resolves a Newtonsoft.Json.Serialization.JsonContract for objects of type <see cref="ICommand" />.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
     public class CommandConverter : JsonConverter
     {
         /// <summary>

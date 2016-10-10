@@ -69,7 +69,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                     c => c.Resolve<SchedulerClockRepository>())
                 .Register<IETagChecker>(
                     c => c.Resolve<SqlEventStoreETagChecker>())
+#pragma warning disable 618
                 .Register<ISchedulerClockTrigger>(
+#pragma warning restore 618
                     c => c.Resolve<SchedulerClockTrigger>())
                 .RegisterSingle(
                     c => new CommandDelivererResolver(c))

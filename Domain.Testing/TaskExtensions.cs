@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Testing
 {
+    /// <summary>
+    /// Provides methods for working with tasks.
+    /// </summary>
     public static class TaskExtensions
     {
         /// <summary>
-        /// Throws a TimeoutException if the specified task does not complete within the given timespan.
+        /// Throws a <see cref="TimeoutException" /> if the specified task does not complete within the given timespan.
         /// </summary>
         /// <param name="task">The task.</param>
-        /// <param name="timespan">The timespan.</param>
+        /// <param name="timespan">The period of time after which to time out.</param>
         /// <exception cref="System.TimeoutException"></exception>
         public static async Task TimeoutAfter(
             this Task task,
@@ -32,7 +35,14 @@ namespace Microsoft.Its.Domain.Testing
                 throw new TimeoutException();
             }
         }
-        
+
+        /// <summary>
+        /// Throws a <see cref="TimeoutException" /> if the specified task does not complete within the given timespan.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="task">The task.</param>
+        /// <param name="timespan">The period of time after which to time out.</param>
+        /// <exception cref="System.TimeoutException"></exception>
         public static async Task<T> TimeoutAfter<T>(
             this Task<T> task,
             TimeSpan timespan)
@@ -46,7 +56,7 @@ namespace Microsoft.Its.Domain.Testing
             {
                 return await task;
             }
-            
+
             throw new TimeoutException();
         }
 

@@ -38,6 +38,7 @@
     <CodeAnalysisRuleSet>BasicDesignGuidelineRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
     <LangVersion>6</LangVersion>
+    <NoWarn>1591,1998</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -48,6 +49,7 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Release\Microsoft.Its.Domain.Api.Tests.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
+    <NoWarn>1591,1998</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">

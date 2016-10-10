@@ -13,6 +13,9 @@ using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Its.Domain.Serialization
 {
+    /// <summary>
+    /// Provides methods for serialization.
+    /// </summary>
     public static class Serializer
     {
         private static readonly Lazy<Func<JsonSerializerSettings, JsonSerializerSettings>> cloneSettings =
@@ -34,8 +37,8 @@ namespace Microsoft.Its.Domain.Serialization
                 Error = (sender, args) => args.ErrorContext.Handled = true
             };
 
-            AddConverter(new OptionalConverter());
-            AddConverter(new UriConverter());
+            Settings.Converters.Add(new OptionalConverter());
+            Settings.Converters.Add(new UriConverter());
 
             return jsonSerializerSettings;
         }); 
@@ -44,6 +47,9 @@ namespace Microsoft.Its.Domain.Serialization
         
         private static JsonSerializerSettings settings;
 
+        /// <summary>
+        /// Gets or sets the default settings for the JSON serializer.
+        /// </summary>
         public static JsonSerializerSettings Settings
         {
             get
@@ -67,6 +73,9 @@ namespace Microsoft.Its.Domain.Serialization
             ConfigureDefault();
         }
 
+        /// <summary>
+        /// Configures the <see cref="Serializer.Settings" /> instance to the default.
+        /// </summary>
         public static void ConfigureDefault()
         {
             Settings = new JsonSerializerSettings
@@ -79,15 +88,13 @@ namespace Microsoft.Its.Domain.Serialization
                 DateParseHandling = DateParseHandling.DateTimeOffset
             };
 
-            AddConverter(new OptionalConverter());
-            AddConverter(new UriConverter());
+            Settings.Converters.Add(new OptionalConverter());
+            Settings.Converters.Add(new UriConverter());
         }
 
-        public static void AddConverter(JsonConverter converter)
-        {
-            Settings.Converters.Add(converter);
-        }
-
+        /// <summary>
+        /// Adds a conversion to be be used when serializing and seserializing between a JSON value and <typeparamref name="T" />.
+        /// </summary>
         public static void AddPrimitiveConverter<T>(
             Func<T, object> serialize,
             Func<object, T> deserialize)
@@ -98,11 +105,17 @@ namespace Microsoft.Its.Domain.Serialization
             }
         }
 
+        /// <summary>
+        /// Clones the <see cref="Serializer.Settings" /> instance.
+        /// </summary>
         public static JsonSerializerSettings CloneSettings()
         {
             return cloneSettings.Value(Settings);
         }
 
+        /// <summary>
+        /// Serializes the specified object to JSON using <see cref="Serializer.Settings" />.
+        /// </summary>
         public static string ToJson<T>(this T obj, Formatting formatting = Formatting.None)
         {
             return JsonConvert.SerializeObject(obj, formatting, Settings);
@@ -113,6 +126,9 @@ namespace Microsoft.Its.Domain.Serialization
             return JsonConvert.SerializeObject(obj, Formatting.Indented, diagnosticSettings.Value);
         }
 
+        /// <summary>
+        /// Deserializes an instance of the specified type from JSON using <see cref="Serializer.Settings" />.
+        /// </summary>
         public static T FromJsonTo<T>(this string json)
         {
             return JsonConvert.DeserializeObject<T>(json, Settings);
@@ -253,7 +269,7 @@ namespace Microsoft.Its.Domain.Serialization
             var candidateTypes = Event.KnownTypes()
                                       .Where(t => t.Name == eventName &&
                                                   t.IsNested &&
-                                                  t.DeclaringType.Name == aggregateName)
+                                                  t.DeclaringType?.Name == aggregateName)
                                       .ToArray();
 
             if (candidateTypes.Length == 1)
@@ -356,6 +372,11 @@ namespace Microsoft.Its.Domain.Serialization
             return eventType;
         }
 
+        /// <summary>
+        /// Deserializes a JSON array to a sequence of events.
+        /// </summary>
+        /// <param name="json">The json.</param>
+        /// <returns></returns>
         public static IEnumerable<IEvent> FromJsonToEvents(string json)
         {
             JArray jsonEvents = JArray.Parse(json);

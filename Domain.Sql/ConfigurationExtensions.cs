@@ -107,8 +107,10 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Gets a scheduler clock trigger.
         /// </summary>
+#pragma warning disable 618
         public static ISchedulerClockTrigger SchedulerClockTrigger(this Configuration configuration) =>
             configuration.Container.Resolve<ISchedulerClockTrigger>();
+#pragma warning restore 618
 
         /// <summary>
         /// Configures the system to use a SQL-based event store.

@@ -21,14 +21,26 @@ namespace Microsoft.Its.Domain.Sql
             Timestamp = DateTimeOffset.UtcNow;
         }
 
+        /// <summary>
+        /// Gets or sets the incrementing database-assigned identifier which can be used as a checkpoint for building projections.
+        /// </summary>
         public long Id { get; set; }
 
+        /// <summary>
+        /// Gets or sets the name of the stream, e.g. the aggregate's type name.
+        /// </summary>
         [MaxLength(255)]
         public string StreamName { get; set; }
 
+        /// <summary>
+        /// Gets or sets the name of the event type.
+        /// </summary>
         [MaxLength(255)]
         public string Type { get; set; }
 
+        /// <summary>
+        /// Gets or sets the <see cref="DateTime" /> (as UTC) time representation of the event's <see cref="Timestamp" />.
+        /// </summary>
         public DateTime UtcTime
         {
             get
@@ -37,18 +49,16 @@ namespace Microsoft.Its.Domain.Sql
             }
             set
             {
-                if (value.Kind == DateTimeKind.Unspecified)
-                {
-                    // treat it as Utc
-                    Timestamp = new DateTime(value.Ticks, DateTimeKind.Utc);
-                }
-                else
-                {
-                    Timestamp = value;
-                }
+                Timestamp =
+                    value.Kind == DateTimeKind.Unspecified
+                        ? new DateTime(value.Ticks, DateTimeKind.Utc)
+                        : value;
             }
         }
 
+        /// <summary>
+        /// Gets or sets a string representing the actor within the system that was operating on the aggregate when the event was recorded.
+        /// </summary>
         [MaxLength(255)]
         public string Actor { get; set; }
 
@@ -57,12 +67,24 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         public string Body { get; set; }
 
-        public DateTimeOffset Timestamp { get; set; } 
+        /// <summary>
+        /// Gets or sets the time at which the event was originally recorded..
+        /// </summary>
+        public DateTimeOffset Timestamp { get; set; }
 
+        /// <summary>
+        /// Gets the id of the aggregate to which this event applies.
+        /// </summary>
         public Guid AggregateId { get; set; }
 
+        /// <summary>
+        /// Gets the position of the event within the source object's event sequence.
+        /// </summary>
         public long SequenceNumber { get; set; }
 
+        /// <summary>
+        /// Gets the event's ETag, which is used to support idempotency within the event stream.
+        /// </summary>
         [MaxLength(100)]
         public string ETag { get; set; }
     }

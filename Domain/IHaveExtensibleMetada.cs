@@ -3,8 +3,14 @@
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Indicates that the implementing object supports extensible metadata.
+    /// </summary>
     public interface IHaveExtensibleMetada
     {
+        /// <summary>
+        /// Gets a dynamic metadata property bag.
+        /// </summary>
         dynamic Metadata { get; }
     }
 }

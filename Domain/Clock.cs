@@ -45,6 +45,9 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        /// <summary>
+        /// Resets this domain clock to use system time.
+        /// </summary>
         public static void Reset() => Current = SystemClock.Instance;
 
         /// <summary>

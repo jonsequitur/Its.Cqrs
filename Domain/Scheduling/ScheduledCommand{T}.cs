@@ -32,6 +32,14 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScheduledCommand{TTarget}"/> class.
+        /// </summary>
+        /// <param name="command">The command.</param>
+        /// <param name="aggregateId">The aggregate identifier.</param>
+        /// <param name="dueTime">The due time.</param>
+        /// <param name="deliveryPrecondition">The delivery precondition.</param>
+        /// <param name="clock">The clock.</param>
         public ScheduledCommand(
             ICommand<TTarget> command,
             Guid aggregateId,
@@ -46,6 +54,16 @@ namespace Microsoft.Its.Domain
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScheduledCommand{TTarget}"/> class.
+        /// </summary>
+        /// <param name="command">The command.</param>
+        /// <param name="targetId">The target identifier.</param>
+        /// <param name="dueTime">The due time.</param>
+        /// <param name="deliveryPrecondition">The delivery precondition.</param>
+        /// <param name="clock">The clock.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
+        /// <exception cref="System.ArgumentException">Parameter targetId cannot be null, empty or whitespace.</exception>
         public ScheduledCommand(
             ICommand<TTarget> command,
             string targetId,

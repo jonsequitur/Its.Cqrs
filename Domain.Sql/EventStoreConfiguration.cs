@@ -8,14 +8,23 @@ using Pocket;
 
 namespace Microsoft.Its.Domain.Sql
 {
+    /// <summary>
+    /// Configures interaction with SQL-based event stores.
+    /// </summary>
     public class EventStoreConfiguration
     {
         private readonly IList<Action<Configuration>> configureActions = new List<Action<Configuration>>();
 
+        /// <summary>
+        /// Specifies the database connection string.
+        /// </summary>
         public EventStoreConfiguration UseConnectionString(
             string connectionString) =>
                 UseDbContext(() => new EventStoreDbContext(connectionString));
 
+        /// <summary>
+        /// Specifies a delegate to be called when creating database contexts for the event store.
+        /// </summary>
         public EventStoreConfiguration UseDbContext(
             Func<EventStoreDbContext> create)
         {

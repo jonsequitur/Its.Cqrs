@@ -242,6 +242,11 @@ namespace Microsoft.Its.Domain
                          })
                          .ElseDefault();
 
+        /// <summary>
+        /// Creates a snapshot of the specified aggregate.
+        /// </summary>
+        /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+        /// <param name="aggregate">The aggregate.</param>
         public static ISnapshot CreateSnapshot<TAggregate>(
             this TAggregate aggregate)
             where TAggregate : class, IEventSourced

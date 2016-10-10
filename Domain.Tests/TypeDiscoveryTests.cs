@@ -6,6 +6,7 @@ using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain.Tests
 {

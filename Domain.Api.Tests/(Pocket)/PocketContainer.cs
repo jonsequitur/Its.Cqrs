@@ -17,6 +17,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
+#pragma warning disable CS0436 // Type conflicts with imported type
+
 namespace Pocket
 {
     /// <summary>
@@ -103,7 +105,7 @@ namespace Pocket
         /// </summary>
         public Func<Type, Exception, Exception> OnFailedResolve = (type, exception) =>
                                                                   new ArgumentException(
-                                                                      string.Format("PocketContainer can't construct a {0} unless you register it first. ☹", type), exception);
+                                                                      $"PocketContainer can't construct a {type} unless you register it first. ☹", exception);
 
         /// <summary>
         /// Resolves an instance of the specified type.
@@ -226,7 +228,7 @@ namespace Pocket
 
                 var ctors = typeof (T).GetConstructors();
 
-                var longestCtorParamCount = ctors.Max(c => c.GetParameters().Count());
+                var longestCtorParamCount = ctors.Max(c => c.GetParameters().Length);
 
                 var chosenCtor = ctors.Single(c => c.GetParameters().Length == longestCtorParamCount);
 

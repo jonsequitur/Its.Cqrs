@@ -5,11 +5,19 @@ using System;
 
 namespace Microsoft.Its.Domain
 {
-    // Store the event name as something that stands out, and is not a valid .Net identifier.
-    [EventName("* Annotated")]
+    /// <summary>
+    /// An annotation in the event stream.
+    /// </summary>
+    /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
+    /// <seealso cref="Microsoft.Its.Domain.Event{TAggregate}" />
+    [EventName("* Annotated") /*  Store the event name as something that stands out, and is not a valid .Net identifier. */  ]
     public class Annotated<TAggregate> : Event<TAggregate>
         where TAggregate : IEventSourced
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Annotated{TAggregate}"/> class.
+        /// </summary>
+        /// <param name="message">The message contained by the annotation.</param>
         public Annotated(string message)
         {
             Message = message;
@@ -17,8 +25,16 @@ namespace Microsoft.Its.Domain
             Timestamp = DateTimeOffset.UtcNow;
         }
 
+        /// <summary>
+        /// Gets the message contained by the annotation..
+        /// </summary>
         public string Message { get; private set; }
 
+        /// <summary>
+        ///     Updates an aggregate to a new state.
+        /// </summary>
+        /// <param name="aggregate">The aggregate to be updated.</param>
+        /// <remarks>This method is called when materializing an aggregate from an event stream.</remarks>
         public override void Update(TAggregate aggregate)
         {
         }

@@ -5,6 +5,11 @@ using System.Data.Entity.Migrations;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler.Migrations
 {
+    /// <summary>
+    /// A database migration.
+    /// </summary>
+    /// <seealso cref="System.Data.Entity.Migrations.DbMigration" />
+    /// <seealso cref="System.Data.Entity.Migrations.Infrastructure.IMigrationMetadata" />
     public partial class v0_6_11 : DbMigration
     {
         public override void Up()

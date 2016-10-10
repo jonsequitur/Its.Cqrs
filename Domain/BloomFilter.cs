@@ -88,10 +88,19 @@ namespace Microsoft.Its.Domain
             numberOfTimesToHash = (int) Math.Round(ln2*tableSize/capacity);
         }
 
+        /// <summary>
+        /// Gets a Base 64 representation of the state of the Bloom filter.
+        /// </summary>
         public string Base64 => table.ToBase64String();
 
+        /// <summary>
+        /// Gets the capacity of the Bloom filter.
+        /// </summary>
         public int Capacity { get; private set; }
-        
+
+        /// <summary>
+        /// Gets the probability that <see cref="MayContain" /> will return a false positive.
+        /// </summary>
         public double ProbabilityOfFalsePositive { get; private set; }
 
         /// <summary>

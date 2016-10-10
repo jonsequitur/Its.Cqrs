@@ -19,6 +19,9 @@ namespace Microsoft.Its.Domain.Sql
             Database.SetInitializer(new EventStoreDatabaseInitializer<EventStoreDbContext>());
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventStoreDbContext"/> class.
+        /// </summary>
         protected EventStoreDbContext()
         {
         }
@@ -73,8 +76,14 @@ namespace Microsoft.Its.Domain.Sql
             modelBuilder.Entity<StorableEvent>().Ignore(a => a.Timestamp);
         }
 
+        /// <summary>
+        /// Gets a database set for the events in the store.
+        /// </summary>
         public virtual DbSet<StorableEvent> Events { get; set; }
 
+        /// <summary>
+        /// Opens the underlying database connection.
+        /// </summary>
         protected internal virtual async Task OpenAsync()
         {
             var dbConnection = ((IObjectContextAdapter) this).ObjectContext.Connection;

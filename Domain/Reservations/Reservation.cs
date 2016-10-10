@@ -20,6 +20,7 @@ namespace Microsoft.Its.Domain
         /// <param name="valueToReserve">A delegate returning the value to be reserved.</param>
         /// <param name="scope">The scope in which the reserved value is unique.</param>
         /// <param name="ownerToken"></param>
+        /// <param name="lease">The lease period before which the reservation cannot be reclaimed by a different caller.</param>
         /// <returns>A task whose result is true if the value has been successfully reserved; otherwise, false.</returns>
         /// <remarks>The method is repeatable, such that if the same principal sends multiple commands requiring the same reserved value, each will return true unless the reservation has expired. If a diferent principle sends a command attempting to reserve the same value, the result will be false.</remarks>
         public static Task<bool> RequiresReserved<TCommand>(

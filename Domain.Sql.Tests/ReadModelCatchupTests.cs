@@ -19,6 +19,7 @@ using Its.Log.Instrumentation;
 using Test.Domain.Ordering;
 using Test.Domain.Ordering.Projections;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
+#pragma warning disable 4014
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -104,10 +105,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             if (extraneousEvent != null)
             {
-                Assert.Fail(string.Format("Found an event that should not have been queried from the event store: {0}:{1} (#{2})",
-                                          extraneousEvent.StreamName,
-                                          extraneousEvent.Type,
-                                          extraneousEvent.Id));
+                Assert.Fail($"Found an event that should not have been queried from the event store: {extraneousEvent.StreamName}:{extraneousEvent.Type} (#{extraneousEvent.Id})");
             }
         }
 

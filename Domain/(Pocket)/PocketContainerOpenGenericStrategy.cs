@@ -13,13 +13,13 @@ using System;
 
 namespace Pocket
 {
+    /// <summary>
+    /// Provides support for registration of open generic types.
+    /// </summary>
 #if !SourceProject
     [System.Diagnostics.DebuggerStepThrough]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
-    /// <summary>
-    /// Provides support for registration of open generic types.
-    /// </summary>
     internal static class PocketContainerOpenGenericStrategy
     {
         /// <summary>

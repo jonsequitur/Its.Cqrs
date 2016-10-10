@@ -16,13 +16,13 @@ using System.Reflection;
 
 namespace Pocket
 {
+    /// <summary>
+    /// Provides a strategy for choosing constructors that do not contain primitive types.
+    /// </summary>
 #if !SourceProject
     [System.Diagnostics.DebuggerStepThrough]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
-    /// <summary>
-    /// Provides a strategy for choosing constructors that do not contain primitive types.
-    /// </summary>
     internal static class PocketContainerPrimitiveAvoidanceStrategy
     {
         private static readonly MethodInfo pocketContainerResolveMethod = typeof (PocketContainer).GetMethod("Resolve", new Type[0]);

@@ -24,6 +24,9 @@ namespace Microsoft.Its.Domain
         private ICommand<TAggregate> command;
         private IClock clock;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandScheduled{TAggregate}"/> class.
+        /// </summary>
         public CommandScheduled()
         {
             if (string.IsNullOrWhiteSpace(ETag))

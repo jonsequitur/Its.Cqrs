@@ -12,6 +12,9 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// A command that can be applied to an aggregate.
+    /// </summary>
     [DebuggerStepThrough]
     public abstract class Command : ICommand
     {

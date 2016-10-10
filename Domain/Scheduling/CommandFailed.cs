@@ -8,10 +8,19 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Indicates that a command failed upon scheduled delivery. 
+    /// </summary>
+    /// <seealso cref="Microsoft.Its.Domain.CommandDelivered" />
     [DebuggerStepThrough]
     [DebuggerDisplay("{ToString()}")]
     public class CommandFailed : CommandDelivered
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandFailed"/> class.
+        /// </summary>
+        /// <param name="command">The command.</param>
+        /// <param name="exception">The exception, if any, that caused the command to fail.</param>
         public CommandFailed(IScheduledCommand command, Exception exception = null) : base(command)
         {
             Exception = exception;
@@ -32,8 +41,20 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public void Retry(TimeSpan? after = null) => RetryAfter = after ?? DefaultRetryBackoffPeriod;
 
+        /// <summary>
+        /// Gets a value indicating whether the command has been canceled.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if this instance is canceled; otherwise, <c>false</c>.
+        /// </value>
         public bool IsCanceled { get; private set; }
 
+        /// <summary>
+        /// Gets a value indicating whether the command will be retried.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if the command will be retried; otherwise, <c>false</c>.
+        /// </value>
         public bool WillBeRetried => RetryAfter != null;
 
         internal TimeSpan? RetryAfter { get; private set; }

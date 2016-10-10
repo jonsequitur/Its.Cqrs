@@ -11,6 +11,7 @@ using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
 using CustomerAccount = Test.Domain.Ordering.CustomerAccount;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain.Tests
 {
@@ -125,12 +126,11 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void When_Subscribe_is_called_with_a_handler_having_no_event_handler_implementations_then_it_throws()
         {
-            var bus = new FakeEventBus();
-
-            bus.Invoking(b => b.Subscribe(new object()))
-               .ShouldThrow<ArgumentException>()
-               .And
-               .Message.Should().Contain("does not implement any event handler interfaces");
+            new FakeEventBus()
+                .Invoking(b => b.Subscribe(new object()))
+                .ShouldThrow<ArgumentException>()
+                .And
+                .Message.Should().Contain("does not implement any event handler interfaces");
         }
 
         [Test]
@@ -156,11 +156,11 @@ namespace Microsoft.Its.Domain.Tests
         [Test]
         public void IProjectFrom_and_ITriggerProcessOn_interfaces_for_different_event_types_are_subscribed_on_the_same_handler_instance()
         {
-            var bus = new FakeEventBus();
+            var fakeEventBus = new FakeEventBus();
 
-            bus.Subscribe(new Projector_and_Trigger_from_different_event_types());
+            fakeEventBus.Subscribe(new Projector_and_Trigger_from_different_event_types());
 
-            bus.SubscribedEventTypes().Count().Should().Be(2);
+            fakeEventBus.SubscribedEventTypes().Count().Should().Be(2);
         }
 
         [Test]

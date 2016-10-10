@@ -14,8 +14,14 @@ namespace Microsoft.Its.Domain
     /// <typeparam name="TAggregate">The type of the aggregate.</typeparam>
     public static class AggregateType<TAggregate> where TAggregate : IEventSourced
     {
+        /// <summary>
+        /// Creates an instance of <typeparamref name="TAggregate" /> from an event sequence.
+        /// </summary>
         public static readonly Func<Guid, IEnumerable<IEvent>, TAggregate> FromEventHistory = CallEventHistoryConstructor();
         
+        /// <summary>
+        /// Creates an instance of <typeparamref name="TAggregate" /> from an event sequence.
+        /// </summary>
         public static readonly Func<ISnapshot, IEnumerable<IEvent>, TAggregate> FromSnapshot = CallSnapshotConstructor();
 
         /// <summary>
@@ -48,7 +54,7 @@ namespace Microsoft.Its.Domain
 
             var callConstructor = Expression.Lambda<Func<Guid, IEnumerable<IEvent>, TAggregate>>(
                 Expression.New(constructor,
-                               parameterExpressions.ToArray()),
+                               parameterExpressions.ToList()),
                 parameterExpressions).Compile();
 
             return (id, events) => callConstructor(id, events);

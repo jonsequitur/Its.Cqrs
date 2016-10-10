@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain;
-using Test.Domain.Ordering;
 
 namespace Test.Domain.Ordering
 {

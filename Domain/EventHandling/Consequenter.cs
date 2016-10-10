@@ -5,9 +5,15 @@ using System;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Methods for creating anonymous consequenters.
+    /// </summary>
     [Obsolete("Support will be removed in a forthcoming version. Please use the command scheduler instead.")]
     public static class Consequenter
     {
+        /// <summary>
+        /// Creates an anonymous consequenter.
+        /// </summary>
         public static IHaveConsequencesWhen<TEvent> Create<TEvent>(Action<TEvent> onEvent) where TEvent : IEvent =>
             new AnonymousConsequenter<TEvent>(onEvent);
     }

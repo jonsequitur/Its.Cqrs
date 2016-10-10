@@ -3,8 +3,14 @@
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Represents work done by the command scheduler.
+    /// </summary>
     public interface ICommandSchedulerActivity
     {
+        /// <summary>
+        /// Gets the scheduled command being operated upon.
+        /// </summary>
         IScheduledCommand ScheduledCommand { get; }
     }
 }

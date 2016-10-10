@@ -10,6 +10,9 @@ namespace Microsoft.Its.Domain
     /// </summary>
     public interface IEventHandler
     {
+        /// <summary>
+        /// Gets the binders for the handler.
+        /// </summary>
         IEnumerable<IEventHandlerBinder> GetBinders();
     }
 }

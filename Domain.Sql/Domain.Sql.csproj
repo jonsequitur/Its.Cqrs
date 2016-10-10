@@ -27,6 +27,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <DocumentationFile>bin\Debug\Microsoft.Its.Domain.Sql.xml</DocumentationFile>
     <LangVersion>6</LangVersion>
+    <NoWarn />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -38,6 +39,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <DocumentationFile>bin\Release\Microsoft.Its.Domain.Sql.xml</DocumentationFile>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <NoWarn />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">

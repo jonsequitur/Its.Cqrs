@@ -14,8 +14,6 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     public class ReadModelDbContext : DbContext
     {
-        private static string nameOrConnectionString;
-
         static ReadModelDbContext()
         {
             Database.SetInitializer(new ReadModelDatabaseInitializer<ReadModelDbContext>());
@@ -58,6 +56,10 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
+        /// <summary>
+        /// Gets the types of configurations to be used to configure the entity model for the read model database.
+        /// </summary>
+        /// <remarks>By default, this discovers and returns all types drived from <see cref="IEntityModelConfiguration" />.</remarks>
         protected virtual IEnumerable<Type> GetEntityModelConfigurationTypes()
         {
             return Discover.ConcreteTypesDerivedFrom(typeof (IEntityModelConfiguration));

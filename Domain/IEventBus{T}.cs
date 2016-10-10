@@ -7,6 +7,9 @@ using System.Reactive;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides a pub/sub mechanism for in-memory event notifications.
+    /// </summary>
     public interface IEventBus
     {
         /// <summary>

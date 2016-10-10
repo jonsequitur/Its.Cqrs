@@ -13,6 +13,9 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for working with event handlers.
+    /// </summary>
     public static class EventHandler
     {
         private static readonly ConcurrentDictionary<Type, ReflectedEventHandlerBinder[]> reflectedBinders =

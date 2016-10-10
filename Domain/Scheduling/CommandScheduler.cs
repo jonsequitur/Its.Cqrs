@@ -10,6 +10,9 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for working with the command scheduler.
+    /// </summary>
     public static class CommandScheduler
     {
         /// <summary>

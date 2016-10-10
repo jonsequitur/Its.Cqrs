@@ -8,6 +8,9 @@ namespace Microsoft.Its.Domain
     /// </summary>
     public interface INamedEventHandler 
     {
+        /// <summary>
+        /// Gets the name of the event handler.
+        /// </summary>
         string Name { get; }
     }
 }

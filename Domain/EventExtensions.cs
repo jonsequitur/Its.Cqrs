@@ -39,7 +39,7 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        /// Returns a string representing the actor who committed the specified event.
+        /// Returns a string representing the actor within the system that was operating on the aggregate when the event was recorded.
         /// </summary>
         public static string Actor(this IEvent e) =>
             e.IfTypeIs<IHaveExtensibleMetada>()
@@ -50,11 +50,17 @@ namespace Microsoft.Its.Domain
                                        .Then(a => a?.ToString())))
              .Else(() => null);
 
+        /// <summary>
+        /// Sets a string representing the actor within the system that was operating on the aggregate when the event was recorded.
+        /// </summary>
         public static void SetActor(
             this IHaveExtensibleMetada e,
             string actor) =>
                 e.Metadata.Actor = actor;
 
+        /// <summary>
+        /// Sets a string representing the actor within the system that was operating on the aggregate when the event was recorded.
+        /// </summary>
         public static void SetActor(
             this IHaveExtensibleMetada e,
             ICommand fromCommand) =>

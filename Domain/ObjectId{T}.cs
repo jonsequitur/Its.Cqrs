@@ -38,10 +38,10 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public T Value { get; }
 
-        protected bool Equals(ObjectId<T> other)
-        {
-            return EqualityComparer<T>.Default.Equals(Value, other.Value);
-        }
+        /// <summary>
+        /// Determines whether the specified <see cref="ObjectId{T}"/> is equal to the current <see cref="ObjectId{T}"/>.
+        /// </summary>
+        protected bool Equals(ObjectId<T> other) => EqualityComparer<T>.Default.Equals(Value, other.Value);
 
         /// <summary>
         /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.

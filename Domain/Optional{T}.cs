@@ -55,8 +55,18 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public bool IsSet => isSet;
 
+        /// <summary>
+        /// Performs an implicit conversion from <see cref="T"/> to <see cref="Optional{T}"/>.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns>
+        /// The result of the conversion.
+        /// </returns>
         public static implicit operator Optional<T>(T value) => new Optional<T>(value);
 
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
         public bool Equals(Optional<T> other) => EqualityComparer<T>.Default.Equals(value, other.value) && isSet.Equals(other.isSet);
 
         /// <summary>
@@ -66,14 +76,10 @@ namespace Microsoft.Its.Domain
         /// true if <paramref name="obj"/> and this instance are the same type and represent the same value; otherwise, false.
         /// </returns>
         /// <param name="obj">Another object to compare to. </param><filterpriority>2</filterpriority>
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-            return obj is Optional<T> && Equals((Optional<T>) obj);
-        }
+        public override bool Equals(object obj) =>
+            !ReferenceEquals(null, obj) &&
+            obj is Optional<T> &&
+            Equals((Optional<T>) obj);
 
         /// <summary>
         /// Returns the hash code for this instance.
@@ -90,8 +96,24 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        /// <summary>
+        /// Implements the operator ==.
+        /// </summary>
+        /// <param name="left">The left.</param>
+        /// <param name="right">The right.</param>
+        /// <returns>
+        /// The result of the operator.
+        /// </returns>
         public static bool operator ==(Optional<T> left, object right) => Equals(left, right);
 
+        /// <summary>
+        /// Implements the operator !=.
+        /// </summary>
+        /// <param name="left">The left.</param>
+        /// <param name="right">The right.</param>
+        /// <returns>
+        /// The result of the operator.
+        /// </returns>
         public static bool operator !=(Optional<T> left, object right) => !(left == right);
 
         /// <summary>

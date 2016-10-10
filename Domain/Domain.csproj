@@ -175,7 +175,6 @@
     <Compile Include="Snapshots\NoSnapshots{T}.cs" />
     <Compile Include="PocketContainerExtensions.cs" />
     <Compile Include="Reservations\NoReservations.cs" />
-    <Compile Include="Reservations\ReservationResult.cs" />
     <Compile Include="Scheduling\CommandScheduled{T}.cs" />
     <Compile Include="Command{T}.cs" />
     <Compile Include="CommandValidationException.cs" />
