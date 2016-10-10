@@ -66,7 +66,7 @@ namespace Microsoft.Its.Domain.Sql
             if (NumberOfEventsProcessed > 0)
             {
                 return
-                    $"Catchup {CatchupName}: Processed {NumberOfEventsProcessed} of {BatchCount} (event id: {CurrentEventId} / recorded: {EventTimestamp} / latency: {(Latency.Value).TotalSeconds}s)";
+                    $"Catchup {CatchupName}: Processed {NumberOfEventsProcessed} of {BatchCount} (event id: {CurrentEventId} / recorded: {EventTimestamp} / latency: {Latency.Value.TotalSeconds}s)";
             }
 
             if (BatchCount == 0)

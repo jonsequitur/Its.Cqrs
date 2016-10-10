@@ -189,11 +189,7 @@ namespace Microsoft.Its.Domain.Sql
             if (eventsProcessed > 0)
             {
                 Debug.WriteLine(
-                    "Catchup {0}: {1} events projected in {2}ms ({3}ms/event)",
-                    Name,
-                    eventsProcessed,
-                    stopwatch.ElapsedMilliseconds,
-                    (stopwatch.ElapsedMilliseconds/eventsProcessed));
+                    $"Catchup {Name}: {eventsProcessed} events projected in {stopwatch.ElapsedMilliseconds}ms ({stopwatch.ElapsedMilliseconds/eventsProcessed}ms/event)");
             }
 
             return ReadModelCatchupResult.CatchupRanAndHandledNewEvents;
@@ -388,12 +384,8 @@ namespace Microsoft.Its.Domain.Sql
         /// Runs a single catchup operation each time the source observable produces a queryable of events.
         /// </summary>
         /// <param name="events">The events.</param>
-        public void RunWhen(IObservable<Unit> events)
-        {
-            EnsureInitialized();
-
+        public void RunWhen(IObservable<Unit> events) =>
             disposables.Add(events.Subscribe(es => Run().Wait()));
-        }
 
         private void EnsureInitialized()
         {

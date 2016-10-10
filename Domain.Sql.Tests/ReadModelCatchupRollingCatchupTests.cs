@@ -175,11 +175,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public void EventStore_polling_polls_again_immediately_if_new_events_were_written_while_the_previous_batch_was_processing()
         {
-            TaskScheduler.UnobservedTaskException += (sender, args) =>
-            {
-                Console.WriteLine(args.Exception.ToLogString());
-            };
-
             Events.Write(1);
             var writeAdditionalEvent = true;
             var scheduler = new TestScheduler();

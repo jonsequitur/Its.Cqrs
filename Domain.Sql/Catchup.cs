@@ -54,17 +54,14 @@ namespace Microsoft.Its.Domain.Sql
                 .Where(status =>
                 {
                     // should we poll again? polling again immediately reduces potential latency by not waiting until the interval-baed polling happens again.  
-                    if (status.IsEndOfBatch)
+                    if (status.IsEndOfBatch &&
+                        status.BatchCount > 0)
                     {
-                        // dispose any previous catchup query immediately, to release its app lock and dispose database connections
-                        if (status.BatchCount > 0)
+                        using (var eventStore = Task.Run(readModelCatchup.CreateOpenEventStoreDbContext).Result)
                         {
-                            using (var eventStore = readModelCatchup.CreateOpenEventStoreDbContext().Result)
+                            if (eventStore.Events.Max(e => e.Id) > status.CurrentEventId)
                             {
-                                if (eventStore.Events.Max(e => e.Id) > status.CurrentEventId)
-                                {
-                                    return true;
-                                }
+                                return true;
                             }
                         }
                     }
