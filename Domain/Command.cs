@@ -109,6 +109,9 @@ namespace Microsoft.Its.Domain
                 .Values
                 .ToArray();
 
+        /// <summary>
+        /// Gets the known types within the <see cref="AppDomain" /> that commands can be applied to.
+        /// </summary>
         public static Type[] KnownTargetTypes => knownTargetTypes.Value;
 
         internal static Type FindType(Type aggregateType, string commandName)

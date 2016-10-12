@@ -122,10 +122,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Domain.EventStore\Domain.EventStore.csproj">
-      <Project>{91d2c196-3345-4f55-88a9-6f6b69621245}</Project>
-      <Name>Domain.EventStore</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Domain.Sql\Domain.Sql.csproj">
       <Project>{DEC1C144-4D30-4A83-A03A-8F90085C87EF}</Project>
       <Name>Domain.Sql</Name>
@@ -133,10 +129,6 @@
     <ProjectReference Include="..\Domain\Domain.csproj">
       <Project>{99442acc-a914-4bdf-8de5-d074fa0447f5}</Project>
       <Name>Domain</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\EventStore\EventStore.csproj">
-      <Project>{49F372BA-8EC1-4F5D-860D-957199EF0422}</Project>
-      <Name>EventStore</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
