@@ -46,6 +46,9 @@ namespace Microsoft.Its.Domain
             return handler;
         }
 
+        /// <summary>
+        /// Specifies a name for the consequenter. 
+        /// </summary>
         public static IHaveConsequencesWhen<TEvent> Named<TEvent>(this IHaveConsequencesWhen<TEvent> consequenter, string name)
             where TEvent : IEvent
         {
@@ -61,6 +64,9 @@ namespace Microsoft.Its.Domain
             return consequenter;
         }
 
+        /// <summary>
+        /// Specifies a name for the projector.
+        /// </summary>
         public static IUpdateProjectionWhen<TEvent> Named<TEvent>(this IUpdateProjectionWhen<TEvent> projector, string name)
             where TEvent : IEvent
         {
@@ -68,7 +74,7 @@ namespace Microsoft.Its.Domain
 
             if (named == null)
             {
-                throw new NotImplementedException(string.Format("Handlers of type {0} do not support naming yet.", projector));
+                throw new NotImplementedException($"Handlers of type {projector} do not support naming yet.");
             }
 
             named.Name = name;
@@ -76,6 +82,9 @@ namespace Microsoft.Its.Domain
             return projector;
         }
 
+        /// <summary>
+        /// Gets the event handler binders for the specified handler.
+        /// </summary>
         public static IEnumerable<IEventHandlerBinder> GetBinders(object handler) =>
             handler.IfTypeIs<IEventHandler>()
                    .Then(h => h.GetBinders())
