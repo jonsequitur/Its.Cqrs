@@ -25,7 +25,6 @@ namespace Microsoft.Its.Domain.Sql
     public class ReadModelCatchup<TDbContext> : IDisposable
         where TDbContext : DbContext
     {
-        public int BatchSize { get; set; }
         private readonly List<object> projectors;
         private readonly CompositeDisposable disposables;
         private MatchEvent[] matchEvents;
@@ -100,6 +99,11 @@ namespace Microsoft.Its.Domain.Sql
             disposables.Add(bus);
             Sensors.ReadModelDbContexts.GetOrAdd(typeof (TDbContext).Name, createReadModelDbContext);   
         }
+
+        /// <summary>
+        /// Gets or sets the maximum number of events that will be queried from the event store when <see cref="Run" /> is called.
+        /// </summary>
+        public int BatchSize { get; set; }
 
         /// <summary>
         /// Gets the event bus used to publish events to the subscribed projectors.
