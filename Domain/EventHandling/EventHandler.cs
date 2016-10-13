@@ -35,6 +35,9 @@ namespace Microsoft.Its.Domain
             return compositeProjector;
         }
 
+        /// <summary>
+        /// Specifies a name for the event handler. 
+        /// </summary>
         public static IEventHandler Named(this IEventHandler handler, string name)
         {
             handler.IfTypeIs<EventHandlerWrapper>()

@@ -35,8 +35,14 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         public bool IsStartOfBatch => NumberOfEventsProcessed == 0;
 
+        /// <summary>
+        /// Gets or sets the time at which the related event was originally recorded.
+        /// </summary>
         public DateTimeOffset? EventTimestamp { get; set; }
 
+        /// <summary>
+        /// Gets the latency between the time that the event was recorded and the time that it was projected.
+        /// </summary>
         public TimeSpan? Latency
         {
             get
@@ -52,6 +58,9 @@ namespace Microsoft.Its.Domain.Sql
 
         internal DateTimeOffset? StatusTimeStamp { get; set; }
 
+        /// <summary>
+        /// Gets or sets the name of the catchup that send the status update.
+        /// </summary>
         public string CatchupName { get; set; }
 
         /// <summary>
@@ -66,7 +75,7 @@ namespace Microsoft.Its.Domain.Sql
             if (NumberOfEventsProcessed > 0)
             {
                 return
-                    $"Catchup {CatchupName}: Processed {NumberOfEventsProcessed} of {BatchCount} (event id: {CurrentEventId} / recorded: {EventTimestamp} / latency: {Latency.Value.TotalSeconds}s)";
+                    $"Catchup {CatchupName}: Processed {NumberOfEventsProcessed} of {BatchCount} (event id: {CurrentEventId} / recorded: {EventTimestamp} / latency: {Latency?.TotalSeconds}s)";
             }
 
             if (BatchCount == 0)

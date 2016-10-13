@@ -575,6 +575,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 error.EventTypeName.Should().Be("ItemAdded");
                 error.SerializedEvent.Should().Contain(productName);
                 error.Error.Should().Contain(errorMessage);
+                error.Error.Should().Contain(Environment.MachineName);
             }
         }
 
