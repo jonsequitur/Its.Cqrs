@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
+using System.Linq.Expressions;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NCrunch.Framework;
@@ -37,6 +39,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
             return catchup;
         }
 
+        public ReadModelCatchup CreateReadModelCatchup(
+            Expression<Func<StorableEvent, bool>> filter = null,
+            int batchSize = 10000,
+            params object[] projectors)
+        {
+            var catchup = new ReadModelCatchup(
+                eventStoreDbContext: () => EventStoreDbContext(),
+                readModelDbContext: () => ReadModelDbContext(),
+                startAtEventId: HighestEventId + 1,
+                projectors: projectors,
+                batchSize: batchSize,
+                filter: filter)
+            {
+                Name = "from " + (HighestEventId + 1)
+            };
+            Configuration.Current.RegisterForDisposal(catchup);
+            return catchup;
+        }
+
         public ReadModelCatchup<T> CreateReadModelCatchup<T>(
             Func<EventStoreDbContext> eventStoreDbContext,
             params object[] projectors)
@@ -53,7 +74,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Configuration.Current.RegisterForDisposal(catchup);
             return catchup;
         }
-
+        
         public ReadModelCatchup<T> CreateReadModelCatchup<T>(params object[] projectors)
             where T : DbContext, new() =>
                 CreateReadModelCatchup<T>(() => EventStoreDbContext(), projectors);

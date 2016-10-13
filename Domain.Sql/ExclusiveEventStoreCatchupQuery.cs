@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reactive.Disposables;
 
 namespace Microsoft.Its.Domain.Sql
@@ -19,8 +20,6 @@ namespace Microsoft.Its.Domain.Sql
         private readonly long expectedNumberOfEvents;
         private readonly IEnumerable<StorableEvent> events;
         private readonly long startAtId;
-        private readonly IQueryable<StorableEvent> eventQuery;
-        private readonly int batchSize;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExclusiveEventStoreCatchupQuery" /> class.
@@ -35,7 +34,8 @@ namespace Microsoft.Its.Domain.Sql
             string lockResourceName, 
             Func<long> getStartAtId, 
             MatchEvent[] matchEvents,
-            int batchSize = 10000)
+            int batchSize = 10000,
+            Expression<Func<StorableEvent, bool>> filter = null)
         {
             if (batchSize < 1)
             {
@@ -44,7 +44,6 @@ namespace Microsoft.Its.Domain.Sql
 
             this.dbContext = dbContext;
             this.lockResourceName = lockResourceName;
-            this.batchSize = batchSize;
 
             if (TryGetAppLock())
             {
@@ -76,9 +75,17 @@ namespace Microsoft.Its.Domain.Sql
                     }
                 }
 
-                this.eventQuery = eventQuery;
+                if (filter != null)
+                {
+                    eventQuery = eventQuery.Where(filter);
+                }
+
+                eventQuery = eventQuery
+                    .Where(e => e.Id >= startAtId)
+                    .Take(batchSize);
                 
-                expectedNumberOfEvents = eventQuery.Count(e => e.Id >= startAtId);
+                expectedNumberOfEvents = eventQuery.Count();
+
                 events = DurableStreamFrom(eventQuery, startAtId);
             }
             else
@@ -112,7 +119,6 @@ namespace Microsoft.Its.Domain.Sql
             Action reset = () =>
             {
                 enumerator = events.Where(e => e.Id >= nextIdToFetch)
-                                   .Take(batchSize)
                                    .GetEnumerator();
             };
 
@@ -170,6 +176,6 @@ namespace Microsoft.Its.Domain.Sql
 
         public void Dispose() => appLockDisposer.Dispose();
 
-        public override string ToString() => new  { lockResourceName, startAtId, eventQuery }.ToString();
+        public override string ToString() => new  { lockResourceName, startAtId, events }.ToString();
     }
 }

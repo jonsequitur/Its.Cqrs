@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -40,6 +41,8 @@ namespace Microsoft.Its.Domain.Sql
         private List<ReadModelInfo> subscribedReadModelInfos;
         private string lockResourceName;
         private readonly long startAtEventId;
+        private readonly Expression<Func<StorableEvent, bool>> filter;
+        private readonly int batchSize;
 
         /// <summary>
         /// Initializes the <see cref="ReadModelCatchup{TDbContext}"/> class.
@@ -55,14 +58,18 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="readModelDbContext">A delegate to create read model database contexts on demand.</param>
         /// <param name="eventStoreDbContext">A delegate to create event store database contexts on demand.</param>
         /// <param name="startAtEventId">The event id that the catchup should start from.</param>
-        /// <param name="projectors">The projectors to be updated as new events are added to the event store.</param>
         /// <param name="batchSize">The number of events queried from the event store at each iteration.</param>
+        /// <param name="filter">An optional filter expression to constrain the query that the catchup uses over the event store.</param>
+        /// <param name="projectors">The projectors to be updated as new events are added to the event store.</param>
+        /// <exception cref="System.ArgumentNullException">
+        /// </exception>
         /// <exception cref="System.ArgumentException">You must specify at least one projector.</exception>
         public ReadModelCatchup(
             Func<DbContext> readModelDbContext,
             Func<EventStoreDbContext> eventStoreDbContext,
             long startAtEventId = 0,
             int batchSize = 10000,
+            Expression<Func<StorableEvent, bool>> filter = null,
             params object[] projectors)
         {
             if (readModelDbContext == null)
@@ -83,8 +90,9 @@ namespace Microsoft.Its.Domain.Sql
             createReadModelDbContext = readModelDbContext;
             createEventStoreDbContext = eventStoreDbContext;
             this.startAtEventId = startAtEventId;
+            this.filter = filter;
             this.projectors = new List<object>(projectors);
-            BatchSize = batchSize;
+            this.batchSize = batchSize;
 
             EnsureProjectorNamesAreDistinct();
 
@@ -99,11 +107,6 @@ namespace Microsoft.Its.Domain.Sql
             disposables.Add(bus);
             Sensors.ReadModelDbContexts.GetOrAdd(typeof (TDbContext).Name, createReadModelDbContext);   
         }
-
-        /// <summary>
-        /// Gets or sets the maximum number of events that will be queried from the event store when <see cref="Run" /> is called.
-        /// </summary>
-        public int BatchSize { get; set; }
 
         /// <summary>
         /// Gets the event bus used to publish events to the subscribed projectors.
@@ -152,7 +155,8 @@ namespace Microsoft.Its.Domain.Sql
                     lockResourceName,
                     GetStartingId,
                     matchEvents,
-                    BatchSize))
+                    batchSize,
+                    filter))
                 {
                     ReportStatus(new ReadModelCatchupStatus
                     {

@@ -415,6 +415,68 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
+        public async Task ReadModelCatchup_queries_can_specify_a_batch_size()
+        {
+            Events.Write(10, _ => Events.Any());
+
+            var eventsQueried = 0;
+
+            var projector = Projector.Create<Event>(e => { eventsQueried++; })
+                                     .Named(MethodBase.GetCurrentMethod().Name);
+
+            using (var catchup = CreateReadModelCatchup(batchSize: 2, projectors: projector))
+            {
+                await catchup.Run();
+            }
+
+            eventsQueried.Should().Be(2);
+        }
+
+        [Test]
+        public async Task ReadModelCatchup_queries_can_be_filtered()
+        {
+            // arrange
+            var shouldQueryAggregateId = Any.Guid();
+            var shouldNotQueryAggregateId = Any.Guid();
+
+            Events.Write(100, i =>
+            {
+                var @event = Events.Any() as Event;
+                @event.AggregateId = i%2 == 0
+                                         ? shouldQueryAggregateId
+                                         : shouldNotQueryAggregateId;
+                return @event;
+            });
+
+            var countOfEventsWeWant = 0;
+            var countOfEventsWeDontWant = 0;
+
+            var projector = Projector.Create<IEvent>(e =>
+                                     {
+                                         if (e.AggregateId == shouldQueryAggregateId)
+                                         {
+                                             countOfEventsWeWant++;
+                                         }
+                                         if (e.AggregateId == shouldNotQueryAggregateId)
+                                         {
+                                             countOfEventsWeDontWant++;
+                                         }
+                                     }).Named(MethodBase.GetCurrentMethod().Name);
+
+            // act
+            using (var catchup = CreateReadModelCatchup(
+                filter: e => e.AggregateId == shouldQueryAggregateId,
+                projectors: new[] { projector }))
+            {
+                await catchup.Run();
+            }
+
+            // assert
+            countOfEventsWeWant.Should().Be(50);
+            countOfEventsWeDontWant.Should().Be(0);
+        }
+
+        [Test]
         public async Task ReadModelCatchup_StartAtEventId_can_be_used_to_avoid_requery_of_previous_events()
         {
             var lastEventId = Events.Write(50, _ => Events.Any());

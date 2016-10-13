@@ -4,6 +4,7 @@
 using System;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -26,12 +27,14 @@ namespace Microsoft.Its.Domain.Sql
             Func<EventStoreDbContext> eventStoreDbContext,
             long startAtEventId = 0,
             int batchSize = 10000,
+            Expression<Func<StorableEvent, bool>> filter = null,
             params object[] projectors) :
-                base(readModelDbContext,
-                     eventStoreDbContext,
-                     startAtEventId,
-                     batchSize,
-                     projectors)
+            base(readModelDbContext,
+                eventStoreDbContext,
+                startAtEventId,
+                batchSize,
+                filter,
+                projectors)
         {
         }
     }
