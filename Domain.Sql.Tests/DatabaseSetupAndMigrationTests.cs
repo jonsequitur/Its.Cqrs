@@ -84,31 +84,21 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public void event_store_stream_name_is_indexed()
+        public void event_store_id_is_indexed()
         {
             using (var context = EventStoreDbContext())
             {
-                var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_StreamName' AND object_id = OBJECT_ID('eventstore.events')").Single();
+                var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_Id' AND object_id = OBJECT_ID('eventstore.events')").Single();
                 result.Should().NotBeEmpty();
             }
         }
 
         [Test]
-        public void event_store_type_is_indexed()
+        public void event_store_id_streamname_type_is_indexed()
         {
             using (var context = EventStoreDbContext())
             {
-                var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_Type' AND object_id = OBJECT_ID('eventstore.events')").Single();
-                result.Should().NotBeEmpty();
-            }
-        }
-
-        [Test]
-        public void event_store_type_and_id_are_indexed()
-        {
-            using (var context = EventStoreDbContext())
-            {
-                var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_Id_and_Type' AND object_id = OBJECT_ID('eventstore.events')").Single();
+                var result = context.QueryDynamic(@"SELECT * FROM sys.indexes WHERE name='IX_Id_StreamName_Type' AND object_id = OBJECT_ID('eventstore.events')").Single();
                 result.Should().NotBeEmpty();
             }
         }

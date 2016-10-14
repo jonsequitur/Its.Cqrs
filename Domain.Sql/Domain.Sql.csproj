@@ -201,9 +201,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\EventStoreDbContext-0_14_0.sql" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Migrations\DbContext-0_0_0_0.sql" />
   </ItemGroup>
   <ItemGroup>

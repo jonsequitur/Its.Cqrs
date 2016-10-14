@@ -2,8 +2,8 @@
     [AggregateId]    UNIQUEIDENTIFIER NOT NULL,
     [SequenceNumber] BIGINT           NOT NULL,
     [Id]             BIGINT           IDENTITY (1, 1) NOT NULL,
-    [StreamName]     NVARCHAR (255)   NOT NULL,
-    [Type]           NVARCHAR (255)   NOT NULL,
+    [StreamName]     NVARCHAR (50)   NOT NULL,
+    [Type]           NVARCHAR (100)   NOT NULL,
     [UtcTime]        DATETIME         NOT NULL,
     [Actor]          NVARCHAR (255)   NULL,
     [Body]           NVARCHAR (MAX)   NULL,
@@ -15,20 +15,8 @@
 GO
 CREATE NONCLUSTERED INDEX [IX_ETag]
     ON [EventStore].[Events]([ETag] ASC);
-
-
 GO
-CREATE NONCLUSTERED INDEX [IX_StreamName]
-    ON [EventStore].[Events]([StreamName] ASC);
 
-
+CREATE UNIQUE NONCLUSTERED INDEX IX_Id   
+    ON EventStore.[Events] (Id); 
 GO
-CREATE NONCLUSTERED INDEX [IX_Type]
-    ON [EventStore].[Events]([Type] ASC);
-
-
-GO
-CREATE NONCLUSTERED INDEX [IX_Id_and_Type]
-    ON [EventStore].[Events]([Id] ASC, [Type] ASC)
-    INCLUDE([StreamName]);
-
