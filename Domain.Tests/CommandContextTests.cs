@@ -274,6 +274,53 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
+        public async Task Different_target_tokens_produce_different_etags()
+        {
+            var token1 = Any.Guid().ToString();
+            var token2 = Any.Guid().ToString();
+            var sequence1 = new List<string>();
+            var sequence2 = new List<string>();
+            var command = new AddItem();
+
+            using (var ctx = CommandContext.Establish(command))
+            {
+                Enumerable.Range(1, 10).ForEach(_ => sequence1.Add(ctx.NextETag(token1)));
+            }
+            using (var ctx = CommandContext.Establish(command))
+            {
+                Enumerable.Range(1, 10).ForEach(_ => sequence2.Add(ctx.NextETag(token2)));
+            }
+
+            sequence1.Should().NotIntersectWith(sequence2);
+        }
+
+        [Test]
+        public async Task ETag_algorithm_should_not_change()
+        {
+            // if this test fails then it indicates that the sequential etag algorithm has changed
+            var etagSequenceProducedByPreviousVersion = new[]
+            {
+                "dM0F0CTmKQpAngK9tYgq/A==", "NxE5yC5V7I8BMBrUPMHKeQ==", "eN1q1+7HXXdDYow/qU80Fg==", "bbyUFL6Hee1cLancyW+iSQ==", "uITytyOZwtA6N0lMI0a1Kw==",
+                "WJ/wpF4bz2/vpTyHwLu5rg==", "RpXqssQ3o0vZSevaUfFJcA==", "eJxBtnoGVd/j+5JU0Qv/tA==", "Ry8jn92BPj3u/vUCDL8bXA==", "43pnV6fNpbBkBHay9wNPoQ=="
+            };
+            var newlyGeneratedSequence = new List<string>();
+            var command = new AddItem
+            {
+                ETag = "some specific value"
+            };
+            var token = "some specific token";
+
+            using (var ctx = CommandContext.Establish(command))
+            {
+                Enumerable.Range(1, 10).ForEach(_ => newlyGeneratedSequence.Add(ctx.NextETag(token)));
+            }
+
+            newlyGeneratedSequence
+                .Should()
+                .BeEquivalentTo(etagSequenceProducedByPreviousVersion);
+        }
+
+        [Test]
         public void Nested_command_contexts_maintain_independent_etag_sequences()
         {
             // arrange

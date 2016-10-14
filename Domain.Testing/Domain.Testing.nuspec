@@ -11,8 +11,8 @@
     <copyright>Copyright 2016</copyright>
     <tags>testing CQRS Its.Cqrs</tags>
     <dependencies>
-      <dependency id="Its.Domain" version="[0.15.9-beta,1)" />
-      <dependency id="Its.Domain.Sql" version="[0.15.9-beta,1)" />
+      <dependency id="Its.Domain" version="[0.15.10-beta,1)" />
+      <dependency id="Its.Domain.Sql" version="[0.15.10-beta,1)" />
       <dependency id="Rx-Main" version="[2.2.5,)" />
     </dependencies>
   </metadata>

@@ -80,6 +80,11 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public IClock Clock { get; set; }
 
+        /// <summary>
+        /// Gets the next etag in a deterministic, repeatable sequence using the specified target token as a seed.
+        /// </summary>
+        /// <param name="forTargetToken">A token representing the command target.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public string NextETag(string forTargetToken)
         {
             if (forTargetToken == null)
@@ -105,7 +110,7 @@ namespace Microsoft.Its.Domain
                                                       _ => new ETagSequence())
                                             .NextETagSequenceNumber();
 
-            var unhashedEtag = $"{Command.ETag}:{""} ({sequence})";
+            var unhashedEtag = $"{Command.ETag}:{forTargetToken} ({sequence})";
 
             var hashedEtag = unhashedEtag.ToETag();
 
