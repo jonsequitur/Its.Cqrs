@@ -355,13 +355,13 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var customClock = CreateClock("CUSTOM:" + Any.CamelCaseName(), theFirst);
 
-            Console.WriteLine(new { customClock }.ToLogString());
-
             var delivered = new ConcurrentBag<IScheduledCommand>();
             Configuration.Current
-                         .TraceScheduledCommands()
                          .TraceScheduledCommands(
-                             onDelivered: command => { delivered.Add(command); });
+                             onDelivered: command =>
+                             {
+                                 delivered.Add(command);
+                             });
             var target = new CommandSchedulerTestAggregate(targetId);
             await Save(target);
 
@@ -381,6 +381,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // act
             await AdvanceClock(theThird, customClock.Name);
             await AdvanceClock(theFourth, customClock.Name);
+
+            await Task.Delay(20);
 
             //assert
             delivered.Should().HaveCount(2);

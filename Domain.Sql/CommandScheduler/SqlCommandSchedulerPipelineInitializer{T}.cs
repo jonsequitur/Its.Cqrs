@@ -49,7 +49,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             where TAggregate : class
         {
             var clock = cmd.DueTime != null
-                            ? Domain.Clock.Create(() => cmd.DueTime.Value)
+                            ? Domain.Clock.Create(() => cmd.DueTime.Value, cmd.Clock)
                             : cmd.Clock;
 
             using (CommandContext.Establish(cmd.Command, clock))
