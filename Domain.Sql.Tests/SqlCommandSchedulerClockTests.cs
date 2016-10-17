@@ -344,7 +344,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task When_a_command_schedule_another_command_on_custom_clock_the_new_command_is_on_the_same_custom_clock()
+        public async Task When_a_command_schedules_another_command_on_a_specific_clock_the_new_command_is_on_the_same_clock()
         {
             // arrange
             var targetId = Any.Guid();
@@ -353,7 +353,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var theThird = theFirst.AddDays(2);
             var theFourth = theThird.AddDays(1);
 
-            var customClock = CreateClock("CUSTOM:" + Any.CamelCaseName(), theFirst);
+            var customClock = CreateClock(Any.CamelCaseName(), theFirst);
 
             var delivered = new ConcurrentBag<IScheduledCommand>();
             Configuration.Current
@@ -381,8 +381,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // act
             await AdvanceClock(theThird, customClock.Name);
             await AdvanceClock(theFourth, customClock.Name);
-
-            await Task.Delay(20);
 
             //assert
             delivered.Should().HaveCount(2);
