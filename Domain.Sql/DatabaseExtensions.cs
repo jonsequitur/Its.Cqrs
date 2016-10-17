@@ -14,6 +14,9 @@ using Microsoft.Its.Domain.Serialization;
 
 namespace Microsoft.Its.Domain.Sql
 {
+    /// <summary>
+    /// Provides methods for working with SQL databases.
+    /// </summary>
     public static class DatabaseExtensions
     {
         /// <summary>
@@ -108,6 +111,9 @@ namespace Microsoft.Its.Domain.Sql
             context.WaitUntilDatabaseIsCreated(false);
         }
 
+        /// <summary>
+        /// Creates a readonly login and user in the target database.
+        /// </summary>
         public static void CreateReadonlyUser(this DbContext context, DbReadonlyUser readonlyUser)
         {
             var createUserCmd = $"CREATE USER [{readonlyUser.UserName}] FOR LOGIN [{readonlyUser.LoginName}]";
@@ -151,7 +157,7 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        public static IEnumerable<IEnumerable<dynamic>> QueryDynamic(
+        internal static IEnumerable<IEnumerable<dynamic>> QueryDynamic(
             this DbContext context,
             string sql,
             IDictionary<string, object> parameters = null) =>
@@ -169,7 +175,7 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        public static IEnumerable<IEnumerable<dynamic>> QueryDynamic(
+        internal static IEnumerable<IEnumerable<dynamic>> QueryDynamic(
             this IDbConnection connection,
             string sql,
             IDictionary<string, object> parameters = null)
@@ -180,7 +186,7 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        public static IDbCommand PrepareCommand(
+        internal static IDbCommand PrepareCommand(
             this IDbConnection connection,
             string sql,
             IDictionary<string, object> parameters = null)
@@ -205,7 +211,7 @@ namespace Microsoft.Its.Domain.Sql
             }
         }
 
-        public static IEnumerable<IEnumerable<dynamic>> ExecuteQueriesToDynamic(
+        internal static IEnumerable<IEnumerable<dynamic>> ExecuteQueriesToDynamic(
             this IDbCommand command)
         {
             using (var reader = command.ExecuteReader())

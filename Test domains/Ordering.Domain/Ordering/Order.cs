@@ -41,19 +41,13 @@ namespace Test.Domain.Ordering
 
         public bool IsCancelled { get; private set; }
 
-        public bool IsPaid { get; private set; }
+        public bool IsPaid { get; }
 
         public IDeliveryMethod DeliveryMethod { get; private set; }
 
         public DateTimeOffset? MustBeDeliveredBy { get; set; }
 
-        public IList<OrderItem> Items
-        {
-            get
-            {
-                return items;
-            }
-        }
+        public IList<OrderItem> Items => items;
 
         public decimal Balance { get; private set; }
 
@@ -75,13 +69,8 @@ namespace Test.Domain.Ordering
 
         private readonly List<EventMigrations.Rename> pendingRenames = new List<EventMigrations.Rename>();
 
-        IEnumerable<EventMigrations.Rename> IEventMigratingAggregate.PendingRenames
-        {
-            get
-            {
-                return pendingRenames;
-            }
-        }
+        IEnumerable<EventMigrations.Rename> IEventMigratingAggregate.PendingRenames =>
+            pendingRenames;
 
         public override void ConfirmSave()
         {

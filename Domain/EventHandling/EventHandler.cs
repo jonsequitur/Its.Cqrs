@@ -23,10 +23,15 @@ namespace Microsoft.Its.Domain
 
         private static readonly ConcurrentDictionary<Type, string> handlerTypeNames = new ConcurrentDictionary<Type, string>();
 
+        /// <summary>
+        /// Wraps all of the specified handler's event handling methods in a proxy delegate.
+        /// </summary>
+        /// <param name="eventHandler">The event handler.</param>
+        /// <param name="proxy">The proxy.</param>
+        /// <returns>A proxy for the specified event handler.</returns>
         public static IEventHandler WrapAll(
             this object eventHandler,
-            Handle<IEvent> proxy,
-            string aliasForCatchup = null)
+            Handle<IEvent> proxy)
         {
             var compositeProjector = new EventHandlerWrapper(eventHandler);
 
@@ -93,6 +98,10 @@ namespace Microsoft.Its.Domain
                    .Then(h => h.GetBinders())
                    .Else(() => GetBindersUsingReflection(handler));
 
+        /// <summary>
+        /// Determines whether the specfied type is an event handler type.
+        /// </summary>
+        /// <param name="type">The type.</param>
         public static bool IsEventHandlerType(this Type type) =>
             type.IsConsequenterType() ||
             type.IsProjectorType() ||
@@ -137,6 +146,10 @@ namespace Microsoft.Its.Domain
                                              });
         }
 
+        /// <summary>
+        /// Returns the name of the event handler.
+        /// </summary>
+        /// <param name="handler">The handler.</param>
         public static string FullName(object handler)
         {
             EnsureIsHandler(handler);

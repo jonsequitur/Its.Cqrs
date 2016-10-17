@@ -8,6 +8,9 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for configuring domain services and behaviors.
+    /// </summary>
     public static class ConfigurationExtensions
     {
         /// <summary>
@@ -282,6 +285,10 @@ namespace Microsoft.Its.Domain
             return configuration;
         }
 
+        /// <summary>
+        /// Gets the configured snapshot repository.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
         public static ISnapshotRepository SnapshotRepository(this Configuration configuration) =>
             configuration.Container.Resolve<ISnapshotRepository>();
 

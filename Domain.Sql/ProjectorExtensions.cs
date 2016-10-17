@@ -7,6 +7,9 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Sql
 {
+    /// <summary>
+    /// Provides methods for working with projectors.
+    /// </summary>
     public static class ProjectorExtensions
     {
         static ProjectorExtensions()

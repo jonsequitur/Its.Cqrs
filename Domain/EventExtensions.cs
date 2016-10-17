@@ -13,8 +13,16 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for working with events.
+    /// </summary>
     public static class EventExtensions
     {
+        /// <summary>
+        /// Gets the absolute sequence number of the specified event, if it has one.
+        /// </summary>
+        /// <param name="event">The event.</param>
+        /// <returns>The absolute sequence number of the event, or 0 if it does not have one.</returns>
         public static long AbsoluteSequenceNumber(this IEvent @event)
         {
             var metadata = (@event as IHaveExtensibleMetada)?.Metadata;
@@ -176,6 +184,10 @@ namespace Microsoft.Its.Domain
                                            return t.Name;
                                        }));
 
+        /// <summary>
+        /// Gets the aggregate, potentially without sourcing it if it has been cached in-memory in the event metadata.
+        /// </summary>
+        /// <param name="event">The event.</param>
         [Obsolete]
         public static T GetAggregate<T>(this Event<T> @event) where T : class, IEventSourced =>
             // TODO: (GetAggregate) this is possibly awkward to use, e.g. expects the handler to know that the aggregate was sourced.
@@ -185,7 +197,7 @@ namespace Microsoft.Its.Domain
                 .IfContains("Aggregate")
                 .And()
                 .IfTypeIs<T>()
-                .Else<T>(() =>
+                .Else(() =>
                 {
                     var repository = Configuration.Current.Container.Resolve<IEventSourcedRepository<T>>();
                     return Task.Run(() => repository.GetLatest(@event.AggregateId)).Result;

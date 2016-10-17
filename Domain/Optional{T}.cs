@@ -56,7 +56,7 @@ namespace Microsoft.Its.Domain
         public bool IsSet => isSet;
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="T"/> to <see cref="Optional{T}"/>.
+        /// Performs an implicit conversion from <see typeparamref="T"/> to <see cref="Optional{T}"/>.
         /// </summary>
         /// <param name="value">The value.</param>
         /// <returns>

@@ -8,6 +8,9 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain.Sql
 {
+    /// <summary>
+    /// Provides methods for working with events.
+    /// </summary>
     public static class EventExtensions
     {
         private static readonly Lazy<JsonSerializerSettings> serializerSettings = new Lazy<JsonSerializerSettings>(() =>

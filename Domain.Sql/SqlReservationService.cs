@@ -17,6 +17,11 @@ namespace Microsoft.Its.Domain.Sql
     {
         private readonly Func<ReservationServiceDbContext> createReservationServiceDbContext;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlReservationService"/> class.
+        /// </summary>
+        /// <param name="createReservationServiceDbContext">A delegate used to create reservation service database context instances.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public SqlReservationService(Func<ReservationServiceDbContext> createReservationServiceDbContext)
         {
             if (createReservationServiceDbContext == null)

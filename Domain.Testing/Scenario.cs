@@ -92,7 +92,9 @@ namespace Microsoft.Its.Domain.Testing
             {
                 var clockTrigger = builder.Configuration.SchedulerClockTrigger();
 
+#pragma warning disable 618
                 SchedulerAdvancedResult result;
+#pragma warning restore 618
                 do
                 {
                     result = await clockTrigger.AdvanceClock(GetClockName(), Clock.Now()).TimeoutAfter(DefaultTimeout());

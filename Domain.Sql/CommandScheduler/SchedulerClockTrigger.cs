@@ -7,12 +7,11 @@ using System.Data.Entity.Core;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
-#pragma warning disable 618
     internal class SchedulerClockTrigger : ISchedulerClockTrigger
-#pragma warning restore 618
     {
         private readonly Func<CommandSchedulerDbContext> createCommandSchedulerDbContext;
 

@@ -25,8 +25,6 @@ namespace Microsoft.Its.Domain
     {
         private static readonly ConcurrentDictionary<string, Type> knownTypesByName = new ConcurrentDictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
-        private static readonly Type[] knownTypes = Discover.ConcreteTypesDerivedFrom(typeof (ICommand<TTarget>)).ToArray();
-
         /// <summary>
         ///     The default authorization method used by all commands for <typeparamref name="TTarget" />.
         /// </summary>
@@ -151,6 +149,13 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        /// <summary>
+        /// Handles a command validation failure.
+        /// </summary>
+        /// <param name="target">The target of the command.</param>
+        /// <param name="validationReport">The validation report.</param>
+        /// <exception cref="CommandValidationException"></exception>
+        /// <remarks>The default implementation throws a <see cref="CommandValidationException" />.</remarks>
         protected virtual void HandleCommandValidationFailure(TTarget target, ValidationReport validationReport)
         {
             var eventSourcedAggregate = target as EventSourcedAggregate;
@@ -277,10 +282,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         /// <param name="target">The target.</param>
         /// <returns>true if the command is authorized; otherwise, false.</returns>
-        public virtual bool Authorize(TTarget target)
-        {
-            return AuthorizeDefault(target, this);
-        }
+        public virtual bool Authorize(TTarget target) => AuthorizeDefault(target, this);
 
         /// <summary>
         /// If set, requires that the command be applied to this version of the target; otherwise, <see cref="ApplyTo" /> will throw..
@@ -305,7 +307,8 @@ namespace Microsoft.Its.Domain
         /// <summary>
         ///     Gets all of the the types implementing <see cref="Command{T}" /> discovered within the AppDomain.
         /// </summary>
-        public new static Type[] KnownTypes => knownTypes;
+        public new static Type[] KnownTypes { get; } =
+            Discover.ConcreteTypesDerivedFrom(typeof(ICommand<TTarget>)).ToArray();
 
         /// <summary>
         ///     Gets the command type having the specified name.
@@ -314,21 +317,6 @@ namespace Microsoft.Its.Domain
             knownTypesByName.GetOrAdd(name,
                                       n =>
                                       KnownTypes.SingleOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
-
-        public static IValidationRule<TTarget> CommandHasNotBeenApplied(ICommand command)
-        {
-            if (string.IsNullOrWhiteSpace(command.ETag) || typeof (EventSourcedAggregate).IsAssignableFrom(typeof (TTarget)))
-            {
-                return Validate.That<TTarget>(a => true)
-                               .WithSuccessMessage("Command is not checked for idempotency via the ETag property.");
-            }
-
-            return Validate.That<TTarget>(target => (target as EventSourcedAggregate)
-                                                              .Events()
-                                                              .OfType<Event>()
-                                                              .Every(e => e.ETag != command.ETag))
-                           .WithErrorMessage($"Command with ETag '{command.ETag}' has already been applied.");
-        }
 
         /// <summary>Returns a string that represents the current object.</summary>
         /// <returns>A string that represents the current object.</returns>

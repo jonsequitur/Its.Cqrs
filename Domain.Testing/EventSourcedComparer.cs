@@ -7,13 +7,15 @@ namespace Microsoft.Its.Domain.Testing
 {
     internal class EventSourcedComparer : IEqualityComparer<IEventSourced>
     {
+
         /// <summary>
         /// Determines whether the specified objects are equal.
         /// </summary>
+        /// <param name="x">The first object of type <see cref="IEventSourced" /> to compare.</param>
+        /// <param name="y">The second object of type <see cref="IEventSourced" /> to compare.</param>
         /// <returns>
         /// true if the specified objects are equal; otherwise, false.
         /// </returns>
-        /// <param name="x">The first object of type <paramref name="T"/> to compare.</param><param name="y">The second object of type <paramref name="T"/> to compare.</param>
         public bool Equals(IEventSourced x, IEventSourced y)
         {
             if (x == null)

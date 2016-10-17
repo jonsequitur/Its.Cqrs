@@ -15,7 +15,7 @@ namespace Microsoft.Its.Domain
 
         public EventHandlerWrapper(object innerHandler)
         {
-            this.InnerHandler = innerHandler;
+            InnerHandler = innerHandler;
             
             var compositeProjector = innerHandler as EventHandlerWrapper;
             if (compositeProjector != null)

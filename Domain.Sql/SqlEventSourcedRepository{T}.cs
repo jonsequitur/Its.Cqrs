@@ -21,6 +21,8 @@ namespace Microsoft.Its.Domain.Sql
     {
         private readonly IEventBus bus;
 
+        private readonly Func<EventStoreDbContext> createEventStoreContext;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlEventSourcedRepository{TAggregate}" /> class.
         /// </summary>
@@ -32,10 +34,8 @@ namespace Microsoft.Its.Domain.Sql
         {
             this.bus = bus ?? Configuration.Current.EventBus;
 
-            if (createEventStoreDbContext != null)
-            {
-                GetEventStoreContext = createEventStoreDbContext;
-            }
+            createEventStoreContext = createEventStoreDbContext ??
+                                      (() => Configuration.Current.EventStoreDbContext());
         }
 
         private async Task<TAggregate> Get(Guid id, long? version = null, DateTimeOffset? asOfDate = null)
@@ -50,7 +50,7 @@ namespace Microsoft.Its.Domain.Sql
                                               .GetSnapshot(id, version, asOfDate);
             }
 
-            using (var context = GetEventStoreContext())
+            using (var context = createEventStoreContext())
             {
                 var streamName = AggregateType<TAggregate>.EventStreamName;
                 var events = context.Events
@@ -149,7 +149,7 @@ namespace Microsoft.Its.Domain.Sql
                 return storableEvent;
             }).ToArray();
 
-            using (var context = GetEventStoreContext())
+            using (var context = createEventStoreContext())
             {
                 foreach (var storableEvent in storableEvents)
                 {
@@ -204,8 +204,6 @@ namespace Microsoft.Its.Domain.Sql
             // publish the events
             await bus.PublishAsync(events);
         }
-
-        public Func<EventStoreDbContext> GetEventStoreContext = () => Configuration.Current.EventStoreDbContext();
 
         /// <summary>
         ///     Gets a command target by the id.

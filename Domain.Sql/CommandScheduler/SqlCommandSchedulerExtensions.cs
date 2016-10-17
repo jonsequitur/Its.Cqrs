@@ -7,6 +7,9 @@ using Microsoft.Its.Domain.Serialization;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+    /// <summary>
+    /// Provides methods for working with a SQL-based command scheduler.
+    /// </summary>
     public static class SqlCommandSchedulerExtensions
     {
         /// <summary>

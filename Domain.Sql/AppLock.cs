@@ -31,7 +31,9 @@ namespace Microsoft.Its.Domain.Sql
         private readonly IDisposable disposables;
 
 #if DEBUG
+#pragma warning disable 1591
         public static readonly ConcurrentDictionary<AppLock, AppLock> Active = new ConcurrentDictionary<AppLock, AppLock>();
+#pragma warning restore 1591
         private readonly Stopwatch timeSpentInAppLockStopwatch = Stopwatch.StartNew();
 #endif
         internal static bool WriteDebugOutput { get; set; }
@@ -181,6 +183,9 @@ SELECT @result";
             }
         }
 
+        /// <summary>
+        /// Releases the app lock.
+        /// </summary>
         public void Dispose()
         {
             disposables.Dispose();

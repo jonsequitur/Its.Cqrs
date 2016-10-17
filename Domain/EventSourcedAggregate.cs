@@ -74,6 +74,12 @@ namespace Microsoft.Its.Domain
             sourceSnapshot = snapshot;
         }
 
+        /// <summary>
+        /// Initializes the event history.
+        /// </summary>
+        /// <param name="sourceEvents">The source events.</param>
+        /// <exception cref="System.InvalidOperationException">Event history has already been initialized.</exception>
+        /// <exception cref="System.ArgumentException">Event history does not match specified aggregate id</exception>
         protected internal void InitializeEventHistory(IEnumerable<IEvent> sourceEvents)
         {
             if (eventHistory.Count > 0)
@@ -182,13 +188,11 @@ namespace Microsoft.Its.Domain
                 validationReport);
         }
 
+        /// <summary>
+        /// Throws a command validation exception.
+        /// </summary>
+        /// <param name="command">The command that failed validation.</param>
+        /// <param name="validationReport">The validation report.</param>
         protected void ThrowCommandValidationException(ICommand command, ValidationReport validationReport) => HandleCommandValidationFailure(command, validationReport);
-    }
-
-    internal enum ProbabilisticAnswer
-    {
-        No,
-        Yes,
-        Maybe
     }
 }

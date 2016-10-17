@@ -29,8 +29,9 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="getStartAtId">The id of the first event to query.</param>
         /// <param name="matchEvents">Specifies the event types to include the query. If none are specified, all events are queried.</param>
         /// <param name="batchSize">The number of events queried from the event store at each iteration.</param>
+         /// <param name="filter">An optional filter expression to constrain the query that the catchup uses over the event store.</param>
         public ExclusiveEventStoreCatchupQuery(
-            EventStoreDbContext dbContext, 
+            EventStoreDbContext dbContext,
             string lockResourceName, 
             Func<long> getStartAtId, 
             MatchEvent[] matchEvents,

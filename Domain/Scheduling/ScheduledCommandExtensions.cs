@@ -7,8 +7,18 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for working with scheduled commands.
+    /// </summary>
     public static class ScheduledCommandExtensions
     {
+        /// <summary>
+        /// Determines whether the specified command is due.
+        /// </summary>
+        /// <param name="command">The command.</param>
+        /// <param name="clock">An optional clock on which to check whether the command is due. If not specified, then the clock specified by the command is used. If that isn't specified, then <see cref="Clock.Current" /> is used.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public static bool IsDue(
             this IScheduledCommand command,
             IClock clock = null)
@@ -31,6 +41,13 @@ namespace Microsoft.Its.Domain
                    && !(command.Result is CommandDelivered);
         }
 
+        /// <summary>
+        /// Determines whether the command's precondition is satisfied, if it has one.
+        /// </summary>
+        /// <param name="preconditionChecker">The precondition checker.</param>
+        /// <param name="scheduledCommand">The scheduled command.</param>
+        /// <returns>True if the command has no precondition, or if its precondition is satisfied.</returns>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public static async Task<bool> IsPreconditionSatisfied(
             this IETagChecker preconditionChecker,
             IScheduledCommand scheduledCommand)

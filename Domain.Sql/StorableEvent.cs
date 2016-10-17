@@ -66,7 +66,7 @@ namespace Microsoft.Its.Domain.Sql
         public string Actor { get; set; }
 
         /// <summary>
-        ///     Gets or sets the serialized body of the actual event.
+        ///     Gets or sets the serialized body of the domain event.
         /// </summary>
         public string Body { get; set; }
 

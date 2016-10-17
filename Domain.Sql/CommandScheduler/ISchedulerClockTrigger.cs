@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+    /// <summary>
+    /// Triggers the delivery of scheduled commands.
+    /// </summary>
     [Obsolete("The interface will be removed in a future version.")]
     public interface ISchedulerClockTrigger
     {

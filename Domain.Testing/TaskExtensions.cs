@@ -60,6 +60,8 @@ namespace Microsoft.Its.Domain.Testing
             throw new TimeoutException();
         }
 
+        internal static Task<T> CompletedTask<T>(this T value) => Task.FromResult(value);
+
         /// <summary>
         /// Provides a way to specify the intention to fire and forget a task and suppress the compiler warning that results from unawaited tasks.
         /// </summary>

@@ -5,6 +5,9 @@ using System;
 
 namespace Microsoft.Its.Domain.Sql
 {
+    /// <summary>
+    /// Creates and migrates a reservation service database.
+    /// </summary>
     public class ReservationServiceDatabaseInitializer : CreateAndMigrate<ReservationServiceDbContext>
     {
     }

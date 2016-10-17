@@ -3,6 +3,7 @@
 
 using System;
 using Test.Domain.Ordering;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain.Tests
 {

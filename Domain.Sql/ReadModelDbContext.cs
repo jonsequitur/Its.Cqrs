@@ -27,6 +27,11 @@ namespace Microsoft.Its.Domain.Sql
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReadModelDbContext"/> class.
+        /// </summary>
+        /// <param name="nameOrConnectionString">Either the database name or a connection string.</param>
+        /// <param name="model">The model that will back this context.</param>
         protected ReadModelDbContext(string nameOrConnectionString, DbCompiledModel model) : base(nameOrConnectionString, model)
         {
         }

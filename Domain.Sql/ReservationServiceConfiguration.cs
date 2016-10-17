@@ -6,14 +6,25 @@ using System.Collections.Generic;
 
 namespace Microsoft.Its.Domain.Sql
 {
+    /// <summary>
+    /// Provides configuration for a SQL-based reservation service.
+    /// </summary>
     public class ReservationServiceConfiguration
     {
         private readonly IList<Action<Configuration>> configureActions = new List<Action<Configuration>>();
 
+        /// <summary>
+        /// Specifies the connection string for the reservation service database.
+        /// </summary>
         public ReservationServiceConfiguration UseConnectionString(
-            string connectionString) =>
-                UseDbContext(() => new ReservationServiceDbContext(connectionString));
+                string connectionString) =>
+            UseDbContext(() => new ReservationServiceDbContext(connectionString));
 
+        /// <summary>
+        /// Specifies how to create instances of <see cref="ReservationServiceDbContext" />.
+        /// </summary>
+        /// <param name="create">A delegate that creates the db context.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public ReservationServiceConfiguration UseDbContext(
             Func<ReservationServiceDbContext> create)
         {

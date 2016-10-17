@@ -29,11 +29,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             if (onSave != null)
             {
-                repository.GetEventStoreContext = () =>
-                {
-                    onSave();
-                    return EventStoreDbContext();
-                };
+                Console.WriteLine("onSave");
+//                repository.GetEventStoreContext = () =>
+//                {
+//                    onSave();
+//                    return EventStoreDbContext();
+//                };
             }
 
             return repository;
@@ -200,9 +201,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task When_storage_fails_then_no_events_are_published()
         {
             var order = new Order();
-            var bus = new FakeEventBus();
-            bus.Events<IEvent>().Subscribe(e => { throw new Exception("oops"); });
-            var repository = CreateRepository<Order>(() => { throw new Exception("oops!"); });
+            var bus = new InProcessEventBus();
+            var eventsPublished = new List<IEvent>();
+            bus.Events<IEvent>().Subscribe(eventsPublished.Add);
+            Func<EventStoreDbContext> eventStoreDbContext = () =>
+            {
+                throw new Exception("oops!");
+            };
+            var repository =new SqlEventSourcedRepository<Order>(bus, eventStoreDbContext);
 
             order
                 .Apply(new AddItem
@@ -220,11 +226,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
             }
 
-            using (var db = EventStoreDbContext())
-            {
-                var events = db.Events.Where(e => e.AggregateId == order.Id).ToArray();
-                events.Length.Should().Be(0);
-            }
+            eventsPublished.Should().BeEmpty();
         }
 
         [Test]

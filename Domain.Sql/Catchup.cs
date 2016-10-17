@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql
 {
+    /// <summary>
+    /// Provides methods for working with read model catchups.
+    /// </summary>
     public static class Catchup
     {
         /// <summary>

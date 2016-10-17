@@ -11,6 +11,9 @@ using Pocket;
 
 namespace Microsoft.Its.Domain.Testing
 {
+    /// <summary>
+    /// Provides methods for configuring the Its.Domain for tests.
+    /// </summary>
     public static class TestConfigurationExtensions
     {
         /// <summary>
@@ -30,7 +33,12 @@ namespace Microsoft.Its.Domain.Testing
 
             return configuration;
         }
-        
+
+        /// <summary>
+        /// Configures the domain to use an in-memory command target store.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <returns></returns>
         public static Configuration UseInMemoryCommandTargetStore(this Configuration configuration)
         {
             configuration.Container
@@ -60,6 +68,12 @@ namespace Microsoft.Its.Domain.Testing
             return configuration;
         }
 
+        /// <summary>
+        /// Configures the domain to use an in-memory event store.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="traceEvents">if set to <c>true</c> [trace events].</param>
+        /// <returns></returns>
         public static Configuration UseInMemoryEventStore(
             this Configuration configuration,
             bool traceEvents = false)
@@ -112,6 +126,11 @@ namespace Microsoft.Its.Domain.Testing
             return null;
         }
 
+        /// <summary>
+        /// Configures the domain to use an in-memory reservation service.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <returns></returns>
         public static Configuration UseInMemoryReservationService(this Configuration configuration)
         {
             configuration.Container

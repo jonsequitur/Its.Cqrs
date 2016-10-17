@@ -12,6 +12,9 @@ namespace Microsoft.Its.Domain
     [DebuggerStepThrough]
     public class SystemClock : IClock
     {
+        /// <summary>
+        /// A single instance of the system clock.
+        /// </summary>
         public static readonly SystemClock Instance = new SystemClock();
 
         private SystemClock()
@@ -23,6 +26,12 @@ namespace Microsoft.Its.Domain
         /// </summary>
         public DateTimeOffset Now() => DateTimeOffset.UtcNow;
 
-        public override string ToString() => $"{GetType()}: {Now().ToString("O")}";
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
+        public override string ToString() => $"{GetType()}: {Now():O}";
     }
 }

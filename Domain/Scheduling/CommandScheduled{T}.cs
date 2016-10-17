@@ -92,6 +92,9 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        /// <summary>
+        /// Gets the number of times the scheduler has previously attempted to deliver the command.
+        /// </summary>
         [JsonIgnore]
         public int NumberOfPreviousAttempts { get; set; }
 

@@ -219,12 +219,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 // catch up to the event store
                 await catchup.Run();
 
-                catchup.Progress
-                       .ForEachAsync(s =>
-                       {
-                           statusReports.Add(s);
-                           Console.WriteLine(s);
-                       });
+                catchup.Progress.Subscribe(statusReports.Add);
 
                 // act
                 catchup.PollEventStore(TimeSpan.FromSeconds(30), scheduler);

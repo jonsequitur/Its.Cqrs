@@ -19,8 +19,9 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="readModelDbContext">A delegate to create read model database contexts on demand.</param>
         /// <param name="eventStoreDbContext">A delegate to create event store database contexts on demand.</param>
         /// <param name="startAtEventId">The event id that the catchup should start from.</param>
-        /// <param name="projectors">The projectors to be updated as new events are added to the event store.</param>
         /// <param name="batchSize">The number of events queried from the event store at each iteration.</param>
+        /// <param name="filter">An optional filter expression to constrain the query that the catchup uses over the event store.</param>
+        /// <param name="projectors">The projectors to be updated as new events are added to the event store.</param>
         /// <exception cref="System.ArgumentException">You must specify at least one projector.</exception>
         public ReadModelCatchup(
             Func<DbContext> readModelDbContext,

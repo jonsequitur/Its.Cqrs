@@ -13,7 +13,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
 {
     public static class Events
     {
+#pragma warning disable CS0436 // Type conflicts with imported type
         private static readonly PocketContainer container = new PocketContainer()
+#pragma warning restore CS0436 // Type conflicts with imported type
             .AutoMockInterfacesAndAbstractClasses()
             .Register(c => Recipes.Any.Decimal(.01m))
             .Register(c => Recipes.Any.Bool())

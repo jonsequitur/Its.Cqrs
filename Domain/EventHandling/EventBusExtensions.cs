@@ -7,6 +7,9 @@ using System.Reactive.Disposables;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for working with the event bus.
+    /// </summary>
     public static class EventBusExtensions
     {
         /// <summary>

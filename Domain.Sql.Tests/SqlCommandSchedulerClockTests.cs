@@ -46,9 +46,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         private void TriggerConcurrencyExceptionOnOrderCommands(Guid orderId)
         {
-            var orderRepository = Configuration.Current.Repository<Order>();
-            Configuration.Current.UseDependency(_ => orderRepository);
-            ((SqlEventSourcedRepository<Order>) orderRepository).GetEventStoreContext = () =>
+            Func<EventStoreDbContext> eventStoreContext = () =>
             {
                 // quick, add a new event in order to trigger a concurrency exception at the moment the scheduler tries to apply the command
                 var repository = new SqlEventSourcedRepository<Order>();
@@ -58,10 +56,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 return EventStoreDbContext();
             };
+
+            var orderRepository = new SqlEventSourcedRepository<Order>(createEventStoreDbContext: eventStoreContext);
+
+            Configuration.Current.UseDependency<IEventSourcedRepository<Order>>(_ => orderRepository);
         }
 
         private void StopTriggeringConcurrencyExceptions() =>
-            ((SqlEventSourcedRepository<Order>) Configuration.Current.Repository<Order>()).GetEventStoreContext = () => EventStoreDbContext();
+            Configuration.Current.UseDependency<IEventSourcedRepository<Order>>(_ => new SqlEventSourcedRepository<Order>());
 
         [Test]
         public override void A_clock_cannot_be_moved_to_a_prior_time()

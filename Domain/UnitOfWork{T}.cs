@@ -84,6 +84,12 @@ namespace Microsoft.Its.Domain
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UnitOfWork{T}"/> class.
+        /// </summary>
+        /// <param name="create">A delegate that is called when the unit of work is created.</param>
+        /// <param name="reject">A delegate that is called when the unit of work is rejected.</param>
+        /// <param name="commit">A delegate that is called when the unit of work is commited.</param>
         public UnitOfWork(Func<T> create,
                           Action<T> reject = null,
                           Action<T> commit = null) : this()
@@ -235,11 +241,7 @@ namespace Microsoft.Its.Domain
                         // check again that Commit did not fail in a way that requires rejection
                         if (!rejected)
                         {
-                            var handler = Committed;
-                            if (handler != null)
-                            {
-                                handler(this, subject);
-                            }
+                            Committed?.Invoke(this, subject);
                         }
                         else
                         {
@@ -300,10 +302,23 @@ namespace Microsoft.Its.Domain
             Reject = work => dispose(work);
         }
 
+        /// <summary>
+        /// A delegate for specifying an action taken when a unit of work is created.
+        /// </summary>
+        /// <param name="unitOfWork">The unit of work.</param>
+        /// <param name="setSubject">A delegate used to set the subject of the unit of work.</param>
         public delegate void CreateUnitOfWork(UnitOfWork<T> unitOfWork, Action<T> setSubject);
 
+        /// <summary>
+        /// A delegate for specifying an action taken when a unit of work is committed.
+        /// </summary>
+        /// <param name="unitOfWork">The unit of work.</param>
         public delegate void CommitUnitOfWork(UnitOfWork<T> unitOfWork);
 
+        /// <summary>
+        /// A delegate for specifying an action taken when a unit of work is rejected.
+        /// </summary>
+        /// <param name="unitOfWork">The unit of work.</param>
         public delegate void RejectUnitOfWork(UnitOfWork<T> unitOfWork);
     }
 }

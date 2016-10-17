@@ -6,10 +6,17 @@ using System.Dynamic;
 
 namespace Microsoft.Its.Domain.Testing
 {
+    /// <summary>
+    /// An in-memory stored event model.
+    /// </summary>
+    /// <seealso cref="Microsoft.Its.Domain.IHaveExtensibleMetada" />
     public class InMemoryStoredEvent : IHaveExtensibleMetada
     {
-        private dynamic metadata;
+        private readonly dynamic metadata;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InMemoryStoredEvent"/> class.
+        /// </summary>
         public InMemoryStoredEvent()
         {
             Timestamp = Clock.Now();
@@ -17,6 +24,9 @@ namespace Microsoft.Its.Domain.Testing
             metadata.AbsoluteSequenceNumber = 0;
         }
 
+        /// <summary>
+        ///     Gets or sets the serialized body of the domain event.
+        /// </summary>
         public string Body { get; set; }
 
         /// <summary>

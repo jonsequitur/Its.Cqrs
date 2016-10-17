@@ -104,7 +104,9 @@ namespace Microsoft.Its.Domain.Tests
             }));
             var customerRepository = new InMemoryEventSourcedRepository<CustomerAccount>();
             await customerRepository.Save(new CustomerAccount(customerId).Apply(new ChangeEmailAddress(Any.Email())));
+#pragma warning disable 618
             bus.Subscribe(Consequenter.Create<Order.Shipped>(e =>
+#pragma warning restore 618
             {
                 var order = orderRepository.GetLatest(e.AggregateId).Result;
                 var customer = customerRepository.GetLatest(order.CustomerId).Result;

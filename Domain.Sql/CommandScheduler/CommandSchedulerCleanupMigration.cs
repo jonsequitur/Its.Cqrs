@@ -15,6 +15,12 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
     {
         private readonly DateTimeOffset cutoffDate;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandSchedulerCleanupMigration"/> class.
+        /// </summary>
+        /// <param name="frequencyInDays">The frequency, in days, at which the cleanup should be performed.</param>
+        /// <param name="completedCommandsOlderThan">The age after which completed scheduled commands should be deleted from storage.</param>
+        /// <exception cref="System.ArgumentException"></exception>
         public CommandSchedulerCleanupMigration(
             int frequencyInDays,
             TimeSpan completedCommandsOlderThan)

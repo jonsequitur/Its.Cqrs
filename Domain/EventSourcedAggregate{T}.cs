@@ -63,6 +63,9 @@ namespace Microsoft.Its.Domain
             InitializeEventHistory(eventHistory.OrEmpty());
         }
 
+        /// <summary>
+        /// Builds up the state of the aggregate from its event history by calling <see cref="Event{T}.Update" /> for each event in order of their <see cref="IEvent.SequenceNumber" /> values.
+        /// </summary>
         protected void BuildUpStateFromEventHistory()
         {
             foreach (var @event in EventHistory.OfType<IEvent<T>>())
@@ -131,7 +134,10 @@ namespace Microsoft.Its.Domain
             RecordEvent(commandScheduledEvent);
         }
 
-        public void EnactCommand(Annotate<T> command)
+        /// <summary>
+        /// Records an annotation event.
+        /// </summary>
+        internal void EnactCommand(Annotate<T> command)
         {
             RecordEvent(new Annotated<T>(command.Message));
         }

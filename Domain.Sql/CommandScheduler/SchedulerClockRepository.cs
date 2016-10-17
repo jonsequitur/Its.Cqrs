@@ -7,6 +7,9 @@ using System.Linq;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+    /// <summary>
+    /// A delegate for specifying how to find the name of the clock on which a command is or should be scheduled.
+    /// </summary>
     public delegate string GetClockName(IScheduledCommand forCommand);
 
     internal class SchedulerClockRepository : ISchedulerClockRepository
@@ -14,6 +17,13 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         private readonly Func<CommandSchedulerDbContext> createDbContext;
         private readonly GetClockName getClockName;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SchedulerClockRepository"/> class.
+        /// </summary>
+        /// <param name="createDbContext">The create database context.</param>
+        /// <param name="getClockName">Name of the get clock.</param>
+        /// <exception cref="System.ArgumentNullException">
+        /// </exception>
         public SchedulerClockRepository(
             Func<CommandSchedulerDbContext> createDbContext,
             GetClockName getClockName)
@@ -74,6 +84,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
         }
 
+        /// <summary>
+        /// Reads the current date and time from the specified clock.
+        /// </summary>
+        /// <param name="clockName">The name of the clock.</param>
         public DateTimeOffset ReadClock(string clockName)
         {
             using (var db = createDbContext())
@@ -82,6 +96,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             }
         }
 
+        /// <summary>
+        /// Gets the name of clock on which the specified command should be or is scheduled.
+        /// </summary>
+        /// <param name="forCommand">The command from which to get the name of the clock.</param>
         public string ClockName(IScheduledCommand forCommand) => getClockName(forCommand);
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Domain.Testing;
+#pragma warning disable 618
 
 namespace Microsoft.Its.Domain.Tests
 {
@@ -113,11 +114,9 @@ namespace Microsoft.Its.Domain.Tests
                         clock);
 
         public static async Task SchedulerWorkComplete() =>
-#pragma warning disable 618
             await Configuration
                       .Current
                       .SchedulerClockTrigger()
                       .Done(DefaultClockName());
-#pragma warning restore 618
     }
 }

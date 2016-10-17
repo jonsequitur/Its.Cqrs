@@ -12,6 +12,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler.Migrations
     /// <seealso cref="System.Data.Entity.Migrations.Infrastructure.IMigrationMetadata" />
     public partial class v0_6_11 : DbMigration
     {
+        /// <summary>
+        /// Operations to be performed during the upgrade process.
+        /// </summary>
         public override void Up()
         {
             CreateTable(
@@ -129,6 +132,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler.Migrations
             CreateIndex("Scheduler.ClockMapping","Value",unique: true);
         }
 
+        /// <summary>
+        /// Operations to be performed during the downgrade process.
+        /// </summary>
         public override void Down()
         {
         }

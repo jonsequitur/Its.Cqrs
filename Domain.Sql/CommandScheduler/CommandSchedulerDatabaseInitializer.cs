@@ -7,6 +7,9 @@ using Microsoft.Its.Domain.Sql.Migrations;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+    /// <summary>
+    /// Creates and migrates a command scheduler database.
+    /// </summary>
     public class CommandSchedulerDatabaseInitializer : CreateAndMigrate<CommandSchedulerDbContext>
     {
         /// <summary>
@@ -24,6 +27,9 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         {
         }
 
+        /// <summary>
+        /// Determines whether the database should be rebuilt.
+        /// </summary>
         protected override bool ShouldRebuildDatabase(CommandSchedulerDbContext context, Version latestVersion) => false;
     }
 }

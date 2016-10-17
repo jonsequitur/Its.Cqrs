@@ -141,6 +141,7 @@
     <Compile Include="IETagChecker.cs" />
     <Compile Include="IEventMigratingAggregate.cs" />
     <Compile Include="IStore{T}.cs" />
+    <Compile Include="ProbabilisticAnswer.cs" />
     <Compile Include="Scheduling\AnonymousCommandDeliverer{T}.cs" />
     <Compile Include="Scheduling\CommandDeliverer.cs" />
     <Compile Include="Scheduling\CommandDelivererPipeline{T}.cs" />

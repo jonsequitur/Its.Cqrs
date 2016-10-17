@@ -10,6 +10,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain.Sql
 {
+    /// <summary>
+    /// Exposes information about configuration and background tasks for use in diagnostics and monitoring.
+    /// </summary>
+    /// <remarks>See </remarks>
     public static class Sensors
     {
         private static ConcurrentDictionary<string, Func<DbContext>> readModelDbContext;
@@ -17,8 +21,14 @@ namespace Microsoft.Its.Domain.Sql
         internal static ConcurrentDictionary<string, Func<DbContext>> ReadModelDbContexts =>
             readModelDbContext ?? (readModelDbContext = new ConcurrentDictionary<string, Func<DbContext>>());
 
+        /// <summary>
+        /// Gets the event store db context from the current configuration.
+        /// </summary>
         public static Func<EventStoreDbContext> GetEventStoreDbContext = () => Configuration.Current.EventStoreDbContext();
 
+        /// <summary>
+        /// Shows the status of read model catchups.
+        /// </summary>
         [Export("DiagnosticSensor")]
         public static async Task<dynamic> CatchupStatus()
         {

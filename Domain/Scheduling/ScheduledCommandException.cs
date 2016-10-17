@@ -13,12 +13,17 @@ namespace Microsoft.Its.Domain
     [DebuggerStepThrough]
     public class ScheduledCommandException : Exception
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScheduledCommandException"/> class.
+        /// </summary>
+        /// <param name="failure">The failure.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public ScheduledCommandException(CommandFailed failure)
             : base(failure.Exception
                           .IfNotNull()
                           .Then(e => e.Message)
                           .Else(() => "Scheduled command failed"),
-                   failure.Exception)
+                failure.Exception)
         {
             if (failure == null)
             {
@@ -27,6 +32,9 @@ namespace Microsoft.Its.Domain
             Failure = failure;
         }
 
+        /// <summary>
+        /// Gets the failure that caused the exception.
+        /// </summary>
         public CommandFailed Failure { get; private set; }
     }
 }

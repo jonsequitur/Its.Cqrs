@@ -18,8 +18,16 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             string clockName,
             DateTimeOffset startTime);
 
+        /// <summary>
+        /// Reads the current date and time from the specified clock.
+        /// </summary>
+        /// <param name="clockName">The name of the clock.</param>
         DateTimeOffset ReadClock(string clockName);
 
+        /// <summary>
+        /// Gets the name of clock on which the specified command should be or is scheduled.
+        /// </summary>
+        /// <param name="forCommand">The command from which to get the name of the clock.</param>
         string ClockName(IScheduledCommand forCommand);
     }
 }

@@ -7,10 +7,19 @@ using Microsoft.Its.Domain.Sql.Migrations;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
+    /// <summary>
+    /// Provides configuration for a SQL-based command scheduler.
+    /// </summary>
     public class CommandSchedulerConfiguration
     {
         private readonly IList<Action<Configuration>> configureActions = new List<Action<Configuration>>();
 
+        /// <summary>
+        /// Deletes successfully delivered scheduled commands from SQL storage on a periodic basis in order to keep database size from growing endlessly.
+        /// </summary>
+        /// <param name="frequencyInDays">The frequency, in days, at which the cleanup should be performed.</param>
+        /// <param name="completedCommandsOlderThan">The age after which completed scheduled commands should be deleted from storage.</param>
+        /// <returns></returns>
         public CommandSchedulerConfiguration CleanUp(
             int frequencyInDays,
             TimeSpan completedCommandsOlderThan)
@@ -36,10 +45,19 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             return this;
         }
 
+        /// <summary>
+        /// Specifies the connection string for the command scheduler database.
+        /// </summary>
+        /// <param name="connectionString">The connection string.</param>
         public CommandSchedulerConfiguration UseConnectionString(
             string connectionString) =>
                 UseDbContext(() => new CommandSchedulerDbContext(connectionString));
 
+        /// <summary>
+        /// Specifies how to create instances of <see cref="CommandSchedulerDbContext" />.
+        /// </summary>
+        /// <param name="create">A delegate that creates the db context.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public CommandSchedulerConfiguration UseDbContext(
             Func<CommandSchedulerDbContext> create)
         {

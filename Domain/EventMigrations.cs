@@ -5,6 +5,9 @@ using System;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for performing event migrations.
+    /// </summary>
     public static class EventMigrations
     {
         /// <summary>
@@ -39,11 +42,20 @@ namespace Microsoft.Its.Domain
                 $"Migration failed, because no event with sequence number {SequenceNumber} on aggregate '{AggregateId}' was found";
         }
 
+        /// <summary>
+        /// Represents a rename operation performed during event migration.
+        /// </summary>
         public class Rename
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="Rename"/> class.
+            /// </summary>
+            /// <param name="sequenceNumber">The sequence number of the event to be renamed.</param>
+            /// <param name="newName">The new name for the event.</param>
+            /// <exception cref="System.ArgumentOutOfRangeException"></exception>
             public Rename(long sequenceNumber, string newName)
             {
-                if (String.IsNullOrWhiteSpace(newName))
+                if (string.IsNullOrWhiteSpace(newName))
                 {
                     throw new ArgumentOutOfRangeException(nameof(newName));
                 }

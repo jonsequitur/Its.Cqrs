@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Its.Domain
 {
+    /// <summary>
+    /// Provides methods for working with snapshots.
+    /// </summary>
     public static class SnapshotRepositoryExtensions
     {
         /// <summary>

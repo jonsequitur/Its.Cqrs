@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="ownerToken">A token indicating the owner of the reservation, which must be provided in order to confirm or cancel the reservation.</param>
         /// <param name="lease">The lease duration, after which the reservation expires.</param>
         /// <returns>A task whose result is true if the value has been reserved.</returns>
-        public async Task<bool> Reserve(string value, string scope, string ownerToken, TimeSpan? lease = null)
+        public Task<bool> Reserve(string value, string scope, string ownerToken, TimeSpan? lease = null)
         {
             if (value == null)
             {
@@ -59,12 +59,12 @@ namespace Microsoft.Its.Domain.Testing
                     Expiration = expiration,
                     ConfirmationToken = value
                 };
-                return reservedValues.TryAdd(key, reservedValue);
+                return reservedValues.TryAdd(key, reservedValue).CompletedTask();
             }
 
             if (reservedValue.Expiration == null)
             {
-                return reservedValue.OwnerToken == ownerToken;
+                return (reservedValue.OwnerToken == ownerToken).CompletedTask();
             }
 
             if (reservedValue.OwnerToken == ownerToken)
@@ -72,7 +72,7 @@ namespace Microsoft.Its.Domain.Testing
                 // if it's the same, extend the lease
                 var newReservedValue = reservedValue.Clone();
                 newReservedValue.Expiration = expiration;
-                return reservedValues.TryUpdate(key, newReservedValue, reservedValue);
+                return reservedValues.TryUpdate(key, newReservedValue, reservedValue).CompletedTask();
             }
 
             if (reservedValue.Expiration < now)
@@ -81,10 +81,10 @@ namespace Microsoft.Its.Domain.Testing
                 var newReservedValue = reservedValue.Clone();
                 newReservedValue.OwnerToken = ownerToken;
                 newReservedValue.Expiration = expiration;
-                return reservedValues.TryUpdate(key, newReservedValue, reservedValue);
+                return reservedValues.TryUpdate(key, newReservedValue, reservedValue).CompletedTask();
             }
 
-            return false;
+            return false.CompletedTask();
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="value">The value to be reserved.</param>  
         /// <param name="ownerToken">A token indicating the owner of the reservation, which must be provided in order to confirm or cancel the reservation.</param>
         /// <param name="scope">The scope in which the value must be unique.</param>
-        public async Task<bool> Confirm(string value, string scope, string ownerToken)
+        public Task<bool> Confirm(string value, string scope, string ownerToken)
         {
             if (value == null)
             {
@@ -120,10 +120,10 @@ namespace Microsoft.Its.Domain.Testing
                 var newReservedValue = oldReservedValue.Clone();
                 newReservedValue.Expiration = null;
                 var key = Tuple.Create(newReservedValue.Value, newReservedValue.Scope);
-                return reservedValues.TryUpdate(key, newReservedValue, oldReservedValue);
+                return reservedValues.TryUpdate(key, newReservedValue, oldReservedValue).CompletedTask();
             }
 
-            return false;
+            return false.CompletedTask();
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="scope">The scope in which the reserved value must be unique.</param>
         /// <param name="ownerToken">A token indicating the owner of the reservation, which must be provided in order to confirm or cancel the reservation.</param>
         /// <returns></returns>
-        public async Task<bool> Cancel(string value, string scope, string ownerToken)
+        public Task<bool> Cancel(string value, string scope, string ownerToken)
         {
             if (value == null)
             {
@@ -157,11 +157,11 @@ namespace Microsoft.Its.Domain.Testing
                 var oldReservedValue = reservedValueInDictionary.Clone();
                 if (oldReservedValue.OwnerToken == ownerToken)
                 {
-                    return reservedValues.TryRemove(key, out oldReservedValue);
+                    return reservedValues.TryRemove(key, out oldReservedValue).CompletedTask();
                 }
             }
 
-            return false;
+            return false.CompletedTask();
         }
 
         /// <summary>
@@ -172,7 +172,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="lease">The lease duration, after which the reservation expires.</param>
         /// <param name="confirmationToken">user specified value that can be used for confirmation of the reservation</param>
         /// <returns></returns>
-        public async Task<string> ReserveAny(string scope, string ownerToken, TimeSpan? lease = null, string confirmationToken = null)
+        public Task<string> ReserveAny(string scope, string ownerToken, TimeSpan? lease = null, string confirmationToken = null)
         {
             if (scope == null)
             {
@@ -199,7 +199,7 @@ namespace Microsoft.Its.Domain.Testing
                 }
                 if (reservedValueInDictionary == null)
                 {
-                    return null;
+                    return Task.FromResult<string>(null);
                 }
 
                 // Make sure to create a new object. Don't use the object from Dictionary directly.
@@ -222,7 +222,7 @@ namespace Microsoft.Its.Domain.Testing
                         reservedValues.TryUpdate(key, oldReservedValue, newReservedValue);
                         return null;
                     }
-                    return newReservedValue.Value;
+                    return newReservedValue.Value.CompletedTask();
                 }
             } while (newReservedValue != null);
             
@@ -239,7 +239,13 @@ namespace Microsoft.Its.Domain.Testing
             return reservations.Count() > 1;
         }
 
-        public async Task<ReservedValue> GetReservedValue(string value, string scope)
+        /// <summary>
+        /// Gets a reserved value by its value and scope.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException">
+        /// </exception>
+        public Task<ReservedValue> GetReservedValue(string value, string scope)
         {
             if (value == null)
             {
@@ -253,7 +259,8 @@ namespace Microsoft.Its.Domain.Testing
             var key = Tuple.Create(value, scope);
             ReservedValue reservedValue;
             reservedValues.TryGetValue(key, out reservedValue);
-            return reservedValue;
+
+            return reservedValue.CompletedTask();
         }
     }
 }
