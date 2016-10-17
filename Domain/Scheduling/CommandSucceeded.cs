@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain
 {
@@ -27,6 +28,6 @@ namespace Microsoft.Its.Domain
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
-        public override string ToString() => "Succeeded";
+        public override string ToString() => $"Succeeded{ScheduledCommand.Clock.IfNotNull().Then(c => " on clock " + c).ElseDefault()}";
     }
 }
