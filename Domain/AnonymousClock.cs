@@ -12,30 +12,32 @@ namespace Microsoft.Its.Domain
     {
         private readonly Func<DateTimeOffset> now;
 
-        public AnonymousClock(Func<DateTimeOffset> now)
+        public AnonymousClock(
+            Func<DateTimeOffset> now,
+            IClock parentClock = null)
         {
             if (now == null)
             {
                 throw new ArgumentNullException(nameof(now));
             }
             this.now = now;
+            ParentClock = parentClock;
         }
 
         public string Name { get; set; }
 
-        public DateTimeOffset Now()
-        {
-            return now();
-        }
+        public DateTimeOffset Now() => now();
+
+        internal IClock ParentClock { get; }
 
         public override string ToString()
         {
             return string.Format("{0}: {2}{1}",
-                                 GetType(),
-                                 Name.IfNotNullOrEmptyOrWhitespace()
-                                     .Then(n => $" ({n})")
-                                     .ElseDefault(),
-                                 Now().ToString("O"));
+                GetType(),
+                Name.IfNotNullOrEmptyOrWhitespace()
+                    .Then(n => $" ({n})")
+                    .ElseDefault(),
+                Now().ToString("O"));
         }
     }
 }

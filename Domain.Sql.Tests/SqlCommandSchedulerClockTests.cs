@@ -3,10 +3,12 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NCrunch.Framework;
@@ -339,6 +341,57 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                        .IfTypeIs<IScheduledCommand<Order>>()
                                        .Then(c => c.TargetId == order.Id.ToString())
                                        .ElseDefault());
+        }
+
+        [Test]
+        public async Task When_a_command_schedule_another_command_on_custom_clock_the_new_command_is_on_the_same_custom_clock()
+        {
+            // arrange
+            var targetId = Any.Guid();
+            var nextCommandId = Any.CamelCaseName();
+            var theFirst = DateTimeOffset.Parse("2012-01-01");
+            var theThird = theFirst.AddDays(2);
+            var theFourth = theThird.AddDays(1);
+
+            var customClock = CreateClock("CUSTOM:" + Any.CamelCaseName(), theFirst);
+
+            var delivered = new ConcurrentBag<IScheduledCommand>();
+            Configuration.Current
+                         .TraceScheduledCommands(
+                             onDelivered: command =>
+                             {
+                                 delivered.Add(command);
+                             });
+            var target = new CommandSchedulerTestAggregate(targetId);
+            await Save(target);
+
+            await Schedule(
+                targetId,
+                new CommandSchedulerTestAggregate.CommandThatSchedulesAnotherCommand
+                {
+                    NextCommand = new CommandSchedulerTestAggregate.Command
+                    {
+                        CommandId = nextCommandId
+                    },
+                    NextCommandDueTime = theFourth
+                },
+                theThird,
+                clock: customClock);
+
+            // act
+            await AdvanceClock(theThird, customClock.Name);
+            await AdvanceClock(theFourth, customClock.Name);
+
+            await Task.Delay(20);
+
+            //assert
+            delivered.Should().HaveCount(2);
+            delivered
+                .OfType<ScheduledCommand<CommandSchedulerTestAggregate>>()
+                .Select(_ => _.Command)
+                .OfType<CommandSchedulerTestAggregate.Command>()
+                .Should()
+                .Contain(c => c.CommandId == nextCommandId);
         }
     }
 }

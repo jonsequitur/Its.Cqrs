@@ -5,6 +5,7 @@ using System;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
@@ -16,7 +17,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         internal static async Task<ScheduledCommand> StoreScheduledCommand<TAggregate>(
             IScheduledCommand<TAggregate> scheduledCommand,
             Func<CommandSchedulerDbContext> createDbContext,
-            Func<IScheduledCommand<TAggregate>, CommandSchedulerDbContext, Task<string>> clockNameForEvent)
+            Func<IScheduledCommand<TAggregate>, CommandSchedulerDbContext, Task<string>> getClockName)
             where TAggregate : class
         {
             ScheduledCommand storedScheduledCommand;
@@ -26,10 +27,10 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
                 var domainTime = Domain.Clock.Now();
 
                 // get or create a clock to schedule the command on
-                var clock = scheduledCommand.Clock as Clock;
+                var clock = TryToGetSqlClockToScheduleOn(scheduledCommand);
                 if (clock == null)
                 {
-                    var clockName = await clockNameForEvent(scheduledCommand, db);
+                    var clockName = await getClockName(scheduledCommand, db);
 
                     var clockStartTime = scheduledCommand.Clock?.Now() ??
                                          domainTime;
@@ -66,6 +67,14 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
 
             return storedScheduledCommand;
         }
+
+        private static Clock TryToGetSqlClockToScheduleOn<TAggregate>(
+            IScheduledCommand<TAggregate> scheduledCommand) where TAggregate : class =>
+            scheduledCommand.Clock as Clock ??
+            scheduledCommand.Clock
+                            .IfTypeIs<AnonymousClock>()
+                            .Then(c => c.ParentClock as Clock)
+                            .ElseDefault();
 
         internal static async Task DeserializeAndDeliverScheduledCommand<TAggregate>(
             ScheduledCommand scheduled,

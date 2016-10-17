@@ -77,7 +77,7 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Creates an <see cref="IClock" /> instance that calls the provided delegate to return the current time.
         /// </summary>
-        public static IClock Create(Func<DateTimeOffset> now) => new AnonymousClock(now);
+        public static IClock Create(Func<DateTimeOffset> now, IClock parentClock = null) => new AnonymousClock(now, parentClock);
 
         internal static IClock Latest(params IClock[] clocks)
         {
@@ -89,9 +89,9 @@ namespace Microsoft.Its.Domain
             }
 
             return Create(() => clocks
-                                    .Select(c => c.Now())
-                                    .OrderBy(time => time)
-                                    .Last());
+                .Select(c => c.Now())
+                .OrderBy(time => time)
+                .Last());
         }
 
         internal static IClock Earliest(params IClock[] clocks)
