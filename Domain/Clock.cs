@@ -88,10 +88,7 @@ namespace Microsoft.Its.Domain
                 return clocks.Single();
             }
 
-            return Create(() => clocks
-                .Select(c => c.Now())
-                .OrderBy(time => time)
-                .Last());
+            return clocks.OrderBy(c => c.Now()).Last();
         }
 
         internal static IClock Earliest(params IClock[] clocks)
@@ -103,9 +100,7 @@ namespace Microsoft.Its.Domain
                 return clocks.Single();
             }
 
-            return Create(() => clocks.Select(c => c.Now())
-                                      .OrderByDescending(time => time)
-                                      .Last());
+            return clocks.OrderByDescending(c => c.Now()).Last();
         }
     }
 }
