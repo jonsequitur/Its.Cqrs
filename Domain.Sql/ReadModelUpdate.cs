@@ -96,7 +96,7 @@ namespace Microsoft.Its.Domain.Sql
                     readModelInfo.FailedOnEventId = sqlError.OriginalId;
                 }
 
-                sqlError.Error = $"{Environment.MachineName}:  {exceptionJson}"; // FIX: (ReportFailure) add machine name
+                sqlError.Error = $"{Environment.MachineName}:  {exceptionJson}"; 
                 sqlError.Handler = readModelInfoName;
                 db.Set<EventHandlingError>().Add(sqlError);
 
