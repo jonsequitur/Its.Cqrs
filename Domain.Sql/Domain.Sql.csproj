@@ -40,6 +40,7 @@
     <DocumentationFile>bin\Release\Microsoft.Its.Domain.Sql.xml</DocumentationFile>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <NoWarn />
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
