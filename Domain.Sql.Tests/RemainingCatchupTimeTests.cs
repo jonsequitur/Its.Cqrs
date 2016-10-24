@@ -3,13 +3,14 @@
 
 using System;
 using System.Collections.Generic;
+using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Its.Domain.Testing;
+using Microsoft.Its.Recipes;
 using NUnit.Framework;
-using Test.Domain.Ordering;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
+using static Microsoft.Its.Domain.Sql.EventHandlerProgressCalculator;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -19,61 +20,63 @@ namespace Microsoft.Its.Domain.Sql.Tests
     public class RemainingCatchupTimeTests : EventStoreDbTest
     {
         [Test]
-        public async Task If_events_have_been_processed_during_initial_replay_then_the_remaining_time_is_estimated_correctly()
+        public async Task During_initial_replay_the_remaining_time_is_estimated_correctly()
         {
             //arrange
-            IEnumerable<EventHandlerProgress> progress = null;
             Events.Write(10);
+            var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
             var eventsProcessed = 0;
-            var projector = new TestProjector
+            IEnumerable<EventHandlerProgress> progress = null;
+
+            var projector = CreateProjector(e =>
             {
-                DoSomething = e =>
+                if (eventsProcessed == eventCount/2)
                 {
-                    if (eventsProcessed == 5)
-                    {
-                        progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
-                    }
-                    VirtualClock.Current.AdvanceBy(TimeSpan.FromSeconds(1));
-                    eventsProcessed++;
+                    // the first half of the catchup took 10 minutes
+                    VirtualClock.Current.AdvanceBy(10.Minutes());
+                    progress = CalculateProgress(() => ReadModelDbContext());
                 }
-            };
+                eventsProcessed++;
+            });
 
             //act
-            await RunCatchup(projector);
-            progress.First(p => p.Name == EventHandler.FullName(projector))
-                    .TimeRemainingForCatchup
-                    .Value
-                    .Should()
-                    .Be(TimeSpan.FromSeconds(5));
+            await RunCatchup(projector,
+                startAtEventId: 0,
+                batchSize: int.MaxValue);
+
+            // assert
+            progress
+                .Single(p => p.Name == EventHandler.FullName(projector))
+                .TimeRemainingForCatchup
+                .Should()
+                .BeCloseTo(10.Minutes(), precision: 1000);
         }
 
         [Test]
         public async Task If_events_have_been_processed_after_initial_replay_then_the_remaining_time_is_estimated_correctly()
         {
             //arrange
-            //Initial replay
             Events.Write(10);
-            var projector = new TestProjector();
-            await RunCatchup(projector);
-
-            //new set of events come in
             IEnumerable<EventHandlerProgress> progress = null;
-            Events.Write(10);
             var eventsProcessed = 0;
-            projector.DoSomething = e =>
+            var projector = CreateProjector(e =>
             {
-                if (eventsProcessed == 5)
+                if (eventsProcessed == 15)
                 {
-                    progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
+                    progress = CalculateProgress(() => ReadModelDbContext());
                 }
                 VirtualClock.Current.AdvanceBy(TimeSpan.FromSeconds(1));
                 eventsProcessed++;
-            };
+            });
+            await RunCatchup(projector);
+
+            //new set of events come in
+            Events.Write(10);
 
             //act
             await RunCatchup(projector);
-            progress.First(p => p.Name == EventHandler.FullName(projector))
-                    .TimeRemainingForCatchup.Value
+            progress.Single(p => p.Name == EventHandler.FullName(projector))
+                    .TimeRemainingForCatchup
                     .Should()
                     .Be(TimeSpan.FromSeconds(5));
         }
@@ -82,11 +85,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public async Task If_events_have_been_processed_after_initial_replay_then_the_time_taken_for_initial_replay_is_saved()
         {
             //arrange
-            ResetReadModelInfo();
-            var projector = new TestProjector
+            var projector = CreateProjector(e =>
             {
-                DoSomething = e => VirtualClock.Current.AdvanceBy(TimeSpan.FromSeconds(1))
-            };
+                VirtualClock.Current.AdvanceBy(TimeSpan.FromSeconds(1));
+            });
+
             //Initial replay
             Events.Write(10);
             await RunCatchup(projector);
@@ -96,11 +99,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             //act
             await RunCatchup(projector);
-            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
+            var progress = CalculateProgress(() => ReadModelDbContext());
 
             //assert
-            progress.First(p => p.Name == EventHandler.FullName(projector))
-                    .TimeTakenForInitialCatchup.Value
+            progress.Single(p => p.Name == EventHandler.FullName(projector))
+                    .TimeTakenForInitialCatchup
                     .Should()
                     .Be(TimeSpan.FromSeconds(9));
         }
@@ -108,28 +111,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
         [Test]
         public async Task If_events_have_been_processed_after_initial_replay_then_the_number_of_events_for_initial_replay_is_saved()
         {
-            //arrange
-            ResetReadModelInfo();
-            var projector = new TestProjector
-            {
-                DoSomething = e => VirtualClock.Current.AdvanceBy(TimeSpan.FromSeconds(1))
-            };
-            //Initial replay
+            // arrange
+            var projector = CreateProjector();
             Events.Write(10);
+            var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
+
             await RunCatchup(projector);
 
             //new set of events come in
             Events.Write(5);
             await RunCatchup(projector);
 
-            //act
-            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
+            // act
+            var progress = CalculateProgress(() => ReadModelDbContext());
 
-            //assert
-            progress.First(p => p.Name == EventHandler.FullName(projector))
-                    .InitialCatchupEvents.Value
+            // assert
+            progress.Single(p => p.Name == EventHandler.FullName(projector))
+                    .InitialCatchupEvents
                     .Should()
-                    .Be(10);
+                    .Be(eventCount);
         }
 
         [Test]
@@ -140,61 +140,39 @@ namespace Microsoft.Its.Domain.Sql.Tests
             Events.Write(5);
 
             var eventsProcessed = 0;
-            var projector = new TestProjector
+            var projector = CreateProjector(e =>
             {
-                DoSomething = e =>
+                if (eventsProcessed == 4)
                 {
-                    if (eventsProcessed == 4)
-                    {
-                        progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
-                    }
-                    eventsProcessed++;
+                    progress = CalculateProgress(() => ReadModelDbContext());
                 }
-            };
+                eventsProcessed++;
+            });
 
             //act
             await RunCatchup(projector);
 
             //assert
-            progress.First(p => p.Name == EventHandler.FullName(projector))
+            progress.Single(p => p.Name == EventHandler.FullName(projector))
                     .EventsRemaining
                     .Should()
                     .Be(1);
         }
 
         [Test]
-        public void If_no_events_have_been_processed_then_the_remaining_time_is_null()
-        {
-            //arrange
-            ResetReadModelInfo();
-            Events.Write(5);
-
-            //act
-            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
-
-            //assert
-            progress.First(p => p.Name == EventHandler.FullName(new TestProjector()))
-                    .TimeRemainingForCatchup
-                    .HasValue
-                    .Should()
-                    .BeFalse();
-        }
-
-        [Test]
         public async Task If_all_events_have_been_processed_then_the_remaining_time_is_zero()
         {
             //arrange
-            var projector = new TestProjector();
             Events.Write(5);
+            var projector = CreateProjector();
             await RunCatchup(projector);
 
             //act
-            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
+            var progress = CalculateProgress(() => ReadModelDbContext());
 
             //assert
-            progress.First(p => p.Name == EventHandler.FullName(projector))
+            progress.Single(p => p.Name == EventHandler.FullName(projector))
                     .TimeRemainingForCatchup
-                    .Value
                     .Should()
                     .Be(TimeSpan.FromMinutes(0));
         }
@@ -204,51 +182,62 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             //arrange
             Events.Write(5);
-            var projector = new TestProjector();
+            var projector = CreateProjector();
             await RunCatchup(projector);
 
             //act
-            var progress = EventHandlerProgressCalculator.Calculate(() => ReadModelDbContext());
+            var progress = CalculateProgress(() => ReadModelDbContext());
 
             //assert
-            progress.First(p => p.Name == EventHandler.FullName(projector))
+            progress.Single(p => p.Name == EventHandler.FullName(projector))
                     .PercentageCompleted
                     .Should()
                     .Be(100);
         }
 
-        private void ResetReadModelInfo()
+        [Test]
+        public async Task InitialCatchupEvents_is_not_limited_by_batch_size()
         {
-            using (var db = ReadModelDbContext())
-            {
-                foreach (var info in db.Set<ReadModelInfo>())
-                {
-                    info.InitialCatchupStartTime = null;
-                    info.InitialCatchupEndTime = null;
-                    info.BatchRemainingEvents = 0;
-                    info.BatchTotalEvents = 0;
-                    info.BatchStartTime = null;
-                }
-                db.SaveChanges();
-            }
+            // arrange
+            Events.Write(10);
+            var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
+              var projector = CreateProjector();
+
+            await RunCatchup(batchSize: 3, projector: projector);
+
+            //act
+            var progress = CalculateProgress(() => ReadModelDbContext());
+
+            //assert
+            var handlerProgress = progress.Single(p => p.Name == EventHandler.FullName(projector));
+
+            handlerProgress
+                .InitialCatchupEvents
+                .Should()
+                .Be(eventCount);
         }
 
-        private async Task RunCatchup(TestProjector projector)
+        private IUpdateProjectionWhen<IEvent> CreateProjector(
+                Action<IEvent> action = null) =>
+            Projector.Create(action ?? (_ => { })).Named(Any.CamelCaseName(6));
+
+        private async Task RunCatchup(
+            IUpdateProjectionWhen<IEvent> projector,
+            int batchSize = 100,
+            long? startAtEventId = null)
         {
-            using (var catchup = CreateReadModelCatchup(projector))
+            if (projector == null)
+            {
+                throw new ArgumentNullException(nameof(projector));
+            }
+
+            using (var catchup = CreateReadModelCatchup(
+                batchSize: batchSize,
+                projectors: projector, 
+                startAtEventId: startAtEventId))
             {
                 await catchup.Run();
             }
-        }
-    }
-
-    public class TestProjector : IUpdateProjectionWhen<Order.ItemAdded>
-    {
-        public Action<Order.ItemAdded> DoSomething = e => { };
-
-        public void UpdateProjection(Order.ItemAdded @event)
-        {
-            DoSomething(@event);
         }
     }
 }

@@ -43,6 +43,8 @@ namespace Microsoft.Its.Domain.Sql
         private readonly long startAtEventId;
         private readonly Expression<Func<StorableEvent, bool>> filter;
         private readonly int batchSize;
+        private long eventStoreEventCount;
+        private bool isInitialized;
 
         /// <summary>
         /// Initializes the <see cref="ReadModelCatchup{TDbContext}"/> class.
@@ -135,6 +137,11 @@ namespace Microsoft.Its.Domain.Sql
         /// <remarks>This method will return immediately without performing any updates if another catchup is currently in progress for the same read model database.</remarks>
         public async Task<ReadModelCatchupResult> Run()
         {
+            if (disposables.IsDisposed)
+            {
+                throw new ObjectDisposedException($"The catchup has been disposed. ({this})");
+            }
+
             // perform a re-entrancy check so that multiple catchups do not try to run concurrently
             if (Interlocked.CompareExchange(ref running, 1, 0) != 0)
             {
@@ -253,7 +260,7 @@ namespace Microsoft.Its.Domain.Sql
                                 if (i.InitialCatchupStartTime == null)
                                 {
                                     i.InitialCatchupStartTime = now;
-                                    i.InitialCatchupEvents = query.ExpectedNumberOfEvents;
+                                    i.InitialCatchupEvents = eventStoreEventCount;
                                 }
                                 
                                 if (eventsRemaining == 0 && i.InitialCatchupEndTime == null)
@@ -393,16 +400,44 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="events">The events.</param>
         public void RunWhen(IObservable<Unit> events) =>
-            disposables.Add(events.Subscribe(es => Run().Wait()));
+            disposables.Add(
+                events
+                    .Subscribe(
+                        onNext: es =>
+                        {
+                            try
+                            {
+                                Run().Wait();
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine(ex);
+                            }
+                        },
+                        onError: ex =>
+                        { Debug.WriteLine(ex); }));
 
         private void EnsureInitialized()
         {
-            if (subscribedReadModelInfos != null)
+            if (isInitialized)
             {
                 return;
             }
 
-            // figure out which event types we will need to query
+            try
+            {
+                InitializeMatchEvents();
+                InitializeReadModelInfo();
+                isInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                EventBus.PublishErrorAsync(new Domain.EventHandlingError(ex));
+            }
+        }
+
+        private void InitializeMatchEvents()
+        {
             matchEvents = projectors.SelectMany(p => p.MatchesEvents())
                                     .Distinct()
                                     .Select(m => m.Type == "Scheduled"
@@ -411,7 +446,10 @@ namespace Microsoft.Its.Domain.Sql
                                     .ToArray();
 
             Debug.WriteLine($"Catchup {Name}: Subscribing to event types: {matchEvents.Select(m => m.ToString()).ToJson()}");
+        }
 
+        private void InitializeReadModelInfo()
+        {
             using (var db = createReadModelDbContext())
             {
                 EnsureLockResourceNameIsInitialized(db);
@@ -435,6 +473,11 @@ namespace Microsoft.Its.Domain.Sql
                     unsubscribedReadModelInfos.Add(readModelInfo);
                 }
                 db.SaveChanges();
+            }
+
+            using (var eventStore = createEventStoreDbContext())
+            {
+                eventStoreEventCount = eventStore.Events.Count();
             }
         }
 

@@ -23,6 +23,15 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
+        public void ToGuidV3_accepts_an_empty_string()
+        {
+            var guid1 = "".ToGuidV3();
+            var guid2 = "".ToGuidV3();
+
+            guid1.Should().Be(guid2);
+        }
+
+        [Test]
         public void ToGuidV3_does_not_collide_for_slightly_different_long_strings()
         {
             var sourceString = Any.String(10000, 10000);

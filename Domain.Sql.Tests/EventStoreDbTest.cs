@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
 using System.Linq.Expressions;
 using Microsoft.Its.Domain.Tests;
@@ -33,7 +32,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 startAtEventId: HighestEventId + 1,
                 projectors: projectors)
             {
-                Name = "from " + (HighestEventId + 1)
+                Name = $"from {HighestEventId + 1}"
             };
             Configuration.Current.RegisterForDisposal(catchup);
             return catchup;
@@ -42,17 +41,21 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public ReadModelCatchup CreateReadModelCatchup(
             Expression<Func<StorableEvent, bool>> filter = null,
             int batchSize = 10000,
+            long? startAtEventId = null,
             params object[] projectors)
         {
+            startAtEventId = startAtEventId ??
+                             HighestEventId + 1;
+
             var catchup = new ReadModelCatchup(
                 eventStoreDbContext: () => EventStoreDbContext(),
                 readModelDbContext: () => ReadModelDbContext(),
-                startAtEventId: HighestEventId + 1,
+                startAtEventId: startAtEventId.Value,
                 projectors: projectors,
                 batchSize: batchSize,
                 filter: filter)
             {
-                Name = "from " + (HighestEventId + 1)
+                Name = $"from {startAtEventId}"
             };
             Configuration.Current.RegisterForDisposal(catchup);
             return catchup;
@@ -69,7 +72,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 startAtEventId: HighestEventId + 1,
                 projectors: projectors)
                           {
-                              Name = "from " + (HighestEventId + 1)
+                              Name = $"from {HighestEventId + 1}"
                           };
             Configuration.Current.RegisterForDisposal(catchup);
             return catchup;

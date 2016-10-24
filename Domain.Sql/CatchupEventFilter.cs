@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -21,8 +24,12 @@ namespace Microsoft.Its.Domain.Sql
 
         private static BinaryExpression GetExpression(MatchEvent criteria, ParameterExpression p)
         {
-            Expression streamNameMatches = Expression.Equal(Expression.Property(p, "StreamName"), Expression.Constant(criteria.StreamName));
-            Expression typeMatches = Expression.Equal(Expression.Property(p, "Type"), Expression.Constant(criteria.Type));
+            var streamNameMatches = Expression.Equal(
+                Expression.Property(p, "StreamName"),
+                Expression.Constant(criteria.StreamName));
+            var typeMatches = Expression.Equal(
+                Expression.Property(p, "Type"),
+                Expression.Constant(criteria.Type));
             return Expression.AndAlso(streamNameMatches, typeMatches);
         }
 
@@ -30,7 +37,8 @@ namespace Microsoft.Its.Domain.Sql
         {
             var seParam = Expression.Parameter(typeof(StorableEvent), "storableEvent");
 
-            var body = criteria.Select(c => GetExpression(c, seParam)).Aggregate(Expression.OrElse);
+            var body = criteria.Select(c => GetExpression(c, seParam))
+                               .Aggregate(Expression.OrElse);
 
             return Expression.Lambda<Func<StorableEvent, bool>>(body, seParam);
         }

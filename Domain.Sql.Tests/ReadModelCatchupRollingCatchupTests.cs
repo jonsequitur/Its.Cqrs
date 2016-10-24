@@ -12,7 +12,6 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,7 +25,6 @@ using Test.Domain.Ordering;
 using Test.Domain.Ordering.Projections;
 using Assert = NUnit.Framework.Assert;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
-using Unit = System.Reactive.Unit;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -627,35 +625,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     shouldThrow = false;
                     throw new Exception("oops!");
                 }
-
+                
                 return Configuration.Current.EventStoreDbContext();
             };
 
-            var subject = new Subject<Unit>();
-
-            var catchup = CreateReadModelCatchup<ReadModels1DbContext>(
+            using (CreateReadModelCatchup<ReadModels1DbContext>(
                     getDbContext,
                     Projector.Create<Order.CreditCardCharged>(e => eventsReceived++))
-                .PollEventStore(subject);
-
-            subject.OnNext(Unit.Default);
-            subject.OnNext(Unit.Default);
-
-            eventsReceived.Should().Be(15);
-        }
-
-        private static TimeSpan DefaultTimeout
-        {
-            get
+                .PollEventStore(300.Milliseconds()))
             {
-                if (!Debugger.IsAttached)
-                {
-                    return TimeSpan.FromSeconds(60);
-                }
+                await Task.Delay(1.Seconds());
 
-                return TimeSpan.FromMinutes(60);
+                eventsReceived.Should().Be(15);
             }
         }
+
+        private static TimeSpan DefaultTimeout =>
+            !Debugger.IsAttached
+                ? TimeSpan.FromSeconds(60)
+                : TimeSpan.FromMinutes(60);
 
         private static void UpdateReservedInventory(DbContext db, Order.ItemAdded e)
         {

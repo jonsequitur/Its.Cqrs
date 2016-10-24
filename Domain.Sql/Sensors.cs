@@ -52,7 +52,7 @@ namespace Microsoft.Its.Domain.Sql
             {
                 LatestEventId = await latestEventId,
                 ReadModels = ReadModelDbContexts.ToDictionary(p => p.Key,
-                                                              p => EventHandlerProgressCalculator.Calculate(p.Value, GetEventStoreDbContext))
+                                                              p => EventHandlerProgressCalculator.CalculateProgress(p.Value, GetEventStoreDbContext))
             };
         }
     }

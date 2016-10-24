@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +20,8 @@ using Its.Log.Instrumentation;
 using Test.Domain.Ordering;
 using Test.Domain.Ordering.Projections;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
+using Unit = System.Reactive.Unit;
+
 #pragma warning disable 4014
 
 namespace Microsoft.Its.Domain.Sql.Tests
@@ -430,6 +433,25 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }
 
             eventsQueried.Should().Be(2);
+        }
+
+        [Test]
+        public async Task When_batch_size_is_smaller_than_remaining_events_then_polling_continues()
+        {
+            Events.Write(10, _ => Events.Any());
+
+            var eventsQueried = 0;
+            var subject = new Subject<Unit>();
+
+            var projector = Projector.Create<Event>(e => { eventsQueried++; })
+                                     .Named(MethodBase.GetCurrentMethod().Name);
+
+            using (CreateReadModelCatchup(batchSize: 2, projectors: projector).PollEventStore(subject))
+            {
+                subject.OnNext(Unit.Default);
+            }
+
+            eventsQueried.Should().Be(10);
         }
 
         [Test]
