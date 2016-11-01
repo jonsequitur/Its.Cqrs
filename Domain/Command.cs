@@ -37,7 +37,7 @@ namespace Microsoft.Its.Domain
         /// Gets the ETag for the command.
         /// </summary>
         /// <remarks>By defalut, this is set to a new Guid, to prevent the same command instance from ever being applied twice. This behavior can be overridden by setting this property to a different value.</remarks>
-        public string ETag { get; set; }
+        public virtual string ETag { get; set; }
 
         /// <summary>
         ///     Gets or sets the principal on whose behalf the command will be authorized.
