@@ -13,8 +13,6 @@ namespace Microsoft.Its.Domain
     [DebuggerStepThrough]
     public abstract class ScheduledCommandResult : ICommandSchedulerActivity
     {
-        private readonly IScheduledCommand command;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ScheduledCommandResult"/> class.
         /// </summary>
@@ -26,12 +24,12 @@ namespace Microsoft.Its.Domain
             {
                 throw new ArgumentNullException(nameof(command));
             }
-            this.command = command;
+            ScheduledCommand = command;
         }
 
         /// <summary>
         /// Gets the scheduled command being operated upon.
         /// </summary>
-        public IScheduledCommand ScheduledCommand => command;
+        public IScheduledCommand ScheduledCommand { get; }
     }
 }

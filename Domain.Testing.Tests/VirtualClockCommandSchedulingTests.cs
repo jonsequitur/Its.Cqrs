@@ -167,6 +167,45 @@ namespace Microsoft.Its.Domain.Testing.Tests
                   .Contain(etag => etag == "second");
         }
 
+        [Test]
+        public async Task When_a_command_fails_and_is_scheduled_for_retry_then_advancing_the_virtual_clock_triggers_redelivery()
+        {
+            VirtualClock.Start();
+
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName())
+            {
+                IsValid = false
+            };
+            var retries = 0;
+
+            var configuration = Configuration.Current;
+        
+            await configuration.Store<NonEventSourcedCommandTarget>().Put(target);
+
+            configuration.UseCommandHandler<NonEventSourcedCommandTarget, TestCommand>(
+                enactCommand: async (_, __) => { },
+                handleScheduledCommandException: async (_, command) =>
+                {
+                    if (command.NumberOfPreviousAttempts >= 12)
+                    {
+                        command.Cancel();
+                        return;
+                    }
+                    retries++;
+                    command.Retry(1.Hours());
+                });
+
+            var scheduler = configuration.CommandScheduler<NonEventSourcedCommandTarget>();
+
+            await scheduler.Schedule(target.Id, 
+                new TestCommand(), 
+                dueTime: Clock.Now().AddHours(1));
+
+            VirtualClock.Current.AdvanceBy(1.Days());
+
+            retries.Should().Be(12);
+        }
+
         protected abstract Configuration GetConfiguration();
     }
 }

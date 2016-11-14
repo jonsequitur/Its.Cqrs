@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Subjects;
@@ -171,7 +172,6 @@ namespace Microsoft.Its.Domain.Testing
                 throw new InvalidOperationException($"You must dispose the current VirtualClock (created by {clock.creatorMemberName} [{clock.creatorFilePath}]) before starting another.");
             }
 
-
             Configuration.Current.EnsureCommandSchedulerPipelineTrackerIsInitialized();
 
             var virtualClock = new VirtualClock(now ?? DateTimeOffset.Now)
@@ -225,7 +225,7 @@ namespace Microsoft.Its.Domain.Testing
             public override IDisposable ScheduleAbsolute<TState>(
                 TState state,
                 DateTimeOffset dueTime,
-                Func<IScheduler, TState, IDisposable> action)
+                Func<IScheduler, TState, IDisposable> deliver)
             {
                 resetEvent.Reset();
 
@@ -233,9 +233,30 @@ namespace Microsoft.Its.Domain.Testing
 
                 var schedule = base.ScheduleAbsolute(state, dueTime, (scheduler, command) =>
                 {
-                    var cancel = action(scheduler, command);
+                    var cancel = deliver(scheduler, command);
 
-                    pending.Remove((IScheduledCommand) command);
+                    var scheduledCommand = (IScheduledCommand) command;
+
+                    var failed = scheduledCommand.Result.IfTypeIs<CommandFailed>()
+                                                 .ElseDefault();
+
+                    pending.Remove(scheduledCommand);
+
+                    if (failed != null && failed.WillBeRetried)
+                    {
+                        var retryAfter = failed.RetryAfter ??
+                                         TimeSpan.FromTicks(1);
+
+                        var clone = CreateNewScheduledCommandFrom(
+                            (dynamic) command,
+                            retryAfter);
+
+                        // scheduling the command will add it back to pending
+                        scheduler.Schedule(
+                            clone,
+                            retryAfter,
+                            deliver);
+                    }
 
                     resetEvent.Set();
 
@@ -243,6 +264,20 @@ namespace Microsoft.Its.Domain.Testing
                 });
 
                 return schedule;
+            }
+
+            private IScheduledCommand<T> CreateNewScheduledCommandFrom<T>(
+                IScheduledCommand<T> scheduledCommand,
+                TimeSpan retryAfter)
+            {
+                return new ScheduledCommand<T>(
+                    scheduledCommand.Command,
+                    scheduledCommand.TargetId,
+                    Domain.Clock.Current.Now() + retryAfter)
+                {
+                    NumberOfPreviousAttempts = scheduledCommand.NumberOfPreviousAttempts + 1,
+                    Clock = scheduledCommand.Clock
+                };
             }
 
             public async Task Done()

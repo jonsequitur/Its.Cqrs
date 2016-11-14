@@ -8,6 +8,7 @@ using Microsoft.Its.Domain.Sql.Tests;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
@@ -41,7 +42,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             return new Configuration()
                 .UseDependency<GetClockName>(_ => c => clockName)
                 .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
-                .UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString))
+                .UseSqlEventStore(c => c.UseConnectionString(EventStore.ConnectionString))
                 .UseInMemoryCommandTargetStore()
                 .TraceScheduledCommands();
         }
