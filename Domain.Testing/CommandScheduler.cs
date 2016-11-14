@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Microsoft.Its.Recipes;
+using static Microsoft.Its.Domain.CommandScheduler;
 
 namespace Microsoft.Its.Domain.Testing
 {
@@ -71,16 +72,16 @@ namespace Microsoft.Its.Domain.Testing
                 }
                 else if (command.Result == null)
                 {
-                    var clock = Clock.Current;
-
-                    command.Result = new CommandScheduled(command, clock);
+                    command.Result = new CommandScheduled(command, 
+                        Clock.Current);
 
                     VirtualClock.Schedule(
                         command,
                         command.DueTime ?? Clock.Now().AddTicks(1),
                         (s, c) =>
                         {
-                            Domain.CommandScheduler.DeliverImmediatelyOnConfiguredScheduler(c, configuration).Wait();
+                            DeliverImmediatelyOnConfiguredScheduler(c, configuration)
+                                  .Wait();
                             return Disposable.Empty;
                         });
                 }

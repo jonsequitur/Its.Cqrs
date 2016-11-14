@@ -164,7 +164,7 @@ namespace Microsoft.Its.Domain.Tests
                   .Select(f => f.ScheduledCommand)
                   .Cast<IScheduledCommand<NonEventSourcedCommandTarget>>()
                   .Should()
-                  .ContainSingle(c => c.Command is TestCommand);
+                  .Contain(c => c.Command is TestCommand);
         }
 
         private static NonEventSourcedCommandTarget CreateCommandTarget()

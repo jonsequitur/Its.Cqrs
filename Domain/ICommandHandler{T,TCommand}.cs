@@ -16,6 +16,8 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Called when a command has passed validation and authorization checks.
         /// </summary>
+        /// <param name="target">The target to which the command was applied.</param>
+        /// <param name="command">The command.</param>
         Task EnactCommand(TTarget target, TCommand command);
 
         /// <summary>
