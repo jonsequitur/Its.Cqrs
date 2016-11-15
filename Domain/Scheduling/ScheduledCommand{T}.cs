@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace Microsoft.Its.Domain
 {
     /// <summary>
-    /// An event that indicates that a command was scheduled.
+    /// A command that has been scheduled for future execution against a specific aggregate type.
     /// </summary>
     /// <typeparam name="TTarget">The type of the aggregate.</typeparam>
     [DebuggerDisplay("{ToString()}")]

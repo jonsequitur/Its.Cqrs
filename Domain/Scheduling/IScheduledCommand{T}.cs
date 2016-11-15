@@ -6,7 +6,7 @@ using System;
 namespace Microsoft.Its.Domain
 {
     /// <summary>
-    /// Represents that a command has been scheduled for future execution against a specific aggregate type.
+    /// A command that has been scheduled for future execution.
     /// </summary>
     public interface IScheduledCommand<in TAggregate> :
         IScheduledCommand
@@ -17,7 +17,7 @@ namespace Microsoft.Its.Domain
         ICommand<TAggregate> Command { get; }
 
         /// <summary>
-        /// Gets the id of the aggregate to which the command will be applied when delivered.
+        /// Gets the id of the target object to which the command will be applied when delivered.
         /// </summary>
         string TargetId { get; }
     }

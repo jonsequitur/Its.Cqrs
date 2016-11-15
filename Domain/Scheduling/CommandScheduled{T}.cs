@@ -53,7 +53,7 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        /// Gets the id of the aggregate to which the command will be applied when delivered.
+        /// Gets the id of the target object to which the command will be applied when delivered.
         /// </summary>
         string IScheduledCommand<TAggregate>.TargetId => AggregateId.ToString();
 

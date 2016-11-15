@@ -66,7 +66,6 @@ namespace Microsoft.Its.Domain
                 }
             }
 
-            // validate that the command's state is valid in and of itself
             var validationReport = RunAllValidations(target, false);
 
             using (CommandContext.Establish(this))
