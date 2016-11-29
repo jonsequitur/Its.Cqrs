@@ -83,6 +83,7 @@ namespace Microsoft.Its.Domain.Sql
 
                 eventQuery = eventQuery
                     .Where(e => e.Id >= startAtId)
+                    .OrderBy(e => e.Id)
                     .Take(batchSize);
                 
                 expectedNumberOfEvents = eventQuery.Count();
