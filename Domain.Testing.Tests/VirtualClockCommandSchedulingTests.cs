@@ -206,6 +206,36 @@ namespace Microsoft.Its.Domain.Testing.Tests
             retries.Should().Be(12);
         }
 
+        [Test]
+        public async Task When_the_VirtualClock_is_advanced_past_a_commands_due_time_then_in_EnactCommand_ClockNow_returns_the_commands_due_time()
+        {
+            var dueTime = DateTimeOffset.Parse("2019-09-01 +00:00");
+
+            VirtualClock.Start(DateTimeOffset.Parse("2019-01-01 +00:00"));
+
+            var target = new NonEventSourcedCommandTarget(Any.CamelCaseName());
+            var configuration = Configuration.Current;
+            await configuration.Store<NonEventSourcedCommandTarget>().Put(target);
+
+            var clockNowAtCommandDeliveryTime = default(DateTimeOffset);
+
+            configuration.UseCommandHandler<NonEventSourcedCommandTarget, TestCommand>(
+                enactCommand: async (_, __) =>
+                {
+                    clockNowAtCommandDeliveryTime = Clock.Now();
+                });
+
+            var scheduler = configuration.CommandScheduler<NonEventSourcedCommandTarget>();
+
+            await scheduler.Schedule(target.Id,
+                new TestCommand(),
+                dueTime: dueTime);
+
+            VirtualClock.Current.AdvanceBy(365.Days());
+
+            clockNowAtCommandDeliveryTime.Should().Be(dueTime);
+        }
+
         protected abstract Configuration GetConfiguration();
     }
 }
