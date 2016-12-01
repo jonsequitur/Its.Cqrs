@@ -157,18 +157,15 @@ SELECT @result";
             }
             catch (Exception ex)
             {
-                Debug.WriteLineIf(WriteDebugOutput,string.Format("Exception occurred while releasing app lock. {0} (#{1})", ex, GetHashCode()));
+                Debug.WriteLineIf(WriteDebugOutput, $"Exception occurred while releasing app lock. {ex} (#{GetHashCode()})");
             }
         }
 
         private void OnDispose()
         {
 #if DEBUG
-            Debug.WriteLineIf(WriteDebugOutput, string.Format("Disposing {0} AppLock after {1}ms for '{2}' (#{3})",
-                                        IsAcquired ? "acquired" : "unacquired",
-                                        timeSpentInAppLockStopwatch.Elapsed.TotalMilliseconds,
-                                        lockResourceName,
-                                        GetHashCode()));
+            Debug.WriteLineIf(WriteDebugOutput,
+                $"Disposing {(IsAcquired ? "acquired" : "unacquired")} AppLock after {timeSpentInAppLockStopwatch.Elapsed.TotalMilliseconds}ms for '{lockResourceName}' (#{GetHashCode()})");
 
             AppLock @lock;
             Active.TryRemove(this, out @lock);
