@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -12,7 +13,8 @@ namespace Microsoft.Its.Domain.Sql
     {
         public static IEnumerable<EventHandlerProgress> CalculateProgress(
             Func<DbContext> createReadModelDbContext,
-            Func<EventStoreDbContext> createEventStoreDbContext = null)
+            Func<EventStoreDbContext> createEventStoreDbContext = null,
+            Expression<Func<ReadModelInfo, bool>> filter = null)
         {
             if (createReadModelDbContext == null)
             {
@@ -41,15 +43,22 @@ namespace Microsoft.Its.Domain.Sql
 
             using (var db = createReadModelDbContext())
             {
-                readModelInfos = db.Set<ReadModelInfo>().ToArray();
+                IQueryable<ReadModelInfo> query = db.Set<ReadModelInfo>();
+
+                if (filter != null)
+                {
+                    query = query.Where(filter);
+                }
+
+                readModelInfos = query.ToArray();
             }
 
             readModelInfos
                 .ForEach(i =>
                 {
-                    var eventsProcessed = i.InitialCatchupEndTime.HasValue
-                                              ? EventsProcessedOutOfBatch(i)
-                                              : EventsProcessedOutOfAllEvents(i);
+                    var isNotInitialCatchup = i.InitialCatchupEndTime.HasValue;
+
+                    var eventsProcessed = EventsProcessedOutOfBatch(i);
 
                     if (eventsProcessed == 0)
                     {
@@ -66,20 +75,40 @@ namespace Microsoft.Its.Domain.Sql
                         return;
                     }
 
-                    var timeTakenForProcessedEvents = i.InitialCatchupEndTime.HasValue
+                    long eventsRemaining;
+                    if (isNotInitialCatchup)
+                    {
+                        eventsRemaining = eventStoreCount - i.BatchRemainingEvents;
+                    }
+                    else
+                    {
+                        eventsRemaining = i.BatchTotalEvents - i.BatchRemainingEvents;
+                    }
+
+                    var timeTakenForProcessedEvents = isNotInitialCatchup
                                                           ? (now - i.BatchStartTime).Value
                                                           : (now - i.InitialCatchupStartTime).Value;
+
+                    var percentageCompleted = Percent(
+                        howMany: eventsRemaining,
+                        outOf: eventStoreCount);
+
+                    var timeRemainingForCatchup = TimeRemaining(
+                        timeTakenForProcessedEvents,
+                        eventsProcessed,
+                        isNotInitialCatchup
+                            ? i.BatchRemainingEvents
+                            : eventStoreCount);
 
                     var eventHandlerProgress = new EventHandlerProgress
                     {
                         Name = i.Name,
                         InitialCatchupEvents = i.InitialCatchupEvents,
-                        TimeTakenForInitialCatchup = TimeTakenForInitialCatchup(i, now),
-                        TimeRemainingForCatchup = TimeRemaining(timeTakenForProcessedEvents, eventsProcessed, i.BatchRemainingEvents),
-                        EventsRemaining = i.BatchRemainingEvents,
-                        PercentageCompleted = Percent(
-                            eventStoreCount - i.BatchRemainingEvents,
-                            eventStoreCount),
+                        TimeTakenForInitialCatchup = TimeTakenForInitialCatchup(
+                            i),
+                        TimeRemainingForCatchup = timeRemainingForCatchup,
+                        EventsRemainingInBatch = i.BatchRemainingEvents,
+                        PercentageCompleted = percentageCompleted,
                         LatencyInMilliseconds = i.LatencyInMilliseconds,
                         LastUpdated = i.LastUpdated,
                         CurrentAsOfEventId = i.CurrentAsOfEventId,
@@ -89,26 +118,19 @@ namespace Microsoft.Its.Domain.Sql
 
                     progress.Add(eventHandlerProgress);
                 });
+
             return progress;
         }
 
-        private static long EventsProcessedOutOfAllEvents(ReadModelInfo i) => 
-            i.InitialCatchupEvents - i.BatchRemainingEvents;
-
-        private static long EventsProcessedOutOfBatch(ReadModelInfo i) => 
+        private static long EventsProcessedOutOfBatch(ReadModelInfo i) =>
             i.BatchTotalEvents - i.BatchRemainingEvents;
 
-        private static TimeSpan? TimeTakenForInitialCatchup(ReadModelInfo i, DateTimeOffset now)
-        {
-            if (i.InitialCatchupStartTime.HasValue)
-            {
-                return (i.InitialCatchupEndTime ?? now) - i.InitialCatchupStartTime;
-            }
+        private static TimeSpan? TimeTakenForInitialCatchup(ReadModelInfo i) =>
+            i.InitialCatchupEndTime.HasValue
+                ? i.InitialCatchupEndTime - i.InitialCatchupStartTime
+                : null;
 
-            return null;
-        }
-
-        private static TimeSpan? TimeRemaining(
+        private static TimeSpan TimeRemaining(
                 TimeSpan timeTakenForProcessedEvents,
                 long eventsProcessed,
                 long eventsRemaining) =>

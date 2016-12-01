@@ -17,7 +17,7 @@ namespace Microsoft.Its.Domain.Sql
 
         public double LatencyInMilliseconds { get; set; }
 
-        public long? EventsRemaining { get; set; }
+        public long? EventsRemainingInBatch { get; set; }
 
         public decimal? PercentageCompleted { get; set; }
 

@@ -3,6 +3,7 @@
 
 using System;
 using System.Data.Entity;
+using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
@@ -26,13 +27,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public ReadModelCatchup CreateReadModelCatchup(params object[] projectors)
         {
+            var startAtEventId = HighestEventId + 1;
+
+            var catchupName = CatchupName(projectors, startAtEventId);
+
             var catchup = new ReadModelCatchup(
                 eventStoreDbContext: () => EventStoreDbContext(),
                 readModelDbContext: () => ReadModelDbContext(),
-                startAtEventId: HighestEventId + 1,
+                startAtEventId: startAtEventId,
                 projectors: projectors)
             {
-                Name = $"from {HighestEventId + 1}"
+                Name = catchupName
             };
             Configuration.Current.RegisterForDisposal(catchup);
             return catchup;
@@ -47,6 +52,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             startAtEventId = startAtEventId ??
                              HighestEventId + 1;
 
+            var catchupName = CatchupName(projectors, startAtEventId);
+
             var catchup = new ReadModelCatchup(
                 eventStoreDbContext: () => EventStoreDbContext(),
                 readModelDbContext: () => ReadModelDbContext(),
@@ -55,11 +62,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 batchSize: batchSize,
                 filter: filter)
             {
-                Name = $"from {startAtEventId}"
+                Name = catchupName
             };
             Configuration.Current.RegisterForDisposal(catchup);
             return catchup;
         }
+
+        private static string CatchupName(
+                object[] projectors,
+                long? startAtEventId) =>
+            $"{projectors.Select(EventHandler.FullName).ToDelimitedString(":")} from {startAtEventId}";
 
         public ReadModelCatchup<T> CreateReadModelCatchup<T>(
             Func<EventStoreDbContext> eventStoreDbContext,

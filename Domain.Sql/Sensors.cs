@@ -37,23 +37,18 @@ namespace Microsoft.Its.Domain.Sql
                 return "GetEventStoreDbContext on class Microsoft.Its.Domain.Sql.Sensors is not configured";
             }
 
-            var latestEventId = Task.Run(() =>
+            using (var eventStore = GetEventStoreDbContext())
             {
-                using (var eventStore = GetEventStoreDbContext())
+                return new
                 {
-                    return eventStore.Events
-                                     .OrderByDescending(e => e.Id)
-                                     .Select(e => e.Id)
-                                     .FirstOrDefault();
-                }
-            });
-
-            return new
-            {
-                LatestEventId = await latestEventId,
-                ReadModels = ReadModelDbContexts.ToDictionary(p => p.Key,
-                                                              p => EventHandlerProgressCalculator.CalculateProgress(p.Value, GetEventStoreDbContext))
-            };
+                    LatestEventId = await eventStore
+                                        .Events
+                                        .MaxAsync(e => e.Id),
+                    ReadModels = ReadModelDbContexts
+                        .ToDictionary(p => p.Key,
+                            p => EventHandlerProgressCalculator.CalculateProgress(p.Value, GetEventStoreDbContext))
+                };
+            }
         }
     }
 }

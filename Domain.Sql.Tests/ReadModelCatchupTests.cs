@@ -780,7 +780,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 using (var catchup = CreateReadModelCatchup(projector))
                 {
                     var events = db.Events.Where(e => e.Id > HighestEventId);
-                    Console.WriteLine(string.Format("starting read model catchup for {0} events", events.Count()));
+                    Console.WriteLine($"starting read model catchup for {events.Count()} events");
                     catchup.Run().Wait();
                     Console.WriteLine("done with read model catchup");
                     barrier.SignalAndWait(MaxWaitTime); //3

@@ -45,6 +45,7 @@ namespace Microsoft.Its.Domain.Sql
         private readonly int batchSize;
         private long eventStoreEventCount;
         private bool isInitialized;
+        private long initialCatchupIsDoneAfterEventId;
 
         /// <summary>
         /// Initializes the <see cref="ReadModelCatchup{TDbContext}"/> class.
@@ -262,8 +263,9 @@ namespace Microsoft.Its.Domain.Sql
                                     i.InitialCatchupStartTime = now;
                                     i.InitialCatchupEvents = eventStoreEventCount;
                                 }
-                                
-                                if (eventsRemaining == 0 && i.InitialCatchupEndTime == null)
+
+                                if (i.CurrentAsOfEventId >= initialCatchupIsDoneAfterEventId &&
+                                    i.InitialCatchupEndTime == null)
                                 {
                                     i.InitialCatchupEndTime = now;
                                 }
@@ -478,6 +480,8 @@ namespace Microsoft.Its.Domain.Sql
             using (var eventStore = createEventStoreDbContext())
             {
                 eventStoreEventCount = eventStore.Events.Count();
+                initialCatchupIsDoneAfterEventId = eventStore.Events.Max(e => e.Id);
+
             }
         }
 

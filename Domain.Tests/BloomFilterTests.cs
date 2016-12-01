@@ -22,7 +22,6 @@ namespace Microsoft.Its.Domain.Tests
             var filter = new BloomFilter();
             var item = Guid.NewGuid().ToString();
             filter.Add(item);
-            Console.WriteLine(filter.ToString());
 
             filter = new BloomFilter(filter.ToString());
 
@@ -71,9 +70,6 @@ namespace Microsoft.Its.Domain.Tests
                                                .Where(s => filter.MayContain(s))
                                                .ToList();
 
-                Console.WriteLine(falsePositives.Count + " false positives");
-                Console.WriteLine(falsePositives.ToLogString());
-
                 try
                 {
                     falsePositives.Count.Should().BeInRange(70, 120);
@@ -82,6 +78,10 @@ namespace Microsoft.Its.Domain.Tests
                 catch (Exception) when (attempts == 0)
                 {
                     throw;
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine(new {falsePositives} + $" on attempt #{attempts}");
                 }
             }
         }
@@ -114,8 +114,6 @@ namespace Microsoft.Its.Domain.Tests
             filter.Add("three");
 
             var json = JsonConvert.SerializeObject(filter, Formatting.Indented);
-
-            Console.WriteLine(json);
 
             var filter2 = JsonConvert.DeserializeObject<BloomFilter>(json);
 

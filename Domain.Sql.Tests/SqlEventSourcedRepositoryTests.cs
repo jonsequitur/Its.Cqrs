@@ -23,22 +23,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     public class SqlEventSourcedRepositoryTests : EventSourcedRepositoryTests
     {
         protected override IEventSourcedRepository<TAggregate> CreateRepository<TAggregate>(
-            Action onSave = null)
-        {
-            var repository = Configuration.Current.Repository<TAggregate>() as SqlEventSourcedRepository<TAggregate>;
-
-            if (onSave != null)
-            {
-                Console.WriteLine("onSave");
-//                repository.GetEventStoreContext = () =>
-//                {
-//                    onSave();
-//                    return EventStoreDbContext();
-//                };
-            }
-
-            return repository;
-        }
+            Action onSave = null) => Configuration.Current.Repository<TAggregate>() as SqlEventSourcedRepository<TAggregate>;
 
         protected override async Task SaveEventsDirectly(params InMemoryStoredEvent[] events)
         {
