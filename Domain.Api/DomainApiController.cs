@@ -63,7 +63,6 @@ namespace Microsoft.Its.Domain.Api
             [FromBody] JObject command)
         {
             var c = CreateCommand(commandName, command);
-            c.AggregateId = id;
 
             var ctor = typeof (TAggregate).GetConstructor(new[] { ((object) c).GetType() });
 

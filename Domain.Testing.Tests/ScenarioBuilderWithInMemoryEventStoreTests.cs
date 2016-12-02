@@ -25,10 +25,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var scenario = CreateScenarioBuilder().Prepare();
 
             var id = Any.Guid();
-            scenario.SaveAsync(new Order(new CreateOrder(Any.FullName())
-            {
-                AggregateId = id
-            })).Wait();
+            scenario.SaveAsync(new Order(new CreateOrder(id, Any.FullName()))).Wait();
 
             var order = scenario.GetLatestAsync<Order>(id);
 

@@ -10,6 +10,7 @@ using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using static Microsoft.Its.Domain.Tests.CurrentConfiguration;
+using static Microsoft.Its.Domain.Tests.NonEventSourcedCommandTarget;
 
 namespace Microsoft.Its.Domain.Tests
 {

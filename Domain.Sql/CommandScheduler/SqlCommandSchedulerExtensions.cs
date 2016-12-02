@@ -33,6 +33,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         /// </summary>
         internal static IScheduledCommand<TAggregate> ToScheduledCommand<TAggregate>(
             this ScheduledCommand scheduled)
+            where TAggregate : class
         {
             var json = scheduled.SerializedCommand;
 
@@ -42,7 +43,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             command.DueTime = scheduled.DueTime;
             command.SequenceNumber = scheduled.SequenceNumber;
             command.NumberOfPreviousAttempts = scheduled.Attempts;
-            
+
             return command;
         }
     }

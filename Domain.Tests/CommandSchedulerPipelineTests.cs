@@ -35,7 +35,7 @@ namespace Microsoft.Its.Domain.Tests
 
             var scheduler = configuration.CommandScheduler<Order>();
 
-            await scheduler.Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            await scheduler.Schedule(new CreateOrder(Any.FullName()));
 
             scheduled.Should().BeTrue();
         }
@@ -78,7 +78,7 @@ namespace Microsoft.Its.Domain.Tests
 
             var scheduler = Configuration.Current.CommandScheduler<Order>();
 
-            await scheduler.Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            await scheduler.Schedule(new CreateOrder(Any.FullName()));
 
             checkpoints.Should()
                        .ContainInOrder("one", "two", "three", "four")
@@ -114,7 +114,7 @@ namespace Microsoft.Its.Domain.Tests
 
             scheduler = Configuration.Current.CommandScheduler<Order>();
 
-            await scheduler.Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            await scheduler.Schedule(new CreateOrder(Any.FullName()));
 
             checkpoints.Should()
                        .ContainInOrder("one", "two", "three", "four")
@@ -130,9 +130,10 @@ namespace Microsoft.Its.Domain.Tests
             var log = new List<string>();
             using (LogTraceOutputTo(log))
             {
+                var targetId = Any.Word();
                 await Configuration.Current
                                    .CommandScheduler<NonEventSourcedCommandTarget>()
-                                   .Schedule(Any.Guid(), new CreateCommandTarget(Any.Word()));
+                                   .Schedule(targetId, new NonEventSourcedCommandTarget.CreateCommandTarget(targetId));
             }
 
             log.Count.Should().Be(4);
@@ -161,7 +162,7 @@ namespace Microsoft.Its.Domain.Tests
                 onDelivered: _ => onDeliveredWasCalled = true);
 
             await Configuration.Current.CommandScheduler<Order>()
-                               .Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+                               .Schedule(new CreateOrder(Any.FullName()));
 
             onSchedulingWasCalled.Should().BeTrue();
             onScheduledWasCalled.Should().BeTrue();
@@ -188,7 +189,7 @@ namespace Microsoft.Its.Domain.Tests
             using (LogTraceOutputTo(log))
             {
                 // send a command
-                await Configuration.Current.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+                await Configuration.Current.CommandScheduler<Order>().Schedule(new CreateOrder(Any.FullName()));
             }
 
             log.Should().ContainSingle(e => e.Contains("[Scheduled]"));
@@ -210,7 +211,7 @@ namespace Microsoft.Its.Domain.Tests
             using (LogTraceOutputTo(log))
             {
                 // send a command
-                await Configuration.Current.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+                await Configuration.Current.CommandScheduler<Order>().Schedule(new CreateOrder(Any.FullName()));
             }
 
             log.Should().ContainSingle(e => e.Contains("[Scheduled]"));
@@ -232,7 +233,7 @@ namespace Microsoft.Its.Domain.Tests
                 .Initialize(Configuration.Current);
 
             // send a command
-            await Configuration.Current.CommandScheduler<Order>().Schedule(Any.Guid(), new CreateOrder(Any.FullName()));
+            await Configuration.Current.CommandScheduler<Order>().Schedule(new CreateOrder(Any.FullName()));
 
             commandsScheduled.Count.Should().Be(1);
         }

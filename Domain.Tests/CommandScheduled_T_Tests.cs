@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Tests.EventSourcedCommandTarget;
 
 namespace Microsoft.Its.Domain.Tests
 {

@@ -171,7 +171,7 @@ namespace Microsoft.Its.Domain.Api.Tests
             var orderId = Any.Guid();
 
             var response = await testApi.GetClient()
-                                        .PostAsJsonAsync($"http://contoso.com/orders/createorder/{orderId}", new CreateOrder(Any.FullName()));
+                                        .PostAsJsonAsync($"http://contoso.com/orders/createorder/{orderId}", new CreateOrder(orderId, Any.FullName()));
 
             response.ShouldSucceed(HttpStatusCode.Created);
         }
@@ -184,11 +184,11 @@ namespace Microsoft.Its.Domain.Api.Tests
 
             var orderId = Any.Guid();
             await testApi.GetClient()
-                         .PostAsJsonAsync($"http://contoso.com/orders/createorder/{orderId}", new CreateOrder(Any.FullName()));
+                         .PostAsJsonAsync($"http://contoso.com/orders/createorder/{orderId}", new CreateOrder(orderId, Any.FullName()));
 
             // act
             var response = await testApi.GetClient()
-                                        .PostAsJsonAsync($"http://contoso.com/orders/createorder/{orderId}", new CreateOrder(Any.FullName()));
+                                        .PostAsJsonAsync($"http://contoso.com/orders/createorder/{orderId}", new CreateOrder(orderId, Any.FullName()));
 
             // assert
             response.ShouldFailWith(HttpStatusCode.Conflict);

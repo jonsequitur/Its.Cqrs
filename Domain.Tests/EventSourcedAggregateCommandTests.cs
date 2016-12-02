@@ -477,6 +477,13 @@ namespace Microsoft.Its.Domain.Tests
 
         public class ConstructorCommandWithDataAnnotations : ConstructorCommand<FakeAggregateWithEnactCommandConvention>
         {
+            public ConstructorCommandWithDataAnnotations(
+                Guid? aggregateId = null,
+                string etag = null) :
+                base(aggregateId ?? Guid.NewGuid(), etag)
+            {
+            }
+
             [Required]
             public string Name { get; set; }
 

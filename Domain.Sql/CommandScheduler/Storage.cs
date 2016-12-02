@@ -79,6 +79,7 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
         internal static async Task DeserializeAndDeliverScheduledCommand<TAggregate>(
             ScheduledCommand scheduled,
             ICommandDeliverer<TAggregate> scheduler)
+            where TAggregate : class
         {
             try
             {

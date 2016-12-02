@@ -3,12 +3,10 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NCrunch.Framework;
@@ -16,6 +14,7 @@ using NUnit.Framework;
 using Test.Domain.Ordering;
 using static Microsoft.Its.Domain.Tests.CurrentConfiguration;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
+using static Microsoft.Its.Domain.Tests.NonEventSourcedCommandTarget;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {

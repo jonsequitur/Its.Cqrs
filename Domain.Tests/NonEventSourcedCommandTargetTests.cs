@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
+using static Microsoft.Its.Domain.Tests.NonEventSourcedCommandTarget;
 
 namespace Microsoft.Its.Domain.Tests
 {

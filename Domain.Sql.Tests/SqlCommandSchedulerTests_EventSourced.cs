@@ -158,7 +158,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 .UseCommandHandler<Order, CreateOrder>(async (_, __) => deliveredTime = Clock.Now());
 
             // act
-            await Schedule(Any.Guid(),
+            await Schedule(
                 new CreateOrder(Any.FullName())
                 {
                     CanBeDeliveredDuringScheduling = false
@@ -620,10 +620,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var orderId = Any.Guid();
             var customerName = Any.FullName();
 
-            await Schedule(orderId, new CreateOrder(customerName)
-            {
-                AggregateId = orderId
-            });
+            await Schedule(orderId, new CreateOrder(orderId, customerName));
 
             var order = await Get<Order>(orderId);
 
@@ -637,15 +634,9 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var orderId = Any.Guid();
             var customerName = Any.FullName();
 
-            await Schedule(orderId, new CreateOrder(customerName)
-            {
-                AggregateId = orderId
-            });
+            await Schedule(orderId, new CreateOrder(orderId, customerName));
 
-            await Schedule(orderId, new CreateOrder(customerName)
-            {
-                AggregateId = orderId
-            });
+            await Schedule(orderId, new CreateOrder(orderId, customerName));
 
             using (var db = CommandSchedulerDbContext())
             {
@@ -677,10 +668,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                              .Current
                                              .CommandScheduler<Order>()
                                              .Schedule(orderId,
-                                                 new CreateOrder(customerName)
-                                                 {
-                                                     AggregateId = orderId
-                                                 },
+                                                 new CreateOrder(orderId, customerName),
                                                  deliveryDependsOn: prerequisiteEvent);
 
             var order = await Get<Order>(orderId);
@@ -719,10 +707,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
 
             await Schedule(orderId,
-                new CreateOrder(customerName)
-                {
-                    AggregateId = orderId
-                },
+                new CreateOrder(orderId, customerName),
                 deliveryDependsOn: prerequisiteEvent);
 
             // sanity check that the order is null
@@ -747,10 +732,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         public override async Task When_a_scheduled_command_depends_on_an_event_that_never_arrives_it_is_eventually_abandoned()
         {
             var orderId = Any.Guid();
-            await Save(new Order(new CreateOrder(Any.FullName())
-            {
-                AggregateId = orderId
-            }));
+            await Save(new Order(new CreateOrder(orderId, Any.FullName())));
 
             var prerequisiteEvent = new CustomerAccount.Created
             {
@@ -815,10 +797,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await Schedule(
                 dueTime: Clock.Now().AddDays(-1),
                 aggregateId: orderId,
-                command: new CreateOrder(Any.FullName())
-                {
-                    AggregateId = orderId
-                });
+                command: new CreateOrder(orderId, Any.FullName()));
 
             VirtualClock.Current.AdvanceBy(TimeSpan.FromDays(1));
 
@@ -858,14 +837,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var failedAggregateId = Any.Guid();
             var successfulAggregateId = Any.Guid();
 
-            await Schedule(failedAggregateId,
-                new CreateOrder(Any.FullName()),
+            await Schedule(
+                new CreateOrder(failedAggregateId, Any.FullName()),
                 Clock.Now().AddHours(1));
-            await Schedule(successfulAggregateId,
-                new CreateOrder(Any.FullName())
-                {
-                    AggregateId = successfulAggregateId
-                },
+            await Schedule(
+                new CreateOrder(successfulAggregateId, Any.FullName()),
                 Clock.Now().AddHours(1.5));
 
             using (var db = CommandSchedulerDbContext())
@@ -892,10 +868,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             // arrange
             var clockName = Any.CamelCaseName();
-            var create = new CreateOrder(Any.FullName())
-            {
-                AggregateId = Any.Guid()
-            };
+            var create = new CreateOrder(Any.Guid(), Any.FullName());
 
             var clock = new CommandScheduler.Clock
             {
