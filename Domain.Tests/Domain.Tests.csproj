@@ -150,6 +150,7 @@
     <Compile Include="Infrastructure\UseInMemoryCommandTargetStoreAttribute.cs" />
     <Compile Include="Infrastructure\UseInMemoryEventStoreAttribute.cs" />
     <Compile Include="Infrastructure\UseInMemoryReservationServiceAttribute.cs" />
+    <Compile Include="EventSourcedCommandTarget.cs" />
     <Compile Include="NonEventSourcedCommandTarget.cs" />
     <Compile Include="EventSourcedAggregateCommandTests.cs" />
     <Compile Include="ConfigurationContextTests.cs" />

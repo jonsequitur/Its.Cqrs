@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Its.Validation;
@@ -11,45 +12,38 @@ using Microsoft.Its.Recipes;
 
 namespace Microsoft.Its.Domain.Tests
 {
-    public class NonEventSourcedCommandTarget
+    public class EventSourcedCommandTarget : EventSourcedAggregate<EventSourcedCommandTarget>
     {
-        public Func<NonEventSourcedCommandTarget, CommandFailed<TestCommand>, Task> OnHandleScheduledCommandError;
-        public Func<NonEventSourcedCommandTarget, TestCommand, Task> OnEnactCommand;
+        public Func<EventSourcedCommandTarget, CommandFailed<TestCommand>, Task> OnHandleScheduledCommandError;
+        public Func<EventSourcedCommandTarget, TestCommand, Task> OnEnactCommand;
 
-        public NonEventSourcedCommandTarget(string id)
+        public EventSourcedCommandTarget(Guid? id = null) : base(id)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                throw new ArgumentException("id");
-            }
-            Id = id;
         }
 
-        public NonEventSourcedCommandTarget(CreateCommandTarget create = null)
+        public EventSourcedCommandTarget(ConstructorCommand<EventSourcedCommandTarget> createCommand) : base(createCommand)
         {
-            Id = create?.TargetId ?? Any.Word();
-            CreatedTime = Clock.Now();
         }
 
-        public string Id { get; }
+        public EventSourcedCommandTarget(Guid id, IEnumerable<IEvent> eventHistory) : base(id, eventHistory)
+        {
+        }
 
         public bool IsValid { get; set; } = true;
 
-        public ConcurrentBag<ICommand<NonEventSourcedCommandTarget>> CommandsEnacted { get; } = new ConcurrentBag<ICommand<NonEventSourcedCommandTarget>>();
+        public ConcurrentBag<ICommand<EventSourcedCommandTarget>> CommandsEnacted { get; } = new ConcurrentBag<ICommand<EventSourcedCommandTarget>>();
 
         public ConcurrentBag<CommandFailed> CommandsFailed { get; } = new ConcurrentBag<CommandFailed>();
 
-        public DateTimeOffset CreatedTime { get; }
-
         public class CommandTargetCommandHandler :
-            ICommandHandler<NonEventSourcedCommandTarget, TestCommand>,
-            ICommandHandler<NonEventSourcedCommandTarget, SendRequests>,
-            ICommandHandler<NonEventSourcedCommandTarget, RequestReply>,
-            ICommandHandler<NonEventSourcedCommandTarget, Reply>
+            ICommandHandler<EventSourcedCommandTarget, TestCommand>,
+            ICommandHandler<EventSourcedCommandTarget, SendRequests>,
+            ICommandHandler<EventSourcedCommandTarget, RequestReply>,
+            ICommandHandler<EventSourcedCommandTarget, Reply>
         {
-            private readonly ICommandScheduler<NonEventSourcedCommandTarget> scheduler;
+            private readonly ICommandScheduler<EventSourcedCommandTarget> scheduler;
 
-            public CommandTargetCommandHandler(ICommandScheduler<NonEventSourcedCommandTarget> scheduler)
+            public CommandTargetCommandHandler(ICommandScheduler<EventSourcedCommandTarget> scheduler)
             {
                 if (scheduler == null)
                 {
@@ -58,7 +52,7 @@ namespace Microsoft.Its.Domain.Tests
                 this.scheduler = scheduler;
             }
 
-            public async Task EnactCommand(NonEventSourcedCommandTarget target, TestCommand command)
+            public async Task EnactCommand(EventSourcedCommandTarget target, TestCommand command)
             {
                 target.CommandsEnacted.Add(command);
 
@@ -68,7 +62,7 @@ namespace Microsoft.Its.Domain.Tests
                 }
             }
 
-            public async Task HandleScheduledCommandException(NonEventSourcedCommandTarget target, CommandFailed<TestCommand> failed)
+            public async Task HandleScheduledCommandException(EventSourcedCommandTarget target, CommandFailed<TestCommand> failed)
             {
                 target.CommandsFailed.Add(failed);
 
@@ -77,56 +71,55 @@ namespace Microsoft.Its.Domain.Tests
                       .ThenDo(enact => enact(target, failed));
             }
 
-            public async Task EnactCommand(NonEventSourcedCommandTarget requestor, SendRequests command)
+            public async Task EnactCommand(EventSourcedCommandTarget requestor, SendRequests command)
             {
                 requestor.CommandsEnacted.Add(command);
 
-                foreach (var targetId in command.TargetIds)
+                foreach (var aggregateId in command.TargetIds)
                 {
-                    await scheduler.Schedule(targetId, new RequestReply(requestor.Id)
+                    await scheduler.Schedule(aggregateId, new RequestReply(requestor.Id)
                     {
                         RequestorId = requestor.Id
                     });
                 }
             }
 
-            public async Task HandleScheduledCommandException(NonEventSourcedCommandTarget target, CommandFailed<SendRequests> command)
+            public async Task HandleScheduledCommandException(EventSourcedCommandTarget target, CommandFailed<SendRequests> command)
             {
                 target.CommandsFailed.Add(command);
             }
 
-            public async Task EnactCommand(NonEventSourcedCommandTarget replier, RequestReply command)
+            public async Task EnactCommand(EventSourcedCommandTarget replier, RequestReply command)
             {
                 replier.CommandsEnacted.Add(command);
 
                 await scheduler.Schedule(command.RequestorId, new Reply(replier.Id));
             }
 
-            public async Task HandleScheduledCommandException(NonEventSourcedCommandTarget target, CommandFailed<RequestReply> command)
+            public async Task HandleScheduledCommandException(EventSourcedCommandTarget target, CommandFailed<RequestReply> command)
             {
                 target.CommandsFailed.Add(command);
             }
 
-            public async Task EnactCommand(NonEventSourcedCommandTarget replier, Reply command)
+            public async Task EnactCommand(EventSourcedCommandTarget replier, Reply command)
             {
                 replier.CommandsEnacted.Add(command);
             }
 
-            public async Task HandleScheduledCommandException(NonEventSourcedCommandTarget target, CommandFailed<Reply> command)
+            public async Task HandleScheduledCommandException(EventSourcedCommandTarget target, CommandFailed<Reply> command)
             {
                 target.CommandsFailed.Add(command);
             }
         }
 
-        public class CreateCommandTarget : ConstructorCommand<NonEventSourcedCommandTarget>
+        public class CreateCommandTarget : ConstructorCommand<EventSourcedCommandTarget>
         {
-            public CreateCommandTarget(string targetId, string etag = null) :
-                base(targetId, etag)
+            public CreateCommandTarget(Guid aggregateId, string etag = null) : base(aggregateId, etag)
             {
             }
         }
 
-        public class TestCommand : Command<NonEventSourcedCommandTarget>, ISpecifySchedulingBehavior
+        public class TestCommand : Command<EventSourcedCommandTarget>, ISpecifySchedulingBehavior
         {
             public TestCommand(string etag = null, bool isValid = true) : base(etag)
             {
@@ -141,18 +134,18 @@ namespace Microsoft.Its.Domain.Tests
             public override IValidationRule CommandValidator =>
                 Validate.That<TestCommand>(cmd => cmd.IsValid);
 
-            public override IValidationRule<NonEventSourcedCommandTarget> Validator =>
-                Validate.That<NonEventSourcedCommandTarget>(_ => _.IsValid);
+            public override IValidationRule<EventSourcedCommandTarget> Validator =>
+                Validate.That<EventSourcedCommandTarget>(_ => _.IsValid);
 
             public bool CanBeDeliveredDuringScheduling { get; set; }
 
             public bool RequiresDurableScheduling { get; set; }
         }
 
-        public class SendRequests : Command<NonEventSourcedCommandTarget>
+        public class SendRequests : Command<EventSourcedCommandTarget>
         {
             public SendRequests(
-                string[] targetIds,
+                Guid[] targetIds,
                 string etag = null) : base(etag)
             {
                 if (targetIds == null)
@@ -167,31 +160,31 @@ namespace Microsoft.Its.Domain.Tests
                 TargetIds = targetIds;
             }
 
-            public string[] TargetIds { get; }
+            public Guid[] TargetIds { get; }
         }
 
-        public class RequestReply : Command<NonEventSourcedCommandTarget>
+        public class RequestReply : Command<EventSourcedCommandTarget>
         {
             public RequestReply(
-                string requestorId,
+                Guid requestorId,
                 string etag = null) : base(etag)
             {
                 RequestorId = requestorId;
             }
 
-            public string RequestorId { get; set; }
+            public Guid RequestorId { get; set; }
         }
 
-        public class Reply : Command<NonEventSourcedCommandTarget>
+        public class Reply : Command<EventSourcedCommandTarget>
         {
             public Reply(
-                string replierId,
+                Guid replierId,
                 string etag = null) : base(etag)
             {
                 ReplierId = replierId;
             }
 
-            public string ReplierId { get; set; }
+            public Guid ReplierId { get; set; }
         }
     }
 }

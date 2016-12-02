@@ -17,19 +17,33 @@ namespace Microsoft.Its.Domain
         /// <summary>
         /// Initializes a new instance of the <see cref="ConstructorCommand{T}"/> class.
         /// </summary>
-        protected ConstructorCommand(string etag = null) : base(etag)
+        protected ConstructorCommand(Guid aggregateId, string etag = null) : base(etag)
         {
-            AggregateId = Guid.NewGuid();
+            AggregateId = aggregateId;
         }
 
         /// <summary>
-        /// Gets or sets the aggregate identifier to be used for the new instance of <typeparamref name="T" />.
+        /// Initializes a new instance of the <see cref="ConstructorCommand{T}"/> class.
         /// </summary>
-        /// <value>
-        /// The aggregate identifier.
-        /// </value>
-        public Guid AggregateId { get; set; }
-   
+        protected ConstructorCommand(string targetId, string etag = null) : base(etag)
+        {
+            if (targetId == null)
+            {
+                throw new ArgumentNullException(nameof(targetId));
+            }
+            TargetId = targetId;
+        }
+
+        /// <summary>
+        /// Gets the identifier to be used for the new instance of <typeparamref name="T" />.
+        /// </summary>
+        public Guid AggregateId { get; }
+
+        /// <summary>
+        /// Gets the identifier to be used for the new instance of <typeparamref name="T" />.
+        /// </summary>
+        public string TargetId { get; }
+
         /// <summary>
         /// If set, requires that the command be applied to this version of the aggregate; otherwise, <see cref="Command{TAggregate}.ApplyTo" /> will throw..
         /// </summary>
@@ -43,7 +57,7 @@ namespace Microsoft.Its.Domain
             }
             set
             {
-                throw new InvalidOperationException("ConstructorCommand<T> can only be applied at version 0 of an aggregate.");
+                throw new InvalidOperationException($"{nameof(ConstructorCommand<T>)} can only be applied at version 0 of an aggregate.");
             }
         }
     }

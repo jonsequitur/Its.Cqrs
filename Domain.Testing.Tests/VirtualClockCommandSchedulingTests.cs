@@ -11,6 +11,7 @@ using Microsoft.Its.Domain.Tests;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Test.Domain.Ordering;
+using static Microsoft.Its.Domain.Tests.NonEventSourcedCommandTarget;
 
 namespace Microsoft.Its.Domain.Testing.Tests
 {
@@ -33,10 +34,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
             var aggregateId = Any.Guid();
             await scheduler.Schedule(new CommandScheduled<Order>
             {
-                Command = new CreateOrder(Any.FullName())
-                {
-                    AggregateId = aggregateId
-                },
+                Command = new CreateOrder(aggregateId, Any.FullName()),
                 DueTime = Clock.Now().AddHours(1),
                 AggregateId = aggregateId
             });
@@ -60,10 +58,7 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             await scheduler.Schedule(new CommandScheduled<Order>
             {
-                Command = new CreateOrder(Any.FullName())
-                {
-                    AggregateId = aggregateId
-                },
+                Command = new CreateOrder(aggregateId, Any.FullName()),
                 DueTime = Clock.Now().AddHours(1),
                 AggregateId = aggregateId
             });

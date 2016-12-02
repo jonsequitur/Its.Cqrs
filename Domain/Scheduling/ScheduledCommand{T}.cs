@@ -12,7 +12,7 @@ namespace Microsoft.Its.Domain
     /// <typeparam name="TTarget">The type of the aggregate.</typeparam>
     [DebuggerDisplay("{ToString()}")]
     public class ScheduledCommand<TTarget> :
-        IScheduledCommand<TTarget>
+        IScheduledCommand<TTarget> where TTarget : class
     {
         private static readonly bool targetIsEventSourced;
         internal static readonly Func<IScheduledCommand<TTarget>, Guid> TargetGuid;
@@ -75,9 +75,29 @@ namespace Microsoft.Its.Domain
             {
                 throw new ArgumentNullException(nameof(command));
             }
+
             if (string.IsNullOrWhiteSpace(targetId))
             {
                 throw new ArgumentException("Parameter targetId cannot be null, empty or whitespace.");
+            }
+
+            var constructorCommand = command as ConstructorCommand<TTarget>;
+            if (constructorCommand != null)
+            {
+                if (typeof(IEventSourced).IsAssignableFrom(typeof(TTarget)))
+                {
+                    if (constructorCommand.AggregateId != Guid.Parse(targetId))
+                    {
+                        throw new ArgumentException($"ConstructorCommand.AggregateId ({constructorCommand.AggregateId}) does not match ScheduledCommand.AggregateId ({targetId})");
+                    }
+                }
+                else
+                {
+                    if (constructorCommand.TargetId != targetId)
+                    {
+                        throw new ArgumentException($"ConstructorCommand.TargetId ({constructorCommand.TargetId}) does not match ScheduledCommand.TargetId ({targetId})");
+                    }
+                }
             }
 
             Command = command;

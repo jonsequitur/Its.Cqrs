@@ -25,7 +25,8 @@ namespace Microsoft.Its.Domain
             DateTimeOffset? dueTime = null,
             IEvent deliveryDependsOn = null,
             IClock clock = null)
-            where TCommand : ICommand<TAggregate>
+            where TCommand : ICommand<TAggregate> 
+            where TAggregate : class
         {
             var scheduledCommand = new ScheduledCommand<TAggregate>(
                 command,
@@ -49,7 +50,8 @@ namespace Microsoft.Its.Domain
             DateTimeOffset? dueTime = null,
             IPrecondition deliveryDependsOn = null,
             IClock clock = null)
-            where TCommand : ICommand<TTarget>
+            where TCommand : ICommand<TTarget> 
+            where TTarget : class
         {
             var scheduledCommand = new ScheduledCommand<TTarget>(
                 command,
@@ -76,7 +78,7 @@ namespace Microsoft.Its.Domain
         {
             return await scheduler.Schedule(
                 command: command,
-                targetId: command.AggregateId.ToString(),
+                targetId: command.TargetId ?? command.AggregateId.ToString(),
                 dueTime: dueTime,
                 deliveryDependsOn: deliveryDependsOn,
                 clock: clock);

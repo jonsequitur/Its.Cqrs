@@ -280,9 +280,10 @@ namespace Microsoft.Its.Domain.Tests
             Guid? customerAccountId = null)
         {
             return new Order(
-                new CreateOrder(customerName ?? Any.FullName())
+                new CreateOrder(
+                    orderId ?? Any.Guid(),
+                    customerName ?? Any.FullName())
                 {
-                    AggregateId = orderId ?? Any.Guid(),
                     CustomerId = customerAccountId ?? Any.Guid()
                 })
                 .Apply(new AddItem

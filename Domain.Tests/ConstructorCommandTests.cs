@@ -27,10 +27,7 @@ namespace Microsoft.Its.Domain.Tests
         public void ConstructorCommand_AggregateId_is_used_to_specify_the_new_instances_Id()
         {
             var id = Any.Guid();
-            var createOrder = new CreateOrder(Any.Paragraph(2))
-            {
-                AggregateId = id
-            };
+            var createOrder = new CreateOrder(id, Any.Paragraph(2));
             var order = new Order(createOrder);
 
             order.Id.Should().Be(id);

@@ -92,9 +92,8 @@ namespace Microsoft.Its.Domain.Tests
             var customerId = Any.Guid();
             var bus = new InProcessEventBus();
             var orderRepository = new InMemoryEventSourcedRepository<Order>(bus: bus);
-            await orderRepository.Save(new Order(new CreateOrder(Any.FullName())
+            await orderRepository.Save(new Order(new CreateOrder(orderId, Any.FullName())
             {
-                AggregateId = orderId,
                 CustomerId = customerId
             }).Apply(new AddItem
             {

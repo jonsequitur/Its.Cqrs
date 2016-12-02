@@ -269,6 +269,7 @@ namespace Microsoft.Its.Domain.Testing
             private IScheduledCommand<T> CreateNewScheduledCommandFrom<T>(
                 IScheduledCommand<T> scheduledCommand,
                 TimeSpan retryAfter)
+                where T : class
             {
                 return new ScheduledCommand<T>(
                     scheduledCommand.Command,

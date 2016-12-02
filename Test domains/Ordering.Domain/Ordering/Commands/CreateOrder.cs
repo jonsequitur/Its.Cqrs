@@ -3,19 +3,25 @@
 
 using System;
 using System.Diagnostics;
-using Microsoft.Its.Domain;
 using Its.Validation;
 using Its.Validation.Configuration;
+using Microsoft.Its.Domain;
+using Newtonsoft.Json;
 
 namespace Test.Domain.Ordering
 {
     [DebuggerStepThrough]
     public class CreateOrder : ConstructorCommand<Order>, ISpecifySchedulingBehavior
     {
-        public CreateOrder(string customerName, string etag = null) : base(etag)
+        [JsonConstructor]
+        public CreateOrder(Guid aggregateId, string customerName, string etag = null) : base(aggregateId, etag)
         {
             CustomerName = customerName;
             CustomerId = Guid.NewGuid();
+        }
+
+        public CreateOrder(string customerName, string etag = null) : this(Guid.NewGuid(), customerName, etag)
+        {
         }
 
         public string CustomerName { get; set; }

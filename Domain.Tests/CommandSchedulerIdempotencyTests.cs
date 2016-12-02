@@ -73,10 +73,7 @@ namespace Microsoft.Its.Domain.Tests
 
             if (await repository.GetLatest(aggregateId) == null)
             {
-                await repository.Save(new Order(new CreateOrder(Any.FullName())
-                {
-                    AggregateId = aggregateId
-                }));
+                await repository.Save(new Order(new CreateOrder(aggregateId, Any.FullName())));
             }
 
             var command = new AddItem
@@ -111,7 +108,7 @@ namespace Microsoft.Its.Domain.Tests
             }
 
             var command = new ScheduledCommand<NonEventSourcedCommandTarget>(
-                new TestCommand(etag),
+                new NonEventSourcedCommandTarget.TestCommand(etag),
                 targetId,
                 dueTime,
                 deliveryDependsOn);

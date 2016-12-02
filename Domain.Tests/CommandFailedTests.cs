@@ -4,6 +4,7 @@
 using FluentAssertions;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
+using static Microsoft.Its.Domain.Tests.NonEventSourcedCommandTarget;
 
 namespace Microsoft.Its.Domain.Tests
 {
