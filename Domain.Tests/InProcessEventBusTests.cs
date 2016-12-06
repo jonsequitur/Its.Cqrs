@@ -67,15 +67,10 @@ namespace Microsoft.Its.Domain.Tests
 
             public Guid Id { get; private set; }
 
-            public long Version
-            {
-                get
-                {
-                    return PendingEvents.Count();
-                }
-            }
+            public long Version => PendingEvents.Count();
 
             public IEnumerable<IEvent> PendingEvents { get; private set; }
+
             public void ConfirmSave()
             {
                 throw new NotImplementedException();

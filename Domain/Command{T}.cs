@@ -57,13 +57,11 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException(nameof(target));
             }
 
-            if (!string.IsNullOrWhiteSpace(ETag))
+            var idempotentTarget = target as IIdempotentCommandTarget;
+            if (idempotentTarget != null &&
+                idempotentTarget.ShouldIgnore(this))
             {
-                var eventSourced = target as IEventSourced;
-                if (eventSourced.HasETag(ETag))
-                {
-                    return;
-                }
+                return;
             }
 
             var validationReport = RunAllValidations(target, false);

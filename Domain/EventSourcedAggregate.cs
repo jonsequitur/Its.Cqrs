@@ -14,7 +14,9 @@ namespace Microsoft.Its.Domain
     /// <summary>
     ///     Represents an aggregate whose state can be persisted as a sequence of events.
     /// </summary>
-    public abstract class EventSourcedAggregate : IEventSourced
+    public abstract class EventSourcedAggregate :
+        IEventSourced,
+        IIdempotentCommandTarget
     {
         [JsonIgnore]
         private readonly EventSequence eventHistory;
@@ -194,5 +196,8 @@ namespace Microsoft.Its.Domain
         /// <param name="command">The command that failed validation.</param>
         /// <param name="validationReport">The validation report.</param>
         protected void ThrowCommandValidationException(ICommand command, ValidationReport validationReport) => HandleCommandValidationFailure(command, validationReport);
+
+        bool IIdempotentCommandTarget.ShouldIgnore(ICommand command) =>
+            AggregateExtensions.HasETag(this, command?.ETag);
     }
 }

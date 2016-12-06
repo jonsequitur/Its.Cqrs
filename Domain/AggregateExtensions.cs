@@ -294,13 +294,13 @@ namespace Microsoft.Its.Domain
                 }
 
                 // ProbabilisticAnswer.Maybe, which means we need to do a lookup
-                var preconditionVerifier = Configuration.Current
-                                                        .Container
-                                                        .Resolve<IETagChecker>();
+                var etagChecker = Configuration.Current
+                                               .Container
+                                               .Resolve<IETagChecker>();
 
-                return Task.Run(() => preconditionVerifier.HasBeenRecorded(
-                    aggregate.Id.ToString(),
-                    etag)).Result;
+                return Task.Run(() => etagChecker.HasBeenRecorded(
+                               aggregate.Id.ToString(),
+                               etag)).Result;
             }
 
             return false;

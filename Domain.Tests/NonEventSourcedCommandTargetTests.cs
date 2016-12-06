@@ -4,6 +4,7 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using static Microsoft.Its.Domain.Tests.NonEventSourcedCommandTarget;
 
@@ -37,6 +38,31 @@ namespace Microsoft.Its.Domain.Tests
                                             .ApplyToAsync(new NonEventSourcedCommandTarget { IsValid = false }).Wait();
 
             applyCommand.ShouldThrow<CommandValidationException>();
+        }
+
+        [Test]
+        public void Commands_can_be_made_idempotent_by_setting_an_ETag()
+        {
+            var etag = Any.Guid().ToString().ToETag();
+
+            var target = new NonEventSourcedIdempotentCommandTarget();
+
+            var firstCommand = new TestCommand
+            {
+                ETag = etag
+            };
+
+            var secondCommand = new TestCommand
+            {
+                ETag = etag
+            };
+
+            target.Apply(firstCommand);
+            target.Apply(secondCommand);
+
+            target.CommandsEnacted
+                  .Should()
+                  .OnlyContain(c => c == firstCommand);
         }
     }
 }

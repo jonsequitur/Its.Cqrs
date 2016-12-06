@@ -173,6 +173,7 @@
     <Compile Include="CommandSchedulingTests_NonEventSourced.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="NonEventSourcedIdempotentCommandTarget.cs" />
     <Compile Include="ObjectIdTests.cs" />
     <Compile Include="OptionalTests.cs" />
     <Compile Include="PrimitiveConverterTests.cs" />
