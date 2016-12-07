@@ -22,7 +22,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             .Register(c => Recipes.Any.PositiveInt())
             .Register(c => Recipes.Any.Word());
 
-        private static readonly Func<IEvent>[] events = {
+        private static readonly Func<IEvent>[] events =
+        {
             () => container.Resolve<Order.Cancelled>(),
             () => container.Resolve<Order.Created>(),
             () => container.Resolve<Order.CreditCardCharged>(),
@@ -47,24 +48,35 @@ namespace Microsoft.Its.Domain.Sql.Tests
             () => container.Resolve<CustomerAccount.UserNameAcquired>()
         };
 
-        public static IEvent Any()
-        {
-            return events.RandomSequence(1).Select(e => e()).Single();
-        }
+        public static IEvent Any(int? sequenceNumber = null) =>
+            events.RandomSequence(1)
+                  .Select(e => e())
+                  .Do(e =>
+                  {
+                      sequenceNumber
+                          .IfNotNull()
+                          .ThenDo(n =>
+                                  ((Event) e).SequenceNumber = n);
+                  })
+                  .Single();
 
         public static long Write(
             int howMany,
             Func<int, IEvent> createEvent = null,
-            Func<EventStoreDbContext> createEventStore = null)
+            Func<EventStoreDbContext> createEventStore = null,
+            bool randomEventTypes = false)
         {
-            createEvent = createEvent ?? (i => new Order.ItemAdded
+            if (createEvent == null)
             {
-                SequenceNumber = i,
-                AggregateId = Recipes.Any.Guid(),
-                Price = 1.99m,
-                ProductName = Recipes.Any.Paragraph(3),
-                Quantity = 1
-            });
+                if (randomEventTypes)
+                {
+                    createEvent = CreateRandomEvent;
+                }
+                else
+                {
+                    createEvent = CreateOrderItemAddedEvent;
+                }
+            }
 
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var eventStore = createEventStore.IfNotNull()
@@ -72,32 +84,49 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                                     .Else(() => EventStoreDbContext()))
             {
                 Enumerable.Range(1, howMany).ForEach(i =>
-                {
-                    var e = createEvent(i);
+                          {
+                              var e = createEvent(i);
 
-                    e.IfTypeIs<Event>()
-                     .ThenDo(ev =>
-                     {
-                         if (ev.AggregateId == Guid.Empty)
-                         {
-                             ev.AggregateId = Guid.NewGuid();
-                         }
+                              e.IfTypeIs<Event>()
+                               .ThenDo(ev =>
+                               {
+                                   if (ev.AggregateId == Guid.Empty)
+                                   {
+                                       ev.AggregateId = Guid.NewGuid();
+                                   }
 
-                         if (ev.SequenceNumber == 0)
-                         {
-                             ev.SequenceNumber = i;
-                         }
-                     });
+                                   if (ev.SequenceNumber == 0)
+                                   {
+                                       ev.SequenceNumber = i;
+                                   }
+                               });
 
-                    var storableEvent = e.ToStorableEvent();
+                              var storableEvent = e.ToStorableEvent();
 
-                    eventStore.Events.Add(storableEvent);
-                });
+                              eventStore.Events.Add(storableEvent);
+                          });
 
                 eventStore.SaveChanges();
 
                 return eventStore.Events.Max(e => e.Id);
             }
+        }
+
+        private static IEvent CreateOrderItemAddedEvent(int sequenceNumber) =>
+            new Order.ItemAdded
+            {
+                SequenceNumber = sequenceNumber,
+                AggregateId = Recipes.Any.Guid(),
+                Price = 1.99m,
+                ProductName = Recipes.Any.Paragraph(3),
+                Quantity = 1
+            };
+
+        private static IEvent CreateRandomEvent(int sequenceNumber)
+        {
+            var randomEvent = Any();
+            ((Event) randomEvent).SequenceNumber = sequenceNumber;
+            return randomEvent;
         }
     }
 }
