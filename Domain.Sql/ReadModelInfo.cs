@@ -33,7 +33,7 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Gets or sets the last error encountered while projecting this read model.
         /// </summary>
-        public string Error { get; set; }
+        public string LastError { get; set; }
 
         /// <summary>
         /// Gets the number of milliseconds between the writing of the most recent event handled by the projector and the time that that event was used to updated the read model.

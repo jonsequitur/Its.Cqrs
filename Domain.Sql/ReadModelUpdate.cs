@@ -92,7 +92,7 @@ namespace Microsoft.Its.Domain.Sql
                         dbSet.Add(readModelInfo);
                     }
 
-                    readModelInfo.Error = exceptionJson;
+                    readModelInfo.LastError = exceptionJson;
                     readModelInfo.FailedOnEventId = sqlError.OriginalId;
                 }
 

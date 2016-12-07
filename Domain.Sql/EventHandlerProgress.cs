@@ -71,7 +71,7 @@ namespace Microsoft.Its.Domain.Sql
 
         public long? FailedOnEventId => readModelInfo.FailedOnEventId;
 
-        public string Error => readModelInfo.Error;
+        public string LastError => readModelInfo.LastError;
 
         internal static TimeSpan TimeRemaining(
                 TimeSpan timeTakenForProcessedEvents,

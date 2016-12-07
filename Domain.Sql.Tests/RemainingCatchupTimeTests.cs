@@ -58,7 +58,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             progress.InitialCatchupTimeRemaining
                     .Should()
-                    .BeCloseTo(expectedTimeRemaining);
+                    .BeCloseTo(expectedTimeRemaining, precision: (int) 5.Minutes().TotalMilliseconds);
         }
 
         [Test]
@@ -99,7 +99,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             progress.InitialCatchupTimeRemaining
                     .Should()
-                    .BeCloseTo(expectedTimeRemaining);
+                    .BeCloseTo(expectedTimeRemaining, precision: (int) 5.Minutes().TotalMilliseconds);
         }
 
         [Test]
@@ -298,7 +298,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         }
 
         [Test]
-        public async Task InitialCatchupEvents_is_not_limited_by_batch_size()
+        public async Task InitialTotalCatchupEvents_is_not_limited_by_batch_size()
         {
             // arrange
             Events.Write(10);
