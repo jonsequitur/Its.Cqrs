@@ -44,7 +44,7 @@ namespace Microsoft.Its.Domain
         /// </summary>
         /// <param name="command">The command.</param>
         /// <param name="clock">The clock used by the command and any events that result.</param>
-        public static CommandContext Establish(ICommand command, IClock clock = null)
+        public static CommandContext Establish(ICommand command = null, IClock clock = null)
         {
             var current = Current;
 
