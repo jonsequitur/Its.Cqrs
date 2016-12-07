@@ -43,7 +43,7 @@ namespace Microsoft.Its.Domain.Sql
         private readonly long startAtEventId;
         private readonly Expression<Func<StorableEvent, bool>> filter;
         private readonly int batchSize;
-        private long eventStoreEventCount;
+        private long eventStoreTotalCount;
         private bool isInitialized;
         private long initialCatchupIsDoneAfterEventId;
 
@@ -168,7 +168,7 @@ namespace Microsoft.Its.Domain.Sql
                 {
                     ReportStatus(new ReadModelCatchupStatus
                     {
-                        BatchCount = query.ExpectedNumberOfEvents,
+                        BatchCount = query.BatchMatchedEventCount,
                         NumberOfEventsProcessed = eventsProcessed,
                         CurrentEventId = query.StartAtId,
                         CatchupName = Name
@@ -176,12 +176,12 @@ namespace Microsoft.Its.Domain.Sql
 
                     Debug.WriteLine(new { query });
 
-                    if (query.ExpectedNumberOfEvents == 0)
+                    if (query.BatchMatchedEventCount == 0)
                     {
                         return ReadModelCatchupResult.CatchupRanButNoNewEvents;
                     }
 
-                    Debug.WriteLine($"Catchup {Name}: Beginning replay of {query.ExpectedNumberOfEvents} events");
+                    Debug.WriteLine($"Catchup {Name}: Beginning replay of {query.BatchMatchedEventCount} events");
 
                     stopwatch.Start();
 
@@ -213,11 +213,11 @@ namespace Microsoft.Its.Domain.Sql
 
         private async Task<long> StreamEventsToProjections(ExclusiveEventStoreCatchupQuery query)
         {
-            long eventsProcessed = 0;
+            long eventsProcessedOutOfBatch = 0;
 
             foreach (var storedEvent in query.Events)
             {
-                eventsProcessed++;
+                eventsProcessedOutOfBatch++;
 
                 IncludeReadModelsNeeding(storedEvent);
 
@@ -244,30 +244,37 @@ namespace Microsoft.Its.Domain.Sql
                             
                             subscribedReadModelInfos.ForEach(i =>
                             {
-                                var eventsRemaining = query.ExpectedNumberOfEvents - eventsProcessed;
-                                
                                 infos.Attach(i);
                                 i.LastUpdated = now;
                                 i.CurrentAsOfEventId = storedEvent.Id;
                                 i.LatencyInMilliseconds = (now - @event.Timestamp).TotalMilliseconds;
-                                i.BatchRemainingEvents = eventsRemaining;
-                                
-                                if (eventsProcessed == 1)
+                                i.BatchRemainingEvents = query.BatchMatchedEventCount - eventsProcessedOutOfBatch;
+
+                                if (eventsProcessedOutOfBatch == 1)
                                 {
                                     i.BatchStartTime = now;
-                                    i.BatchTotalEvents = query.ExpectedNumberOfEvents;
+                                    i.BatchTotalEvents = query.BatchMatchedEventCount;
                                 }
                                 
                                 if (i.InitialCatchupStartTime == null)
                                 {
                                     i.InitialCatchupStartTime = now;
-                                    i.InitialCatchupEvents = eventStoreEventCount;
+                                    i.InitialCatchupTotalEvents = eventStoreTotalCount;
                                 }
 
-                                if (i.CurrentAsOfEventId >= initialCatchupIsDoneAfterEventId &&
-                                    i.InitialCatchupEndTime == null)
+                                if (i.InitialCatchupEndTime == null)
                                 {
-                                    i.InitialCatchupEndTime = now;
+                                    if (i.CurrentAsOfEventId >= initialCatchupIsDoneAfterEventId)
+                                    {
+                                        i.InitialCatchupEndTime = now;
+                                        i.InitialCatchupRemainingEvents = 0;
+                                    }
+                                    else
+                                    {
+                                        // initial catchup is still in progress
+                                        i.InitialCatchupRemainingEvents = query.TotalMatchedEventCount -
+                                                                          eventsProcessedOutOfBatch;
+                                    }
                                 }
                             });
 
@@ -292,8 +299,8 @@ namespace Microsoft.Its.Domain.Sql
 
                 var status = new ReadModelCatchupStatus
                 {
-                    BatchCount = query.ExpectedNumberOfEvents,
-                    NumberOfEventsProcessed = eventsProcessed,
+                    BatchCount = query.BatchMatchedEventCount,
+                    NumberOfEventsProcessed = eventsProcessedOutOfBatch,
                     CurrentEventId = storedEvent.Id,
                     EventTimestamp = storedEvent.Timestamp,
                     StatusTimeStamp = now,
@@ -309,7 +316,7 @@ namespace Microsoft.Its.Domain.Sql
 
                 ReportStatus(status);
             }
-            return eventsProcessed;
+            return eventsProcessedOutOfBatch;
         }
 
         private void IncludeReadModelsNeeding(StorableEvent storedEvent)
@@ -479,7 +486,7 @@ namespace Microsoft.Its.Domain.Sql
 
             using (var eventStore = createEventStoreDbContext())
             {
-                eventStoreEventCount = eventStore.Events.Count();
+                eventStoreTotalCount = eventStore.Events.Count();
                 initialCatchupIsDoneAfterEventId = eventStore.Events.Max(e => e.Id);
 
             }
