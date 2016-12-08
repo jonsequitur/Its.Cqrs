@@ -19,9 +19,14 @@ namespace Microsoft.Its.Domain.Sql
         }
 
         /// <summary>
-        /// Returns a string representing the actor within the system that was operating on the aggregate when the event was recorded.
+        /// Gets or sets the id of error.
         /// </summary>
-        public string Actor { get; set; }
+        public long Id { get; set; }
+
+        /// <summary>
+        /// Gets or sets the event id of the event that was being handled when the error occurred.
+        /// </summary>
+        public long? EventId { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the handler that encountered an error.
@@ -29,9 +34,9 @@ namespace Microsoft.Its.Domain.Sql
         public string Handler { get; set; }
 
         /// <summary>
-        /// Gets or sets the sequence number of the event that was being handled when the error occurred.
+        /// Gets or sets the error.
         /// </summary>
-        public long SequenceNumber { get; set; }
+        public string Error { get; set; }
 
         /// <summary>
         /// Gets or sets the aggregate id of the event that was being handled when the error occurred.
@@ -39,9 +44,9 @@ namespace Microsoft.Its.Domain.Sql
         public Guid AggregateId { get; set; }
 
         /// <summary>
-        /// Gets or sets the id of error.
+        /// Gets or sets the sequence number of the event that was being handled when the error occurred.
         /// </summary>
-        public long Id { get; set; }
+        public long SequenceNumber { get; set; }
 
         /// <summary>
         /// Gets or sets the stream name of the event that was being handled when the error occurred.
@@ -54,23 +59,13 @@ namespace Microsoft.Its.Domain.Sql
         public string EventTypeName { get; set; }
 
         /// <summary>
-        /// Gets or sets the UTC time at which the error occurred.
-        /// </summary>
-        public DateTimeOffset UtcTime { get; set; }
-
-        /// <summary>
         /// Gets or sets the serialized event that was being handled when the error occurred.
         /// </summary>
         public string SerializedEvent { get; set; }
 
         /// <summary>
-        /// Gets or sets the error.
+        /// Gets or sets the UTC time at which the error occurred.
         /// </summary>
-        public string Error { get; set; }
-
-        /// <summary>
-        /// Gets or sets the event id of the event that was being handled when the error occurred.
-        /// </summary>
-        public long? OriginalId { get; set; }
+        public DateTimeOffset UtcTime { get; set; }
     }
 }

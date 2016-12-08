@@ -85,6 +85,33 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
+        public void CommandContext_can_be_used_to_specify_a_clock_but_not_a_command()
+        {
+            var created = DateTimeOffset.Parse("2014-05-15 00:00:00");
+
+            Order order;
+            using (CommandContext.Establish(clock: Clock.Create(() => created)))
+            {
+                var addItem = new AddItem
+                {
+                    ProductName = "Widget",
+                    Price = 3.99m
+                };
+
+                order = new Order(new CreateOrder(Any.FullName()));
+                order.Apply(addItem);
+            }
+
+            order.Events()
+                 .Count()
+                 .Should()
+                 .Be(3);
+            order.Events()
+                 .Should()
+                 .OnlyContain(e => e.Timestamp == created);
+        }
+
+        [Test]
         public async Task When_one_command_triggers_another_command_via_a_consequenter_then_the_second_command_acquires_the_first_commands_clock()
         {
             // arrange

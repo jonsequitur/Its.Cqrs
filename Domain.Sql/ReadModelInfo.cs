@@ -33,7 +33,7 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Gets or sets the last error encountered while projecting this read model.
         /// </summary>
-        public string Error { get; set; }
+        public string LastError { get; set; }
 
         /// <summary>
         /// Gets the number of milliseconds between the writing of the most recent event handled by the projector and the time that that event was used to updated the read model.
@@ -46,14 +46,24 @@ namespace Microsoft.Its.Domain.Sql
         public DateTimeOffset? InitialCatchupStartTime { get; set; }
 
         /// <summary>
-        /// Gets the number of events in the initial read model database rebuild.
-        /// </summary>
-        public long InitialCatchupEvents { get; set; }
-
-        /// <summary>
         /// Gets the time at which the read model rebuild completed.
         /// </summary>
         public DateTimeOffset? InitialCatchupEndTime { get; set; }
+
+        /// <summary>
+        /// Gets the total number of events in the initial read model database rebuild.
+        /// </summary>
+        public long InitialCatchupTotalEvents { get; set; }
+
+        /// <summary>
+        /// Gets the number of events remaining in the initial read model database rebuild.
+        /// </summary>
+        public long InitialCatchupRemainingEvents { get; set; }
+
+        /// <summary>
+        /// Gets the total number of events in the currently processing batch.
+        /// </summary>
+        public long BatchTotalEvents { get; set; }
 
         /// <summary>
         /// Gets the number of events remaining in the currently processing batch.
@@ -64,11 +74,6 @@ namespace Microsoft.Its.Domain.Sql
         /// Gets the time at which processing of the current batch of events began.
         /// </summary>
         public DateTimeOffset? BatchStartTime { get; set; }
-
-        /// <summary>
-        /// Gets the total number of events in the currently processing batch.
-        /// </summary>
-        public long BatchTotalEvents { get; set; }
 
         /// <summary>
         /// Gets the name for the specified projector.

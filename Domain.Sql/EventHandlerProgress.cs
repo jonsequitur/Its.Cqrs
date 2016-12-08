@@ -7,26 +7,85 @@ namespace Microsoft.Its.Domain.Sql
 {
     internal class EventHandlerProgress
     {
-        public string Name { get; set; }
+        private readonly DateTimeOffset now;
+        private readonly ReadModelInfo readModelInfo;
 
-        public long? InitialCatchupEvents { get; set; }
+        public EventHandlerProgress(
+            ReadModelInfo readModelInfo,
+            DateTimeOffset? asOf = null)
+        {
+            if (readModelInfo == null)
+            {
+                throw new ArgumentNullException(nameof(readModelInfo));
+            }
 
-        public TimeSpan? TimeTakenForInitialCatchup { get; set; }
+            this.readModelInfo = readModelInfo;
 
-        public TimeSpan? TimeRemainingForCatchup { get; set; }
+            now = asOf ?? Clock.Now();
+        }
 
-        public double LatencyInMilliseconds { get; set; }
+        public string Name => readModelInfo.Name;
 
-        public long? EventsRemainingInBatch { get; set; }
+        public long BatchEventsProcessed =>
+            readModelInfo.BatchTotalEvents - readModelInfo.BatchRemainingEvents;
 
-        public decimal? PercentageCompleted { get; set; }
+        public decimal? BatchPercentageCompleted => Percent(
+            BatchEventsProcessed,
+            readModelInfo.BatchTotalEvents);
 
-        public DateTimeOffset? LastUpdated { get; set; }
+        public long? BatchRemainingEvents => readModelInfo.BatchRemainingEvents;
 
-        public long CurrentAsOfEventId { get; set; }
+        public TimeSpan BatchTimeRemaining => TimeRemaining(
+            (now - readModelInfo.BatchStartTime).Value,
+            BatchEventsProcessed,
+            readModelInfo.BatchRemainingEvents);
 
-        public long? FailedOnEventId { get; set; }
+        public long BatchTotalEvents => readModelInfo.BatchTotalEvents;
 
-        public string Error { get; set; }
+        public long InitialCatchupEventsProcessed =>
+            readModelInfo.InitialCatchupTotalEvents - readModelInfo.InitialCatchupRemainingEvents;
+
+        public long InitialCatchupRemainingEvents => readModelInfo.InitialCatchupRemainingEvents;
+
+        public TimeSpan? InitialCatchupTimeElapsed =>
+            readModelInfo.InitialCatchupEndTime.HasValue
+                ? readModelInfo.InitialCatchupEndTime - readModelInfo.InitialCatchupStartTime
+                : now - readModelInfo.InitialCatchupStartTime.Value;
+
+        public TimeSpan? InitialCatchupTimeRemaining => TimeRemaining(
+            (now - readModelInfo.InitialCatchupStartTime).Value,
+            InitialCatchupEventsProcessed,
+            readModelInfo.InitialCatchupRemainingEvents);
+
+        public long? InitialCatchupTotalEvents => readModelInfo.InitialCatchupTotalEvents;
+
+        public double LatencyInMilliseconds => readModelInfo.LatencyInMilliseconds;
+
+        public decimal? InitialCatchupPercentageCompleted => Percent(
+            InitialCatchupEventsProcessed,
+            readModelInfo.InitialCatchupTotalEvents);
+
+        public DateTimeOffset? LastUpdated => readModelInfo.LastUpdated;
+
+        public long CurrentAsOfEventId => readModelInfo.CurrentAsOfEventId;
+
+        public long? FailedOnEventId => readModelInfo.FailedOnEventId;
+
+        public string LastError => readModelInfo.LastError;
+
+        internal static TimeSpan TimeRemaining(
+                TimeSpan timeTakenForProcessedEvents,
+                long eventsProcessed,
+                long eventsRemaining) =>
+            eventsProcessed == 0
+                ? (eventsRemaining == 0
+                       ? TimeSpan.Zero
+                       : TimeSpan.MaxValue)
+                : TimeSpan.FromTicks((long) (timeTakenForProcessedEvents.Ticks*(eventsRemaining/(decimal) eventsProcessed)));
+
+        internal static decimal Percent(decimal completed, decimal total) =>
+            total == 0
+                ? 100
+                : completed/total*100;
     }
 }

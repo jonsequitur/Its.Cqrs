@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using NUnit.Framework;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 using static Microsoft.Its.Domain.Sql.EventHandlerProgressCalculator;
+using static Microsoft.Its.Domain.Sql.EventHandlerProgress;
 
 namespace Microsoft.Its.Domain.Sql.Tests
 {
@@ -21,23 +22,35 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [UseSqlEventStore]
     public class RemainingCatchupTimeTests : EventStoreDbTest
     {
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
+
+            if (eventCount < 2000)
+            {
+                Events.Write(2000 - eventCount, randomEventTypes: true);
+            }
+        }
+
         [Test]
-        public async Task During_initial_replay_the_remaining_time_is_estimated_correctly()
+        public async Task During_initial_catchup_the_remaining_time_is_estimated_correctly()
         {
             //arrange
-            Events.Write(20);
+            Events.Write(20, randomEventTypes: true);
             var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
 
             var eventsProcessed = 0;
             EventHandlerProgress progress = null;
-            var batchSize = eventCount/10 + 1;
 
             IUpdateProjectionWhen<IEvent> projector = null;
 
-            projector = CreateProjector(e =>
+            var numberOfEventsToProcessBeforeCalculating = eventCount/100;
+
+            projector = CreateProjector<IEvent>(e =>
             {
                 eventsProcessed++;
-                if (eventsProcessed == batchSize)
+                if (eventsProcessed == numberOfEventsToProcessBeforeCalculating)
                 {
                     VirtualClock.Current.AdvanceBy(1.Minutes());
                     progress = CalculateProgressFor(projector);
@@ -45,20 +58,76 @@ namespace Microsoft.Its.Domain.Sql.Tests
             });
 
             //act
+            var batchSize = numberOfEventsToProcessBeforeCalculating*2;
+
             await RunCatchupSingleBatch(projector,
                 startAtEventId: 0,
                 batchSize: batchSize);
 
-            Console.WriteLine(new { eventCount, eventsProcessed, batchSize });
-
             // assert
-            progress.TimeRemainingForCatchup
+            var expectedTimeRemaining = TimeRemaining(
+                1.Minutes(),
+                eventsProcessed: numberOfEventsToProcessBeforeCalculating,
+                eventsRemaining: eventCount - numberOfEventsToProcessBeforeCalculating);
+
+            Console.WriteLine(new { eventCount, batchSize, eventsProcessed, numberOfEventsToProcessBeforeCalculating, expectedTimeRemaining });
+
+            progress.InitialCatchupTimeRemaining
                     .Should()
-                    .BeCloseTo(10.Minutes(), precision: 30000 /* milliseconds */);
+                    .BeCloseTo(expectedTimeRemaining,
+                        precision: (int) 6.Minutes().TotalMilliseconds);
         }
 
         [Test]
-        public async Task During_initial_replay_the_percent_completed_is_estimated_correctly()
+        public async Task During_initial_catchup_the_remaining_time_is_estimated_correctly_across_multiple_batches()
+        {
+            //arrange
+            Events.Write(20, randomEventTypes: true);
+            var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
+
+            var eventsProcessed = 0;
+            EventHandlerProgress progress = null;
+
+            IUpdateProjectionWhen<IEvent> projector = null;
+
+            var numberOfEventsToProcessBeforeCalculating = eventCount/100;
+
+            projector = CreateProjector<IEvent>(e =>
+            {
+                eventsProcessed++;
+                if (eventsProcessed == numberOfEventsToProcessBeforeCalculating)
+                {
+                    VirtualClock.Current.AdvanceBy(1.Minutes());
+                    progress = CalculateProgressFor(projector);
+                }
+            });
+
+            //act
+            var batchSize = eventCount/1000;
+
+            for (var i = 0; i < 13; i++)
+            {
+                await RunCatchupSingleBatch(projector,
+                    startAtEventId: 0,
+                    batchSize: batchSize);
+            }
+
+            // assert
+            var expectedTimeRemaining = TimeRemaining(
+                1.Minutes(),
+                eventsProcessed: numberOfEventsToProcessBeforeCalculating,
+                eventsRemaining: eventCount - numberOfEventsToProcessBeforeCalculating);
+
+            Console.WriteLine(new { eventCount, batchSize, eventsProcessed, numberOfEventsToProcessBeforeCalculating, expectedTimeRemaining });
+
+            progress.InitialCatchupTimeRemaining
+                    .Should()
+                    .BeCloseTo(expectedTimeRemaining,
+                        precision: (int) 6.Minutes().TotalMilliseconds);
+        }
+
+        [Test]
+        public async Task During_initial_catchup_the_percent_completed_is_estimated_correctly()
         {
             //arrange
             Events.Write(10);
@@ -68,7 +137,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             IUpdateProjectionWhen<IEvent> projector = null;
 
-            projector = CreateProjector(e =>
+            projector = CreateProjector<IEvent>(e =>
             {
                 if (eventsProcessed == eventCount/10 + 1)
                 {
@@ -86,35 +155,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 startAtEventId: 0,
                 batchSize: batchSize);
 
-            Console.WriteLine(new { eventCount, eventsProcessed, batchSize });
-
             // assert
-            progress.PercentageCompleted
+            progress.InitialCatchupPercentageCompleted
                     .Should()
                     .BeInRange(10, 11);
         }
 
         [Test]
-        public async Task TimeTakenForInitialCatchup_should_be_null_when_initial_catchup_is_not_done()
-        {
-            // arrange
-            Events.Write(10);
-
-            var projector = CreateProjector();
-
-            // act
-            await RunCatchupSingleBatch(projector,
-                startAtEventId: 0,
-                batchSize: 5);
-
-            var progress = CalculateProgressFor(projector);
-
-            //assert
-            progress.TimeTakenForInitialCatchup.Should().NotHaveValue();
-        }
-
-        [Test]
-        public async Task If_events_have_been_processed_after_initial_replay_then_the_remaining_time_is_estimated_correctly()
+        public async Task If_events_have_been_processed_after_initial_catchup_then_the_remaining_time_is_estimated_correctly()
         {
             //arrange
             Events.Write(10);
@@ -122,7 +170,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var eventsProcessed = 0;
             IUpdateProjectionWhen<IEvent> projector = null;
 
-            projector = CreateProjector(e =>
+            projector = CreateProjector<IEvent>(e =>
             {
                 if (eventsProcessed == 15)
                 {
@@ -139,18 +187,18 @@ namespace Microsoft.Its.Domain.Sql.Tests
             //act
             await RunCatchupSingleBatch(projector);
 
-            progress.TimeRemainingForCatchup
+            progress.BatchTimeRemaining
                     .Should()
                     .Be(TimeSpan.FromSeconds(5));
         }
 
         [Test]
-        public async Task If_events_have_been_processed_after_initial_replay_then_the_time_taken_for_initial_replay_is_saved()
+        public async Task If_events_have_been_processed_after_initial_catchup_then_the_time_taken_for_initial_catchup_is_saved()
         {
             //arrange
-            var projector = CreateProjector(e => { VirtualClock.Current.AdvanceBy(TimeSpan.FromSeconds(1)); });
+            var projector = CreateProjector<IEvent>(e => { VirtualClock.Current.AdvanceBy(TimeSpan.FromSeconds(1)); });
 
-            //Initial replay
+            //Initial catchup
             Events.Write(10);
             await RunCatchupSingleBatch(projector);
 
@@ -162,16 +210,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var progress = CalculateProgressFor(projector);
 
             //assert
-            progress.TimeTakenForInitialCatchup
+            progress.InitialCatchupTimeElapsed
                     .Should()
                     .Be(TimeSpan.FromSeconds(9));
         }
 
         [Test]
-        public async Task If_events_have_been_processed_after_initial_replay_then_the_number_of_events_for_initial_replay_is_saved()
+        public async Task If_events_have_been_processed_after_initial_catchup_then_the_number_of_events_for_initial_catchup_is_saved()
         {
             // arrange
-            var projector = CreateProjector();
+            var projector = CreateProjector<IEvent>();
             Events.Write(10);
             var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
 
@@ -185,7 +233,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var progress = CalculateProgressFor(projector);
 
             // assert
-            progress.InitialCatchupEvents
+            progress.InitialCatchupTotalEvents
                     .Should()
                     .Be(eventCount);
         }
@@ -199,7 +247,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             var eventsProcessed = 0;
             IUpdateProjectionWhen<IEvent> projector = null;
-            projector = CreateProjector(e =>
+            projector = CreateProjector<IEvent>(e =>
             {
                 if (eventsProcessed == 4)
                 {
@@ -212,7 +260,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             await RunCatchupSingleBatch(projector);
 
             //assert
-            progress.EventsRemainingInBatch
+            progress.BatchRemainingEvents
                     .Should()
                     .Be(1);
         }
@@ -222,14 +270,14 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             //arrange
             Events.Write(5);
-            var projector = CreateProjector();
+            var projector = CreateProjector<IEvent>();
             await RunCatchupSingleBatch(projector);
 
             //act
             var progress = CalculateProgressFor(projector);
 
             //assert
-            progress.TimeRemainingForCatchup
+            progress.InitialCatchupTimeRemaining
                     .Should()
                     .Be(TimeSpan.FromMinutes(0));
         }
@@ -239,7 +287,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
         {
             //arrange
             Events.Write(5);
-            var projector = CreateProjector();
+            var projector = CreateProjector<IEvent>();
             await RunCatchupSingleBatch(projector);
 
             //act
@@ -247,17 +295,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             //assert
             progress
-                .PercentageCompleted
+                .InitialCatchupPercentageCompleted
                 .Should()
                 .Be(100);
         }
 
         [Test]
-        public async Task If_all_events_have_been_processed_out_of_a_subsequent_catchup_then_the_percentage_completed_is_100()
+        public async Task If_all_events_have_been_processed_out_of_a_batch_then_the_percentage_completed_is_100()
         {
             //arrange
             Events.Write(5);
-            var projector = CreateProjector();
+            var projector = CreateProjector<IEvent>();
             await RunCatchupSingleBatch(projector);
             CalculateProgressFor(projector);
             Events.Write(5);
@@ -268,18 +316,18 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             //assert
             progress
-                .PercentageCompleted
+                .BatchPercentageCompleted
                 .Should()
                 .Be(100);
         }
 
         [Test]
-        public async Task InitialCatchupEvents_is_not_limited_by_batch_size()
+        public async Task InitialTotalCatchupEvents_is_not_limited_by_batch_size()
         {
             // arrange
             Events.Write(10);
             var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
-            var projector = CreateProjector();
+            var projector = CreateProjector<IEvent>();
 
             await RunCatchupSingleBatch(batchSize: 3, projector: projector);
 
@@ -288,17 +336,81 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             //assert
             progress
-                .InitialCatchupEvents
+                .InitialCatchupTotalEvents
                 .Should()
                 .Be(eventCount);
         }
 
-        private IUpdateProjectionWhen<IEvent> CreateProjector(
-                Action<IEvent> action = null) =>
+        [Test]
+        public async Task TimeRemaining_correctly_calculates_time_remaining_based_on_events_processed_and_events_remaining()
+        {
+            TimeRemaining(1.Minutes(),
+                    1,
+                    100)
+                .Should()
+                .Be(100.Minutes());
+
+            TimeRemaining(123.Minutes(),
+                    123,
+                    1)
+                .Should()
+                .BeCloseTo(1.Minutes(), precision: 1);
+
+            TimeRemaining(23.Minutes(),
+                    23,
+                    1)
+                .Should()
+                .BeCloseTo(1.Minutes(), precision: 1);
+        }
+
+        [Test]
+        public async Task When_initial_catchup_has_not_completed_then_time_elapsed_increases_as_time_passes()
+        {
+            var startTime = DateTimeOffset.Parse("2016-01-01 12:00am +00:00");
+
+            var readModelInfo = new ReadModelInfo
+            {
+                InitialCatchupStartTime = startTime,
+                InitialCatchupEndTime = null,
+                BatchRemainingEvents = 1000
+            };
+
+            new EventHandlerProgress(readModelInfo, startTime)
+                .InitialCatchupTimeElapsed
+                .Should()
+                .Be(0.Minutes());
+
+            new EventHandlerProgress(readModelInfo, startTime.AddHours(1))
+                .InitialCatchupTimeElapsed
+                .Should()
+                .Be(1.Hours());
+        }
+
+        [Test]
+        public async Task When_initial_catchup_has_completed_then_time_elapsed_does_not_increases_as_time_passes()
+        {
+            var startTime = DateTimeOffset.Parse("2016-01-01 12:00am +00:00");
+
+            var readModelInfo = new ReadModelInfo
+            {
+                InitialCatchupStartTime = startTime,
+                InitialCatchupEndTime = startTime.AddHours(52),
+                BatchRemainingEvents = 1000
+            };
+
+            new EventHandlerProgress(readModelInfo, startTime.AddDays(4))
+                .InitialCatchupTimeElapsed
+                .Should()
+                .Be(52.Hours());
+        }
+
+        private IUpdateProjectionWhen<T> CreateProjector<T>(
+            Action<T> action = null)
+            where T : IEvent =>
             Projector.Create(action ?? (_ => { })).Named(Any.CamelCaseName(6));
 
-        private static EventHandlerProgress CalculateProgressFor(
-            IUpdateProjectionWhen<IEvent> projector)
+        private static EventHandlerProgress CalculateProgressFor<T>(
+            IUpdateProjectionWhen<T> projector) where T : IEvent
         {
             var projectorName = EventHandler.FullName(projector);
 
@@ -312,10 +424,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
             return progress;
         }
 
-        private async Task RunCatchupSingleBatch(
-            IUpdateProjectionWhen<IEvent> projector,
+        private async Task RunCatchupSingleBatch<T>(
+            IUpdateProjectionWhen<T> projector,
             int batchSize = 100,
             long? startAtEventId = null)
+            where T : IEvent
         {
             if (projector == null)
             {
@@ -325,6 +438,20 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (var catchup = CreateReadModelCatchup(
                 batchSize: batchSize,
                 projectors: projector,
+                startAtEventId: startAtEventId))
+            {
+                await catchup.SingleBatchAsync();
+            }
+        }
+
+        private async Task RunCatchupSingleBatch(
+            int batchSize,
+            long? startAtEventId,
+            params object[] projectors)
+        {
+            using (var catchup = CreateReadModelCatchup(
+                batchSize: batchSize,
+                projectors: projectors,
                 startAtEventId: startAtEventId))
             {
                 await catchup.SingleBatchAsync();

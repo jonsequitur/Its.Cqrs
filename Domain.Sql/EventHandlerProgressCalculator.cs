@@ -36,7 +36,6 @@ namespace Microsoft.Its.Domain.Sql
                 return Enumerable.Empty<EventHandlerProgress>();
             }
 
-            var now = Clock.Now();
             var progress = new List<EventHandlerProgress>();
 
             ReadModelInfo[] readModelInfos;
@@ -56,11 +55,9 @@ namespace Microsoft.Its.Domain.Sql
             readModelInfos
                 .ForEach(i =>
                 {
-                    var isNotInitialCatchup = i.InitialCatchupEndTime.HasValue;
+                    var eventsProcessedOutOfBatch = EventsProcessedOutOfBatch(i);
 
-                    var eventsProcessed = EventsProcessedOutOfBatch(i);
-
-                    if (eventsProcessed == 0)
+                    if (eventsProcessedOutOfBatch == 0)
                     {
                         return;
                     }
@@ -75,46 +72,7 @@ namespace Microsoft.Its.Domain.Sql
                         return;
                     }
 
-                    long eventsRemaining;
-                    if (isNotInitialCatchup)
-                    {
-                        eventsRemaining = eventStoreCount - i.BatchRemainingEvents;
-                    }
-                    else
-                    {
-                        eventsRemaining = i.BatchTotalEvents - i.BatchRemainingEvents;
-                    }
-
-                    var timeTakenForProcessedEvents = isNotInitialCatchup
-                                                          ? (now - i.BatchStartTime).Value
-                                                          : (now - i.InitialCatchupStartTime).Value;
-
-                    var percentageCompleted = Percent(
-                        howMany: eventsRemaining,
-                        outOf: eventStoreCount);
-
-                    var timeRemainingForCatchup = TimeRemaining(
-                        timeTakenForProcessedEvents,
-                        eventsProcessed,
-                        isNotInitialCatchup
-                            ? i.BatchRemainingEvents
-                            : eventStoreCount);
-
-                    var eventHandlerProgress = new EventHandlerProgress
-                    {
-                        Name = i.Name,
-                        InitialCatchupEvents = i.InitialCatchupEvents,
-                        TimeTakenForInitialCatchup = TimeTakenForInitialCatchup(
-                            i),
-                        TimeRemainingForCatchup = timeRemainingForCatchup,
-                        EventsRemainingInBatch = i.BatchRemainingEvents,
-                        PercentageCompleted = percentageCompleted,
-                        LatencyInMilliseconds = i.LatencyInMilliseconds,
-                        LastUpdated = i.LastUpdated,
-                        CurrentAsOfEventId = i.CurrentAsOfEventId,
-                        FailedOnEventId = i.FailedOnEventId,
-                        Error = i.Error
-                    };
+                    var eventHandlerProgress = new EventHandlerProgress(i);
 
                     progress.Add(eventHandlerProgress);
                 });
@@ -124,21 +82,5 @@ namespace Microsoft.Its.Domain.Sql
 
         private static long EventsProcessedOutOfBatch(ReadModelInfo i) =>
             i.BatchTotalEvents - i.BatchRemainingEvents;
-
-        private static TimeSpan? TimeTakenForInitialCatchup(ReadModelInfo i) =>
-            i.InitialCatchupEndTime.HasValue
-                ? i.InitialCatchupEndTime - i.InitialCatchupStartTime
-                : null;
-
-        private static TimeSpan TimeRemaining(
-                TimeSpan timeTakenForProcessedEvents,
-                long eventsProcessed,
-                long eventsRemaining) =>
-            TimeSpan.FromTicks((long) (timeTakenForProcessedEvents.Ticks*(eventsRemaining/(decimal) eventsProcessed)));
-
-        internal static decimal Percent(decimal howMany, decimal outOf) =>
-            outOf == 0
-                ? 100
-                : (howMany/outOf)*100;
     }
 }

@@ -51,7 +51,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var projector1 = new Projector1();
             using (var catchup = CreateReadModelCatchup(projector1))
             {
-                catchup.Progress.ForEachAsync(s => Console.WriteLine(s));
                 await catchup.Run();
             }
 
@@ -103,7 +102,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        });
                 await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             if (extraneousEvent != null)
@@ -111,7 +109,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Assert.Fail($"Found an event that should not have been queried from the event store: {extraneousEvent.StreamName}:{extraneousEvent.Type} (#{extraneousEvent.Id})");
             }
         }
-
 
         [Test]
         public async Task ReadModelCatchup_queries_events_that_match_both_aggregate_and_event_type()
@@ -633,8 +630,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                         .First(e => e.AggregateId == badEvent.AggregateId);
                 failure.Error.Should().Contain("JsonReaderException");
                 failure.SerializedEvent.Should().Contain(badEvent.Body);
-                failure.Actor.Should().Be(badEvent.Actor);
-                failure.OriginalId.Should().Be(badEvent.Id);
+                failure.EventId.Should().Be(badEvent.Id);
                 failure.AggregateId.Should().Be(badEvent.AggregateId);
                 failure.SequenceNumber.Should().Be(badEvent.SequenceNumber);
                 failure.StreamName.Should().Be(badEvent.StreamName);
