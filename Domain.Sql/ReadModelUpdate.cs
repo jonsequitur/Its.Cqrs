@@ -93,7 +93,7 @@ namespace Microsoft.Its.Domain.Sql
                     }
 
                     readModelInfo.LastError = exceptionJson;
-                    readModelInfo.FailedOnEventId = sqlError.OriginalId;
+                    readModelInfo.FailedOnEventId = sqlError.EventId;
                 }
 
                 sqlError.Error = $"{Environment.MachineName}:  {exceptionJson}"; 
@@ -107,50 +107,46 @@ namespace Microsoft.Its.Domain.Sql
         private static EventHandlingError CreateEventHandlingError(Domain.EventHandlingError e) =>
             new EventHandlingError
             {
-                Actor = e.Event.Actor(),
                 AggregateId = e.Event.AggregateId,
                 SequenceNumber = e.Event.SequenceNumber,
                 SerializedEvent = e.Event.ToJson(),
                 StreamName = e.Event.EventStreamName(),
                 EventTypeName = e.Event.EventName(),
-                OriginalId = e.Event.AbsoluteSequenceNumber()
+                EventId = e.Event.AbsoluteSequenceNumber()
             };
 
         private static EventHandlingError CreateEventHandlingError(IEvent e) =>
             new EventHandlingError
             {
-                Actor = e.Actor(),
                 AggregateId = e.AggregateId,
                 SequenceNumber = e.SequenceNumber,
                 SerializedEvent = e.ToJson(),
                 StreamName = e.EventStreamName(),
                 EventTypeName = e.EventName(),
-                OriginalId = null
+                EventId = null
             };
 
         private static EventHandlingError CreateEventHandlingError(EventHandlingDeserializationError e) =>
             new EventHandlingError
             {
-                Actor = e.Actor,
                 AggregateId = e.AggregateId,
                 SequenceNumber = e.SequenceNumber,
                 SerializedEvent = e.Body,
                 StreamName = e.StreamName,
                 EventTypeName = e.Type,
-                OriginalId = e.Try(ee => ee.Metadata.AbsoluteSequenceNumber, ignore: ex => true)
+                EventId = e.Try(ee => ee.Metadata.AbsoluteSequenceNumber, ignore: ex => true)
                               .Else(() => (long?) null)
             };
 
         private static EventHandlingError CreateEventHandlingError(StorableEvent e) =>
             new EventHandlingError
             {
-                Actor = e.Actor,
                 AggregateId = e.AggregateId,
                 SequenceNumber = e.SequenceNumber,
                 SerializedEvent = e.Body,
                 StreamName = e.StreamName,
                 EventTypeName = e.Type,
-                OriginalId = e.Id
+                EventId = e.Id
             };
     }
 }
