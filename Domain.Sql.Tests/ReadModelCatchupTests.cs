@@ -51,7 +51,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var projector1 = new Projector1();
             using (var catchup = CreateReadModelCatchup(projector1))
             {
-                catchup.Progress.ForEachAsync(s => Console.WriteLine(s));
                 await catchup.Run();
             }
 
@@ -103,7 +102,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        });
                 await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             if (extraneousEvent != null)
@@ -111,7 +109,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 Assert.Fail($"Found an event that should not have been queried from the event store: {extraneousEvent.StreamName}:{extraneousEvent.Type} (#{extraneousEvent.Id})");
             }
         }
-
 
         [Test]
         public async Task ReadModelCatchup_queries_events_that_match_both_aggregate_and_event_type()
