@@ -65,7 +65,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var projector2 = new Projector2();
             using (var catchup = CreateReadModelCatchup(projector1, projector2))
             {
-                catchup.Progress.ForEachAsync(s => Console.WriteLine(s));
                 await catchup.Run();
             }
 
@@ -129,7 +128,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        .ForEachAsync(s => { eventsQueried++; });
                 await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             eventsQueried.Should().Be(numOfOrderCreatedEvents);
@@ -150,7 +148,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        .ForEachAsync(s => { eventsQueried++; });
                  await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             eventsQueried.Should().Be(100);
@@ -172,8 +169,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 
                 await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-
-                Console.WriteLine(new { eventsQueried });
             }
 
             eventsQueried.Should().Be(100);
@@ -203,7 +198,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        .ForEachAsync(s => { eventsQueried++; });
                  await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             eventsQueried.Should().Be(orderEvents);
@@ -236,7 +230,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        });
                 await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             eventsQueried.Should().Be(orderEvents);
@@ -270,7 +263,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        .ForEachAsync(s => { eventsQueried++; });
                 await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             eventsQueried.Should().Be(subclassedEventsWritten);
@@ -316,7 +308,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        });
                 await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             scheduledCommandsQueried.Should().Be(scheduledCommandsWritten);
@@ -362,7 +353,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        });
                 await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             scheduledCommandsQueried.Should().Be(scheduledCommandsWritten);
@@ -408,7 +398,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        });
                 await catchup.Run()
                              .ContinueWith(r => catchup.Dispose());
-                Console.WriteLine(new { eventsQueried });
             }
 
             scheduledCommandsQueried.Should().Be(scheduledCommandsWritten);
@@ -539,7 +528,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             using (catchup.Progress.Subscribe(s =>
             {
                 progress.Add(s);
-                Console.WriteLine("progress: " + s);
             }))
             {
 #pragma warning disable 4014
@@ -1049,7 +1037,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 catchup.Progress.Subscribe(s =>
                 {
-                    Console.WriteLine(s);
                     lastEventId = s.CurrentEventId;
                 });
 
@@ -1076,8 +1063,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 
                 var ids = statuses.Select(s => s.CurrentEventId).ToArray();
                 
-                Console.WriteLine(new { ids }.ToLogString());
-                
                 ids.ShouldBeEquivalentTo(new[]
                 {
                     HighestEventId + 1,
@@ -1099,7 +1084,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
             {
                 var status = await catchup.SingleBatchAsync();
 
-                Console.WriteLine(status);
                 status.IsEndOfBatch.Should().BeTrue();
                 status.BatchCount.Should().Be(10);
                 status.CurrentEventId.Should().Be(HighestEventId + 10);
@@ -1113,7 +1097,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (var catchup = CreateReadModelCatchup(Projector.Create<IEvent>(e => { })))
             {
-                var status = await catchup.SingleBatchAsync().Do(s => Console.WriteLine(s));
+                var status = await catchup.SingleBatchAsync();
 
                 status.IsEndOfBatch.Should().BeTrue();
                 status.BatchCount.Should().Be(10);
