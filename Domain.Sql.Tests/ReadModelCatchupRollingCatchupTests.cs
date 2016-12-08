@@ -631,7 +631,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             using (CreateReadModelCatchup<ReadModels1DbContext>(
                     getDbContext,
-                    Projector.Create<Order.CreditCardCharged>(e => eventsReceived++))
+                    Projector.Create<Order.CreditCardCharged>(e => eventsReceived++).Named(Any.CamelCaseName()))
                 .PollEventStore(300.Milliseconds()))
             {
                 await Task.Delay(1.Seconds());

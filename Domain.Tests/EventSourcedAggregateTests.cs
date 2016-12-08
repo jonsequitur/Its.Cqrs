@@ -274,7 +274,6 @@ namespace Microsoft.Its.Domain.Tests
             var t = new PerfTestAggregate(Guid.NewGuid(), largeListOfEvents);
             sw.Stop();
 
-            Console.WriteLine("Elapsed: {0}ms", sw.ElapsedMilliseconds);
             t.Version.Should().Be(count);
             t.NumberOfUpdatesExecuted.Should().Be(count);
             sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2));

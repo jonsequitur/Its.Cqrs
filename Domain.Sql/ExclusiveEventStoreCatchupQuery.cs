@@ -14,10 +14,10 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     internal class ExclusiveEventStoreCatchupQuery : IDisposable
     {
+        public int BatchSize { get; set; }
         private readonly EventStoreDbContext dbContext;
         private readonly string lockResourceName;
         private readonly SerialDisposable appLockDisposer = new SerialDisposable();
-        private readonly long expectedNumberOfEvents;
         private readonly IEnumerable<StorableEvent> events;
         private readonly long startAtId;
 
@@ -38,11 +38,13 @@ namespace Microsoft.Its.Domain.Sql
             int batchSize = 10000,
             Expression<Func<StorableEvent, bool>> filter = null)
         {
+         
             if (batchSize < 1)
             {
                 throw new ArgumentException($"{nameof(batchSize)} must be greater than zero.");
             }
 
+            BatchSize = batchSize;
             this.dbContext = dbContext;
             this.lockResourceName = lockResourceName;
 
@@ -83,11 +85,13 @@ namespace Microsoft.Its.Domain.Sql
 
                 eventQuery = eventQuery
                     .Where(e => e.Id >= startAtId)
-                    .OrderBy(e => e.Id)
-                    .Take(batchSize);
+                    .OrderBy(e => e.Id);
                 
-                expectedNumberOfEvents = eventQuery.Count();
+                TotalMatchedEventCount = eventQuery.Count();
+                BatchMatchedEventCount = Math.Min(BatchSize, TotalMatchedEventCount);
 
+                eventQuery = eventQuery.Take(batchSize);
+                
                 events = DurableStreamFrom(eventQuery, startAtId);
             }
             else
@@ -98,7 +102,9 @@ namespace Microsoft.Its.Domain.Sql
 
         public virtual IEnumerable<StorableEvent> Events => events;
 
-        public long ExpectedNumberOfEvents => expectedNumberOfEvents;
+        public long BatchMatchedEventCount { get; }
+
+        public long TotalMatchedEventCount { get; }
 
         public long StartAtId => startAtId;
 
@@ -139,7 +145,7 @@ namespace Microsoft.Its.Domain.Sql
 
                     if (!enumerator.MoveNext())
                     {
-                        if (receivedEvents >= expectedNumberOfEvents)
+                        if (receivedEvents >= BatchMatchedEventCount)
                         {
                             yield break;
                         }
