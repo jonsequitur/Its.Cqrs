@@ -5,7 +5,6 @@ using System;
 using System.Data.Entity;
 using System.Data.Entity.ModelConfiguration;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Microsoft.Its.Domain.Sql.CommandScheduler
 {
@@ -76,10 +75,6 @@ namespace Microsoft.Its.Domain.Sql.CommandScheduler
             modelBuilder.Configurations.Add(new CommandExecutionErrorEntityTypeConfiguration());
             modelBuilder.Configurations.Add(new ScheduledCommandEntityTypeConfiguration());
             modelBuilder.Configurations.Add(new ETagEntityTypeConfiguration());
-
-            // add infrastructure for catchup tracking
-            modelBuilder.Configurations.Add(new ReadModelInfoEntityModelConfiguration.ReadModelInfoEntityTypeConfiguration());
-            modelBuilder.Configurations.Add(new EventHandlingErrorEntityModelConfiguration.EventHandlingErrorEntityTypeConfiguration());
         }
 
         private class ScheduledCommandEntityTypeConfiguration : EntityTypeConfiguration<ScheduledCommand>
