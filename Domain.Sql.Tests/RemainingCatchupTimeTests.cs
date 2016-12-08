@@ -22,6 +22,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [UseSqlEventStore]
     public class RemainingCatchupTimeTests : EventStoreDbTest
     {
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
+
+            if (eventCount < 2000)
+            {
+                Events.Write(2000 - eventCount, randomEventTypes: true);
+            }
+        }
+
         [Test]
         public async Task During_initial_catchup_the_remaining_time_is_estimated_correctly()
         {
@@ -34,18 +45,21 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             IUpdateProjectionWhen<IEvent> projector = null;
 
+            var numberOfEventsToProcessBeforeCalculating = eventCount/100;
+
             projector = CreateProjector<IEvent>(e =>
             {
                 eventsProcessed++;
-                if (eventsProcessed == eventCount/100)
+                if (eventsProcessed == numberOfEventsToProcessBeforeCalculating)
                 {
                     VirtualClock.Current.AdvanceBy(1.Minutes());
                     progress = CalculateProgressFor(projector);
                 }
             });
-             
+
             //act
-            var batchSize = (int) ((eventCount/100) * 1.1);
+            var batchSize = numberOfEventsToProcessBeforeCalculating*2;
+
             await RunCatchupSingleBatch(projector,
                 startAtEventId: 0,
                 batchSize: batchSize);
@@ -53,12 +67,15 @@ namespace Microsoft.Its.Domain.Sql.Tests
             // assert
             var expectedTimeRemaining = TimeRemaining(
                 1.Minutes(),
-                eventsProcessed: eventCount/100,
-                eventsRemaining: eventCount - (eventCount/100) );
+                eventsProcessed: numberOfEventsToProcessBeforeCalculating,
+                eventsRemaining: eventCount - numberOfEventsToProcessBeforeCalculating);
+
+            Console.WriteLine(new { eventCount, batchSize, eventsProcessed, numberOfEventsToProcessBeforeCalculating, expectedTimeRemaining });
 
             progress.InitialCatchupTimeRemaining
                     .Should()
-                    .BeCloseTo(expectedTimeRemaining, precision: (int) 5.Minutes().TotalMilliseconds);
+                    .BeCloseTo(expectedTimeRemaining,
+                        precision: (int) 6.Minutes().TotalMilliseconds);
         }
 
         [Test]
@@ -73,10 +90,12 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
             IUpdateProjectionWhen<IEvent> projector = null;
 
+            var numberOfEventsToProcessBeforeCalculating = eventCount/100;
+
             projector = CreateProjector<IEvent>(e =>
             {
                 eventsProcessed++;
-                if (eventsProcessed == eventCount/100)
+                if (eventsProcessed == numberOfEventsToProcessBeforeCalculating)
                 {
                     VirtualClock.Current.AdvanceBy(1.Minutes());
                     progress = CalculateProgressFor(projector);
@@ -84,22 +103,27 @@ namespace Microsoft.Its.Domain.Sql.Tests
             });
 
             //act
+            var batchSize = eventCount/1000;
+
             for (var i = 0; i < 13; i++)
             {
                 await RunCatchupSingleBatch(projector,
                     startAtEventId: 0,
-                    batchSize: eventCount/1000);
+                    batchSize: batchSize);
             }
 
             // assert
             var expectedTimeRemaining = TimeRemaining(
                 1.Minutes(),
-                eventsProcessed: eventCount/100,
-                eventsRemaining: eventCount - (eventCount/100));
+                eventsProcessed: numberOfEventsToProcessBeforeCalculating,
+                eventsRemaining: eventCount - numberOfEventsToProcessBeforeCalculating);
+
+            Console.WriteLine(new { eventCount, batchSize, eventsProcessed, numberOfEventsToProcessBeforeCalculating, expectedTimeRemaining });
 
             progress.InitialCatchupTimeRemaining
                     .Should()
-                    .BeCloseTo(expectedTimeRemaining, precision: (int) 5.Minutes().TotalMilliseconds);
+                    .BeCloseTo(expectedTimeRemaining,
+                        precision: (int) 6.Minutes().TotalMilliseconds);
         }
 
         [Test]

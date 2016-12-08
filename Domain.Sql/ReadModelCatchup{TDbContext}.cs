@@ -90,6 +90,11 @@ namespace Microsoft.Its.Domain.Sql
                 throw new ArgumentException("You must specify at least one projector.");
             }
 
+            if (batchSize < 1)
+            {
+                throw new ArgumentException($"Argument {nameof(batchSize)} must be at least 1.");
+            }
+
             createReadModelDbContext = readModelDbContext;
             createEventStoreDbContext = eventStoreDbContext;
             this.startAtEventId = startAtEventId;
