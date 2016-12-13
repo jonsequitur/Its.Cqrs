@@ -92,7 +92,7 @@ namespace Microsoft.Its.Domain
                 throw new ArgumentNullException(nameof(forTargetToken));
             }
 
-            if (string.IsNullOrWhiteSpace(Command.ETag))
+            if (Command != null && string.IsNullOrWhiteSpace(Command.ETag))
             {
                 Command.IfTypeIs<Command>()
                        .ThenDo(c =>
@@ -105,16 +105,28 @@ namespace Microsoft.Its.Domain
                        });
             }
 
-            var parentCommand = commandStack.Peek().Command;
+            var parentCommand = commandStack.Peek().Command ?? new NoCommand(forTargetToken);
             var sequence = etagSequences.GetOrAdd(parentCommand,
                                                       _ => new ETagSequence())
                                             .NextETagSequenceNumber();
 
-            var unhashedEtag = $"{Command.ETag}:{forTargetToken} ({sequence})";
+            var unhashedEtag = $"{Command?.ETag}:{forTargetToken} ({sequence})";
 
             var hashedEtag = unhashedEtag.ToETag();
 
             return hashedEtag;
+        }
+
+        private class NoCommand : Command
+        {
+            private readonly string forTargetToken;
+
+            public NoCommand(string forTargetToken)
+            {
+                this.forTargetToken = forTargetToken;
+            }
+
+            public override string ETag => forTargetToken.ToETag();
         }
 
         /// <summary>

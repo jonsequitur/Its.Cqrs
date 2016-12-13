@@ -112,6 +112,29 @@ namespace Microsoft.Its.Domain.Tests
         }
 
         [Test]
+        public void When_a_CommandContext_does_not_specify_a_command_then_by_default_new_events_have_null_etags()
+        {
+            using (CommandContext.Establish(clock: Clock.Create(() => DateTimeOffset.UtcNow)))
+            {
+                var created = new Order.Created();
+                created.ETag.Should().BeNull();
+            }
+        }
+
+        [Test]
+        public async Task When_a_CommandContext_does_not_specify_a_command_then_new_etags_can_be_created_determinstically_based_on_a_token()
+        {
+            using (var ctx = CommandContext.Establish(clock: Clock.Create(() => DateTimeOffset.UtcNow)))
+            {
+                var etag1 = ctx.NextETag("some value");
+                var etag2 = ctx.NextETag("some value");
+
+                etag1.Should().NotBeNullOrEmpty();
+                etag1.Should().Be(etag2);
+            }
+        }
+
+        [Test]
         public async Task When_one_command_triggers_another_command_via_a_consequenter_then_the_second_command_acquires_the_first_commands_clock()
         {
             // arrange
