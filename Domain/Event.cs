@@ -22,11 +22,10 @@ namespace Microsoft.Its.Domain
         /// </summary>
         protected Event()
         {
-            var commandContext = CommandContext.Current;
+            var command = CommandContext.Current?.Command;
 
-            if (commandContext != null)
+            if (command != null)
             {
-                var command = commandContext.Command;
                 this.SetActor(command);
                 ETag = command.ETag;
             }
