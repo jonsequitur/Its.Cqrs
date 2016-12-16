@@ -83,15 +83,32 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 readModelDbContext: () => new T(),
                 startAtEventId: HighestEventId + 1,
                 projectors: projectors)
-                          {
-                              Name = $"from {HighestEventId + 1}"
-                          };
+            {
+                Name = $"from {HighestEventId + 1}"
+            };
             Configuration.Current.RegisterForDisposal(catchup);
             return catchup;
         }
-        
+
+        public ReadModelCatchup CreateReadModelCatchup(
+            object[] projectors,
+            Func<EventStoreDbContext> eventStoreDbContext,
+            Func<ReadModelDbContext> readModelDbContext = null)
+        {
+            var catchup = new ReadModelCatchup(
+                eventStoreDbContext: eventStoreDbContext,
+                readModelDbContext: readModelDbContext ?? (() => ReadModelDbContext()),
+                startAtEventId: HighestEventId + 1,
+                projectors: projectors)
+            {
+                Name = $"from {HighestEventId + 1}"
+            };
+            Configuration.Current.RegisterForDisposal(catchup);
+            return catchup;
+        }
+
         public ReadModelCatchup<T> CreateReadModelCatchup<T>(params object[] projectors)
             where T : DbContext, new() =>
-                CreateReadModelCatchup<T>(() => EventStoreDbContext(), projectors);
+            CreateReadModelCatchup<T>(() => EventStoreDbContext(), projectors);
     }
 }

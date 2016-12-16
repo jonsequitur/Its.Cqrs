@@ -20,8 +20,8 @@ namespace Microsoft.Its.Domain.Testing
     /// <seealso cref="Microsoft.Its.Domain.Sql.EventStoreDbContext" />
     public class InMemoryEventStoreDbContext : EventStoreDbContext
     {
-        private readonly InMemoryEventStream eventStream;
-        private readonly DbSet<StorableEvent> sqlEvents;
+        private readonly InMemoryEventStream persistedEventsStream;
+        private readonly InMemoryDbSet<StorableEvent> eventsDbSet;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InMemoryEventStoreDbContext"/> class.
@@ -29,13 +29,13 @@ namespace Microsoft.Its.Domain.Testing
         /// <param name="eventStream">The event stream in which events are saved.</param>
         public InMemoryEventStoreDbContext(InMemoryEventStream eventStream = null)
         {
-            this.eventStream = eventStream ?? new InMemoryEventStream();
+            persistedEventsStream = eventStream ?? new InMemoryEventStream();
             eventStream = eventStream ?? Domain.Configuration
                                                .Current
                                                .Container
                                                .Resolve<InMemoryEventStream>();
 
-            sqlEvents = new InMemoryDbSet<StorableEvent>(new HashSet<StorableEvent>(eventStream.Events.Select(e => e.ToStorableEvent())));
+            eventsDbSet = new InMemoryDbSet<StorableEvent>(new HashSet<StorableEvent>(eventStream.Events.Select(e => e.ToStorableEvent())));
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Microsoft.Its.Domain.Testing
         {
             get
             {
-                return sqlEvents;
+                return eventsDbSet;
             }
             set
             {
@@ -67,7 +67,7 @@ namespace Microsoft.Its.Domain.Testing
         /// <returns> A set for the given entity type. </returns>
         public override DbSet<TEntity> Set<TEntity>()
         {
-            return (dynamic) sqlEvents;
+            return (dynamic) eventsDbSet;
         }
 
         /// <summary>
@@ -149,31 +149,34 @@ namespace Microsoft.Its.Domain.Testing
 
         private async Task AssignIdsAndSyncStream()
         {
-            var newEvents =
-                sqlEvents
-                    .Select(e => new
-                    {
-                        inMemoryEvent = e.ToInMemoryStoredEvent(),
-                        sqlEvent = e
-                    })
-                    .Where(ee => !eventStream.Contains(ee.inMemoryEvent))
-                    .ToArray();
-
-            newEvents.ForEach(e =>
+            foreach (var pendingEvent in eventsDbSet.Pending)
             {
-                var nextId = Interlocked.Increment(ref eventStream.NextAbsoluteSequenceNumber);
-                e.inMemoryEvent.Metadata.AbsoluteSequenceNumber = nextId;
-                e.sqlEvent.Id = nextId;
-            });
+                if (persistedEventsStream.Any(
+                    e => Guid.Parse(e.AggregateId) == pendingEvent.AggregateId &&
+                         e.SequenceNumber == pendingEvent.SequenceNumber))
+                {
+                    eventsDbSet.CancelChanges();
 
-            await eventStream.Append(newEvents.Select(_ => _.inMemoryEvent).ToArray());
+                    throw new DbUpdateConcurrencyException();
+                }
+
+                var nextId = Interlocked.Increment(ref persistedEventsStream.NextAbsoluteSequenceNumber);
+                pendingEvent.Id = nextId;
+            }
+
+            await persistedEventsStream.Append(
+                eventsDbSet.Pending
+                           .Select(_ => _.ToInMemoryStoredEvent())
+                           .ToArray());
+
+            eventsDbSet.CommitChanges();
         }
     }
 
     internal class InMemoryDbSet<T> :
-        DbSet<T>,
-        IQueryable<T>,
-        IDbAsyncEnumerable<T>
+            DbSet<T>,
+            IQueryable<T>,
+            IDbAsyncEnumerable<T>
         where T : class
     {
         private readonly HashSet<T> source;
@@ -187,9 +190,11 @@ namespace Microsoft.Its.Domain.Testing
             this.source = source;
         }
 
+        public HashSet<T> Pending { get; } = new HashSet<T>();
+
         public override T Add(T entity)
         {
-            source.Add(entity);
+            Pending.Add(entity);
             return entity;
         }
 
@@ -202,7 +207,7 @@ namespace Microsoft.Its.Domain.Testing
 
         public override T Remove(T entity)
         {
-            source.Remove(entity);
+            Pending.Remove(entity);
             return entity;
         }
 
@@ -226,6 +231,17 @@ namespace Microsoft.Its.Domain.Testing
         public IDbAsyncEnumerator<T> GetAsyncEnumerator() => new InMemoryAsyncEnumerator<T>(source.GetEnumerator());
 
         IDbAsyncEnumerator IDbAsyncEnumerable.GetAsyncEnumerator() => GetAsyncEnumerator();
+
+        public void CancelChanges() => Pending.Clear();
+
+        public void CommitChanges()
+        {
+            foreach (var e in Pending)
+            {
+                source.Add(e);
+            }
+            Pending.Clear();
+        }
     }
 
     internal class InMemoryAsyncEnumerator<T> :

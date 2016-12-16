@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Diagnostics;
@@ -13,6 +14,7 @@ using System.Reactive.Subjects;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Its.Log.Lite;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Unit = System.Reactive.Unit;
@@ -236,60 +238,11 @@ namespace Microsoft.Its.Domain.Sql
 
                 try
                 {
-                    // update projectors
-                    @event = storedEvent.ToDomainEvent();
-
-                    if (@event != null)
-                    {
-                        using (var work = CreateUnitOfWork(@event))
-                        {
-                            await bus.PublishAsync(@event);
-                             
-                            var infos = work.Resource<DbContext>().Set<ReadModelInfo>();
-                            
-                            subscribedReadModelInfos.ForEach(i =>
-                            {
-                                infos.Attach(i);
-                                i.LastUpdated = now;
-                                i.CurrentAsOfEventId = storedEvent.Id;
-                                i.LatencyInMilliseconds = (now - @event.Timestamp).TotalMilliseconds;
-                                i.BatchRemainingEvents = query.BatchMatchedEventCount - eventsProcessedOutOfBatch;
-
-                                if (eventsProcessedOutOfBatch == 1)
-                                {
-                                    i.BatchStartTime = now;
-                                    i.BatchTotalEvents = query.BatchMatchedEventCount;
-                                }
-                                
-                                if (i.InitialCatchupStartTime == null)
-                                {
-                                    i.InitialCatchupStartTime = now;
-                                    i.InitialCatchupTotalEvents = eventStoreTotalCount;
-                                }
-
-                                if (i.InitialCatchupEndTime == null)
-                                {
-                                    if (i.CurrentAsOfEventId >= initialCatchupIsDoneAfterEventId)
-                                    {
-                                        i.InitialCatchupEndTime = now;
-                                        i.InitialCatchupRemainingEvents = 0;
-                                    }
-                                    else
-                                    {
-                                        // initial catchup is still in progress
-                                        i.InitialCatchupRemainingEvents = query.TotalMatchedEventCount -
-                                                                          eventsProcessedOutOfBatch;
-                                    }
-                                }
-                            });
-
-                            work.VoteCommit();
-                        }
-                    }
-                    else
-                    {
-                        throw new SerializationException($"Deserialization: Event type '{storedEvent.StreamName}.{storedEvent.Type}' not found");
-                    }
+                    @event = await UpdateProjectorsAndCursors(
+                                 query,
+                                 storedEvent,
+                                 eventsProcessedOutOfBatch,
+                                 now);
                 }
                 catch (Exception ex)
                 {
@@ -321,8 +274,85 @@ namespace Microsoft.Its.Domain.Sql
 
                 ReportStatus(status);
             }
+
             return eventsProcessedOutOfBatch;
         }
+
+        private async Task<IEvent> UpdateProjectorsAndCursors(
+            ExclusiveEventStoreCatchupQuery query, 
+            StorableEvent storedEvent, 
+            long eventsProcessedOutOfBatch,
+            DateTimeOffset now)
+        {
+            var @event = storedEvent.ToDomainEvent();
+
+            if (@event != null)
+            {
+                using (var work = CreateUnitOfWork(@event))
+                {
+                    var errors = new ConcurrentBag<Domain.EventHandlingError>();
+
+                    using (CaptureErrorsFor(@event, into: errors))
+                    {
+                        await bus.PublishAsync(@event);
+                    }
+
+                    var infos = work.Resource<DbContext>().Set<ReadModelInfo>();
+
+                    subscribedReadModelInfos
+                        .Where(i => errors.All(err => err.Handler != i.Handler))
+                        .ForEach(i =>
+                    {
+                        infos.Attach(i);
+                        i.LastUpdated = now;
+                        i.CurrentAsOfEventId = storedEvent.Id;
+                        i.LatencyInMilliseconds = (now - @event.Timestamp).TotalMilliseconds;
+                        i.BatchRemainingEvents = query.BatchMatchedEventCount - eventsProcessedOutOfBatch;
+
+                        if (eventsProcessedOutOfBatch == 1)
+                        {
+                            i.BatchStartTime = now;
+                            i.BatchTotalEvents = query.BatchMatchedEventCount;
+                        }
+
+                        if (i.InitialCatchupStartTime == null)
+                        {
+                            i.InitialCatchupStartTime = now;
+                            i.InitialCatchupTotalEvents = eventStoreTotalCount;
+                        }
+
+                        if (i.InitialCatchupEndTime == null)
+                        {
+                            if (i.CurrentAsOfEventId >= initialCatchupIsDoneAfterEventId)
+                            {
+                                i.InitialCatchupEndTime = now;
+                                i.InitialCatchupRemainingEvents = 0;
+                            }
+                            else
+                            {
+                                // initial catchup is still in progress
+                                i.InitialCatchupRemainingEvents = query.TotalMatchedEventCount -
+                                                                  eventsProcessedOutOfBatch;
+                            }
+                        }
+                    });
+
+                    work.VoteCommit();
+                }
+            }
+            else
+            {
+                throw new SerializationException($"Deserialization: Event type '{storedEvent.StreamName}.{storedEvent.Type}' not found");
+            }
+
+            return @event;
+        }
+
+        private IDisposable CaptureErrorsFor(IEvent @event, ConcurrentBag<Domain.EventHandlingError> @into) =>
+            bus.Errors
+               .Where(e =>
+                       e.Event == @event && e.Exception.IsTransient())
+               .Subscribe(@into.Add);
 
         private void IncludeReadModelsNeeding(StorableEvent storedEvent)
         {
@@ -333,6 +363,7 @@ namespace Microsoft.Its.Domain.Sql
                     if (storedEvent.Id >= readmodelInfo.CurrentAsOfEventId + 1)
                     {
                         var handler = projectors.Single(p => ReadModelInfo.NameForProjector(p) == readmodelInfo.Name);
+                        readmodelInfo.Handler = handler;
                         disposables.Add(bus.Subscribe(handler));
                         unsubscribedReadModelInfos.Remove(readmodelInfo);
                         subscribedReadModelInfos.Add(readmodelInfo);
@@ -425,11 +456,13 @@ namespace Microsoft.Its.Domain.Sql
                             }
                             catch (Exception ex)
                             {
-                                Debug.WriteLine(ex);
+                                Trace.WriteLine(ex);
                             }
                         },
                         onError: ex =>
-                        { Debug.WriteLine(ex); }));
+                        {
+                            Trace.WriteLine(ex);
+                        }));
 
         private void EnsureInitialized()
         {

@@ -5,6 +5,7 @@ using System;
 using System.Data;
 using System.Data.Entity.Core;
 using System.Data.Entity.Infrastructure;
+using System.Data.Entity.SqlServer;
 using System.Data.SqlClient;
 
 namespace Microsoft.Its.Domain.Sql
@@ -26,5 +27,14 @@ namespace Microsoft.Its.Domain.Sql
         public static bool IsUniquenessConstraint(this Exception exception) =>
             exception.IsConcurrencyException() &&
             exception.ToString().Contains("with unique index");
+
+        internal static bool IsTransient(this Exception exception) =>
+            new ExecutionStrategy().ShouldRetry(exception);
+
+        private class ExecutionStrategy : SqlAzureExecutionStrategy
+        {
+            public bool ShouldRetry(Exception exception) =>
+                base.ShouldRetryOn(exception);
+        }
     }
 }

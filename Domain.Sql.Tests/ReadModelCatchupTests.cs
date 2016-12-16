@@ -2,8 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -16,7 +18,6 @@ using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
-using Its.Log.Instrumentation;
 using Test.Domain.Ordering;
 using Test.Domain.Ordering.Projections;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
@@ -663,64 +664,188 @@ namespace Microsoft.Its.Domain.Sql.Tests
                  .Be(itemAdded.SequenceNumber);
         }
 
-        [Ignore("Test needs rebuilding")]
         [Test]
-        public async Task Database_command_timeouts_during_catchup_do_not_interrupt_catchup()
+        public async Task When_a_transient_exception_is_thrown_reading_from_the_read_model_database_then_catchup_retries_projection_of_the_event()
         {
-            // reset read model tracking to 0
-            ReadModelDbContext().DisposeAfter(c =>
+             // arrange
+            var eventsReceived = new List<IEvent>();
+            var aggregateId = Any.Guid();
+            Events.Write(10, i => new Order.Created
             {
-                var projectorName = ReadModelInfo.NameForProjector(new Projector<Order.CustomerInfoChanged>());
-                c.Set<ReadModelInfo>()
-                 .SingleOrDefault(i => i.Name == projectorName)
-                 .IfNotNull()
-                 .ThenDo(i => { i.CurrentAsOfEventId = 0; });
-                c.SaveChanges();
+                AggregateId = aggregateId,
+                SequenceNumber = i
+            });
+            var hitCount = 0;
+
+            var projector = Projector.Create<IEvent>(e => eventsReceived.Add(e));
+
+            var catchup = CreateReadModelCatchup(
+                readModelDbContext: CreateFlakyReadModelDbContext(
+                   throwOnOpen: () =>
+                   {
+                       hitCount++;
+                       return hitCount%3 == 0;
+                   }),
+                eventStoreDbContext: () => EventStoreDbContext(),
+                projectors:
+                new object[] { projector });
+
+            // act
+            await catchup.Run();
+
+            // assert
+            eventsReceived.Select(e => e.SequenceNumber)
+                          .Should()
+                          .BeInAscendingOrder()
+                          .And
+                          .BeEquivalentTo(new[] { 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L });
+        }
+
+        [Test]
+        public async Task When_a_transient_exception_is_thrown_writing_to_the_read_model_database_then_catchup_retries_projection_of_the_event()
+        {
+            // arrange
+            var eventsReceived = new List<IEvent>();
+            var aggregateId = Any.Guid();
+            Events.Write(10, i => new Order.Created
+            {
+                AggregateId = aggregateId,
+                SequenceNumber = i
+            });
+            var hitCount = 0;
+
+            var projector = Projector.Create<IEvent>(e => eventsReceived.Add(e));
+
+            var catchup = CreateReadModelCatchup(
+                readModelDbContext: CreateFlakyReadModelDbContext(
+                   throwOnSave: () =>
+                   {
+                       hitCount++;
+                       return hitCount%3 == 0;
+                   }),
+                eventStoreDbContext: () => EventStoreDbContext(),
+                projectors:
+                new object[] { projector });
+
+            // act
+            await catchup.Run();
+
+            // assert
+            eventsReceived.Select(e => e.SequenceNumber)
+                          .Should()
+                          .BeInAscendingOrder()
+                          .And
+                          .BeEquivalentTo(new[] { 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L });
+        }
+
+        [Test]
+        public async Task When_a_transient_exception_is_thrown_communicating_with_the_event_store_then_catchup_retries_projection_of_the_event()
+        {
+            // arrange
+            var aggregateId = Any.Guid();
+            var eventsReceived = new List<IEvent>();
+            Events.Write(10, i => new Order.Created
+            {
+                AggregateId = aggregateId,
+                SequenceNumber = i
+            });
+            var throwOnRead = true;
+
+            var projector = Projector.Create<IEvent>(e => { eventsReceived.Add(e); });
+
+            var catchup = CreateReadModelCatchup(
+                eventStoreDbContext: CreateFlakyEventStoreDbContext(
+                    throwOnRead: () => throwOnRead),
+                projectors: new object[] { projector });
+
+            // act
+            await catchup.Run();
+            throwOnRead = false;
+            await catchup.Run();
+
+            // assert
+            var sequenceNumbers = eventsReceived.Select(e => e.SequenceNumber)
+                                                .ToList();
+
+            sequenceNumbers
+                .Should()
+                .BeInAscendingOrder()
+                .And
+                .BeEquivalentTo(new[] { 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L });
+        }
+
+        [Test]
+        public async Task When_a_transient_exception_is_thrown_updating_a_projection_then_catchup_retries_projection_of_the_event()
+        {
+            // arrange
+            var shouldThrow = true;
+            var aggregateId = Any.Guid();
+            var eventsReceived = new List<IEvent>();
+            Events.Write(10, i => new Order.Created
+            {
+                AggregateId = aggregateId,
+                SequenceNumber = i
+            });
+            var projector = Projector.Create<IEvent>(e =>
+            {
+                if (shouldThrow)
+                {
+                    ThrowSqlException(41302);
+                }
+                eventsReceived.Add(e);
             });
 
-            var exceptions = new Stack<Exception>(Enumerable.Range(1, 2)
-                                                            .Select(_ => new InvalidOperationException("Invalid attempt to call IsDBNull when reader is closed.")));
+            var catchup = CreateReadModelCatchup(projectors: projector);
 
-            var count = 0;
-            var flakyEvents = new FlakyEventStream(
-                Enumerable.Range(1, 1000)
-                          .Select(i => new StorableEvent
-                          {
-                              AggregateId = Any.Guid(),
-                              Body = new Order.CustomerInfoChanged { CustomerName = i.ToString() }.ToJson(),
-                              SequenceNumber = i,
-                              StreamName = typeof (Order).Name,
-                              Timestamp = DateTimeOffset.Now,
-                              Type = typeof (Order.CustomerInfoChanged).Name,
-                              Id = i
-                          }).ToArray(),
-                startFlakingOnEnumeratorNumber: 2,
-                doSomethingFlaky: i =>
-                {
-                    if (count++ > 50)
-                    {
-                        count = 0;
-                        if (exceptions.Any())
-                        {
-                            throw exceptions.Pop();
-                        }
-                    }
-                });
+            // act
+            await catchup.Run();
+            shouldThrow = false;
+            await catchup.Run();
 
-            var names = new HashSet<string>();
+            // assert
+            var sequenceNumbers = eventsReceived.Select(e => e.SequenceNumber)
+                                                .ToList();
 
-            var projector = new Projector<Order.CustomerInfoChanged>
-            {
-                OnUpdate = (work, e) => names.Add(e.CustomerName)
-            };
+            sequenceNumbers
+                .Should()
+                .BeInAscendingOrder()
+                .And
+                .BeEquivalentTo(new[] { 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L });
+        }
 
-            using (var catchup = CreateReadModelCatchup(projector))
-            {
-                await catchup.Run();
-            }
+        private void ThrowSqlException(int errorCode)
+        {
+            // these types all have internal constructors so some ugly reflection code is needed to instantiate
+            var sqlErrorCtor = typeof(SqlError)
+                .GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance,
+                    binder: null,
+                    types: new[] { typeof(int), typeof(byte), typeof(byte), typeof(string), typeof(string), typeof(string), typeof(int) },
+                    modifiers: null);
 
-            projector.CallCount.Should().Be(1000);
-            names.Count.Should().Be(1000);
+            var sqlError = sqlErrorCtor.Invoke(new object[] { errorCode, (byte) 0, (byte) 0, "", "", "", 1 });
+            var errors = new ArrayList { sqlError };
+
+            var sqlErrorCollectionCtor = typeof(SqlErrorCollection)
+                .GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance,
+                    binder: null,
+                    types: new Type[] { },
+                    modifiers: null);
+            var errorCollection = sqlErrorCollectionCtor
+                                      .Invoke(new object[] { }) as SqlErrorCollection;
+
+            typeof(SqlErrorCollection)
+                .GetField("errors", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(errorCollection, errors);
+
+            var exception = typeof(SqlException)
+                                .GetConstructor(
+                                    BindingFlags.NonPublic | BindingFlags.Instance,
+                                    binder: null,
+                                    types: new[] { typeof(string), typeof(SqlErrorCollection), typeof(Exception), typeof(Guid), },
+                                    modifiers: null)
+                                .Invoke(new object[] { "oops!", errorCollection, null, Any.Guid() }) as Exception;
+
+            throw exception;
         }
 
         [Test]
@@ -1232,6 +1357,89 @@ namespace Microsoft.Its.Domain.Sql.Tests
             public DbContext CreateDbContext()
             {
                 return ReadModelDbContext();
+            }
+        }
+
+        private Func<EventStoreDbContext> CreateFlakyEventStoreDbContext(
+                Func<bool> throwOnRead) =>
+            () => new EventStoreDbContextThatIsFlakyOnRead(
+                beforeOpen: () =>
+                {
+                    if (throwOnRead())
+                    {
+                        ThrowSqlException(41302);
+                    }
+                });
+
+        public class EventStoreDbContextThatIsFlakyOnRead : EventStoreDbContext
+        {
+            private readonly Action beforeOpen;
+
+            public EventStoreDbContextThatIsFlakyOnRead(Action beforeOpen = null) :
+                base(EventStore.ConnectionString)
+            {
+                this.beforeOpen = beforeOpen;
+            }
+            
+            protected internal override Task OpenAsync()
+            {
+                beforeOpen?.Invoke();
+                return base.OpenAsync();
+            }
+        }
+
+        private Func<ReadModelDbContext> CreateFlakyReadModelDbContext(
+            Func<bool> throwOnSave = null,
+            Func<bool> throwOnOpen = null)
+        {
+            throwOnSave = throwOnSave ?? (() => false);
+            throwOnOpen = throwOnOpen ?? (() => false);
+
+            return () => new FlakyReadModelDbContext(
+                onSave: () =>
+                {
+                    if (throwOnSave())
+                    {
+                        ThrowSqlException(41302);
+                    }
+                },
+                throwOnOpen: throwOnOpen());
+        }
+
+        public class FlakyReadModelDbContext : ReadModelDbContext
+        {
+            private readonly Action onSave;
+
+            public FlakyReadModelDbContext(
+                Action onSave = null,
+                bool throwOnOpen = false) :
+                this(throwOnOpen
+                         ? CantLogInWithConnectionString()
+                         : ReadModels.ConnectionString)
+            {
+                this.onSave = onSave;
+            }
+
+            private FlakyReadModelDbContext(string nameOrConnectionString) : base(nameOrConnectionString)
+            {
+            }
+
+            private static string CantLogInWithConnectionString() =>
+                new SqlConnectionStringBuilder(ReadModels.ConnectionString)
+                {
+                    IntegratedSecurity = false
+                }.ConnectionString;
+
+            public override int SaveChanges()
+            {
+                onSave?.Invoke();
+                return base.SaveChanges();
+            }
+
+            public override async Task<int> SaveChangesAsync()
+            {
+                onSave?.Invoke();
+                return await base.SaveChangesAsync();
             }
         }
     }

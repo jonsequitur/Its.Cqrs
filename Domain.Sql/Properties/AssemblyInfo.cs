@@ -18,3 +18,4 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("Microsoft.Its.Domain.Testing")]
 [assembly: InternalsVisibleTo("Microsoft.Its.Domain.Sql.Tests")]
+[assembly: InternalsVisibleTo("Microsoft.Its.Domain.Testing.Tests")]
