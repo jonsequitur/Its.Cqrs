@@ -406,7 +406,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 var eventStoreDbContext = EventStoreDbContext();
                 dbConnection1 = ((IObjectContextAdapter) eventStoreDbContext).ObjectContext.Connection;
                 return eventStoreDbContext;
-            }, projector1))
+            }, projectors: projector1))
             using (var catchup2 = CreateReadModelCatchup<ReadModels1DbContext>(projector2))
             {
                 catchup1.Progress.ForEachAsync(s =>
@@ -504,10 +504,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                 {
                                     if (s.Latency > pollInterval)
                                     {
-                                        Assert.Fail(string.Format("Latency ({0}) exceeded poll interval {1}\n({2})",
-                                                                  s.Latency.Value.TotalSeconds,
-                                                                  pollInterval.TotalSeconds,
-                                                                  s));
+                                        Assert.Fail($"Latency ({s.Latency.Value.TotalSeconds}) exceeded poll interval {pollInterval.TotalSeconds}\n({s})");
                                     }
                                 })
                                 .FirstAsync(s => s.CurrentEventId == lastEventId)
@@ -630,8 +627,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             };
 
             using (CreateReadModelCatchup<ReadModels1DbContext>(
-                    getDbContext,
-                    Projector.Create<Order.CreditCardCharged>(e => eventsReceived++).Named(Any.CamelCaseName()))
+                    eventStoreDbContext: getDbContext,
+                    projectors: Projector.Create<Order.CreditCardCharged>(e => eventsReceived++).Named(Any.CamelCaseName()))
                 .PollEventStore(300.Milliseconds()))
             {
                 await Task.Delay(1.Seconds());

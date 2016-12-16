@@ -76,6 +76,11 @@ namespace Microsoft.Its.Domain.Sql
         public DateTimeOffset? BatchStartTime { get; set; }
 
         /// <summary>
+        /// Provides a reference to an event handler instance during catchup.
+        /// </summary>
+        internal object Handler { get; set; }
+
+        /// <summary>
         /// Gets the name for the specified projector.
         /// </summary>
         public static string NameForProjector(object projector) => EventHandler.FullName(projector);

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Data.Entity.Infrastructure;
 using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -103,12 +104,62 @@ namespace Microsoft.Its.Domain.Testing.Tests
 
             using (var db = new InMemoryEventStoreDbContext(eventStream))
             {
-                Console.WriteLine(db.Events.Count());
-
                 db.Events
                   .Select(e => e.Id)
                   .Should()
                   .BeEquivalentTo(1L, 2L, 3L, 4L, 5L);
+            }
+        }
+
+        [Test]
+        public async Task Events_added_to_the_in_memory_context_but_failing_on_concurrency_cannot_be_queried_back()
+        {
+            var eventStream = new InMemoryEventStream();
+            var aggregateId = Any.Guid();
+
+            Func<EventStoreDbContext> createDbContext = () =>
+            {
+                //                return TestDatabases.EventStoreDbContext();
+                return new InMemoryEventStoreDbContext(eventStream);
+            };
+
+            using (var db = createDbContext())
+            {
+                db.Events.Add(new Order.Created
+                  {
+                      AggregateId = aggregateId,
+                      SequenceNumber = 1,
+                      OrderNumber = "one"
+                  }.ToStorableEvent());
+
+                db.SaveChanges();
+            }
+
+            using (var db = createDbContext())
+            {
+                db.Events.Add(new Order.Created
+                  {
+                      AggregateId = aggregateId,
+                      SequenceNumber = 1,
+                      OrderNumber = "two"
+                  }.ToStorableEvent());
+
+                Action save = () => db.SaveChanges();
+
+                save.ShouldThrow<DbUpdateException>()
+                    .Which
+                    .IsConcurrencyException()
+                    .Should()
+                    .BeTrue();
+            }
+
+            using (var db = createDbContext())
+            {
+                var created = db.Events.Single(e => e.AggregateId == aggregateId && e.SequenceNumber == 1)
+                                .ToDomainEvent() as Order.Created;
+
+                created.Should().NotBeNull();
+                created.OrderNumber.Should().Be("one");
             }
         }
     }

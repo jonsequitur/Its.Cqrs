@@ -43,8 +43,9 @@ namespace Microsoft.Its.Domain.Testing
         /// Creates an in-memory stored event from the specified <see cref="StorableEvent" />.
         /// </summary>
         /// <param name="e">The event from which to create an in-memory stored event.</param>
-        public static InMemoryStoredEvent ToInMemoryStoredEvent(this StorableEvent e) =>
-            new InMemoryStoredEvent
+        public static InMemoryStoredEvent ToInMemoryStoredEvent(this StorableEvent e)
+        {
+            var @event = new InMemoryStoredEvent
             {
                 SequenceNumber = e.SequenceNumber,
                 AggregateId = e.AggregateId.ToString(),
@@ -54,6 +55,9 @@ namespace Microsoft.Its.Domain.Testing
                 ETag = e.ETag,
                 StreamName = e.StreamName
             };
+            @event.Metadata.AbsoluteSequenceNumber = e.Id;
+            return @event;
+        }
 
         private static readonly Lazy<JsonSerializerSettings> serializerSettings = new Lazy<JsonSerializerSettings>(() =>
         {
