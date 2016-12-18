@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reactive.Disposables;
 
 namespace Microsoft.Its.Domain.Sql
@@ -27,18 +26,15 @@ namespace Microsoft.Its.Domain.Sql
         /// <param name="dbContext">The event store database context to execute the query against.</param>
         /// <param name="lockResourceName">Name of the lock. Multiple instances compete with other instances having the same <paramref name="lockResourceName" />.</param>
         /// <param name="getStartAtId">The id of the first event to query.</param>
-        /// <param name="matchEvents">Specifies the event types to include the query. If none are specified, all events are queried.</param>
+        /// <param name="applyFilter">Transforms a query to filter the events to be read from the event store.</param>
         /// <param name="batchSize">The number of events queried from the event store at each iteration.</param>
-         /// <param name="filter">An optional filter expression to constrain the query that the catchup uses over the event store.</param>
         public ExclusiveEventStoreCatchupQuery(
             EventStoreDbContext dbContext,
             string lockResourceName, 
             Func<long> getStartAtId, 
-            MatchEvent[] matchEvents,
-            int batchSize = 10000,
-            Expression<Func<StorableEvent, bool>> filter = null)
+            Func< IQueryable<StorableEvent>, IQueryable<StorableEvent>> applyFilter,
+            int batchSize = 10000)
         {
-         
             if (batchSize < 1)
             {
                 throw new ArgumentException($"{nameof(batchSize)} must be greater than zero.");
@@ -51,47 +47,17 @@ namespace Microsoft.Its.Domain.Sql
             if (TryGetAppLock())
             {
                 startAtId = getStartAtId();
-                IQueryable<StorableEvent> eventQuery = dbContext.Events.AsNoTracking();
 
-                matchEvents = matchEvents ?? new[] { new MatchEvent() };
+                IQueryable<StorableEvent> eventQuery =
+                    applyFilter(dbContext.Events.AsNoTracking())
+                        .Where(e => e.Id >= startAtId)
+                        .OrderBy(e => e.Id);
 
-                // if specific event types are requested, we can optimize the event store query
-                // if Event or IEvent are requested, we don't filter -- this requires reading every event
-                if (matchEvents.Any())
-                {
-                    var eventTypes = matchEvents.Select(m => m.Type).Distinct().ToArray();
-                    var aggregates = matchEvents.Select(m => m.StreamName).Distinct().ToArray();
-
-                    if (!aggregates.Any(streamName => string.IsNullOrWhiteSpace(streamName) || streamName == MatchEvent.Wildcard))
-                    {
-                        if (!eventTypes.Any(type => string.IsNullOrWhiteSpace(type) || type == MatchEvent.Wildcard))
-                        {
-                            // Filter on StreamName and Type
-                            var projectionEventFilter = new CatchupEventFilter(matchEvents);
-                            eventQuery = eventQuery.Where(projectionEventFilter.Filter);
-                        }
-                        else
-                        {
-                            // Filter on StreamName
-                            eventQuery = eventQuery.Where(e => aggregates.Contains(e.StreamName));
-                        }
-                    }
-                }
-
-                if (filter != null)
-                {
-                    eventQuery = eventQuery.Where(filter);
-                }
-
-                eventQuery = eventQuery
-                    .Where(e => e.Id >= startAtId)
-                    .OrderBy(e => e.Id);
-                
                 TotalMatchedEventCount = eventQuery.Count();
                 BatchMatchedEventCount = Math.Min(BatchSize, TotalMatchedEventCount);
 
                 eventQuery = eventQuery.Take(batchSize);
-                
+
                 events = DurableStreamFrom(eventQuery, startAtId);
             }
             else

@@ -14,7 +14,6 @@ using System.Reactive.Subjects;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Its.Log.Lite;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
 using Unit = System.Reactive.Unit;
@@ -169,9 +168,8 @@ namespace Microsoft.Its.Domain.Sql
                     await CreateOpenEventStoreDbContext(),
                     lockResourceName,
                     GetStartingId,
-                    matchEvents,
-                    batchSize,
-                    filter))
+                    q => q.Where(matchEvents, filter),
+                    batchSize))
                 {
                     ReportStatus(new ReadModelCatchupStatus
                     {
@@ -475,6 +473,7 @@ namespace Microsoft.Its.Domain.Sql
             {
                 InitializeMatchEvents();
                 InitializeReadModelInfo();
+                InitializeEventStoreCatchupGoals();
                 isInitialized = true;
             }
             catch (Exception ex)
@@ -521,12 +520,14 @@ namespace Microsoft.Its.Domain.Sql
                 }
                 db.SaveChanges();
             }
+        }
 
+        private void InitializeEventStoreCatchupGoals()
+        {
             using (var eventStore = createEventStoreDbContext())
             {
-                eventStoreTotalCount = eventStore.Events.Count();
+                eventStoreTotalCount = eventStore.Events.Where(matchEvents, filter).Count();
                 initialCatchupIsDoneAfterEventId = eventStore.Events.Max(e => e.Id);
-
             }
         }
 

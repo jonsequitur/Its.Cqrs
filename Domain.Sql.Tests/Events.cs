@@ -64,7 +64,8 @@ namespace Microsoft.Its.Domain.Sql.Tests
             int howMany,
             Func<int, IEvent> createEvent = null,
             Func<EventStoreDbContext> createEventStore = null,
-            bool randomEventTypes = false)
+            bool randomEventTypes = false,
+            bool saveAfterEachEvent = false)
         {
             if (createEvent == null)
             {
@@ -98,6 +99,11 @@ namespace Microsoft.Its.Domain.Sql.Tests
                                    if (ev.SequenceNumber == 0)
                                    {
                                        ev.SequenceNumber = i;
+                                   }
+
+                                   if (saveAfterEachEvent)
+                                   {
+                                         eventStore.SaveChanges();
                                    }
                                });
 
