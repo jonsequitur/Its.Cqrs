@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -34,7 +35,7 @@ namespace Microsoft.Its.Domain.Sql
             {
                 currentCount = relatedEvents.Count;
 
-                var unqueriedIds = ids.Where(id => ! relatedEvents.Select(e => e.AggregateId).Contains(id));
+                var unqueriedIds = ids.Where(id => !relatedEvents.Select(e => e.AggregateId).Contains(id));
 
                 var newEvents = await events.Where(e => unqueriedIds.Any(id => id == e.AggregateId)).ToArrayAsync();
 
@@ -58,11 +59,49 @@ namespace Microsoft.Its.Domain.Sql
 
         private static readonly Regex guidRegex = new Regex(
             "\"([a-fA-F0-9-\\{\\}]{36})\"", RegexOptions.CultureInvariant | RegexOptions.Compiled
-            );
+        );
 
         private static IEnumerable<Guid> ExtractGuids(this string eventBody) =>
             guidRegex.Matches(eventBody)
                      .Cast<Match>()
                      .Select(match => Guid.Parse(match.Groups[1].ToString()));
+
+        internal static IQueryable<StorableEvent> Where(
+            this IQueryable<StorableEvent> eventQuery,
+            MatchEvent[] matchEvents,
+            Expression<Func<StorableEvent, bool>> filter)
+        {
+            matchEvents = matchEvents ?? new[] { new MatchEvent() };
+
+            // if specific event types are requested, we can optimize the event store query
+            // if Event or IEvent are requested, we don't filter -- this requires reading every event
+            if (matchEvents.Any())
+            {
+                var eventTypes = matchEvents.Select(m => m.Type).Distinct().ToArray();
+                var aggregates = matchEvents.Select(m => m.StreamName).Distinct().ToArray();
+
+                if (!aggregates.Any(streamName => string.IsNullOrWhiteSpace(streamName) || streamName == MatchEvent.Wildcard))
+                {
+                    if (!eventTypes.Any(type => string.IsNullOrWhiteSpace(type) || type == MatchEvent.Wildcard))
+                    {
+                        // Filter on StreamName and Type
+                        var projectionEventFilter = new CatchupEventFilter(matchEvents);
+                        eventQuery = eventQuery.Where(projectionEventFilter.Filter);
+                    }
+                    else
+                    {
+                        // Filter on StreamName
+                        eventQuery = eventQuery.Where(e => aggregates.Contains(e.StreamName));
+                    }
+                }
+            }
+
+            if (filter != null)
+            {
+                eventQuery = eventQuery.Where(filter);
+            }
+
+            return eventQuery;
+        }
     }
 }

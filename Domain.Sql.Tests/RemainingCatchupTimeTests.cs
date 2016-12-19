@@ -11,6 +11,7 @@ using Microsoft.Its.Domain.Testing;
 using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using Test.Domain.Ordering;
 using static Microsoft.Its.Domain.Sql.Tests.TestDatabases;
 using static Microsoft.Its.Domain.Sql.EventHandlerProgressCalculator;
 using static Microsoft.Its.Domain.Sql.EventHandlerProgress;
@@ -22,7 +23,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
     [UseSqlEventStore]
     public class RemainingCatchupTimeTests : EventStoreDbTest
     {
-        [OneTimeSetUp]
+        [SetUp]
         public void OneTimeSetUp()
         {
             var eventCount = EventStoreDbContext().DisposeAfter(_ => _.Events.Count());
@@ -124,6 +125,59 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     .Should()
                     .BeCloseTo(expectedTimeRemaining,
                         precision: (int) 6.Minutes().TotalMilliseconds);
+        }
+
+        [Test]
+        public async Task During_initial_catchup__with_specific_events_the_remaining_time_is_estimated_correctly()
+        {
+            var eventCount = 200;
+
+            if (EventStoreDbContext().DisposeAfter(_ => _.Events.Count()) != eventCount)
+            {
+                EventStoreDbContext().DisposeAfter(_ => { _.Database.ExecuteSqlCommand(@"delete from EventStore.Events"); });
+
+                //arrange
+                Events.Write(eventCount, i =>
+                {
+                    if (i < eventCount/2)
+                    {
+                        return i%2 == 0
+                                   ? (IEvent) new Order.Created { SequenceNumber = 1 }
+                                   : (IEvent) new Order.Cancelled { SequenceNumber = 1 };
+                    }
+
+                    return new Order.Created { SequenceNumber = 1 };
+                }, saveAfterEachEvent: true);
+            }
+
+            var eventsProcessed = 0;
+
+            var batchSize = eventCount/4;
+
+            var createdProjector = CreateProjector<Order.Created>(e => { });
+
+            //act
+            await RunCatchupSingleBatch(
+                startAtEventId: 0,
+                batchSize: batchSize,
+                projectors: createdProjector);
+            VirtualClock.Current.AdvanceBy(1.Minutes());
+            var progress = CalculateProgressFor(createdProjector);
+
+            // assert
+            Console.WriteLine("[ASSERTING]");
+            Console.WriteLine(new { eventCount, batchSize, eventsProcessed });
+
+            using (var db = EventStoreDbContext())
+            {
+                progress.InitialCatchupTotalEvents
+                        .Should()
+                        .Be(150);
+
+                progress.InitialCatchupTimeRemaining
+                        .Should()
+                        .Be(2.Minutes());
+            }
         }
 
         [Test]
