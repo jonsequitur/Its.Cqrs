@@ -10,12 +10,6 @@ namespace Test.Domain.Ordering
 {
     public class Cancel : Command<Order>
     {
-        public override IValidationRule<Order> Validator
-        {
-            get
-            {
-                return Order.NotFulfilled;
-            }
-        }
+        public override IValidationRule<Order> Validator => Order.NotFulfilled;
     }
 }

@@ -7,12 +7,6 @@ namespace Test.Domain.Ordering
 {
     public class PayCash : PaymentCommand
     {
-        public override IValidationRule<Order> Validator
-        {
-            get
-            {
-                return Order.BalanceIsAtLeast(Amount);
-            }
-        }
+        public override IValidationRule<Order> Validator => Order.BalanceIsAtLeast(Amount);
     }
 }

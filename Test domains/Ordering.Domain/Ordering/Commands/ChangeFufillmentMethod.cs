@@ -10,12 +10,6 @@ namespace Test.Domain.Ordering
     {
         public FulfillmentMethod FulfillmentMethod { get; set; }
 
-        public override IValidationRule<Order> Validator
-        {
-            get
-            {
-                return Order.NotFulfilled;
-            }
-        }
+        public override IValidationRule<Order> Validator => Order.NotFulfilled;
     }
 }

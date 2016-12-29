@@ -3,14 +3,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Its.Domain;
 
 namespace Test.Domain.Ordering
 {
     public partial class Order : EventSourcedAggregate<Order>, IEventMigratingAggregate
     {
-        private readonly IList<OrderItem> items = new List<OrderItem>();
 
         public Order(Guid id, IEnumerable<IEvent> eventHistory) : base(id, eventHistory)
         {
@@ -36,7 +34,7 @@ namespace Test.Domain.Ordering
         public string OrderNumber { get; private set; }
 
         public bool IsFulfilled { get; private set; }
-        
+
         public bool IsShipped { get; private set; }
 
         public bool IsCancelled { get; private set; }
@@ -47,7 +45,7 @@ namespace Test.Domain.Ordering
 
         public DateTimeOffset? MustBeDeliveredBy { get; set; }
 
-        public IList<OrderItem> Items => items;
+        public IList<OrderItem> Items { get; } = new List<OrderItem>();
 
         public decimal Balance { get; private set; }
 

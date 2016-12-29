@@ -10,12 +10,6 @@ namespace Test.Domain.Ordering
     {
         public DateTimeOffset ChargeDate { get; set; }
 
-        public override IValidationRule<Order> Validator
-        {
-            get
-            {
-                return null;
-            }
-        }
+        public override IValidationRule<Order> Validator => null;
     }
 }
