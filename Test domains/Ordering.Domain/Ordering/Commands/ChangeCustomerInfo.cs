@@ -18,12 +18,6 @@ namespace Test.Domain.Ordering
 
         public Optional<string> PhoneNumber { get; set; }
 
-        public override IValidationRule<Order> Validator
-        {
-            get
-            {
-                return Order.NotFulfilled;
-            }
-        }
+        public override IValidationRule<Order> Validator => Order.NotFulfilled;
     }
 }

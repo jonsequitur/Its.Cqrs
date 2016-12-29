@@ -18,12 +18,6 @@ namespace Test.Domain.Ordering
         [Range(.01, double.MaxValue)]
         public decimal Amount { get; set; }
 
-        public override IValidationRule CommandValidator
-        {
-            get
-            {
-                return CreditCardInfo.IsValid;
-            }
-        }
+        public override IValidationRule CommandValidator => CreditCardInfo.IsValid;
     }
 }
