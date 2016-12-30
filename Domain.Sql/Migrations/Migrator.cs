@@ -75,26 +75,13 @@ FROM sys.tables;";
             return (result ?? 1) == 1;
         }
 
-        /// <summary>
-        /// Sql Azure Database Properties
-        /// </summary>
-        public class SqlAzureDatabaseProperties
-        {
-            /// <summary>
-            /// Edition
-            /// </summary>
-            public string Edition { get; set; }
-            /// <summary>
-            /// Service Objective
-            /// </summary>
-            public string ServiceObjective { get; set; }
-        }
-
         internal static SqlAzureDatabaseProperties GetAzureDatabaseProperties<TContext>(this TContext context)
     where TContext : DbContext
         {
             
-            var sql = $"SELECT DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'EDITION') as Edition,  DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'ServiceObjective') as ServiceObjective";
+            var sql = $"SELECT DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'EDITION') as Edition," +
+                      $"DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'ServiceObjective') as ServiceObjective," +
+                      $"convert(bigint,DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'MaxSizeInBytes')) / 1024 / 1024 as MaxSizeInMegaBytes";
             var result = context.Database.SqlQuery<SqlAzureDatabaseProperties>(sql).Single();
             return result;
         }

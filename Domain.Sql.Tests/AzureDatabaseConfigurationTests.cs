@@ -111,6 +111,33 @@ namespace Microsoft.Its.Domain.Sql.Tests
                        .Contain(v => v.MigrationVersion.ToString() == "0.0.42.1");
             }
         }
+
+        [Test]
+        [Ignore("Integration tests"), NUnit.Framework.Category("Integration tests")]
+        public void AzureSqlDatabase_can_be_configured_during_creation()
+        {
+            var databaseSettings = Settings.Get<AzureSqlDatabaseSettings>();
+            databaseSettings.DatabaseName = "ItsCqrsPremiumDatabase";
+            var connectionString = databaseSettings.BuildConnectionString();
+            var sqlAzureDatabaseProperties = new SqlAzureDatabaseProperties()
+            {
+                ServiceObjective = "P1",
+                Edition = "Premium",
+                MaxSizeInMegaBytes = 10 * 1024
+            };
+
+            using (var context = new MigrationsTestReadModels(connectionString, typeof(OrderTallyEntityModelConfiguration)))
+            {
+                new ReadModelDatabaseInitializer<MigrationsTestReadModels>()
+                    .WithSqlAzureDatabaseProperties(sqlAzureDatabaseProperties)
+                    .InitializeDatabase(context);
+
+                var sku = context.GetAzureDatabaseProperties();
+
+                sku.Edition.Should().Be("Premium");
+                sku.ServiceObjective.Should().Be("P1");
+            }
+        }
     }
 
     public class AzureSqlDatabaseSettings
