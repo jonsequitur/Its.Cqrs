@@ -94,12 +94,16 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 new ReadModelDatabaseInitializer<MigrationsTestReadModels>().InitializeDatabase(context);
 
                 var migrator = new AzureSqlDbMigrator(
-                    serviceObjective: "S0",
-                    edition: "standard",
-                    maxSize: "500 MB",
+                    serviceObjective: "P1",
+                    edition: "Premium",
+                    maxSize: "10GB",
                     migrationVersion: new Version("0.0.42.1"));
 
                 context.EnsureDatabaseIsUpToDate(migrator);
+                var sku = context.GetAzureDatabaseProperties();
+
+                sku.Edition.Should().Be("Premium");
+                sku.ServiceObjective.Should().Be("P1");
 
                 context.OpenConnection()
                        .GetLatestAppliedMigrationVersions()
