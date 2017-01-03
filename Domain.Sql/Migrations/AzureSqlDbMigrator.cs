@@ -17,54 +17,47 @@ namespace Microsoft.Its.Domain.Sql.Migrations
     /// </remarks>
     public class AzureSqlDbMigrator : IDbMigrator
     {
+        private readonly AzureSqlDatabaseServiceObjective azureSqlDatabaseServiceObjective;
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="AzureSqlDbMigrator" /> class.
         /// </summary>
-        /// <param name="serviceObjective">The service objective.</param>
-        /// <param name="edition">The edition.</param>
-        /// <param name="maxSize">The maximum size.</param>
+        /// <param name="azureSqlDatabaseServiceObjective"></param>
         /// <param name="migrationVersion">The migration version.</param>
         /// <exception cref="System.ArgumentNullException">
         /// </exception>
         public AzureSqlDbMigrator(
-            string serviceObjective,
-            string edition,
-            string maxSize,
+            AzureSqlDatabaseServiceObjective azureSqlDatabaseServiceObjective,
             Version migrationVersion)
         {
-            if (serviceObjective == null)
+            if (azureSqlDatabaseServiceObjective == null)
             {
-                throw new ArgumentNullException(nameof(serviceObjective));
-            }
-            if (maxSize == null)
-            {
-                throw new ArgumentNullException(nameof(maxSize));
+                throw new ArgumentNullException(nameof(azureSqlDatabaseServiceObjective));
             }
             if (migrationVersion == null)
             {
                 throw new ArgumentNullException(nameof(migrationVersion));
             }
 
-            ServiceObjective = serviceObjective;
-            Edition = edition;
-            MaxSize = maxSize;
+            this.azureSqlDatabaseServiceObjective = azureSqlDatabaseServiceObjective;
             MigrationVersion = migrationVersion;
         }
 
         /// <summary>
         ///     Gets the Azure SQL database edition.
         /// </summary>
-        public string Edition { get; }
+        public string Edition => azureSqlDatabaseServiceObjective.Edition;
 
         /// <summary>
         ///     Gets the maximum size for the database.
         /// </summary>
-        public string MaxSize { get; }
+        public long MaxSize => azureSqlDatabaseServiceObjective.MaxSizeInMegaBytes;
+
 
         /// <summary>
         ///     Gets the service objective for the database.
         /// </summary>
-        public string ServiceObjective { get; }
+        public string ServiceObjective => azureSqlDatabaseServiceObjective.ServiceObjective;
 
         /// <summary>
         ///     Gets the scope within of the migration.
@@ -102,7 +95,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
             var sql =
                 $@"
 alter database {context.Database.Connection.Database} 
-modify (MAXSIZE = {MaxSize},
+modify (MAXSIZE = {MaxSize}MB,
         EDITION = '{Edition}',
         SERVICE_OBJECTIVE = '{ServiceObjective}')";
 

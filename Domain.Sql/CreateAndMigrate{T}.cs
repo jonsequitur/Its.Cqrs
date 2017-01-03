@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Sql
     {
         private readonly IDbMigrator[] migrators;
         private static bool bypassInitialization;
-        private SqlAzureDatabaseProperties sqlAzureDatabaseProperties;
+        private AzureSqlDatabaseServiceObjective azureSqlDatabaseServiceObjective;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CreateAndMigrate{TContext}"/> class.
@@ -48,13 +48,13 @@ namespace Microsoft.Its.Domain.Sql
         /// <summary>
         /// Set Azure Databse SKU and Size
         /// </summary>
-        /// <param name="sqlAzureDatabaseProperties"></param>
+        /// <param name="azureSqlDatabaseServiceObjective"></param>
         /// <returns></returns>
-        public CreateAndMigrate<TContext> WithSqlAzureDatabaseProperties(SqlAzureDatabaseProperties sqlAzureDatabaseProperties)
+        public CreateAndMigrate<TContext> WithSqlAzureDatabaseProperties(AzureSqlDatabaseServiceObjective azureSqlDatabaseServiceObjective)
         {
-            if (sqlAzureDatabaseProperties == null)
-                throw new ArgumentNullException(nameof(sqlAzureDatabaseProperties));
-            this.sqlAzureDatabaseProperties = sqlAzureDatabaseProperties;
+            if (azureSqlDatabaseServiceObjective == null)
+                throw new ArgumentNullException(nameof(azureSqlDatabaseServiceObjective));
+            this.azureSqlDatabaseServiceObjective = azureSqlDatabaseServiceObjective;
             return this;
         }
 
@@ -134,7 +134,7 @@ namespace Microsoft.Its.Domain.Sql
                 if (context.IsAzureDatabase())
                 {
                     // create the database
-                    context.CreateAzureDatabase(sqlAzureDatabaseProperties, connectionString);
+                    context.CreateAzureDatabase(azureSqlDatabaseServiceObjective, connectionString);
 
                     // this triggers the initializer, which then throws because the schema hasn't been initialized, so we have to suspend initialization momentarily
                     bypassInitialization = true;

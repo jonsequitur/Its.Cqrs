@@ -74,7 +74,7 @@ namespace Microsoft.Its.Domain.Sql
         /// Creates an Azure database.
         /// </summary>
         /// <param name="context">The DbContext</param>
-        /// <param name="sqlAzureDatabaseProperties"></param>
+        /// <param name="azureSqlDatabaseServiceObjective"></param>
         /// <param name="connectionString">Optional connection string to use instead of taking it off of <paramref name="context"/></param>
         /// <exception cref="System.ArgumentException">Not Azure database based on ConnectionString</exception>
         /// <remarks>
@@ -85,7 +85,7 @@ namespace Microsoft.Its.Domain.Sql
         /// </remarks>
         internal static void CreateAzureDatabase(
             this DbContext context,
-            SqlAzureDatabaseProperties sqlAzureDatabaseProperties,
+            AzureSqlDatabaseServiceObjective azureSqlDatabaseServiceObjective,
             string connectionString = null)
         {
             if (!context.IsAzureDatabase())
@@ -97,20 +97,15 @@ namespace Microsoft.Its.Domain.Sql
             {
                 InitialCatalog = "master"
             };
-            if (sqlAzureDatabaseProperties == null)
+            if (azureSqlDatabaseServiceObjective == null)
             {
-                sqlAzureDatabaseProperties = new SqlAzureDatabaseProperties()
-                    {
-                        Edition = "Standard",
-                        ServiceObjective = "S0",
-                        MaxSizeInMegaBytes = 2 * 1024
-                    };
+                azureSqlDatabaseServiceObjective = new AzureSqlDatabaseServiceObjective("Standard","S0",2 * 1024);
             }
 
             var databaseName = context.Database.Connection.Database;
-            var dbCreationCmd = $"CREATE DATABASE [{databaseName}] (MAXSIZE={sqlAzureDatabaseProperties.MaxSizeInMegaBytes}MB," +
-                                $"EDITION='{sqlAzureDatabaseProperties.Edition}'," +
-                                $"SERVICE_OBJECTIVE='{sqlAzureDatabaseProperties.ServiceObjective}')";
+            var dbCreationCmd = $"CREATE DATABASE [{databaseName}] (MAXSIZE={azureSqlDatabaseServiceObjective.MaxSizeInMegaBytes}MB," +
+                                $"EDITION='{azureSqlDatabaseServiceObjective.Edition}'," +
+                                $"SERVICE_OBJECTIVE='{azureSqlDatabaseServiceObjective.ServiceObjective}')";
 
             // With Azure SQL db V12, database creation TSQL became a sync process. 
             // So we need a 10 minutes command timeout
