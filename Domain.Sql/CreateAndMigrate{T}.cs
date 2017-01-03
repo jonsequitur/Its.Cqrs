@@ -24,7 +24,7 @@ namespace Microsoft.Its.Domain.Sql
     {
         private readonly IDbMigrator[] migrators;
         private static bool bypassInitialization;
-        private SqlAzureDatabaseProperties _sqlAzureDatabaseProperties;
+        private SqlAzureDatabaseProperties sqlAzureDatabaseProperties;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CreateAndMigrate{TContext}"/> class.
@@ -52,7 +52,9 @@ namespace Microsoft.Its.Domain.Sql
         /// <returns></returns>
         public CreateAndMigrate<TContext> WithSqlAzureDatabaseProperties(SqlAzureDatabaseProperties sqlAzureDatabaseProperties)
         {
-            _sqlAzureDatabaseProperties = sqlAzureDatabaseProperties;
+            if (sqlAzureDatabaseProperties == null)
+                throw new ArgumentNullException(nameof(sqlAzureDatabaseProperties));
+            this.sqlAzureDatabaseProperties = sqlAzureDatabaseProperties;
             return this;
         }
 
@@ -132,7 +134,7 @@ namespace Microsoft.Its.Domain.Sql
                 if (context.IsAzureDatabase())
                 {
                     // create the database
-                    context.CreateAzureDatabase(_sqlAzureDatabaseProperties, connectionString);
+                    context.CreateAzureDatabase(sqlAzureDatabaseProperties, connectionString);
 
                     // this triggers the initializer, which then throws because the schema hasn't been initialized, so we have to suspend initialization momentarily
                     bypassInitialization = true;
