@@ -1,6 +1,7 @@
 using System;
 using System.Data.Entity;
 using System.Data.SqlClient;
+using System.Reactive.Disposables;
 using FluentAssertions;
 using Its.Configuration;
 using Microsoft.Its.Domain.Sql.Migrations;
@@ -94,7 +95,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                     migrationVersion: new Version("0.0.42.1"));
 
                 context.EnsureDatabaseIsUpToDate(migrator);
-                var sku = context.GetAzureDatabaseProperties();
+                var sku = context.GetAzureSqlDatabaseServiceObjective();
 
                 sku.Edition.Should().Be("Premium");
                 sku.ServiceObjective.Should().Be("P1");
@@ -116,19 +117,21 @@ namespace Microsoft.Its.Domain.Sql.Tests
             var sqlAzureDatabaseProperties = new AzureSqlDatabaseServiceObjective("Premium", "P1", 10 * 1024);
 
             using (var context = new MigrationsTestReadModels(connectionString, typeof(OrderTallyEntityModelConfiguration)))
+            using (Disposable.Create(() =>
+            {
+                // Drop the expensive database
+                context.Database.Connection.Close();
+                context.Database.Delete();
+            }))
             {
                 new ReadModelDatabaseInitializer<MigrationsTestReadModels>()
                     .WithSqlAzureDatabaseProperties(sqlAzureDatabaseProperties)
                     .InitializeDatabase(context);
 
-                var sku = context.GetAzureDatabaseProperties();
+                var sku = context.GetAzureSqlDatabaseServiceObjective();
 
                 sku.Edition.Should().Be("Premium");
                 sku.ServiceObjective.Should().Be("P1");
-
-                // Drop the expensive database
-                context.Database.Connection.Close();
-                context.Database.Delete();
             }
         }
     }

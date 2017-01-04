@@ -82,7 +82,7 @@ FROM sys.tables;";
             public long MaxSizeInMegaBytes { get; set; }
         }
 
-        internal static AzureSqlDatabaseServiceObjective GetAzureDatabaseProperties<TContext>(this TContext context)
+        internal static AzureSqlDatabaseServiceObjective GetAzureSqlDatabaseServiceObjective<TContext>(this TContext context)
         where TContext : DbContext
         {
 

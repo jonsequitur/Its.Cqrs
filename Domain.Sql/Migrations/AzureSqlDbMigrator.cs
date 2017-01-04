@@ -101,18 +101,18 @@ modify (MAXSIZE = {MaxSize}MB,
 
             context.Database.ExecuteSqlCommand(sql);
 
-            var sku = context.GetAzureDatabaseProperties();
+            var sku = context.GetAzureSqlDatabaseServiceObjective();
             var retryCount = 5;
             while (!string.Equals(sku.Edition, Edition, StringComparison.InvariantCultureIgnoreCase)
                    && !string.Equals(sku.Edition, Edition, StringComparison.InvariantCultureIgnoreCase)
                    && retryCount > 0)
             {
                 context.Database.Connection.Close();
-                Thread.Sleep(TimeSpan.FromSeconds(15));
+                Thread.Sleep(TimeSpan.FromSeconds(10));
                 try
                 {
                     context.OpenConnection();
-                    sku = context.GetAzureDatabaseProperties();
+                    sku = context.GetAzureSqlDatabaseServiceObjective();
                 }
                 catch (SqlException e)
                 {
