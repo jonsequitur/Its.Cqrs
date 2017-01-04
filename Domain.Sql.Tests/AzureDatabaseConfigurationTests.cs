@@ -1,6 +1,7 @@
 using System;
 using System.Data.Entity;
 using System.Data.SqlClient;
+using System.Reactive.Disposables;
 using FluentAssertions;
 using Its.Configuration;
 using Microsoft.Its.Domain.Sql.Migrations;
@@ -36,9 +37,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 new CreateAndMigrate<MigrationsTestReadModels>().InitializeDatabase(context);
 
                 var migrator = new AzureSqlDbMigrator(
-                    serviceObjective: "S0",
-                    edition: "standard",
-                    maxSize: "500 MB",
+                    new AzureSqlDatabaseServiceObjective("standard", "S0", 500),
                     migrationVersion: new Version("0.1.2.3"));
 
                 // act
@@ -67,9 +66,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 new EventStoreDatabaseInitializer<EventStoreDbContext>().InitializeDatabase(context);
 
                 var migrator = new AzureSqlDbMigrator(
-                    serviceObjective: "S0",
-                    edition: "standard",
-                    maxSize: "500 MB",
+                    new AzureSqlDatabaseServiceObjective("standard", "S0", 500),
                     migrationVersion: new Version("0.0.42.1"));
 
                 context.EnsureDatabaseIsUpToDate(migrator);
@@ -89,22 +86,52 @@ namespace Microsoft.Its.Domain.Sql.Tests
             databaseSettings.DatabaseName = "ItsCqrsMigrationsTestReadModels";
             var connectionString = databaseSettings.BuildConnectionString();
 
-            using (var context = new MigrationsTestReadModels(connectionString, typeof (OrderTallyEntityModelConfiguration)))
+            using (var context = new MigrationsTestReadModels(connectionString, typeof(OrderTallyEntityModelConfiguration)))
             {
                 new ReadModelDatabaseInitializer<MigrationsTestReadModels>().InitializeDatabase(context);
 
                 var migrator = new AzureSqlDbMigrator(
-                    serviceObjective: "S0",
-                    edition: "standard",
-                    maxSize: "500 MB",
+                    new AzureSqlDatabaseServiceObjective("Premium", "P1", 10 * 1024),
                     migrationVersion: new Version("0.0.42.1"));
 
                 context.EnsureDatabaseIsUpToDate(migrator);
+                var sku = context.GetAzureSqlDatabaseServiceObjective();
+
+                sku.Edition.Should().Be("Premium");
+                sku.ServiceObjective.Should().Be("P1");
 
                 context.OpenConnection()
                        .GetLatestAppliedMigrationVersions()
                        .Should()
                        .Contain(v => v.MigrationVersion.ToString() == "0.0.42.1");
+            }
+        }
+
+        [Test]
+        [Ignore("Integration tests"), NUnit.Framework.Category("Integration tests")]
+        public void AzureSqlDatabase_can_be_configured_during_creation()
+        {
+            var databaseSettings = Settings.Get<AzureSqlDatabaseSettings>();
+            databaseSettings.DatabaseName = "ItsCqrsPremiumDatabase";
+            var connectionString = databaseSettings.BuildConnectionString();
+            var sqlAzureDatabaseProperties = new AzureSqlDatabaseServiceObjective("Premium", "P1", 10 * 1024);
+
+            using (var context = new MigrationsTestReadModels(connectionString, typeof(OrderTallyEntityModelConfiguration)))
+            using (Disposable.Create(() =>
+            {
+                // Drop the expensive database
+                context.Database.Connection.Close();
+                context.Database.Delete();
+            }))
+            {
+                new ReadModelDatabaseInitializer<MigrationsTestReadModels>()
+                    .WithSqlAzureDatabaseProperties(sqlAzureDatabaseProperties)
+                    .InitializeDatabase(context);
+
+                var sku = context.GetAzureSqlDatabaseServiceObjective();
+
+                sku.Edition.Should().Be("Premium");
+                sku.ServiceObjective.Should().Be("P1");
             }
         }
     }

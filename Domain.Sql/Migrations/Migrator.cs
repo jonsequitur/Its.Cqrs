@@ -16,7 +16,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
     /// </summary>
     public static class Migrator
     {
-        private static readonly string bootstrapResourceName = $"{typeof (Migrator).Assembly.GetName().Name}.Migrations.DbContext-0_0_0_0.sql";
+        private static readonly string bootstrapResourceName = $"{typeof(Migrator).Assembly.GetName().Name}.Migrations.DbContext-0_0_0_0.sql";
 
         /// <summary>
         /// Creates database migrators from embedded resources found in the source assembly of <typeparamref name="TContext" />.
@@ -29,9 +29,9 @@ namespace Microsoft.Its.Domain.Sql.Migrations
                 typeof (TContext)
             };
 
-            var baseType = typeof (TContext).BaseType;
+            var baseType = typeof(TContext).BaseType;
 
-            while (baseType != typeof (DbContext) && baseType != null)
+            while (baseType != typeof(DbContext) && baseType != null)
             {
                 parentage.Add(baseType);
                 baseType = baseType.BaseType;
@@ -60,7 +60,7 @@ namespace Microsoft.Its.Domain.Sql.Migrations
         internal static bool CurrentUserHasWritePermissions<TContext>(this TContext context)
             where TContext : DbContext
         {
-            const string HasPermsSql = 
+            const string HasPermsSql =
 @"SELECT TOP(1) 
 HAS_PERMS_BY_NAME(
 QUOTENAME(DB_NAME()) + '.' + 
@@ -74,6 +74,25 @@ FROM sys.tables;";
             // if there are no records in the db, assume write permissions and let things fail later 
             return (result ?? 1) == 1;
         }
+
+        internal class AzureSqlDatabaseServiceObjectiveInternal
+        {
+            public string Edition { get; set; }
+            public string ServiceObjective { get; set; }
+            public long MaxSizeInMegaBytes { get; set; }
+        }
+
+        internal static AzureSqlDatabaseServiceObjective GetAzureSqlDatabaseServiceObjective<TContext>(this TContext context)
+        where TContext : DbContext
+        {
+
+            var sql = $"SELECT DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'EDITION') as Edition," +
+                      $"DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'ServiceObjective') as ServiceObjective," +
+                      $"convert(bigint,DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'MaxSizeInBytes')) / 1024 / 1024 as MaxSizeInMegaBytes";
+            var result = context.Database.SqlQuery<AzureSqlDatabaseServiceObjectiveInternal>(sql).Single();
+            return new AzureSqlDatabaseServiceObjective(result.Edition, result.ServiceObjective, result.MaxSizeInMegaBytes);
+        }
+
 
         /// <summary>
         /// Ensures that all of the provided migrations have been applied to the database.
@@ -151,7 +170,7 @@ WHERE rowNumber = 1")
                     .Select(x => new AppliedMigration
                     {
                         MigrationScope = x.MigrationScope,
-                        MigrationVersion = new Version ((string)x.MigrationVersion)
+                        MigrationVersion = new Version((string)x.MigrationVersion)
                     })
                     .ToArray();
             }

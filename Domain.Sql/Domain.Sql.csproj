@@ -96,6 +96,7 @@
     <Compile Include="CatchupEventFilter.cs" />
     <Compile Include="CommandScheduler\CommandSchedulerCleanupMigration.cs" />
     <Compile Include="CommandScheduler\CommandExecutionError.cs" />
+    <Compile Include="AzureSqlDatabaseServiceObjective.cs" />
     <Compile Include="SqlEventStoreETagChecker.cs" />
     <Compile Include="CommandScheduler\ETag.cs" />
     <Compile Include="CommandScheduler\ISchedulerClockRepository.cs" />

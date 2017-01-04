@@ -24,6 +24,7 @@ namespace Microsoft.Its.Domain.Sql
     {
         private readonly IDbMigrator[] migrators;
         private static bool bypassInitialization;
+        private AzureSqlDatabaseServiceObjective azureSqlDatabaseServiceObjective;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CreateAndMigrate{TContext}"/> class.
@@ -42,6 +43,19 @@ namespace Microsoft.Its.Domain.Sql
                                      .Concat(migrators)
                                      .OrEmpty()
                                      .ToArray();
+        }
+
+        /// <summary>
+        /// Set Azure Databse SKU and Size
+        /// </summary>
+        /// <param name="azureSqlDatabaseServiceObjective"></param>
+        /// <returns></returns>
+        public CreateAndMigrate<TContext> WithSqlAzureDatabaseProperties(AzureSqlDatabaseServiceObjective azureSqlDatabaseServiceObjective)
+        {
+            if (azureSqlDatabaseServiceObjective == null)
+                throw new ArgumentNullException(nameof(azureSqlDatabaseServiceObjective));
+            this.azureSqlDatabaseServiceObjective = azureSqlDatabaseServiceObjective;
+            return this;
         }
 
         /// <summary>
@@ -120,7 +134,7 @@ namespace Microsoft.Its.Domain.Sql
                 if (context.IsAzureDatabase())
                 {
                     // create the database
-                    context.CreateAzureDatabase(connectionString: connectionString);
+                    context.CreateAzureDatabase(azureSqlDatabaseServiceObjective, connectionString);
 
                     // this triggers the initializer, which then throws because the schema hasn't been initialized, so we have to suspend initialization momentarily
                     bypassInitialization = true;
