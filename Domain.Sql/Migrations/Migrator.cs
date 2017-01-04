@@ -75,7 +75,7 @@ FROM sys.tables;";
             return (result ?? 1) == 1;
         }
 
-        internal class SqlAzureDatabasePropertiesInt
+        internal class AzureSqlDatabaseServiceObjectiveInternal
         {
             public string Edition { get; set; }
             public string ServiceObjective { get; set; }
@@ -89,7 +89,7 @@ FROM sys.tables;";
             var sql = $"SELECT DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'EDITION') as Edition," +
                       $"DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'ServiceObjective') as ServiceObjective," +
                       $"convert(bigint,DATABASEPROPERTYEX('{context.Database.Connection.Database}', 'MaxSizeInBytes')) / 1024 / 1024 as MaxSizeInMegaBytes";
-            var result = context.Database.SqlQuery<SqlAzureDatabasePropertiesInt>(sql).Single();
+            var result = context.Database.SqlQuery<AzureSqlDatabaseServiceObjectiveInternal>(sql).Single();
             return new AzureSqlDatabaseServiceObjective(result.Edition, result.ServiceObjective, result.MaxSizeInMegaBytes);
         }
 
