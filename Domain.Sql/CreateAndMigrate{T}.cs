@@ -50,7 +50,7 @@ namespace Microsoft.Its.Domain.Sql
         /// </summary>
         /// <param name="azureSqlDatabaseServiceObjective"></param>
         /// <returns></returns>
-        public CreateAndMigrate<TContext> WithSqlAzureDatabaseProperties(AzureSqlDatabaseServiceObjective azureSqlDatabaseServiceObjective)
+        public CreateAndMigrate<TContext> WithAzureSqlDatabaseServiceObjective(AzureSqlDatabaseServiceObjective azureSqlDatabaseServiceObjective)
         {
             if (azureSqlDatabaseServiceObjective == null)
                 throw new ArgumentNullException(nameof(azureSqlDatabaseServiceObjective));
