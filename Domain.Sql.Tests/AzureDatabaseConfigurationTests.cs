@@ -125,7 +125,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
             }))
             {
                 new ReadModelDatabaseInitializer<MigrationsTestReadModels>()
-                    .WithSqlAzureDatabaseProperties(sqlAzureDatabaseProperties)
+                    .WithAzureSqlDatabaseServiceObjective(sqlAzureDatabaseProperties)
                     .InitializeDatabase(context);
 
                 var sku = context.GetAzureSqlDatabaseServiceObjective();
