@@ -32,12 +32,12 @@ namespace Test.Domain.Banking.Tests
         [Test]
         public void A_checking_account_with_a_positive_balance_cannot_be_closed()
         {
-            account.Apply(new DepositFunds
+            account.Apply(new CheckingAccount.DepositFunds
             {
                 Amount = Any.Decimal(20, 200)
             });
 
-            Action close = () => account.Apply(new CloseCheckingAccount());
+            Action close = () => account.Apply(new CheckingAccount.CloseCheckingAccount());
 
             close.ShouldThrow<CommandValidationException>()
                  .And
@@ -47,17 +47,17 @@ namespace Test.Domain.Banking.Tests
         [Test]
         public void A_checking_account_with_a_negative_balance_cannot_be_closed()
         {
-            account.Apply(new DepositFunds
+            account.Apply(new CheckingAccount.DepositFunds
             {
                 Amount = Any.Decimal(20, 200)
             });
 
-            account.Apply(new WithdrawFunds
+            account.Apply(new CheckingAccount.WithdrawFunds
             {
                 Amount = 1
             });
 
-            Action close = () => account.Apply(new CloseCheckingAccount());
+            Action close = () => account.Apply(new CheckingAccount.CloseCheckingAccount());
 
             close.ShouldThrow<CommandValidationException>()
                  .And

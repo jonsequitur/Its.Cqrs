@@ -38,7 +38,7 @@ namespace Test.Domain.Banking.Tests
         {
             var startingBalance = account.Balance;
             var withdrawalAmount = Any.Decimal(1, account.Balance);
-            account.Apply(new WithdrawFunds
+            account.Apply(new CheckingAccount.WithdrawFunds
             {
                 Amount = withdrawalAmount
             });
@@ -49,7 +49,7 @@ namespace Test.Domain.Banking.Tests
         [Test]
         public void A_withdrawal_cannot_be_made_for_a_negative_amount()
         {
-            Action withdraw = () => account.Apply(new WithdrawFunds
+            Action withdraw = () => account.Apply(new CheckingAccount.WithdrawFunds
             {
                 Amount = Any.Decimal(-2000, -1)
             });
@@ -63,13 +63,13 @@ namespace Test.Domain.Banking.Tests
         public void A_withdrawal_cannot_be_made_from_a_closed_account()
         {
             account
-                .Apply(new WithdrawFunds
+                .Apply(new CheckingAccount.WithdrawFunds
                 {
                     Amount = account.Balance
                 })
-                .Apply(new CloseCheckingAccount());
+                .Apply(new CheckingAccount.CloseCheckingAccount());
 
-            Action withdraw = () => account.Apply(new WithdrawFunds
+            Action withdraw = () => account.Apply(new CheckingAccount.WithdrawFunds
             {
                 Amount = Any.Decimal(1, 100)
             });

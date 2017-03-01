@@ -105,7 +105,6 @@
     <Compile Include="CommandAuthorizationException.cs" />
     <Compile Include="CommandContext.cs" />
     <Compile Include="CommandExtensions.cs" />
-    <Compile Include="CommandHandler.cs" />
     <Compile Include="CommandHandler{TTarget}.cs" />
     <Compile Include="CommandReference.cs" />
     <Compile Include="CommandSchedulerPipelineTraceInitializer.cs" />
