@@ -8,44 +8,43 @@ using Microsoft.Its.Domain;
 
 namespace Test.Domain.Banking
 {
-    public partial class CheckingAccount
+    public class WithdrawFunds : Command<CheckingAccount>
     {
-        public class WithdrawFunds : Command<CheckingAccount>
+        public decimal Amount { get; set; }
+
+        public override IValidationRule<CheckingAccount> Validator
         {
-            public decimal Amount { get; set; }
-
-            public override IValidationRule<CheckingAccount> Validator
+            get
             {
-                get
+                var accountIsNotClosed =
+                    Validate.That<CheckingAccount>(account => account.DateClosed == null)
+                        .WithErrorMessage("You cannot make a withdrawal from a closed account.");
+
+                var fundsAreAvailable = Validate.That<CheckingAccount>(account => account.Balance >= Amount)
+                    .WithErrorMessage("Insufficient funds.");
+
+                return new ValidationPlan<CheckingAccount>
                 {
-                    var accountIsNotClosed =
-                        Validate.That<CheckingAccount>(account => account.DateClosed == null)
-                            .WithErrorMessage("You cannot make a withdrawal from a closed account.");
-
-                    var fundsAreAvailable = Validate.That<CheckingAccount>(account => account.Balance >= Amount)
-                        .WithErrorMessage("Insufficient funds.");
-
-                    return new ValidationPlan<CheckingAccount>
-                    {
-                        accountIsNotClosed,
-                        fundsAreAvailable.When(accountIsNotClosed)
-                    };
-                }
-            }
-
-            public override IValidationRule CommandValidator
-            {
-                get
-                {
-                    return Validate.That<WithdrawFunds>(cmd => cmd.Amount > 0)
-                        .WithErrorMessage("You cannot make a withdrawal for a negative amount.");
-                }
+                    accountIsNotClosed,
+                    fundsAreAvailable.When(accountIsNotClosed)
+                };
             }
         }
 
+        public override IValidationRule CommandValidator
+        {
+            get
+            {
+                return Validate.That<WithdrawFunds>(cmd => cmd.Amount > 0)
+                    .WithErrorMessage("You cannot make a withdrawal for a negative amount.");
+            }
+        }
+    }
+
+    public partial class CheckingAccount
+    {
         public class WithdrawFundsCommandHandler : ICommandHandler<CheckingAccount, WithdrawFunds>
         {
-
             public Task EnactCommand(CheckingAccount target, WithdrawFunds command)
             {
                 target.RecordEvent(new FundsWithdrawn
@@ -54,12 +53,10 @@ namespace Test.Domain.Banking
                 });
 
                 if (target.IsOverdrawn)
-                {
                     target.RecordEvent(new Overdrawn
                     {
                         Balance = target.Balance
                     });
-                }
                 return Task.FromResult(true);
             }
 

@@ -8,26 +8,25 @@ using Microsoft.Its.Domain;
 
 namespace Test.Domain.Banking
 {
-    public partial class CheckingAccount
+    public class CloseCheckingAccount : Command<CheckingAccount>
     {
-        public class CloseCheckingAccount : Command<CheckingAccount>
+        public override IValidationRule<CheckingAccount> Validator
         {
-            public override IValidationRule<CheckingAccount> Validator
+            get
             {
-                get
-                {
-                    return Validate.That<CheckingAccount>(account => account.Balance == 0)
-                        .WithErrorMessage("The account cannot be closed until it has a zero balance.");
-                }
+                return Validate.That<CheckingAccount>(account => account.Balance == 0)
+                    .WithErrorMessage("The account cannot be closed until it has a zero balance.");
             }
         }
+    }
 
+    public partial class CheckingAccount
+    {
         public class CloseCheckingAccountCommandHandler : ICommandHandler<CheckingAccount, CloseCheckingAccount>
         {
-
             public Task EnactCommand(CheckingAccount target, CloseCheckingAccount command)
             {
-                target.RecordEvent(new CheckingAccount.Closed());
+                target.RecordEvent(new Closed());
                 return Task.FromResult(true);
             }
 

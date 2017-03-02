@@ -13,8 +13,6 @@ namespace Test.Domain.Banking.Tests
     [TestFixture]
     public class WithdrawalTests
     {
-        private CheckingAccount account;
-
         [SetUp]
         public void SetUp()
         {
@@ -29,8 +27,43 @@ namespace Test.Domain.Banking.Tests
                     Amount = Any.PositiveInt(100)
                 }
             });
-            
+
             Authorization.AuthorizeAllCommands();
+        }
+
+        private CheckingAccount account;
+
+        [Test]
+        public void A_withdrawal_cannot_be_made_for_a_negative_amount()
+        {
+            Action withdraw = () => account.Apply(new WithdrawFunds
+            {
+                Amount = Any.Decimal(-2000, -1)
+            });
+
+            withdraw.ShouldThrow<CommandValidationException>()
+                .And
+                .Message.Should().Contain("You cannot make a withdrawal for a negative amount.");
+        }
+
+        [Test]
+        public void A_withdrawal_cannot_be_made_from_a_closed_account()
+        {
+            account
+                .Apply(new WithdrawFunds
+                {
+                    Amount = account.Balance
+                })
+                .Apply(new CloseCheckingAccount());
+
+            Action withdraw = () => account.Apply(new WithdrawFunds
+            {
+                Amount = Any.Decimal(1, 100)
+            });
+
+            withdraw.ShouldThrow<CommandValidationException>()
+                .And
+                .Message.Should().Contain("You cannot make a withdrawal from a closed account.");
         }
 
         [Test]
@@ -38,45 +71,12 @@ namespace Test.Domain.Banking.Tests
         {
             var startingBalance = account.Balance;
             var withdrawalAmount = Any.Decimal(1, account.Balance);
-            account.Apply(new CheckingAccount.WithdrawFunds
+            account.Apply(new WithdrawFunds
             {
                 Amount = withdrawalAmount
             });
 
             account.Balance.Should().Be(startingBalance - withdrawalAmount);
-        }
-
-        [Test]
-        public void A_withdrawal_cannot_be_made_for_a_negative_amount()
-        {
-            Action withdraw = () => account.Apply(new CheckingAccount.WithdrawFunds
-            {
-                Amount = Any.Decimal(-2000, -1)
-            });
-
-            withdraw.ShouldThrow<CommandValidationException>()
-                    .And
-                    .Message.Should().Contain("You cannot make a withdrawal for a negative amount.");
-        }
-
-        [Test]
-        public void A_withdrawal_cannot_be_made_from_a_closed_account()
-        {
-            account
-                .Apply(new CheckingAccount.WithdrawFunds
-                {
-                    Amount = account.Balance
-                })
-                .Apply(new CheckingAccount.CloseCheckingAccount());
-
-            Action withdraw = () => account.Apply(new CheckingAccount.WithdrawFunds
-            {
-                Amount = Any.Decimal(1, 100)
-            });
-
-            withdraw.ShouldThrow<CommandValidationException>()
-                    .And
-                    .Message.Should().Contain("You cannot make a withdrawal from a closed account.");
         }
     }
 }

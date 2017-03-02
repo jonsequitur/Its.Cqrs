@@ -38,7 +38,7 @@ namespace Test.Domain.Banking.Tests
         {
             var startingBalance = account.Balance;
             var depositAmount = Any.Decimal(1, 2000);
-            account.Apply(new CheckingAccount.DepositFunds
+            account.Apply(new DepositFunds
             {
                 Amount = depositAmount
             });
@@ -49,7 +49,7 @@ namespace Test.Domain.Banking.Tests
         [Test]
         public void A_deposit_cannot_be_made_for_a_negative_amount()
         {
-            Action makeDeposit = () => account.Apply(new CheckingAccount.DepositFunds
+            Action makeDeposit = () => account.Apply(new DepositFunds
             {
                 Amount = Any.Decimal(-2000, -1)
             });
@@ -63,13 +63,13 @@ namespace Test.Domain.Banking.Tests
         public void A_deposit_cannot_be_made_for_a_closed_account()
         {
             account
-                .Apply(new CheckingAccount.WithdrawFunds
+                .Apply(new WithdrawFunds
                 {
                     Amount = account.Balance
                 })
-                .Apply(new CheckingAccount.CloseCheckingAccount());
+                .Apply(new CloseCheckingAccount());
 
-            Action deposit = () => account.Apply(new CheckingAccount.DepositFunds
+            Action deposit = () => account.Apply(new DepositFunds
             {
                 Amount = Any.Decimal(1, 100)
             });
