@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Threading.Tasks;
 using Its.Validation;
 using Its.Validation.Configuration;
 using Microsoft.Its.Domain;
@@ -17,10 +18,10 @@ namespace Test.Domain.Banking
             {
                 var accountIsNotClosed =
                     Validate.That<CheckingAccount>(account => account.DateClosed == null)
-                            .WithErrorMessage("You cannot make a withdrawal from a closed account.");
+                        .WithErrorMessage("You cannot make a withdrawal from a closed account.");
 
                 var fundsAreAvailable = Validate.That<CheckingAccount>(account => account.Balance >= Amount)
-                                                .WithErrorMessage("Insufficient funds.");
+                    .WithErrorMessage("Insufficient funds.");
 
                 return new ValidationPlan<CheckingAccount>
                 {
@@ -35,7 +36,33 @@ namespace Test.Domain.Banking
             get
             {
                 return Validate.That<WithdrawFunds>(cmd => cmd.Amount > 0)
-                               .WithErrorMessage("You cannot make a withdrawal for a negative amount.");
+                    .WithErrorMessage("You cannot make a withdrawal for a negative amount.");
+            }
+        }
+    }
+
+    public partial class CheckingAccount
+    {
+        public class WithdrawFundsCommandHandler : ICommandHandler<CheckingAccount, WithdrawFunds>
+        {
+            public Task EnactCommand(CheckingAccount target, WithdrawFunds command)
+            {
+                target.RecordEvent(new FundsWithdrawn
+                {
+                    Amount = command.Amount
+                });
+
+                if (target.IsOverdrawn)
+                    target.RecordEvent(new Overdrawn
+                    {
+                        Balance = target.Balance
+                    });
+                return Task.FromResult(true);
+            }
+
+            public Task HandleScheduledCommandException(CheckingAccount target, CommandFailed<WithdrawFunds> command)
+            {
+                return Task.FromResult(true);
             }
         }
     }
