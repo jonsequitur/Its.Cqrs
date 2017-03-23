@@ -13,8 +13,6 @@ namespace Test.Domain.Banking.Tests
     [TestFixture]
     public class WithdrawalTests
     {
-        private CheckingAccount account;
-
         [SetUp]
         public void SetUp()
         {
@@ -29,22 +27,11 @@ namespace Test.Domain.Banking.Tests
                     Amount = Any.PositiveInt(100)
                 }
             });
-            
+
             Authorization.AuthorizeAllCommands();
         }
 
-        [Test]
-        public void When_a_withdrawal_is_made_then_the_balance_reflects_it()
-        {
-            var startingBalance = account.Balance;
-            var withdrawalAmount = Any.Decimal(1, account.Balance);
-            account.Apply(new WithdrawFunds
-            {
-                Amount = withdrawalAmount
-            });
-
-            account.Balance.Should().Be(startingBalance - withdrawalAmount);
-        }
+        private CheckingAccount account;
 
         [Test]
         public void A_withdrawal_cannot_be_made_for_a_negative_amount()
@@ -55,8 +42,8 @@ namespace Test.Domain.Banking.Tests
             });
 
             withdraw.ShouldThrow<CommandValidationException>()
-                    .And
-                    .Message.Should().Contain("You cannot make a withdrawal for a negative amount.");
+                .And
+                .Message.Should().Contain("You cannot make a withdrawal for a negative amount.");
         }
 
         [Test]
@@ -75,8 +62,21 @@ namespace Test.Domain.Banking.Tests
             });
 
             withdraw.ShouldThrow<CommandValidationException>()
-                    .And
-                    .Message.Should().Contain("You cannot make a withdrawal from a closed account.");
+                .And
+                .Message.Should().Contain("You cannot make a withdrawal from a closed account.");
+        }
+
+        [Test]
+        public void When_a_withdrawal_is_made_then_the_balance_reflects_it()
+        {
+            var startingBalance = account.Balance;
+            var withdrawalAmount = Any.Decimal(1, account.Balance);
+            account.Apply(new WithdrawFunds
+            {
+                Amount = withdrawalAmount
+            });
+
+            account.Balance.Should().Be(startingBalance - withdrawalAmount);
         }
     }
 }

@@ -51,7 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CheckingAccount\CheckingAccount.cs" />
-    <Compile Include="CheckingAccount\CheckingAccount.EnactCommands.cs" />
     <Compile Include="CheckingAccount\Commands\CloseCheckingAccount.cs" />
     <Compile Include="CheckingAccount\Commands\DepositFunds.cs" />
     <Compile Include="CheckingAccount\Events\CheckingAccount.Closed.cs" />
