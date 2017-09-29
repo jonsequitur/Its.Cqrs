@@ -53,7 +53,15 @@ namespace Microsoft.Its.Domain.Sql
                         .Where(e => e.Id >= startAtId)
                         .OrderBy(e => e.Id);
 
-                TotalMatchedEventCount = eventQuery.Count();
+                try
+                {
+                    TotalMatchedEventCount = eventQuery.Count();
+                }
+                catch
+                {
+                    System.Diagnostics.Trace.WriteLine("Failed :eventQuery.Count() \n" + eventQuery.ToString());
+                    throw;
+                }
                 BatchMatchedEventCount = Math.Min(BatchSize, TotalMatchedEventCount);
 
                 eventQuery = eventQuery.Take(batchSize);
