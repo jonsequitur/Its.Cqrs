@@ -16,7 +16,7 @@ namespace Microsoft.Its.Domain.Sql
         private static readonly Lazy<JsonSerializerSettings> serializerSettings = new Lazy<JsonSerializerSettings>(() =>
         {
             var settings = Serializer.CloneSettings();
-            settings.ContractResolver = new EventContractResolver();
+            settings.ContractResolver = Serializer.AreDefaultSerializerSettingsConfigured ? new EventContractResolver() : settings.ContractResolver;
             return settings;
         });
 
