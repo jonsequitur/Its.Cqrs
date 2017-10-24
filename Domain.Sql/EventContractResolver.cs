@@ -14,6 +14,7 @@ namespace Microsoft.Its.Domain.Sql
     [DebuggerStepThrough]
     public class EventContractResolver : DefaultContractResolver
     {
+        /// <inheritdoc />
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {
             var property = base.CreateProperty(member, memberSerialization);
