@@ -40,10 +40,5 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
         public static ReadModelDbContext ReadModelDbContext() =>
             new ReadModelDbContext(ReadModels.ConnectionString);
-
-        public static long HighestEventId(this EventStoreDbContext db)
-        {
-            return db.Events.Max<StorableEvent, long?>(e => e.Id) ?? 0;
-        }
     }
 }

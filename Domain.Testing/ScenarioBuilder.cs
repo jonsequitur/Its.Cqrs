@@ -98,7 +98,7 @@ namespace Microsoft.Its.Domain.Testing
             {
                 // capture the highest event id from the event store before the scenario adds new ones
                 startCatchupAtEventId = configuration.EventStoreDbContext()
-                                                     .DisposeAfter(db => db.Events.Max<StorableEvent, long?>(e => e.Id) ?? 0) + 1;
+                                                     .DisposeAfter(db => db.HighestEventId()) + 1;
             }
 
             SourceAggregatesFromInitialEvents();

@@ -62,7 +62,7 @@ namespace Microsoft.Its.Domain.Sql
                     {
                         using (var eventStore = Task.Run(readModelCatchup.CreateOpenEventStoreDbContext).Result)
                         {
-                            if (eventStore.Events.Max(e => e.Id) > status.CurrentEventId)
+                            if (eventStore.HighestEventId() > status.CurrentEventId)
                             {
                                 return true;
                             }

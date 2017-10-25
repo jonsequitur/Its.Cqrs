@@ -527,7 +527,7 @@ namespace Microsoft.Its.Domain.Sql
             using (var eventStore = createEventStoreDbContext())
             {
                 eventStoreTotalCount = eventStore.Events.Where(matchEvents, filter).Count();
-                initialCatchupIsDoneAfterEventId = eventStore.Events.Max(e => e.Id);
+                initialCatchupIsDoneAfterEventId = eventStore.HighestEventId();
             }
         }
 
