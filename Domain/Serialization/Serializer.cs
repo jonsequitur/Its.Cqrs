@@ -47,6 +47,8 @@ namespace Microsoft.Its.Domain.Serialization
         
         private static JsonSerializerSettings settings;
 
+        internal static bool AreDefaultSerializerSettingsConfigured;
+
         /// <summary>
         /// Gets or sets the default settings for the JSON serializer.
         /// </summary>
@@ -65,6 +67,7 @@ namespace Microsoft.Its.Domain.Serialization
                 }
 
                 settings = value;
+                AreDefaultSerializerSettingsConfigured = false;
             }
         }
 
@@ -90,6 +93,8 @@ namespace Microsoft.Its.Domain.Serialization
 
             Settings.Converters.Add(new OptionalConverter());
             Settings.Converters.Add(new UriConverter());
+
+            AreDefaultSerializerSettingsConfigured = true;
         }
 
         /// <summary>
