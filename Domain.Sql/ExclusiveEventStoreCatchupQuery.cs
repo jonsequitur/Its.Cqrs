@@ -52,20 +52,15 @@ namespace Microsoft.Its.Domain.Sql
                     applyFilter(dbContext.Events.AsNoTracking())
                         .Where(e => e.Id >= startAtId)
                         .OrderBy(e => e.Id);
-                var oldCommandTimeout = dbContext.Database.CommandTimeout;
+
                 try
                 {
-                    dbContext.Database.CommandTimeout = TimeSpan.FromMinutes(10).Seconds;
                     TotalMatchedEventCount = eventQuery.Count();
                 }
                 catch
                 {
                     System.Diagnostics.Trace.WriteLine("Failed :eventQuery.Count() \n" + eventQuery.ToString());
                     throw;
-                }
-                finally
-                {
-                    dbContext.Database.CommandTimeout = oldCommandTimeout;
                 }
                 BatchMatchedEventCount = Math.Min(BatchSize, TotalMatchedEventCount);
 
