@@ -626,12 +626,17 @@ namespace Microsoft.Its.Domain.Sql.Tests
                 return Configuration.Current.EventStoreDbContext();
             };
 
-            using (CreateReadModelCatchup<ReadModels1DbContext>(
-                    eventStoreDbContext: getDbContext,
-                    projectors: Projector.Create<Order.CreditCardCharged>(e => eventsReceived++).Named(Any.CamelCaseName()))
-                .PollEventStore(300.Milliseconds()))
+            var catchup = CreateReadModelCatchup<ReadModels1DbContext>(
+                eventStoreDbContext: getDbContext,
+                projectors: Projector.Create<Order.CreditCardCharged>(e => eventsReceived++).Named(Any.CamelCaseName()));
+
+            var received15 = catchup.Progress
+                .Where(p => p.IsEndOfBatch)
+                .FirstOrDefaultAsync();
+
+            using (catchup.PollEventStore(300.Milliseconds()))
             {
-                await Task.Delay(1.Seconds());
+                await received15.Timeout(3.Seconds());
 
                 eventsReceived.Should().Be(15);
             }
