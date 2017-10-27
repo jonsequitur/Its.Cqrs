@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved. 
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
@@ -25,24 +25,33 @@ namespace Microsoft.Its.Domain.Serialization
         /// </returns>
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {
-            JsonProperty property = base.CreateProperty(member, memberSerialization);
+            var property = base.CreateProperty(member, memberSerialization);
 
-            if (typeof (IOptional).IsAssignableFrom(property.PropertyType))
+            ApplyRulesToProperty(property);
+
+            return property;
+        }
+
+        /// <summary>
+        /// Applies rules for serializing optional values to the specified property.
+        /// </summary>
+        /// <param name="property">The property to apply rules to.</param>
+        public static void ApplyRulesToProperty(JsonProperty property)
+        {
+            if (typeof(IOptional).IsAssignableFrom(property.PropertyType))
             {
                 property.NullValueHandling = NullValueHandling.Include;
 
                 property.ShouldSerialize = obj =>
                 {
-                    var optional = (IOptional) property.ValueProvider.GetValue(obj);
+                    var optional = (IOptional)property.ValueProvider.GetValue(obj);
                     return optional.IsSet;
                 };
             }
-            else if (typeof (IPrincipal).IsAssignableFrom(property.PropertyType))
+            else if (typeof(IPrincipal).IsAssignableFrom(property.PropertyType))
             {
                 property.Ignored = true;
             }
-
-            return property;
         }
     }
 }
