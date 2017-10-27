@@ -114,7 +114,7 @@ namespace Microsoft.Its.Domain.Sql.Tests
 
                 eventStore.SaveChanges();
 
-                return eventStore.Events.Max(e => e.Id);
+                return eventStore.HighestEventId();
             }
         }
 
