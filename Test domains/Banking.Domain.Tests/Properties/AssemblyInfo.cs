@@ -3,7 +3,6 @@
 
 using System.Reflection;
 using System.Runtime.InteropServices;
-using NUnit.Framework;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
@@ -21,4 +20,3 @@ using NUnit.Framework;
 // to COM components.  If you need to access a type in this assembly from
 // COM, set the ComVisible attribute to true on that type.
 [assembly: ComVisible(false)]
-[assembly: LevelOfParallelism(1)]
