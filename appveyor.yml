@@ -1,4 +1,4 @@
-image: Previous Visual Studio 2015
+image: Visual Studio 2015
 
 install:
   - nuget-restore.cmd
@@ -10,7 +10,5 @@ build:
   project: Its.Cqrs.sln
   publish_nuget: true
 
-test:
-  assemblies:
-    - '**\*Tests.dll'
-
+test_script:
+- ps: nunit3-console (ls . -filter '*.Tests.dll' -r | ?{$_.FullName.Contains('bin\Release\')}  | sort-object -Unique -Property Name | % FullName) --agents=1 --result=myresults.xml`;format=AppVeyor
