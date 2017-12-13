@@ -23,19 +23,30 @@ namespace Microsoft.Its.Domain.Sql
 
         private readonly Func<EventStoreDbContext> createEventStoreContext;
 
+        private readonly CustomSerialize serializationFunc;
+
+        private readonly CustomDeserialize deserializationFunc;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlEventSourcedRepository{TAggregate}" /> class.
         /// </summary>
         /// <param name="bus">The bus.</param>
         /// <param name="createEventStoreDbContext">The create event store database context.</param>
+        /// <param name="serializationFunc">The func to use when serializing events.</param>
+        /// <param name="deserializationFunc">The func to use when deserializing events.</param>
         public SqlEventSourcedRepository(
             IEventBus bus = null,
-            Func<EventStoreDbContext> createEventStoreDbContext = null)
+            Func<EventStoreDbContext> createEventStoreDbContext = null,
+            CustomSerialize serializationFunc = null,
+            CustomDeserialize deserializationFunc = null)
         {
             this.bus = bus ?? Configuration.Current.EventBus;
 
             createEventStoreContext = createEventStoreDbContext ??
                                       (() => Configuration.Current.EventStoreDbContext());
+
+            this.serializationFunc = serializationFunc;
+            this.deserializationFunc = deserializationFunc;
         }
 
         private async Task<TAggregate> Get(Guid id, long? version = null, DateTimeOffset? asOfDate = null)
@@ -75,7 +86,7 @@ namespace Microsoft.Its.Domain.Sql
                 var domainEvents = (await events
                                                   .AsNoTracking()
                                                   .ToListAsync())
-                    .Select(e => e.ToDomainEvent())
+                    .Select(e => e.ToDomainEvent(deserializationFunc))
                                                   .ToList();
 
                 if (snapshot != null)
@@ -144,7 +155,7 @@ namespace Microsoft.Its.Domain.Sql
 
             var storableEvents = events.OfType<IEvent<TAggregate>>().Select(e =>
             {
-                var storableEvent = e.ToStorableEvent();
+                var storableEvent = e.ToStorableEvent(serializationFunc);
                 storableEvent.StreamName = AggregateType<TAggregate>.EventStreamName;
                 return storableEvent;
             }).ToArray();

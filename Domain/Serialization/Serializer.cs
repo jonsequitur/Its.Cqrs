@@ -150,6 +150,7 @@ namespace Microsoft.Its.Domain.Serialization
         /// <param name="body">The body of the event.</param>
         /// <param name="uniqueEventId">The unique event identifier.</param>
         /// <param name="serializerSettings">The serializer settings used when deserializing the event body.</param>
+        /// <param name="deserializationFunc">Optional func to deserialize the event.</param>
         /// <param name="etag">The ETag of the event.</param>
         /// <returns></returns>
         public static IEvent DeserializeEvent(
@@ -161,6 +162,7 @@ namespace Microsoft.Its.Domain.Serialization
             string body,
             dynamic uniqueEventId = null,
             JsonSerializerSettings serializerSettings = null,
+            CustomDeserialize deserializationFunc = null,
             string etag = null)
         {
             var deserializerKey = aggregateName + ":" + eventName;
@@ -168,8 +170,8 @@ namespace Microsoft.Its.Domain.Serialization
             serializerSettings = serializerSettings ?? Settings;
 
             var deserializer = deserializers.GetOrAdd(
-                deserializerKey, 
-                _ => GetDeserializer(aggregateName, eventName, serializerSettings));
+                deserializerKey,
+                _ => GetDeserializer(aggregateName, eventName, serializerSettings, deserializationFunc));
 
             var @event =
                 deserializer(
@@ -196,7 +198,8 @@ namespace Microsoft.Its.Domain.Serialization
         private static Func<StoredEvent, IEvent> GetDeserializer(
             string aggregateName,
             string eventName,
-            JsonSerializerSettings serializerSettings)
+            JsonSerializerSettings serializerSettings,
+            CustomDeserialize deserializationFunc = null)
         {
             var aggregateType = FindAggregateType(aggregateName);
 
@@ -211,7 +214,7 @@ namespace Microsoft.Its.Domain.Serialization
             if (aggregateType == null &&
                 eventType == null)
             {
-                return DeserializeAsDynamicEvent(serializerSettings);
+                return DeserializeAsDynamicEvent(serializerSettings, deserializationFunc);
             }
 
             if (eventType == null)
@@ -219,6 +222,7 @@ namespace Microsoft.Its.Domain.Serialization
                 // even if the domain no longer cares about some old event type, anonymous events are returned as placeholders in the EventSequence
                 return DeserializeAsAnonymousEvent(
                     serializerSettings,
+                    deserializationFunc,
                     aggregateType);
             }
 
@@ -232,11 +236,12 @@ namespace Microsoft.Its.Domain.Serialization
                 {
                     return DeserializeAsAnonymousEvent(
                         serializerSettings,
+                        deserializationFunc,
                         aggregateType);
                 }
             }
 
-            return DeserializeAsEventType(serializerSettings, eventType);
+            return DeserializeAsEventType(serializerSettings, deserializationFunc, eventType);
         }
 
         private static Type FindAggregateType(string aggregateName)
@@ -287,16 +292,16 @@ namespace Microsoft.Its.Domain.Serialization
 
         private static Func<StoredEvent, IEvent> DeserializeAsEventType(
             JsonSerializerSettings serializerSettings,
+            CustomDeserialize deserializationFunc,
             Type eventType)
         {
             if (typeof (Event).IsAssignableFrom(eventType))
             {
                 return e =>
                 {
-                    var deserialized = (Event) JsonConvert.DeserializeObject(
-                        e.Body,
-                        eventType,
-                        serializerSettings);
+                    var deserialized = deserializationFunc == null
+                        ? (Event) JsonConvert.DeserializeObject(e.Body, eventType, serializerSettings)
+                        : (Event) deserializationFunc(e.Body, eventType);
 
                     deserialized.AggregateId = e.AggregateId;
                     deserialized.SequenceNumber = e.SequenceNumber;
@@ -309,10 +314,9 @@ namespace Microsoft.Its.Domain.Serialization
 
             return e =>
             {
-                var deserialized = (IEvent) JsonConvert.DeserializeObject(
-                    e.Body, 
-                    eventType, 
-                    serializerSettings);
+                var deserialized = deserializationFunc == null
+                    ? (IEvent)JsonConvert.DeserializeObject(e.Body, eventType, serializerSettings)
+                    : (IEvent)deserializationFunc(e.Body, eventType);
 
                 JsonConvert.PopulateObject(e.ToJson(), deserialized);
 
@@ -321,11 +325,12 @@ namespace Microsoft.Its.Domain.Serialization
         }
 
         private static Func<StoredEvent, IEvent> DeserializeAsDynamicEvent(
-            JsonSerializerSettings serializerSettings)
+            JsonSerializerSettings serializerSettings,
+            CustomDeserialize deserializationFunc = null)
         {
             return e =>
             {
-                dynamic deserializeObject = JsonConvert.DeserializeObject(e.Body, serializerSettings);
+                dynamic deserializeObject = deserializationFunc == null ? JsonConvert.DeserializeObject(e.Body, serializerSettings) : deserializationFunc(e.Body);
                 var dynamicEvent = new DynamicEvent(deserializeObject)
                 {
                     EventStreamName = e.StreamName,
@@ -341,12 +346,17 @@ namespace Microsoft.Its.Domain.Serialization
         }
 
         private static Func<StoredEvent, IEvent> DeserializeAsAnonymousEvent(
-            JsonSerializerSettings serializerSettings, 
+            JsonSerializerSettings serializerSettings,
+            CustomDeserialize deserializationFunc,
             Type aggregateType)
         {
             return e =>
-                {
-                    var anonymousEvent = (Event) JsonConvert.DeserializeObject(e.Body, typeof (AnonymousEvent<>).MakeGenericType(aggregateType), serializerSettings);
+            {
+                var anonymousEventType = typeof(AnonymousEvent<>).MakeGenericType(aggregateType);
+
+                    var anonymousEvent = deserializationFunc == null
+                        ? (Event) JsonConvert.DeserializeObject(e.Body, anonymousEventType, serializerSettings)
+                        : (Event) deserializationFunc(e.Body, anonymousEventType);
                     anonymousEvent.AggregateId = e.AggregateId;
                     anonymousEvent.SequenceNumber = e.SequenceNumber;
                     anonymousEvent.Timestamp = e.Timestamp;

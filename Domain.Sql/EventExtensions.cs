@@ -24,7 +24,8 @@ namespace Microsoft.Its.Domain.Sql
         /// Creates a <see cref="StorableEvent" /> based on the specified domain event.
         /// </summary>
         /// <param name="domainEvent">The domain event.</param>
-        public static StorableEvent ToStorableEvent(this IEvent domainEvent)
+        /// <param name="serializationFunc">Optional func to call to serialize the domain event.</param>
+        public static StorableEvent ToStorableEvent(this IEvent domainEvent, CustomSerialize serializationFunc = null)
         {
             if (domainEvent == null)
             {
@@ -44,7 +45,7 @@ namespace Microsoft.Its.Domain.Sql
                 SequenceNumber = domainEvent.SequenceNumber,
                 AggregateId = domainEvent.AggregateId,
                 Type = domainEvent.EventName(),
-                Body = JsonConvert.SerializeObject(domainEvent, Formatting.None, serializerSettings.Value),
+                Body = serializationFunc == null ? JsonConvert.SerializeObject(domainEvent, Formatting.None, serializerSettings.Value) : serializationFunc(domainEvent),
                 Timestamp = domainEvent.Timestamp,
                 ETag = domainEvent.ETag,
                 Id = domainEvent.AbsoluteSequenceNumber()
@@ -55,7 +56,8 @@ namespace Microsoft.Its.Domain.Sql
         /// Creates a <see cref="StorableEvent" /> based on the specified domain event.
         /// </summary>
         /// <param name="domainEvent">The domain event.</param>
-        internal static StorableEvent ToStorableEvent<TAggregate>(this IEvent<TAggregate> domainEvent)
+        /// <param name="serializationFunc">Optional func to call to serialize the domain event.</param>
+        internal static StorableEvent ToStorableEvent<TAggregate>(this IEvent<TAggregate> domainEvent, CustomSerialize serializationFunc = null)
             where TAggregate : IEventSourced =>
                 new StorableEvent
                 {
@@ -64,7 +66,7 @@ namespace Microsoft.Its.Domain.Sql
                     SequenceNumber = domainEvent.SequenceNumber,
                     AggregateId = domainEvent.AggregateId,
                     Type = domainEvent.EventName(),
-                    Body = JsonConvert.SerializeObject(domainEvent, Formatting.None, serializerSettings.Value),
+                    Body = serializationFunc == null ? JsonConvert.SerializeObject(domainEvent, Formatting.None, serializerSettings.Value) : serializationFunc(domainEvent),
                     Timestamp = domainEvent.Timestamp,
                     ETag = domainEvent.ETag
                 };
@@ -73,8 +75,9 @@ namespace Microsoft.Its.Domain.Sql
         /// Creates a domain event from a <see cref="StorableEvent" />.
         /// </summary>
         /// <param name="storableEvent">The storable event.</param>
+        /// <param name="deserializationFunc">Optional func to call to deserialize the storable event.</param>
         /// <returns>A deserialized domain event.</returns>
-        public static IEvent ToDomainEvent(this StorableEvent storableEvent) =>
+        public static IEvent ToDomainEvent(this StorableEvent storableEvent, CustomDeserialize deserializationFunc = null) =>
             Serializer.DeserializeEvent(
                 storableEvent.StreamName,
                 storableEvent.Type,
@@ -84,6 +87,7 @@ namespace Microsoft.Its.Domain.Sql
                 storableEvent.Body,
                 storableEvent.Id,
                 serializerSettings.Value,
+                deserializationFunc: deserializationFunc,
                 etag: storableEvent.ETag);
     }
 }
