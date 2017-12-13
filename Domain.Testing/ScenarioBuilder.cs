@@ -42,7 +42,8 @@ namespace Microsoft.Its.Domain.Testing
                          .Register<IEventBus>(c => eventBus);
 
             configuration.UseInMemoryEventStore()
-                         .UseInMemoryCommandScheduling();
+                         .UseInMemoryCommandScheduling()
+                         .UseDefaultSerialization();
 
             configure?.Invoke(Configuration);
         }
