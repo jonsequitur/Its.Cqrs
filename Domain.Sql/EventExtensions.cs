@@ -13,7 +13,7 @@ namespace Microsoft.Its.Domain.Sql
     /// </summary>
     public static class EventExtensions
     {
-        private static readonly Lazy<JsonSerializerSettings> serializerSettings = new Lazy<JsonSerializerSettings>(() =>
+        internal static readonly Lazy<JsonSerializerSettings> serializerSettings = new Lazy<JsonSerializerSettings>(() =>
         {
             var settings = Serializer.CloneSettings();
             settings.ContractResolver = Serializer.AreDefaultSerializerSettingsConfigured ? new EventContractResolver() : settings.ContractResolver;
@@ -59,8 +59,6 @@ namespace Microsoft.Its.Domain.Sql
         internal static StorableEvent ToStorableEvent<TAggregate>(this IEvent<TAggregate> domainEvent, SerializeEvent serialize)
             where TAggregate : IEventSourced
         {
-            serialize = serialize ?? (input => JsonConvert.SerializeObject(input, Formatting.None, serializerSettings.Value));
-
             return new StorableEvent
             {
                 Actor = domainEvent.Actor(),
