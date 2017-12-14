@@ -16,7 +16,7 @@ namespace Microsoft.Its.Domain
     /// <returns>
     /// The deserialized object.
     /// </returns>
-    public delegate object CustomDeserialize(string input, Type type = null);
+    public delegate object DeserializeEvent(string input, Type type = null);
 
     /// <summary>
     /// Serializes an object to a string.
@@ -25,7 +25,7 @@ namespace Microsoft.Its.Domain
     /// <returns>
     /// The object serialized to a string.
     /// </returns>
-    public delegate string CustomSerialize(object input);
+    public delegate string SerializeEvent(object input);
 
     /// <summary>
     /// Provides methods for configuring domain services and behaviors.
@@ -155,16 +155,6 @@ namespace Microsoft.Its.Domain
         }
 
         /// <summary>
-        /// Configures the domain to use the default serializer.
-        /// </summary>
-        public static Configuration UseDefaultSerialization(
-            this Configuration configuration)
-        {
-            configuration.UseCustomSerialization(null, null);
-            return configuration;
-        }
-
-        /// <summary>
         /// Configures the domain to use a custom serializer.
         /// </summary>
         /// <param name="configuration">The configuration.</param>
@@ -172,8 +162,8 @@ namespace Microsoft.Its.Domain
         /// <param name="deserializationFunc">A func that deserializes objects from strings.</param>
         public static Configuration UseCustomSerialization(
             this Configuration configuration,
-            CustomSerialize serializationFunc,
-            CustomDeserialize deserializationFunc)
+            SerializeEvent serializationFunc,
+            DeserializeEvent deserializationFunc)
         {
             configuration.Container.RegisterSingle(c => serializationFunc);
             configuration.Container.RegisterSingle(c => deserializationFunc);

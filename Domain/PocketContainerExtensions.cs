@@ -77,5 +77,12 @@ namespace Microsoft.Its.Domain
                 return null;
             });
         }
+
+        public static PocketContainer UseJsonSerializerSettingsForSerialization(this PocketContainer container)
+        {
+            container.RegisterSingle(c => (SerializeEvent) null);
+            container.RegisterSingle(c => (DeserializeEvent) null);
+            return container;
+        }
     }
 }

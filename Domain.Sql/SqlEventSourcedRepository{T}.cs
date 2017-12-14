@@ -23,9 +23,9 @@ namespace Microsoft.Its.Domain.Sql
 
         private readonly Func<EventStoreDbContext> createEventStoreContext;
 
-        private readonly CustomSerialize serializationFunc;
+        private readonly SerializeEvent serializationFunc;
 
-        private readonly CustomDeserialize deserializationFunc;
+        private readonly DeserializeEvent deserializationFunc;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlEventSourcedRepository{TAggregate}" /> class.
@@ -37,8 +37,8 @@ namespace Microsoft.Its.Domain.Sql
         public SqlEventSourcedRepository(
             IEventBus bus = null,
             Func<EventStoreDbContext> createEventStoreDbContext = null,
-            CustomSerialize serializationFunc = null,
-            CustomDeserialize deserializationFunc = null)
+            SerializeEvent serializationFunc = null,
+            DeserializeEvent deserializationFunc = null)
         {
             this.bus = bus ?? Configuration.Current.EventBus;
 

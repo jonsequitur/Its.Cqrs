@@ -48,6 +48,7 @@ namespace Microsoft.Its.Domain
                      .UseImmediateCommandScheduling()
                      .DefaultToJsonSnapshots()
                      .AddStoreStrategy()
+                     .UseJsonSerializerSettingsForSerialization()
                      .RegisterSingle<IReservationService>(c => NoReservations.Instance)
                      .RegisterSingle<IEventBus>(c => new InProcessEventBus())
                      .Register<ISnapshotRepository>(c => new NoSnapshots())
