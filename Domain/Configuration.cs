@@ -36,6 +36,7 @@ namespace Microsoft.Its.Domain
         {
             global = new Configuration();
             global.Container.Register<IEventBus>(c => InProcessEventBus.Instance);
+            global.container.UseJsonSerializerSettingsForSerialization();
         }
 
         /// <summary>

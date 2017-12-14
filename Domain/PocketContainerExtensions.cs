@@ -78,7 +78,7 @@ namespace Microsoft.Its.Domain
             });
         }
 
-        public static PocketContainer UseJsonSerializerSettingsForSerialization(this PocketContainer container)
+        internal static PocketContainer UseJsonSerializerSettingsForSerialization(this PocketContainer container)
         {
             container.RegisterSingle(c => (SerializeEvent) null);
             container.RegisterSingle(c => (DeserializeEvent) null);
