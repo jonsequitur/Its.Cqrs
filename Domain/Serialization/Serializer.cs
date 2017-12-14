@@ -201,6 +201,8 @@ namespace Microsoft.Its.Domain.Serialization
             SerializeEvent result = input => JsonConvert.SerializeObject(input, Formatting.None, serializerSettings);
             return result;
         }
+
+        internal static DeserializeEvent BuildDeserializer(JsonSerializerSettings serializerSettings)
         {
             serializerSettings = serializerSettings ?? Settings;
             DeserializeEvent result = delegate (string input, Type type)

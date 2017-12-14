@@ -9,6 +9,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain.Serialization;
 using Microsoft.Its.Recipes;
+using Newtonsoft.Json;
 
 namespace Microsoft.Its.Domain.Sql
 {
@@ -45,8 +46,8 @@ namespace Microsoft.Its.Domain.Sql
             createEventStoreContext = createEventStoreDbContext ??
                                       (() => Configuration.Current.EventStoreDbContext());
 
-            this.deserialize = deserialize;
             this.serialize = serialize ?? Serializer.BuildSerializer(EventExtensions.serializerSettings.Value);
+            this.deserialize = deserialize ?? Serializer.BuildDeserializer(EventExtensions.serializerSettings.Value);
         }
 
         private async Task<TAggregate> Get(Guid id, long? version = null, DateTimeOffset? asOfDate = null)
