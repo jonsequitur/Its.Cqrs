@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved. 
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -23,30 +23,30 @@ namespace Microsoft.Its.Domain.Sql
 
         private readonly Func<EventStoreDbContext> createEventStoreContext;
 
-        private readonly SerializeEvent serializationFunc;
+        private readonly SerializeEvent serialize;
 
-        private readonly DeserializeEvent deserializationFunc;
+        private readonly DeserializeEvent deserialize;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlEventSourcedRepository{TAggregate}" /> class.
         /// </summary>
         /// <param name="bus">The bus.</param>
         /// <param name="createEventStoreDbContext">The create event store database context.</param>
-        /// <param name="serializationFunc">The func to use when serializing events.</param>
-        /// <param name="deserializationFunc">The func to use when deserializing events.</param>
+        /// <param name="serialize">Serializes events.</param>
+        /// <param name="deserialize">Deserializes events.</param>
         public SqlEventSourcedRepository(
             IEventBus bus = null,
             Func<EventStoreDbContext> createEventStoreDbContext = null,
-            SerializeEvent serializationFunc = null,
-            DeserializeEvent deserializationFunc = null)
+            SerializeEvent serialize = null,
+            DeserializeEvent deserialize = null)
         {
             this.bus = bus ?? Configuration.Current.EventBus;
 
             createEventStoreContext = createEventStoreDbContext ??
                                       (() => Configuration.Current.EventStoreDbContext());
 
-            this.serializationFunc = serializationFunc;
-            this.deserializationFunc = deserializationFunc;
+            this.serialize = serialize;
+            this.deserialize = deserialize;
         }
 
         private async Task<TAggregate> Get(Guid id, long? version = null, DateTimeOffset? asOfDate = null)
@@ -86,7 +86,7 @@ namespace Microsoft.Its.Domain.Sql
                 var domainEvents = (await events
                                                   .AsNoTracking()
                                                   .ToListAsync())
-                    .Select(e => e.ToDomainEvent(deserializationFunc))
+                    .Select(e => e.ToDomainEvent(deserialize))
                                                   .ToList();
 
                 if (snapshot != null)
@@ -155,7 +155,7 @@ namespace Microsoft.Its.Domain.Sql
 
             var storableEvents = events.OfType<IEvent<TAggregate>>().Select(e =>
             {
-                var storableEvent = e.ToStorableEvent(serializationFunc);
+                var storableEvent = e.ToStorableEvent(serialize);
                 storableEvent.StreamName = AggregateType<TAggregate>.EventStreamName;
                 return storableEvent;
             }).ToArray();

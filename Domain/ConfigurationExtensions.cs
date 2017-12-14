@@ -158,15 +158,15 @@ namespace Microsoft.Its.Domain
         /// Configures the domain to use a custom serializer.
         /// </summary>
         /// <param name="configuration">The configuration.</param>
-        /// <param name="serializationFunc">A func that serializes objects to string.</param>
-        /// <param name="deserializationFunc">A func that deserializes objects from strings.</param>
+        /// <param name="serialize">Serializes objects to string.</param>
+        /// <param name="deserialize">Deserializes objects from strings.</param>
         public static Configuration UseCustomSerialization(
             this Configuration configuration,
-            SerializeEvent serializationFunc,
-            DeserializeEvent deserializationFunc)
+            SerializeEvent serialize,
+            DeserializeEvent deserialize)
         {
-            configuration.Container.RegisterSingle(c => serializationFunc);
-            configuration.Container.RegisterSingle(c => deserializationFunc);
+            configuration.Container.RegisterSingle(c => serialize);
+            configuration.Container.RegisterSingle(c => deserialize);
             return configuration;
         }
 

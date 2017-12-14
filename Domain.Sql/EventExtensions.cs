@@ -55,11 +55,11 @@ namespace Microsoft.Its.Domain.Sql
         /// Creates a <see cref="StorableEvent" /> based on the specified domain event.
         /// </summary>
         /// <param name="domainEvent">The domain event.</param>
-        /// <param name="serializationFunc">Optional func to call to serialize the domain event.</param>
-        internal static StorableEvent ToStorableEvent<TAggregate>(this IEvent<TAggregate> domainEvent, SerializeEvent serializationFunc)
+        /// <param name="serialize">Serializes the domain event.</param>
+        internal static StorableEvent ToStorableEvent<TAggregate>(this IEvent<TAggregate> domainEvent, SerializeEvent serialize)
             where TAggregate : IEventSourced
         {
-            serializationFunc = serializationFunc ?? (input => JsonConvert.SerializeObject(input, Formatting.None, serializerSettings.Value));
+            serialize = serialize ?? (input => JsonConvert.SerializeObject(input, Formatting.None, serializerSettings.Value));
 
             return new StorableEvent
             {
@@ -68,7 +68,7 @@ namespace Microsoft.Its.Domain.Sql
                 SequenceNumber = domainEvent.SequenceNumber,
                 AggregateId = domainEvent.AggregateId,
                 Type = domainEvent.EventName(),
-                Body = serializationFunc(domainEvent),
+                Body = serialize(domainEvent),
                 Timestamp = domainEvent.Timestamp,
                 ETag = domainEvent.ETag
             };
@@ -78,9 +78,9 @@ namespace Microsoft.Its.Domain.Sql
         /// Creates a domain event from a <see cref="StorableEvent" />.
         /// </summary>
         /// <param name="storableEvent">The storable event.</param>
-        /// <param name="deserializationFunc">Optional func to call to deserialize the storable event.</param>
+        /// <param name="deserialize">Deserializes the storable event.</param>
         /// <returns>A deserialized domain event.</returns>
-        public static IEvent ToDomainEvent(this StorableEvent storableEvent, DeserializeEvent deserializationFunc = null) =>
+        public static IEvent ToDomainEvent(this StorableEvent storableEvent, DeserializeEvent deserialize = null) =>
             Serializer.DeserializeEvent(
                 storableEvent.StreamName,
                 storableEvent.Type,
@@ -90,7 +90,7 @@ namespace Microsoft.Its.Domain.Sql
                 storableEvent.Body,
                 storableEvent.Id,
                 serializerSettings.Value,
-                deserializationFunc: deserializationFunc,
+                deserialize: deserialize,
                 etag: storableEvent.ETag);
     }
 }
