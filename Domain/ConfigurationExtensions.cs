@@ -9,6 +9,25 @@ using Microsoft.Its.Recipes;
 namespace Microsoft.Its.Domain
 {
     /// <summary>
+    /// Deserializes a string into an object.
+    /// </summary>
+    /// <param name="input">The string to deserialize.</param>
+    /// <param name="type">Optional type to deserialize as.</param>
+    /// <returns>
+    /// The deserialized object.
+    /// </returns>
+    public delegate object DeserializeEvent(string input, Type type = null);
+
+    /// <summary>
+    /// Serializes an object to a string.
+    /// </summary>
+    /// <param name="input">The object to serialize.</param>
+    /// <returns>
+    /// The object serialized to a string.
+    /// </returns>
+    public delegate string SerializeEvent(object input);
+
+    /// <summary>
     /// Provides methods for configuring domain services and behaviors.
     /// </summary>
     public static class ConfigurationExtensions
@@ -132,6 +151,22 @@ namespace Microsoft.Its.Domain
             // ReSharper disable RedundantTypeArgumentsOfMethod
             configuration.Container.Register<T>(c => resolve(c.Resolve));
             // ReSharper restore RedundantTypeArgumentsOfMethod
+            return configuration;
+        }
+
+        /// <summary>
+        /// Configures the domain to use a custom serializer.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="serialize">Serializes objects to string.</param>
+        /// <param name="deserialize">Deserializes objects from strings.</param>
+        public static Configuration UseCustomSerialization(
+            this Configuration configuration,
+            SerializeEvent serialize,
+            DeserializeEvent deserialize)
+        {
+            configuration.Container.RegisterSingle(c => serialize);
+            configuration.Container.RegisterSingle(c => deserialize);
             return configuration;
         }
 

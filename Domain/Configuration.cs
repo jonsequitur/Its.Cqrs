@@ -36,6 +36,7 @@ namespace Microsoft.Its.Domain
         {
             global = new Configuration();
             global.Container.Register<IEventBus>(c => InProcessEventBus.Instance);
+            global.container.UseJsonSerializerSettingsForSerialization();
         }
 
         /// <summary>
@@ -48,6 +49,7 @@ namespace Microsoft.Its.Domain
                      .UseImmediateCommandScheduling()
                      .DefaultToJsonSnapshots()
                      .AddStoreStrategy()
+                     .UseJsonSerializerSettingsForSerialization()
                      .RegisterSingle<IReservationService>(c => NoReservations.Instance)
                      .RegisterSingle<IEventBus>(c => new InProcessEventBus())
                      .Register<ISnapshotRepository>(c => new NoSnapshots())
