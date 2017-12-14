@@ -44,7 +44,6 @@ namespace Microsoft.Its.Domain.Testing.Tests
                 .UseSqlStorageForScheduledCommands(c => c.UseConnectionString(TestDatabases.CommandScheduler.ConnectionString))
                 .UseSqlEventStore(c => c.UseConnectionString(EventStore.ConnectionString))
                 .UseInMemoryCommandTargetStore()
-                .UseDefaultSerialization()
                 .TraceScheduledCommands();
         }
     }

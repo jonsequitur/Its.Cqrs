@@ -9,6 +9,6 @@ namespace Microsoft.Its.Domain.Sql.Tests
     public class UseSqlEventStoreAttribute : DomainConfigurationAttribute
     {
         protected override void BeforeTest(ITest test, Configuration configuration) =>
-            configuration.UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString)).UseDefaultSerialization();
+            configuration.UseSqlEventStore(c => c.UseConnectionString(TestDatabases.EventStore.ConnectionString));
     }
 }
