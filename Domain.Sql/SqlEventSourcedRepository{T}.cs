@@ -46,7 +46,7 @@ namespace Microsoft.Its.Domain.Sql
                                       (() => Configuration.Current.EventStoreDbContext());
 
             this.deserialize = deserialize;
-            this.serialize = serialize ?? (input => JsonConvert.SerializeObject(input, Formatting.None, EventExtensions.serializerSettings.Value));
+            this.serialize = serialize ?? Serializer.BuildSerializer(EventExtensions.serializerSettings.Value);
         }
 
         private async Task<TAggregate> Get(Guid id, long? version = null, DateTimeOffset? asOfDate = null)
